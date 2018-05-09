@@ -22,6 +22,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from a share listing operation.
@@ -31,228 +34,109 @@ namespace Microsoft.Azure.Storage.File.Protocol
 #else
     public
 #endif
-        sealed class ListSharesResponse : ResponseParsingBase<FileShareEntry>
+        sealed class ListSharesResponse
     {
-        /// <summary>
-        /// Stores the share prefix.
-        /// </summary>
-        private string prefix;
-
-        /// <summary>
-        /// Signals when the share prefix can be consumed.
-        /// </summary>
-        private bool prefixConsumable;
-
-        /// <summary>
-        /// Stores the marker.
-        /// </summary>
-        private string marker;
-
-        /// <summary>
-        /// Signals when the marker can be consumed.
-        /// </summary>
-        private bool markerConsumable;
-
-        /// <summary>
-        /// Stores the max results.
-        /// </summary>
-        private int maxResults;
-
-        /// <summary>
-        /// Signals when the max results can be consumed.
-        /// </summary>
-        private bool maxResultsConsumable;
-
-        /// <summary>
-        /// Stores the next marker.
-        /// </summary>
-        private string nextMarker;
-
-        /// <summary>
-        /// Signals when the next marker can be consumed.
-        /// </summary>
-        private bool nextMarkerConsumable;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ListSharesResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream to be parsed.</param>
-        public ListSharesResponse(Stream stream)
-            : base(stream)
-        {
-        }
-
-        /// <summary>
-        /// Gets the listing context from the XML response.
-        /// </summary>
-        /// <value>A set of parameters for the listing operation.</value>
-        public ListingContext ListingContext
-        {
-            get
-            {
-                // Force a parsing in order
-                ListingContext listingContext = new ListingContext(this.Prefix, this.MaxResults);
-                listingContext.Marker = this.NextMarker;
-                return listingContext;
-            }
-        }
-
         /// <summary>
         /// Gets an enumerable collection of <see cref="FileShareEntry"/> objects from the response.
         /// </summary>
         /// <value>An enumerable collection of <see cref="FileShareEntry"/> objects.</value>
-        public IEnumerable<FileShareEntry> Shares
-        {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Prefix value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The Prefix value.</value>
-        public string Prefix
-        {
-            get
-            {
-                this.Variable(ref this.prefixConsumable);
-
-                return this.prefix;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Marker value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The Marker value.</value>
-        public string Marker
-        {
-            get
-            {
-                this.Variable(ref this.markerConsumable);
-
-                return this.marker;
-            }
-        }
-
-        /// <summary>
-        /// Gets the MaxResults value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The MaxResults value.</value>
-        public int MaxResults
-        {
-            get
-            {
-                this.Variable(ref this.maxResultsConsumable);
-
-                return this.maxResults;
-            }
-        }
+        public IEnumerable<FileShareEntry> Shares { get; private set; }
 
         /// <summary>
         /// Gets the NextMarker value from the XML response, if the listing was not complete.
         /// </summary>
         /// <value>The NextMarker value.</value>
-        public string NextMarker
-        {
-            get
-            {
-                this.Variable(ref this.nextMarkerConsumable);
-
-                return this.nextMarker;
-            }
-        }
+        public string NextMarker { get; private set; }
 
         /// <summary>
         /// Reads a share entry completely including its properties and metadata.
         /// </summary>
         /// <returns>Share listing entry</returns>
-        private FileShareEntry ParseShareEntry(Uri baseUri)
+        private static async Task<FileShareEntry> ParseShareEntryAsync(XmlReader reader, Uri baseUri, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             string name = null;
             DateTimeOffset? snapshotTime = null;
             IDictionary<string, string> metadata = null;
             FileShareProperties shareProperties = new FileShareProperties();
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.NameElement:
-                            name = this.reader.ReadElementContentAsString();
+                            name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.SnapshotElement:
-                            snapshotTime = this.reader.ReadElementContentAsString().ToUTCTime();
+                            snapshotTime = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                             break;
 
                         case Constants.PropertiesElement:
-                            this.reader.ReadStartElement();
-                            while (this.reader.IsStartElement())
+                            await reader.ReadStartElementAsync().ConfigureAwait(false);
+                            while (await reader.IsStartElementAsync().ConfigureAwait(false))
                             {
-                                if (this.reader.IsEmptyElement)
+                                token.ThrowIfCancellationRequested();
+
+                                if (reader.IsEmptyElement)
                                 {
-                                    this.reader.Skip();
+                                    await reader.SkipAsync().ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    switch (this.reader.Name)
+                                    switch (reader.Name)
                                     {
                                         case Constants.LastModifiedElement:
-                                            shareProperties.LastModified = reader.ReadElementContentAsString().ToUTCTime();
+                                            shareProperties.LastModified = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                                             break;
 
                                         case Constants.EtagElement:
-                                            shareProperties.ETag = reader.ReadElementContentAsString();
+                                            shareProperties.ETag = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.QuotaElement:
-                                            shareProperties.Quota = reader.ReadElementContentAsInt();
+                                            shareProperties.Quota = await reader.ReadElementContentAsInt32Async().ConfigureAwait(false);
                                             break;
 
                                         default:
-                                            reader.Skip();
+                                            await reader.SkipAsync().ConfigureAwait(false);
                                             break;
                                     }
                                 }
                             }
 
-                            this.reader.ReadEndElement();
+                            await reader.ReadEndElementAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.MetadataElement:
-                            metadata = Response.ParseMetadata(this.reader);
+                            metadata = await Response.ParseMetadataAsync(reader).ConfigureAwait(false);
                             break;
 
                         default:
-                            reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
-
-            if (metadata == null)
-            {
-                metadata = new Dictionary<string, string>();
-            }
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             return new FileShareEntry
             {
                 Properties = shareProperties,
                 Name = name,
                 Uri = NavigationHelper.AppendPathToSingleUri(baseUri, name),
-                Metadata = metadata,
+                Metadata = metadata ?? new Dictionary<string, string>(),
                 SnapshotTime = snapshotTime,
             };
         }
@@ -261,73 +145,76 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// Parses the response XML for a share listing operation.
         /// </summary>
         /// <returns>An enumerable collection of <see cref="FileShareEntry"/> objects.</returns>
-        protected override IEnumerable<FileShareEntry> ParseXml()
+        internal static async Task<ListSharesResponse> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.EnumerationResultsElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
-                {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    Uri baseUri = new Uri(this.reader.GetAttribute(Constants.ServiceEndpointElement));
+                token.ThrowIfCancellationRequested();
 
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement())
+                List<FileShareEntry> shares = new List<FileShareEntry>();
+                string nextMarker = default(string);
+
+                if (await reader.ReadToFollowingAsync(Constants.EnumerationResultsElement).ConfigureAwait(false))
+                {
+                    if (reader.IsEmptyElement)
                     {
-                        if (this.reader.IsEmptyElement)
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        Uri baseUri = new Uri(reader.GetAttribute(Constants.ServiceEndpointElement));
+
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                         {
-                            this.reader.Skip();
-                        }
-                        else
-                        {
-                            switch (this.reader.Name)
+                            token.ThrowIfCancellationRequested();
+
+                            if (reader.IsEmptyElement)
                             {
-                                case Constants.MarkerElement:
-                                    this.marker = this.reader.ReadElementContentAsString();
-                                    this.markerConsumable = true;
-                                    yield return null;
-                                    break;
+                                await reader.SkipAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                switch (reader.Name)
+                                {
+                                    case Constants.MarkerElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.NextMarkerElement:
-                                    this.nextMarker = this.reader.ReadElementContentAsString();
-                                    this.nextMarkerConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.NextMarkerElement:
+                                        nextMarker = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.MaxResultsElement:
-                                    this.maxResults = this.reader.ReadElementContentAsInt();
-                                    this.maxResultsConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.MaxResultsElement:
+                                        await reader.ReadElementContentAsInt32Async().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.PrefixElement:
-                                    this.prefix = this.reader.ReadElementContentAsString();
-                                    this.prefixConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.PrefixElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.SharesElement:
-                                    this.reader.ReadStartElement();
-                                    while (this.reader.IsStartElement(Constants.ShareElement))
-                                    {
-                                        yield return this.ParseShareEntry(baseUri);
-                                    }
+                                    case Constants.SharesElement:
+                                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                                        while (await reader.IsStartElementAsync(Constants.ShareElement))
+                                        {
+                                            shares.Add(await ParseShareEntryAsync(reader, baseUri, token).ConfigureAwait(false));
+                                        }
 
-                                    this.reader.ReadEndElement();
-                                    this.allObjectsParsed = true;
-                                    break;
+                                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                                        break;
 
-                                default:
-                                    reader.Skip();
-                                    break;
+                                    default:
+                                        await reader.SkipAsync().ConfigureAwait(false);
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    this.reader.ReadEndElement();
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
                 }
+
+                return new ListSharesResponse { Shares = shares, NextMarker = nextMarker };
             }
         }
     }

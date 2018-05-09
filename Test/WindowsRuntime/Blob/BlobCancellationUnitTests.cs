@@ -106,7 +106,7 @@ namespace Microsoft.Azure.Storage.Blob
                         catch (Exception)
                         {
                             Assert.AreEqual(operationContext.LastResult.Exception.Message, "A task was canceled.");
-                            Assert.AreEqual(operationContext.LastResult.HttpStatusCode, 306);
+                            Assert.AreEqual(operationContext.LastResult.HttpStatusCode, 0);
                             //Assert.AreEqual(operationContext.LastResult.HttpStatusMessage, "Unused");
                         }
                         TestHelper.AssertNAttempts(operationContext, 1);
@@ -145,16 +145,17 @@ namespace Microsoft.Azure.Storage.Blob
 #else
                         Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, default(AccessCondition), default(BlobRequestOptions), operationContext, tokenSource.Token);
 #endif
-                        await Task.Delay(1000); //we need a bit longer time in order to put the cancel output exception to operationContext.LastResult
+                        //await Task.Delay(1000); //we need a bit longer time in order to put the cancel output exception to operationContext.LastResult
                         tokenSource.Cancel();
                         try
                         {
                             await action;
+                            await Task.Delay(1000);
                         }
                         catch (Exception)
                         {
                             Assert.AreEqual(operationContext.LastResult.Exception.Message, "A task was canceled.");
-                            Assert.AreEqual(operationContext.LastResult.HttpStatusCode, 306);
+                            Assert.AreEqual(operationContext.LastResult.HttpStatusCode, 0);
                             //Assert.AreEqual(operationContext.LastResult.HttpStatusMessage, "Unused");
                         }
                         TestHelper.AssertNAttempts(operationContext, 1);

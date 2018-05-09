@@ -26,6 +26,7 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Globalization;
     using System.IO;
     using System.Text;
+    using System.Threading;
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
     internal abstract class BlobWriteStreamBase :
@@ -48,7 +49,11 @@ namespace Microsoft.Azure.Storage.Blob
         protected CounterEvent noPendingWritesEvent;
         protected MD5Wrapper blobMD5;
         protected MD5Wrapper blockMD5;
+#if WINDOWS_DESKTOP
+        protected AsyncSemaphoreAsync parallelOperationSemaphoreAsync;
+#else
         protected AsyncSemaphore parallelOperationSemaphore;
+#endif
         protected volatile Exception lastException;
         protected volatile bool committed;
         protected bool disposed;
@@ -71,7 +76,11 @@ namespace Microsoft.Azure.Storage.Blob
             this.noPendingWritesEvent = new CounterEvent();
             this.blobMD5 = this.options.StoreBlobContentMD5.Value ? new MD5Wrapper() : null;
             this.blockMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
+#if WINDOWS_DESKTOP
+            this.parallelOperationSemaphoreAsync = new AsyncSemaphoreAsync(options.ParallelOperationThreadCount.Value);
+#else
             this.parallelOperationSemaphore = new AsyncSemaphore(options.ParallelOperationThreadCount.Value);
+#endif
             this.lastException = null;
             this.committed = false;
             this.disposed = false;
@@ -132,7 +141,11 @@ namespace Microsoft.Azure.Storage.Blob
             this.operationContext = this.operationContext ?? new OperationContext();
             this.appendBlob = appendBlob;
             this.Blob = this.appendBlob;
+#if WINDOWS_DESKTOP
+            this.parallelOperationSemaphoreAsync = new AsyncSemaphoreAsync(1);
+#else
             this.parallelOperationSemaphore = new AsyncSemaphore(1);
+#endif
             this.streamWriteSizeInBytes = appendBlob.StreamWriteSizeInBytes;
         }
 
@@ -230,10 +243,7 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new NotSupportedException();
             }
 
-            if (this.lastException != null)
-            {
-                throw this.lastException;
-            }
+            this.ThrowLastExceptionIfExists();
 
             long newOffset;
             switch (origin)
@@ -310,15 +320,16 @@ namespace Microsoft.Azure.Storage.Blob
                     this.internalBuffer.Dispose();
                     this.internalBuffer = null;
                 }
-       
-                if (this.noPendingWritesEvent != null)
-                {
-                    this.noPendingWritesEvent.Dispose();
-                    this.noPendingWritesEvent = null;
-                }
             }
 
             base.Dispose(disposing);
+        }
+        protected void ThrowLastExceptionIfExists()
+        {
+            if (this.lastException != null)
+            {
+                throw this.lastException;
+            }
         }
     }
 }

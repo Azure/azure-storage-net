@@ -340,7 +340,7 @@ namespace Microsoft.Azure.Storage.File
                 IPAddress actualIP = null;
                 opContext.ResponseReceived += (sender, e) => 
                     {
-                        Stream stream = e.Response.GetResponseStream();
+                        Stream stream = HttpResponseParsers.GetResponseStream(e.Response);
                         stream.Seek(0, SeekOrigin.Begin);
                         using (StreamReader reader = new StreamReader(stream))
                         {

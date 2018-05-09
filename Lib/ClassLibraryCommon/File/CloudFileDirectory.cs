@@ -26,6 +26,7 @@ namespace Microsoft.Azure.Storage.File
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -79,23 +80,16 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            this.AssertNoSnapshot();
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.CreateDirectoryImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.CreateAsync(options, operationContext), callback, state);
         }
 
-        /// <summary>
+        /// <summary> 
         /// Ends an asynchronous operation to create a directory.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndCreate(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -106,7 +100,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task CreateAsync()
         {
-            return this.CreateAsync(CancellationToken.None);
+            return this.CreateAsync(options: null, operationContext: null, cancellationToken: CancellationToken.None);
         }
 
         /// <summary>
@@ -117,7 +111,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task CreateAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginCreate, this.EndCreate, cancellationToken);
+            return this.CreateAsync(options:null, operationContext:null, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -142,7 +136,13 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task CreateAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginCreate, this.EndCreate, options, operationContext, cancellationToken);
+            this.Share.AssertNoSnapshot();
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.CreateDirectoryImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -216,32 +216,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            // Root directory always exists if the share exists.
-            // We cannot call this.BeginCreate() if this is the root directory, because the service will always 
-            // return a 405 error in that case, regardless of whether or not the share exists.
-            if (String.IsNullOrEmpty(this.Name))
-            {
-                // If the share does not exist, the end call will throw a 404, which is what we want.
-                // This.BeginCreate() will throw the same 404 if the share does not exist, and this is not the root directory.
-                return this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).BeginFetchAttributes(null, options, operationContext, callback, state);
-            }
-
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
-                modifiedOptions,
-                operationContext,
-                createResult =>
-                {
-                    if (callback != null)
-                    {
-                        callback(createResult);
-                    }
-                },
-                null);
-
-            return savedCreateResult;
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.CreateIfNotExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -251,38 +226,7 @@ namespace Microsoft.Azure.Storage.File
         /// <returns><c>true</c> if the directory did not already exist and was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
-            if (string.IsNullOrEmpty(this.Name))
-            {
-                this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).EndFetchAttributes(asyncResult);
-
-                // If the above call did not throw an exception, then the share (and thus the root directory) already exists.
-                return false;
-            }
-
-            ExecutionState<NullType> executionResult = asyncResult as ExecutionState<NullType>;
-            CommonUtility.AssertNotNull("AsyncResult", executionResult);
-            try
-            {
-                this.EndCreate(executionResult);
-                return true;
-            }
-            catch (StorageException e)
-            {
-                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
-                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists)))
-                {
-                    return false;
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -297,16 +241,6 @@ namespace Microsoft.Azure.Storage.File
             return this.CreateIfNotExistsAsync(CancellationToken.None);
         }
 
-        private async Task<bool> CreateIfNotExistsAsyncHelper(FileRequestOptions options, OperationContext context, CancellationToken cancellationToken)
-        {
-            // If the share does not exist, this will throw a 404, which is what we want.
-            // This.Create() will throw the same 404 if the share does not exist, and this is not the root directory.
-            await this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).FetchAttributesAsync(null, options, context, cancellationToken).ConfigureAwait(false);
-
-            // If the above call did not throw an exception, then the share (and thus the root directory) already exists.
-            return false;
-        }
-
         /// <summary>
         /// Returns a task that performs an asynchronous request to create the directory if it does not already exist.
         /// </summary>
@@ -316,15 +250,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(CancellationToken cancellationToken)
         {
-            // Root directory always exists if the share exists.
-            // We cannot call this.Create() if this is the root directory, because the service will always 
-            // return a 405 error in that case, regardless of whether or not the share exists.
-            if (String.IsNullOrEmpty(this.Name))
-            {
-                return this.CreateIfNotExistsAsyncHelper(null, null, cancellationToken);
-            }
-
-            return AsyncExtensions.TaskFromApm(this.BeginCreateIfNotExists, this.EndCreateIfNotExists, cancellationToken);
+            return this.CreateIfNotExistsAsync(options: null, operationContext: null, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -349,17 +275,39 @@ namespace Microsoft.Azure.Storage.File
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
-        public virtual Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> CreateIfNotExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             // Root directory always exists if the share exists.
             // We cannot call this.Create() if this is the root directory, because the service will always 
             // return a 405 error in that case, regardless of whether or not the share exists.
             if (String.IsNullOrEmpty(this.Name))
             {
-                return this.CreateIfNotExistsAsyncHelper(options, operationContext, cancellationToken);
+                // If the share does not exist, this will throw a 404, which is what we want.
+                // This.Create() will throw the same 404 if the share does not exist, and this is not the root directory.
+                await this.ServiceClient.GetShareReference(this.Share.Name, this.Share.SnapshotTime).FetchAttributesAsync(null, options, operationContext, cancellationToken).ConfigureAwait(false);
+
+                // If the above call did not throw an exception, then the share (and thus the root directory) already exists.
+                return false;
             }
 
-            return AsyncExtensions.TaskFromApm(this.BeginCreateIfNotExists, this.EndCreateIfNotExists, options, operationContext, cancellationToken);
+            try
+            {
+                await this.CreateAsync(options, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == FileErrorCodeStrings.ResourceAlreadyExists)))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 #endif
 
@@ -406,14 +354,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            this.AssertNoSnapshot();
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.DeleteDirectoryImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.DeleteAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -422,7 +363,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDelete(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -444,7 +385,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task DeleteAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, cancellationToken);
+            return this.DeleteAsync(default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -471,7 +412,13 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task DeleteAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, accessCondition, options, operationContext, cancellationToken);
+            this.Share.AssertNoSnapshot();
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.DeleteDirectoryImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -545,97 +492,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteIfExists(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-
-            this.DeleteIfExistsHandler(accessCondition, options, operationContext, storageAsyncResult);
-            return storageAsyncResult;
-        }
-
-        private void DeleteIfExistsHandler(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
-        {
-            ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                options,
-                operationContext,
-                existsResult =>
-                {
-                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                    lock (storageAsyncResult.CancellationLockerObject)
-                    {
-                        storageAsyncResult.CancelDelegate = null;
-                        try
-                        {
-                            bool exists = this.EndExists(existsResult);
-                            if (!exists)
-                            {
-                                storageAsyncResult.Result = false;
-                                storageAsyncResult.OnComplete();
-                                return;
-                            }
-                        }
-                        catch (StorageException e)
-                        {
-                            if ((e.RequestInformation != null) &&
-                                (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden))
-                            {
-                                storageAsyncResult.OnComplete(e);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            storageAsyncResult.OnComplete(e);
-                            return;
-                        }
-
-                        ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                            accessCondition,
-                            options,
-                            operationContext,
-                            deleteResult =>
-                            {
-                                storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                                storageAsyncResult.CancelDelegate = null;
-                                try
-                                {
-                                    this.EndDelete(deleteResult);
-                                    storageAsyncResult.Result = true;
-                                    storageAsyncResult.OnComplete();
-                                }
-                                catch (StorageException e)
-                                {
-                                    if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                                    {
-                                        storageAsyncResult.Result = false;
-                                        storageAsyncResult.OnComplete();
-                                    }
-                                    else
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    storageAsyncResult.OnComplete(e);
-                                }
-                            },
-                            null  /* state */);
-
-                        storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
-                        if (storageAsyncResult.CancelRequested)
-                        {
-                            storageAsyncResult.Cancel();
-                        }
-                    }
-                },
-                null);
-
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -645,10 +502,7 @@ namespace Microsoft.Azure.Storage.File
         /// <returns><c>true</c> if the directory did already exist and was deleted; otherwise, <c>false</c>.</returns>
         public virtual bool EndDeleteIfExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = asyncResult as StorageAsyncResult<bool>;
-            CommonUtility.AssertNotNull("AsyncResult", res);
-            res.End();
-            return res.Result;
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -670,7 +524,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> DeleteIfExistsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, cancellationToken);
+            return this.DeleteIfExistsAsync(default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -695,9 +549,40 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, accessCondition, options, operationContext, cancellationToken);
+            try
+            {
+                bool exists = await this.ExistsAsync(options, operationContext, cancellationToken).ConfigureAwait(false);
+                if (!exists)
+                {
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
+            }
+
+            try
+            {
+                await this.DeleteAsync(accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (StorageException storageEx)
+            {
+                if (storageEx.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 #endif
 
@@ -742,13 +627,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.ExistsImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.ExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -758,7 +637,7 @@ namespace Microsoft.Azure.Storage.File
         /// <returns><c>true</c> if the directory exists; <c>false</c>, otherwise.</returns>
         public virtual bool EndExists(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<bool>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -780,7 +659,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, cancellationToken);
+            return this.ExistsAsync(default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -805,7 +684,12 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync(FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, options, operationContext, cancellationToken);
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.ExistsImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -851,13 +735,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.FetchAttributesImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -866,7 +744,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndFetchAttributes(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -888,7 +766,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task FetchAttributesAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, cancellationToken);
+            return this.FetchAttributesAsync(default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -915,7 +793,12 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task FetchAttributesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, accessCondition, options, operationContext, cancellationToken);
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.FetchAttributesImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1063,13 +946,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginListFilesAndDirectoriesSegmented(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken, prefix),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<FileResultSegment>(token => this.ListFilesAndDirectoriesSegmentedAsync(prefix, maxResults, currentToken, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1080,8 +957,7 @@ namespace Microsoft.Azure.Storage.File
         /// <returns>A result segment containing objects that implement <see cref="IListFileItem"/>.</returns>
         public virtual FileResultSegment EndListFilesAndDirectoriesSegmented(IAsyncResult asyncResult)
         {
-            ResultSegment<IListFileItem> resultSegment = Executor.EndExecuteAsync<ResultSegment<IListFileItem>>(asyncResult);
-            return new FileResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
+            return ((CancellableAsyncResultTaskWrapper<FileResultSegment>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1170,9 +1046,16 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<FileResultSegment> ListFilesAndDirectoriesSegmentedAsync(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListFilesAndDirectoriesSegmented, this.EndListFilesAndDirectoriesSegmented, prefix, maxResults, currentToken, options, operationContext, cancellationToken);
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            ResultSegment<IListFileItem> resultSegment = await Executor.ExecuteAsync(
+                this.ListFilesAndDirectoriesImpl(maxResults, modifiedOptions, currentToken, prefix),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
+
+            return new FileResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
         }
 #endif
 
@@ -1219,14 +1102,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            this.AssertNoSnapshot();
-            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.SetMetadataImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1235,7 +1111,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndSetMetadata(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1257,7 +1133,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, cancellationToken);
+            return this.SetMetadataAsync(default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1284,7 +1160,13 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, accessCondition, options, operationContext, cancellationToken);
+            this.Share.AssertNoSnapshot();
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.SetMetadataImpl(accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1298,9 +1180,12 @@ namespace Microsoft.Azure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.Create(uri, serverTimeout, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) => DirectoryHttpWebRequestFactory.AddMetadata(r, this.Metadata);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = DirectoryHttpRequestMessageFactory.Create(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                DirectoryHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
@@ -1323,8 +1208,7 @@ namespace Microsoft.Azure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.Delete(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.Delete(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
             return putCmd;
@@ -1340,18 +1224,13 @@ namespace Microsoft.Azure.Storage.File
             RESTCommand<bool> getCmd = new RESTCommand<bool>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(getCmd);
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, null, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, null, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
                 {
                     return false;
-                }
-
-                if (resp.StatusCode == HttpStatusCode.PreconditionFailed)
-                {
-                    return true;
                 }
 
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
@@ -1375,8 +1254,7 @@ namespace Microsoft.Azure.Storage.File
             RESTCommand<NullType> getCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(getCmd);
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, accessCondition, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.GetProperties(uri, serverTimeout, this.Share.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -1410,12 +1288,11 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.List(uri, serverTimeout, listingContext, this.Share.SnapshotTime, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.List(uri, serverTimeout, this.Share.SnapshotTime, listingContext, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                ListFilesAndDirectoriesResponse listFilesResponse = new ListFilesAndDirectoriesResponse(cmd.ResponseStream);
+                ListFilesAndDirectoriesResponse listFilesResponse = await ListFilesAndDirectoriesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
                 List<IListFileItem> fileList = listFilesResponse.Files.Select(item => this.SelectListFileItem(item)).ToList();
                 FileContinuationToken continuationToken = null;
                 if (listFilesResponse.NextMarker != null)
@@ -1447,9 +1324,12 @@ namespace Microsoft.Azure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => DirectoryHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) => DirectoryHttpWebRequestFactory.AddMetadata(r, this.Metadata);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = DirectoryHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                DirectoryHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -1465,7 +1345,7 @@ namespace Microsoft.Azure.Storage.File
         /// Retrieve ETag and LastModified date time from response.
         /// </summary>
         /// <param name="response">The response to parse.</param>
-        private void UpdateETagAndLastModified(HttpWebResponse response)
+        private void UpdateETagAndLastModified(HttpResponseMessage response)
         {
             FileDirectoryProperties parsedProperties = DirectoryHttpResponseParsers.GetProperties(response);
             this.Properties.ETag = parsedProperties.ETag;

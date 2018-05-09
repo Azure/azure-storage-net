@@ -106,7 +106,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginListBlobsSegmented(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.Container.BeginListBlobsSegmented(this.Prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, callback, state);
+            return new CancellableAsyncResultTaskWrapper<BlobResultSegment>(token => this.ListBlobsSegmentedAsync(useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="BlobResultSegment"/> object.</returns>
         public virtual BlobResultSegment EndListBlobsSegmented(IAsyncResult asyncResult)
         {
-            return this.Container.EndListBlobsSegmented(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<BlobResultSegment>)asyncResult).GetAwaiter().GetResult();
         }
         
 #if TASK
@@ -130,7 +130,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken)
         {
-            return this.ListBlobsSegmentedAsync(currentToken, CancellationToken.None);
+            return this.Container.ListBlobsSegmentedAsync(this.Prefix, false /*useFlatBlobListDetails*/, BlobListingDetails.None, null /*maxResults*/, currentToken, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListBlobsSegmented, this.EndListBlobsSegmented, currentToken, cancellationToken);
+            return this.Container.ListBlobsSegmentedAsync(this.Prefix, false /*useFlatBlobListDetails*/, BlobListingDetails.None, null /*maxResults*/, currentToken, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
         
         /// <summary>
@@ -180,7 +180,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListBlobsSegmented, this.EndListBlobsSegmented, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken);
+            return this.Container.ListBlobsSegmentedAsync(this.Prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken);
         }
 #endif    
     }

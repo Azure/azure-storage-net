@@ -150,7 +150,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-            CloudAppendBlob blob2 = new CloudAppendBlob(blob.StorageUri, null, null);
+            CloudAppendBlob blob2 = new CloudAppendBlob(blob.StorageUri, null, credentials: null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
             Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);
@@ -800,7 +800,7 @@ namespace Microsoft.Azure.Storage.Blob
                 OperationContext context = new OperationContext();
                 context.SendingRequest += (sender, e) =>
                 {
-                    e.Request.Headers["x-ms-meta-key1"] = string.Empty;
+                    Shared.Protocol.HttpRequestHandler.SetHeader(e.Request, "x-ms-meta-key1", string.Empty);
                 };
 
                 blob.SetMetadata(operationContext: context);
@@ -3025,15 +3025,17 @@ namespace Microsoft.Azure.Storage.Blob
                         {
                             if (copyLength.HasValue)
                             {
-                                ICancellableAsyncResult result = blob.BeginUploadFromStream(
+                                ICancellableAsyncResult result = null;
+                                result = blob.BeginUploadFromStream(
                                     sourceStream, copyLength.Value, accessCondition, options, null, ar => waitHandle.Set(), null);
                                 waitHandle.WaitOne();
                                 blob.EndUploadFromStream(result);
                             }
                             else
                             {
-                                ICancellableAsyncResult result = blob.BeginUploadFromStream(
-                                    sourceStream, accessCondition, options, null, ar => waitHandle.Set(), null);
+                                ICancellableAsyncResult result = null;
+                                result = blob.BeginUploadFromStream(
+                                sourceStream, accessCondition, options, null, ar => waitHandle.Set(), null);
                                 waitHandle.WaitOne();
                                 blob.EndUploadFromStream(result);
                             }

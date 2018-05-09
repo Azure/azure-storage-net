@@ -19,22 +19,22 @@
     <dependencies>
       <group targetFramework=".NETStandard1.0">
         <dependency id="NETStandard.Library" version="1.6.1" />
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0.1-preview" />
       </group>
       <group targetFramework=".NETStandard1.3">
         <dependency id="NETStandard.Library" version="1.6.1" />
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0.1-preview" />
       </group>
       <group targetFramework=".NETFramework4.5">
         <dependency id="Newtonsoft.Json" version="10.0.2" />
         <dependency id="Microsoft.Azure.KeyVault.Core" version="1.0.0" />
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0.1-preview" />
       </group>
       <group targetFramework="Windows8.1">
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0.1-preview" />
       </group>
       <group targetFramework="WindowsPhoneApp0.0">
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.0.0.1-preview" />
       </group>
     </dependencies>
     <references>

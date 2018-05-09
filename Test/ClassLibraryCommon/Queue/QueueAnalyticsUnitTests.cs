@@ -304,7 +304,7 @@ namespace Microsoft.Azure.Storage.Queue
             }
             catch (StorageException ex)
             {
-                Assert.AreEqual(ex.Message, "The remote server returned an error: (400) Bad Request.");
+                Assert.AreEqual(ex.Message, "XML specified is not syntactically valid.");
                 Assert.AreEqual(ex.RequestInformation.HttpStatusCode, (int)HttpStatusCode.BadRequest);
                 TestHelper.AssertNAttempts(ctx, 1);
             }

@@ -40,11 +40,14 @@ namespace Microsoft.Azure.Storage.File
         protected CounterEvent noPendingWritesEvent;
         protected MD5Wrapper fileMD5;
         protected MD5Wrapper rangeMD5;
-        protected AsyncSemaphore parallelOperationSemaphore;
         protected volatile Exception lastException;
         protected volatile bool committed;
         protected bool disposed;
-
+#if WINDOWS_DESKTOP
+        protected AsyncSemaphoreAsync parallelOperationSemaphoreAsync;
+#else
+        protected AsyncSemaphore parallelOperationSemaphore;
+#endif
         /// <summary>
         /// Initializes a new instance of the FileWriteStreamBase class for a file.
         /// </summary>
@@ -65,7 +68,11 @@ namespace Microsoft.Azure.Storage.File
             this.noPendingWritesEvent = new CounterEvent();
             this.fileMD5 = this.options.StoreFileContentMD5.Value ? new MD5Wrapper() : null;
             this.rangeMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
+#if !(NETCORE || WINDOWS_RT)
+            this.parallelOperationSemaphoreAsync = new AsyncSemaphoreAsync(options.ParallelOperationThreadCount.Value);
+#else
             this.parallelOperationSemaphore = new AsyncSemaphore(options.ParallelOperationThreadCount.Value);
+#endif
             this.lastException = null;
             this.committed = false;
             this.disposed = false;
@@ -225,15 +232,17 @@ namespace Microsoft.Azure.Storage.File
                     this.internalBuffer.Dispose();
                     this.internalBuffer = null;
                 }
-
-                if (this.noPendingWritesEvent != null)
-                {
-                    this.noPendingWritesEvent.Dispose();
-                    this.noPendingWritesEvent = null;
-                }
             }
 
             base.Dispose(disposing);
+        }
+
+        protected void ThrowLastExceptionIfExists()
+        {
+            if (this.lastException != null)
+            {
+                throw this.lastException;
+            }
         }
     }
 }

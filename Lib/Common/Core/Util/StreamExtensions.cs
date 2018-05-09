@@ -24,10 +24,7 @@ namespace Microsoft.Azure.Storage.Core.Util
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Threading;
-
-#if WINDOWS_RT || NETCORE
     using System.Threading.Tasks;
-#endif
 
     /// <summary>
     /// Provides stream helper methods that allow us to copy streams and measure the stream size.
@@ -45,6 +42,17 @@ namespace Microsoft.Azure.Storage.Core.Util
             {
                 return Constants.DefaultBufferSize;
             }
+        }
+
+        /// <summary>
+        /// Position the stream with offset from beginning.
+        /// </summary>
+        /// <param name="stream">input stream</param>
+        /// <param name="offset">offset from beginning</param>
+        /// <returns>stream position</returns>
+        public static long Seek(this Stream stream, long offset)
+        {
+            return stream.Seek(offset, SeekOrigin.Begin);
         }
 
 #if !(WINDOWS_RT || NETCORE)
@@ -201,7 +209,7 @@ namespace Microsoft.Azure.Storage.Core.Util
                     try
                     {
                         executionState.ReqTimedOut = true;
-                        executionState.Req.Abort();
+                        executionState.CancellationTokenSource.Cancel();
                     }
                     catch (Exception)
                     {
@@ -234,12 +242,13 @@ namespace Microsoft.Azure.Storage.Core.Util
         }
 #endif
 
-#if WINDOWS_RT || NETCORE
+#if NETCORE || WINDOWS_RT
         /// <summary>
         /// Asynchronously reads the entire content of the stream and writes it to the given output stream.
         /// </summary>
         /// <param name="stream">The origin stream.</param>
         /// <param name="toStream">The destination stream.</param>
+        /// <param name="bufferManager">IBufferManager instance to use. May be null.</param>
         /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot be passed with a value for maxLength.</param>
         /// <param name="maxLength">Maximum length of the source stream. Cannot be passed with a value for copyLength.</param>
         /// <param name="calculateMd5">Bool value indicating whether the Md5 should be calculated.</param>
@@ -247,7 +256,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// <param name="streamCopyState">An object that represents the current state for the copy operation.</param>
         /// <param name="token">A CancellationToken to observe while waiting for the copy to complete.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        internal static async Task WriteToAsync<T>(this Stream stream, Stream toStream, long? copyLength, long? maxLength, bool calculateMd5, ExecutionState<T> executionState, StreamDescriptor streamCopyState, CancellationToken token)
+        internal static async Task WriteToAsync<T>(this Stream stream, Stream toStream, IBufferManager bufferManager, long? copyLength, long? maxLength, bool calculateMd5, ExecutionState<T> executionState, StreamDescriptor streamCopyState, CancellationToken token)
         {
             if (copyLength.HasValue && maxLength.HasValue)
             {
@@ -263,13 +272,15 @@ namespace Microsoft.Azure.Storage.Core.Util
             {
                 throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
             }
-            
+
             if (streamCopyState != null && calculateMd5 && streamCopyState.Md5HashRef == null)
             {
                 streamCopyState.Md5HashRef = new MD5Wrapper();
             }
 
             CancellationTokenSource cts = null;
+
+            byte[] buffer = bufferManager != null ? bufferManager.TakeBuffer(GetBufferSize(stream)) : new byte[GetBufferSize(stream)];
 
             try
             {
@@ -283,7 +294,6 @@ namespace Microsoft.Azure.Storage.Core.Util
                     token = cts.Token;
                 }
 
-                byte[] buffer = new byte[GetBufferSize(stream)];
                 long? bytesRemaining = copyLength;
                 int readCount;
                 do
@@ -338,6 +348,11 @@ namespace Microsoft.Azure.Storage.Core.Util
                     cts.Dispose();
                     cts = null;
                 }
+
+                if (buffer != null && bufferManager != null)
+                {
+                    bufferManager.ReturnBuffer(buffer);
+                }
             }
 
             // Streams opened with AsStreamForWrite extension need to be flushed
@@ -350,26 +365,30 @@ namespace Microsoft.Azure.Storage.Core.Util
                 streamCopyState.Md5HashRef = null;
             }
         }
+#endif
+#if TASK
 
-#elif WINDOWS_DESKTOP 
         /// <summary>
         /// Asynchronously reads the entire content of the stream and writes it to the given output stream.
         /// </summary>
         /// <typeparam name="T">The result type of the ExecutionState</typeparam>
         /// <param name="stream">The origin stream.</param>
         /// <param name="toStream">The destination stream.</param>
+        /// <param name="bufferManager">IBufferManager instance to use.</param>
         /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot be passed with a value for maxLength.</param>
         /// <param name="maxLength">Maximum length of the source stream. Cannot be passed with a value for copyLength.</param>
         /// <param name="calculateMd5">Bool value indicating whether the Md5 should be calculated.</param>
         /// <param name="executionState">An object that stores state of the operation.</param>
         /// <param name="streamCopyState">State of the stream copy.</param>
+        /// <param name="cancellationToken">The cancellation token for the operation.</param>
         /// <param name="completed">The action taken when the execution is completed.</param>
         [DebuggerNonUserCode]
-        internal static void WriteToAsync<T>(this Stream stream, Stream toStream, long? copyLength, long? maxLength, bool calculateMd5, ExecutionState<T> executionState, StreamDescriptor streamCopyState, Action<ExecutionState<T>> completed)
+        internal static Task WriteToAsync<T>(this Stream stream, Stream toStream, IBufferManager bufferManager, long? copyLength, long? maxLength, bool calculateMd5, ExecutionState<T> executionState, StreamDescriptor streamCopyState, CancellationToken cancellationToken, Action<ExecutionState<T>> completed = null)
         {
-            AsyncStreamCopier<T> copier = new AsyncStreamCopier<T>(stream, toStream, executionState, GetBufferSize(stream), calculateMd5, streamCopyState);
-            copier.StartCopyStream(completed, copyLength, maxLength);
+            AsyncStreamCopier<T> copier = new AsyncStreamCopier<T>(stream, toStream, executionState, bufferManager, GetBufferSize(stream), calculateMd5, streamCopyState);
+            return copier.StartCopyStream(completed, copyLength, maxLength, cancellationToken);
         }
 #endif
+
     }
 }

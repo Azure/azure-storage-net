@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         public CloudBlockBlob(Uri blobAbsoluteUri)
-            : this(blobAbsoluteUri, null /* credentials */)
+            : this(blobAbsoluteUri, default(StorageCredentials) /* credentials */)
         {
         }
 
@@ -59,7 +59,17 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlockBlob(Uri blobAbsoluteUri, StorageCredentials credentials)
-            : this(blobAbsoluteUri, null /* snapshotTime */, credentials)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlockBlob(Uri blobAbsoluteUri, CloudBlobClient client)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, client)
         {
         }
 
@@ -77,11 +87,34 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
         /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlockBlob(Uri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+            : this(new StorageUri(blobAbsoluteUri), snapshotTime, client)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
+        /// </summary>
         /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlockBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
             : base(blobAbsoluteUri, snapshotTime, credentials)
+        {
+            this.Properties.BlobType = BlobType.BlockBlob;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlockBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlockBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+            : base(blobAbsoluteUri, snapshotTime, client)
         {
             this.Properties.BlobType = BlobType.BlockBlob;
         }
@@ -141,6 +174,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
+
 #if !WINDOWS_RT
         /// <summary>
         /// Uploads an enumerable collection of seekable streams.
@@ -149,12 +183,29 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning", Justification = "Reviewed.")]
         [DoesServiceRequest]
-        internal async Task UploadFromMultiStreamAsync(IEnumerable<Stream> streamList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
+        internal Task UploadFromMultiStreamAsync(IEnumerable<Stream> streamList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.UploadFromMultiStreamAsync(streamList, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+        }
+
+        /// <summary>
+        /// Uploads an enumerable collection of seekable streams.
+        /// </summary>
+        /// <param name="streamList">An enumerable collection of seekable streams to be uploaded.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning", Justification = "Reviewed.")]
+        [DoesServiceRequest]
+        private async Task UploadFromMultiStreamAsync(IEnumerable<Stream> streamList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
 #else
         /// <summary>
         /// Uploads an enumerable collection of seekable streams.
@@ -167,7 +218,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning", Justification = "Reviewed.")]
         [DoesServiceRequest]
-        internal async Task UploadFromMultiStreamAsync(IEnumerable<Stream> streamList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private async Task UploadFromMultiStreamAsync(IEnumerable<Stream> streamList, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
             CommonUtility.AssertNotNull("streamList", streamList);
@@ -318,6 +369,7 @@ namespace Microsoft.Azure.Storage.Blob
 
         /// <summary>
         /// Helper method to generate a 409 Conflict exception.
+        /// </summary>
         /// <returns>Return a 409 error wrapped in StorageException </returns>
         private static StorageException GenerateExceptionForConflictFailure()
         {

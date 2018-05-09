@@ -25,6 +25,8 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
     using System;
     using System.Globalization;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
 #if WINDOWS_RT
     internal
@@ -38,9 +40,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service properties.</param>
         /// <returns>The service properties stored in the stream.</returns>
-        public static ServiceProperties ReadServiceProperties(Stream inputStream)
+        public static Task<ServiceProperties> ReadServicePropertiesAsync(Stream inputStream, CancellationToken token)
         {
-            return HttpResponseParsers.ReadServiceProperties(inputStream);
+            return HttpResponseParsers.ReadServicePropertiesAsync(inputStream, token);
         }
 
         /// <summary>
@@ -48,9 +50,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service stats.</param>
         /// <returns>The service stats stored in the stream.</returns>
-        public static ServiceStats ReadServiceStats(Stream inputStream)
+        public static Task<ServiceStats> ReadServiceStatsAsync(Stream inputStream, CancellationToken token)
         {
-            return HttpResponseParsers.ReadServiceStats(inputStream);
+            return HttpResponseParsers.ReadServiceStatsAsync(inputStream, token);
         }
 
         /// <summary>
@@ -237,7 +239,6 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             return CheckIfTrue(incrementalCopyHeader);
         }
 
-
         /// <summary>
         /// Determines if a blob has been deleted.
         /// </summary>
@@ -247,7 +248,6 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         {
             return CheckIfTrue(deletedHeader);
         }
-
         /// <summary>
         /// Determines if the header is equal to the value true.
         /// </summary>

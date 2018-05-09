@@ -17,9 +17,13 @@
 
 namespace Microsoft.Azure.Storage.File.Protocol
 {
+    using Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from an operation to get a range for a file.
@@ -29,65 +33,48 @@ namespace Microsoft.Azure.Storage.File.Protocol
 #else
     internal
 #endif
-        sealed class ListRangesResponse : ResponseParsingBase<FileRange>
+        static class ListRangesResponse
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ListRangesResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream of ranges to be parsed.</param>
-        public ListRangesResponse(Stream stream)
-            : base(stream)
-        {
-        }
-
-        /// <summary>
-        /// Gets an enumerable collection of <see cref="FileRange"/> objects from the response.
-        /// </summary>
-        /// <value>An enumerable collection of <see cref="FileRange"/> objects.</value>
-        public IEnumerable<FileRange> Ranges
-        {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
-
         /// <summary>
         /// Reads a range.
         /// </summary>
         /// <returns>Range entry</returns>
-        private FileRange ParseRange()
+        private static async Task<FileRange> ParseRangeAsync(XmlReader reader, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             long start = 0L;
             long end = 0L;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.StartElement:
-                            start = reader.ReadElementContentAsLong();
+                            start = await reader.ReadElementContentAsInt64Async().ConfigureAwait(false);
                             break;
 
                         case Constants.EndElement:
-                            end = reader.ReadElementContentAsLong();
+                            end = await reader.ReadElementContentAsInt64Async().ConfigureAwait(false);
                             break;
 
                         default:
-                            reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             return new FileRange(start, end);
         }
@@ -96,25 +83,33 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// Parses the XML response for an operation to get a range for a file.
         /// </summary>
         /// <returns>An enumerable collection of <see cref="FileRange"/> objects.</returns>
-        protected override IEnumerable<FileRange> ParseXml()
+        internal static async Task<IEnumerable<FileRange>> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.FileRangeListElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
-                {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement(Constants.FileRangeElement))
-                    {
-                        yield return this.ParseRange();
-                    }
+                token.ThrowIfCancellationRequested();
 
-                    this.allObjectsParsed = true;
-                    this.reader.ReadEndElement();
+                List<FileRange> ranges = new List<FileRange>();
+
+                if (await reader.ReadToFollowingAsync(Constants.FileRangeListElement).ConfigureAwait(false))
+                {
+                    if (reader.IsEmptyElement)
+                    {
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync(Constants.FileRangeElement).ConfigureAwait(false))
+                        {
+                            ranges.Add(await ParseRangeAsync(reader, token).ConfigureAwait(false));
+                        }
+
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
                 }
+
+                return ranges;
             }
         }
     }

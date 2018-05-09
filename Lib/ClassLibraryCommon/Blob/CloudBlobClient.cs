@@ -18,7 +18,6 @@
 namespace Microsoft.Azure.Storage.Blob
 {
     using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Auth.Protocol;
     using Microsoft.Azure.Storage.Blob.Protocol;
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Executor;
@@ -27,7 +26,6 @@ namespace Microsoft.Azure.Storage.Blob
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Threading;
@@ -35,15 +33,9 @@ namespace Microsoft.Azure.Storage.Blob
 
     public partial class CloudBlobClient
     {
-        private IAuthenticationHandler authenticationHandler;
-
         /// <summary>
         /// Gets or sets the authentication scheme to use to sign HTTP requests.
         /// </summary>
-        /// <remarks>
-        /// This property is set only when Shared Key or Shared Key Lite credentials are used; it does not apply to authentication via a shared access signature 
-        /// or anonymous access.
-        /// </remarks>
         public AuthenticationScheme AuthenticationScheme
         {
             get
@@ -53,41 +45,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             set
             {
-                if (value != this.authenticationScheme)
-                {
-                    this.authenticationScheme = value;
-                    this.authenticationHandler = null;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the authentication handler used to sign HTTP requests.
-        /// </summary>
-        /// <value>The authentication handler.</value>
-        internal IAuthenticationHandler AuthenticationHandler
-        {
-            get
-            {
-                IAuthenticationHandler result = this.authenticationHandler;
-                if (result == null)
-                {
-                    if (this.Credentials.IsSharedKey)
-                    {
-                        result = new SharedKeyAuthenticationHandler(
-                            this.GetCanonicalizer(),
-                            this.Credentials,
-                            this.Credentials.AccountName);
-                    }
-                    else
-                    {
-                        result = new NoOpAuthenticationHandler();
-                    }
-
-                    this.authenticationHandler = result;
-                }
-
-                return result;
+                this.authenticationScheme = value;
             }
         }
 
@@ -217,13 +175,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginListContainersSegmented(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken continuationToken, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-            return Executor.BeginExecuteAsync(
-                this.ListContainersImpl(prefix, detailsIncluded, continuationToken, maxResults, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<ContainerResultSegment>(token => this.ListContainersSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -233,8 +185,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="ContainerResultSegment"/> object.</returns>
         public virtual ContainerResultSegment EndListContainersSegmented(IAsyncResult asyncResult)
         {
-            ResultSegment<CloudBlobContainer> resultSegment = Executor.EndExecuteAsync<ResultSegment<CloudBlobContainer>>(asyncResult);
-            return new ContainerResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
+            return ((CancellableAsyncResultTaskWrapper<ContainerResultSegment>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -246,7 +197,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(BlobContinuationToken continuationToken)
         {
-            return this.ListContainersSegmentedAsync(continuationToken, CancellationToken.None);
+            return this.ListContainersSegmentedAsync(null /* prefix */, ContainerListingDetails.None, null /* maxResults */, continuationToken, null /* options */, null /* operationContext */, CancellationToken.None);
         }
 
         /// <summary>
@@ -258,7 +209,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(BlobContinuationToken continuationToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListContainersSegmented, this.EndListContainersSegmented, continuationToken, cancellationToken);
+            return this.ListContainersSegmentedAsync(null /* prefix */, ContainerListingDetails.None, null /* maxResults */, continuationToken, null /* options */, null /* operationContext */, cancellationToken);
         }
 
         /// <summary>
@@ -270,7 +221,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, BlobContinuationToken continuationToken)
         {
-            return this.ListContainersSegmentedAsync(prefix, continuationToken, CancellationToken.None);
+            return this.ListContainersSegmentedAsync(prefix, ContainerListingDetails.None, null /* maxResults */, continuationToken, null /* options */, null /* operationContext */, CancellationToken.None);
         }
 
         /// <summary>
@@ -283,7 +234,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, BlobContinuationToken continuationToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListContainersSegmented, this.EndListContainersSegmented, prefix, continuationToken, cancellationToken);
+            return this.ListContainersSegmentedAsync(prefix, ContainerListingDetails.None, null, continuationToken, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -316,9 +267,16 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="ContainerResultSegment"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken continuationToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<ContainerResultSegment> ListContainersSegmentedAsync(string prefix, ContainerListingDetails detailsIncluded, int? maxResults, BlobContinuationToken continuationToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListContainersSegmented, this.EndListContainersSegmented, prefix, detailsIncluded, maxResults, continuationToken, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
+            ResultSegment<CloudBlobContainer> resultSegment = await Executor.ExecuteAsync(
+                this.ListContainersImpl(prefix, detailsIncluded, continuationToken, maxResults, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
+
+            return new ContainerResultSegment(resultSegment.Results, (BlobContinuationToken)resultSegment.ContinuationToken);
         }
 #endif
 
@@ -415,38 +373,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginListBlobsSegmented(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            string containerName;
-            string listingPrefix;
-            CloudBlobClient.ParseUserPrefix(prefix, out containerName, out listingPrefix);
-
-            CloudBlobContainer container = this.GetContainerReference(containerName);
-            StorageAsyncResult<BlobResultSegment> result = new StorageAsyncResult<BlobResultSegment>(callback, state);
-            ICancellableAsyncResult asyncResult = container.BeginListBlobsSegmented(
-                listingPrefix,
-                useFlatBlobListing,
-                blobListingDetails,
-                maxResults,
-                currentToken,
-                options,
-                operationContext,
-                ar =>
-                {
-                    result.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-
-                    try
-                    {
-                        result.Result = container.EndListBlobsSegmented(ar);
-                        result.OnComplete();
-                    }
-                    catch (Exception e)
-                    {
-                        result.OnComplete(e);
-                    }
-                },
-                null /* state */);
-
-            result.CancelDelegate = asyncResult.Cancel;
-            return result;
+            return new CancellableAsyncResultTaskWrapper<BlobResultSegment>(token => this.ListBlobsSegmentedAsync(prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -457,9 +384,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="BlobResultSegment"/> object.</returns>
         public virtual BlobResultSegment EndListBlobsSegmented(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<BlobResultSegment> result = (StorageAsyncResult<BlobResultSegment>)asyncResult;
-            result.End();
-            return result.Result;
+            return ((CancellableAsyncResultTaskWrapper<BlobResultSegment>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -473,7 +398,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, BlobContinuationToken currentToken)
         {
-            return this.ListBlobsSegmentedAsync(prefix, currentToken, CancellationToken.None);
+            return this.ListBlobsSegmentedAsync(prefix, false /*useFlatBlobListing*/, BlobListingDetails.None, null /*maxResults*/, currentToken, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -487,7 +412,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, BlobContinuationToken currentToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListBlobsSegmented, this.EndListBlobsSegmented, prefix, currentToken, cancellationToken);
+            return this.ListBlobsSegmentedAsync(prefix, false /*useFlatBlobListing*/, BlobListingDetails.None, null /*maxResults*/,  currentToken, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -526,7 +451,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListBlobsSegmented, this.EndListBlobsSegmented, prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken);
+            string containerName;
+            string listingPrefix;
+            CloudBlobClient.ParseUserPrefix(prefix, out containerName, out listingPrefix);
+
+            CloudBlobContainer container = this.GetContainerReference(containerName);
+            return container.ListBlobsSegmentedAsync(listingPrefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext);
         }
 #endif
 
@@ -610,14 +540,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetBlobReferenceFromServer(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("blobUri", blobUri);
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
-            return Executor.BeginExecuteAsync(
-                this.GetBlobReferenceImpl(blobUri, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<ICloudBlob>(token => this.GetBlobReferenceFromServerAsync(blobUri, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -627,7 +550,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <see cref="ICloudBlob"/> object.</returns>
         public virtual ICloudBlob EndGetBlobReferenceFromServer(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<ICloudBlob>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<ICloudBlob>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -651,7 +574,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetBlobReferenceFromServer, this.EndGetBlobReferenceFromServer, blobUri, cancellationToken);
+            return this.GetBlobReferenceFromServerAsync(new StorageUri(blobUri), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -665,7 +588,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.GetBlobReferenceFromServerAsync(blobUri, accessCondition, options, operationContext, CancellationToken.None);
+            return this.GetBlobReferenceFromServerAsync(new StorageUri(blobUri), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -680,7 +603,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(Uri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetBlobReferenceFromServer, this.EndGetBlobReferenceFromServer, blobUri, accessCondition, options, operationContext, cancellationToken);
+            return this.GetBlobReferenceFromServerAsync(new StorageUri(blobUri), accessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -709,7 +632,14 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<ICloudBlob> GetBlobReferenceFromServerAsync(StorageUri blobUri, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetBlobReferenceFromServer, this.EndGetBlobReferenceFromServer, blobUri, accessCondition, options, operationContext, cancellationToken);
+            CommonUtility.AssertNotNull("blobUri", blobUri);
+
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
+            return Executor.ExecuteAsync(
+                this.GetBlobReferenceImpl(blobUri, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -735,12 +665,12 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ContainerHttpWebRequestFactory.List(uri, serverTimeout, listingContext, detailsIncluded, useVersionHeader, ctx);
-            getCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ContainerHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                ListContainersResponse listContainersResponse = new ListContainersResponse(cmd.ResponseStream);
+                ListContainersResponse listContainersResponse = await ListContainersResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
+
                 List<CloudBlobContainer> containersList = listContainersResponse.Containers.Select(item => new CloudBlobContainer(item.Properties, item.Metadata, item.Name, this)).ToList();
                 BlobContinuationToken continuationToken = null;
                 if (listContainersResponse.NextMarker != null)
@@ -781,12 +711,10 @@ namespace Microsoft.Azure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.GetProperties(uri, serverTimeout, parsedSnapshot, accessCondition, useVersionHeader, ctx);
-            getCmd.SignRequest = client.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, parsedSnapshot, accessCondition, cnt, ctx, client.GetCanonicalizer(), client.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-
                 BlobAttributes attributes = new BlobAttributes()
                 {
                     StorageUri = blobUri,
@@ -1154,44 +1082,42 @@ namespace Microsoft.Azure.Storage.Blob
         private RESTCommand<ServiceProperties> GetServicePropertiesImpl(BlobRequestOptions requestOptions)
         {
             RESTCommand<ServiceProperties> retCmd = new RESTCommand<ServiceProperties>(this.Credentials, this.StorageUri);
+
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequestDelegate = BlobHttpWebRequestFactory.GetServiceProperties;
-            retCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
 
-            retCmd.PostProcessResponse =
-                (cmd, resp, ctx) => BlobHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream);
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => BlobHttpResponseParsers.ReadServicePropertiesAsync(cmd.ResponseStream, ct);
+
             requestOptions.ApplyToStorageCommand(retCmd);
             return retCmd;
         }
 
         private RESTCommand<NullType> SetServicePropertiesImpl(ServiceProperties properties, BlobRequestOptions requestOptions)
         {
-            MultiBufferMemoryStream str = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
+            MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.BufferManager, (int)(1 * Constants.KB));
             try
             {
-                properties.WriteServiceProperties(str);
+                properties.WriteServiceProperties(memoryStream);
             }
             catch (InvalidOperationException invalidOpException)
             {
-                str.Dispose();
+                memoryStream.Dispose();
                 throw new ArgumentException(invalidOpException.Message, "properties");
             }
 
-            str.Seek(0, SeekOrigin.Begin);
-
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
-            retCmd.SendStream = str;
-            retCmd.StreamToDispose = str;
-            retCmd.BuildRequestDelegate = BlobHttpWebRequestFactory.SetServiceProperties;
-            retCmd.RecoveryAction = RecoveryActions.RewindStream;
-            retCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            requestOptions.ApplyToStorageCommand(retCmd);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
+            retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            retCmd.StreamToDispose = memoryStream;
+            retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value /* retVal */, cmd, ex);
             requestOptions.ApplyToStorageCommand(retCmd);
             return retCmd;
         }
@@ -1201,16 +1127,15 @@ namespace Microsoft.Azure.Storage.Blob
             if (RetryPolicies.LocationMode.PrimaryOnly == requestOptions.LocationMode)
             {
                 throw new InvalidOperationException(SR.GetServiceStatsInvalidOperation);
-            }  
+            }
 
             RESTCommand<ServiceStats> retCmd = new RESTCommand<ServiceStats>(this.Credentials, this.StorageUri);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequestDelegate = BlobHttpWebRequestFactory.GetServiceStats;
-            retCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream);
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => BlobHttpResponseParsers.ReadServiceStatsAsync(cmd.ResponseStream, ct);
             return retCmd;
         }
 

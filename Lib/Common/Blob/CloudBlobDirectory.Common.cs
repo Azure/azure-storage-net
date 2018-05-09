@@ -113,7 +113,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="CloudPageBlob"/> object.</returns>
         public virtual CloudPageBlob GetPageBlobReference(string blobName)
         {
-            return this.GetPageBlobReference(blobName, null /* snapshotTime */);
+            return this.GetPageBlobReference(blobName, default(DateTimeOffset?) /* snapshotTime */);
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
             StorageUri blobUri = NavigationHelper.AppendPathToUri(this.StorageUri, blobName, this.ServiceClient.DefaultDelimiter);
-            return new CloudPageBlob(blobUri, snapshotTime, this.ServiceClient.Credentials);
+            return new CloudPageBlob(blobUri, snapshotTime, this.ServiceClient);
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="CloudBlockBlob"/> object.</returns>
         public virtual CloudBlockBlob GetBlockBlobReference(string blobName)
         {
-            return this.GetBlockBlobReference(blobName, null /* snapshotTime */);
+            return this.GetBlockBlobReference(blobName, default(DateTimeOffset?) /* snapshotTime */);
         }
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
             StorageUri blobUri = NavigationHelper.AppendPathToUri(this.StorageUri, blobName, this.ServiceClient.DefaultDelimiter);
-            return new CloudBlockBlob(blobUri, snapshotTime, this.ServiceClient.Credentials);
+            return new CloudBlockBlob(blobUri, snapshotTime, this.ServiceClient);
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="CloudAppendBlob"/> object.</returns>
         public virtual CloudAppendBlob GetAppendBlobReference(string blobName)
         {
-            return this.GetAppendBlobReference(blobName, null /* snapshotTime */);
+            return this.GetAppendBlobReference(blobName, default(DateTimeOffset?) /* snapshotTime */);
         }
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
             StorageUri blobUri = NavigationHelper.AppendPathToUri(this.StorageUri, blobName, this.ServiceClient.DefaultDelimiter);
-            return new CloudAppendBlob(blobUri, snapshotTime, this.ServiceClient.Credentials);
+            return new CloudAppendBlob(blobUri, snapshotTime, this.ServiceClient);
         }
 
         /// <summary>
@@ -185,7 +185,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="CloudBlob"/> object.</returns>
         public virtual CloudBlob GetBlobReference(string blobName)
         {
-            return this.GetBlobReference(blobName, null /* snapshotTime */);
+            return this.GetBlobReference(blobName, default(DateTimeOffset?) /* snapshotTime */);
         }
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNullOrEmpty("blobName", blobName);
 
             StorageUri blobUri = NavigationHelper.AppendPathToUri(this.StorageUri, blobName, this.ServiceClient.DefaultDelimiter);
-            return new CloudBlob(blobUri, snapshotTime, this.ServiceClient.Credentials);
+            return new CloudBlob(blobUri, snapshotTime, this.ServiceClient);
         }
 
         /// <summary>

@@ -91,7 +91,7 @@ namespace Microsoft.Azure.Storage.Core
             await MultiLocationRetriesAsync(SecondaryTests.TestQueueFetchAttributesAsync);
         }
 
-         private static async Task MultiLocationRetriesAsync(Func<LocationMode?, LocationMode, StorageLocation, IList<RetryContext>, IList<RetryInfo>, Task> testMethodAsync)
+        private static async Task MultiLocationRetriesAsync(Func<LocationMode?, LocationMode, StorageLocation, IList<RetryContext>, IList<RetryInfo>, Task> testMethodAsync)
         {
             AssertSecondaryEndpoint();
 

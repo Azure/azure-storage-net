@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Storage
 {
     using Microsoft.Azure.Storage.Core.Util;
     using System;
+    using System.Threading.Tasks;
     using System.Xml;
 
     /// <summary>
@@ -91,6 +92,21 @@ namespace Microsoft.Azure.Storage
             return res;
         }
 
+        internal static async Task<ExceptionInfo> ReadFromXMLReaderAsync(XmlReader reader)
+        {
+            ExceptionInfo res = new ExceptionInfo();
+            try
+            {
+                await res.ReadXmlAsync(reader).ConfigureAwait(false);
+            }
+            catch (XmlException)
+            {
+                return null;
+            }
+
+            return res;
+        }
+
         #region IXMLSerializable
 
         internal void WriteXml(XmlWriter writer)
@@ -129,6 +145,25 @@ namespace Microsoft.Azure.Storage
 
             // End ExceptionInfo
             reader.ReadEndElement();
+        }
+
+        internal async Task ReadXmlAsync(XmlReader reader)
+        {
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            this.Type = await CommonUtility.ReadElementAsStringAsync("Type", reader).ConfigureAwait(false);
+            this.Message = await CommonUtility.ReadElementAsStringAsync("Message", reader).ConfigureAwait(false);
+            this.Source = await CommonUtility.ReadElementAsStringAsync("Source", reader).ConfigureAwait(false);
+            this.StackTrace = await CommonUtility.ReadElementAsStringAsync("StackTrace", reader).ConfigureAwait(false);
+
+            if (await reader.IsStartElementAsync().ConfigureAwait(false) && reader.LocalName == "InnerExceptionInfo")
+            {
+                await reader.ReadStartElementAsync().ConfigureAwait(false);
+                this.InnerExceptionInfo = await ReadFromXMLReaderAsync(reader).ConfigureAwait(false);
+                await reader.ReadEndElementAsync().ConfigureAwait(false);
+            }
+
+            // End ExceptionInfo
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
         }
 
         #endregion

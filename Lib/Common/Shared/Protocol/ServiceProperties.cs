@@ -139,6 +139,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         internal const string AllowedHeadersName = "AllowedHeaders";
 
         /// <summary>
+        /// The name of the RetainedVersionsPerBlob XML element.
+        /// </summary>
+        internal const string RetainedVersionsPerBlob = "RetainedVersionsPerBlob";
+
+        /// <summary>
         /// Initializes a new instance of the ServiceProperties class.
         /// </summary>
         public ServiceProperties()
@@ -155,6 +160,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             this.MinuteMetrics = minuteMetrics;
             this.Cors = cors;
             this.DeleteRetentionPolicy = deleteRetentionPolicy;
+
         }
 
         /// <summary>
@@ -415,7 +421,6 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 
             if (!enabled) return xml;
 
-
             if (!deleteRetentionPolicy.RetentionDays.HasValue || deleteRetentionPolicy.RetentionDays.Value < 1
                 || deleteRetentionPolicy.RetentionDays > Constants.MaximumAllowedRetentionDays)
             {
@@ -549,7 +554,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             {
                 return null;
             }
-
+            
             var deleteRetentionPolicy = new DeleteRetentionPolicy()
             {
                 Enabled = false,

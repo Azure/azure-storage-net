@@ -7,7 +7,7 @@
     "netstandard1.0": {
       "dependencies": {
         "NETStandard.Library": "1.6.1",
-        "Microsoft.Azure.Storage.Common": "9.0.0.0-preview"
+        "Microsoft.Azure.Storage.Common": "9.0.0-preview"
       },
       "imports": "dnxcore50"
     }
@@ -23,5 +23,8 @@
       "Blob/*.cs"
     ],
     "define": [ "SIGN" ]
+  },
+  "dependencies": {
+    "Microsoft.Azure.Storage.Common": "9.0.0.1-preview"
   }
 }

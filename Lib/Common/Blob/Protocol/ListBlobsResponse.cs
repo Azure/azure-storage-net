@@ -25,6 +25,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from a blob listing operation.
@@ -34,161 +37,19 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 #else
     public
 #endif
- sealed class ListBlobsResponse : ResponseParsingBase<IListBlobEntry>
+ sealed class ListBlobsResponse 
     {
-        /// <summary>
-        /// Stores the blob prefix.
-        /// </summary>
-        private string prefix;
-
-        /// <summary>
-        /// Signals when the blob prefix can be consumed.
-        /// </summary>
-        private bool prefixConsumable;
-
-        /// <summary>
-        /// Stores the marker.
-        /// </summary>
-        private string marker;
-
-        /// <summary>
-        /// Signals when the marker can be consumed.
-        /// </summary>
-        private bool markerConsumable;
-
-        /// <summary>
-        /// Stores the blob delimiter.
-        /// </summary>
-        private string delimiter;
-
-        /// <summary>
-        /// Signals when the blob delimiter can be consumed.
-        /// </summary>
-        private bool delimiterConsumable;
-
-        /// <summary>
-        /// Stores the max results.
-        /// </summary>
-        private int maxResults;
-
-        /// <summary>
-        /// Signals when the max results can be consumed.
-        /// </summary>
-        private bool maxResultsConsumable;
-
-        /// <summary>
-        /// Stores the next marker.
-        /// </summary>
-        private string nextMarker;
-
-        /// <summary>
-        /// Signals when the next marker can be consumed.
-        /// </summary>
-        private bool nextMarkerConsumable;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ListBlobsResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream to be parsed.</param>
-        public ListBlobsResponse(Stream stream)
-            : base(stream)
-        {
-        }
-
-        /// <summary>
-        /// Gets the listing context from the XML response.
-        /// </summary>
-        /// <value>A <see cref="BlobListingContext"/> object.</value>
-        public BlobListingContext ListingContext
-        {
-            get
-            {
-                BlobListingContext listingContext = new BlobListingContext(this.Prefix, this.MaxResults, this.Delimiter, BlobListingDetails.None);
-                listingContext.Marker = this.NextMarker;
-                return listingContext;
-            }
-        }
-
         /// <summary>
         /// Gets an enumerable collection of objects that implement <see cref="IListBlobEntry"/> from the response.
         /// </summary>
         /// <value>An enumerable collection of objects that implement <see cref="IListBlobEntry"/>.</value>
-        public IEnumerable<IListBlobEntry> Blobs
+        public IEnumerable<IListBlobEntry> Blobs { get; private set; }
+
+
+        public string NextMarker { get; private set; }
+
+        private ListBlobsResponse()
         {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Prefix value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>A string containing the Prefix value.</value>
-        public string Prefix
-        {
-            get
-            {
-                this.Variable(ref this.prefixConsumable);
-
-                return this.prefix;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Marker value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>A string containing the Marker value.</value>
-        public string Marker
-        {
-            get
-            {
-                this.Variable(ref this.markerConsumable);
-
-                return this.marker;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Delimiter value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>A string containing the Delimiter value.</value>
-        public string Delimiter
-        {
-            get
-            {
-                this.Variable(ref this.delimiterConsumable);
-
-                return this.delimiter;
-            }
-        }
-
-        /// <summary>
-        /// Gets the MaxResults value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>An integer containing the MaxResults value.</value>
-        public int MaxResults
-        {
-            get
-            {
-                this.Variable(ref this.maxResultsConsumable);
-
-                return this.maxResults;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the NextMarker value from the XML response, if the listing was not complete.
-        /// </summary>
-        /// <value>A string containing the NextMarker value.</value>
-        public string NextMarker
-        {
-            get
-            {
-                this.Variable(ref this.nextMarkerConsumable);
-
-                return this.nextMarker;
-            }
         }
 
         /// <summary>
@@ -196,8 +57,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <returns>Blob listing entry</returns>
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Reviewed.")]
-        private IListBlobEntry ParseBlobEntry(Uri baseUri)
+        private static async Task<IListBlobEntry> ParseBlobEntryAsync(XmlReader reader, Uri baseUri, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             BlobAttributes blob = new BlobAttributes();
             string name = null;
 
@@ -215,79 +78,83 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             string rehydrationStatusString = null;
             DateTimeOffset? blobTierLastModifiedTime = null;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.NameElement:
-                            name = reader.ReadElementContentAsString();
+                            name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.SnapshotElement:
-                            blob.SnapshotTime = reader.ReadElementContentAsString().ToUTCTime();
+                            blob.SnapshotTime = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                             break;
 
                         case Constants.DeletedElement:
-                            blob.IsDeleted = BlobHttpResponseParsers.GetDeletionStatus(reader.ReadElementContentAsString());
+                            blob.IsDeleted = BlobHttpResponseParsers.GetDeletionStatus(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                             break;
 
                         case Constants.PropertiesElement:
-                            this.reader.ReadStartElement();
-                            while (this.reader.IsStartElement())
+                            await reader.ReadStartElementAsync().ConfigureAwait(false);
+                            while (await reader.IsStartElementAsync().ConfigureAwait(false))
                             {
-                                if (this.reader.IsEmptyElement)
+                                token.ThrowIfCancellationRequested();
+
+                                if (reader.IsEmptyElement)
                                 {
-                                    this.reader.Skip();
+                                    await reader.SkipAsync().ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    switch (this.reader.Name)
+                                    switch (reader.Name)
                                     {
                                         case Constants.LastModifiedElement:
-                                            blob.Properties.LastModified = reader.ReadElementContentAsString().ToUTCTime();
+                                            blob.Properties.LastModified = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                                             break;
 
                                         case Constants.EtagElement:
-                                            blob.Properties.ETag = string.Format(CultureInfo.InvariantCulture, "\"{0}\"", reader.ReadElementContentAsString());
+                                            blob.Properties.ETag = string.Format(CultureInfo.InvariantCulture, "\"{0}\"", await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.ContentLengthElement:
-                                            blob.Properties.Length = reader.ReadElementContentAsLong();
+                                            blob.Properties.Length = await reader.ReadElementContentAsInt64Async().ConfigureAwait(false);
                                             break;
 
                                         case Constants.CacheControlElement:
-                                            blob.Properties.CacheControl = reader.ReadElementContentAsString();
+                                            blob.Properties.CacheControl = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.ContentTypeElement:
-                                            blob.Properties.ContentType = reader.ReadElementContentAsString();
+                                            blob.Properties.ContentType = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.HeaderConstants.ContentDispositionResponseHeader:
-                                            blob.Properties.ContentDisposition = reader.ReadElementContentAsString();
+                                            blob.Properties.ContentDisposition = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.ContentEncodingElement:
-                                            blob.Properties.ContentEncoding = reader.ReadElementContentAsString();
+                                            blob.Properties.ContentEncoding = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.ContentLanguageElement:
-                                            blob.Properties.ContentLanguage = reader.ReadElementContentAsString();
+                                            blob.Properties.ContentLanguage = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.ContentMD5Element:
-                                            blob.Properties.ContentMD5 = reader.ReadElementContentAsString();
+                                            blob.Properties.ContentMD5 = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.BlobTypeElement:
-                                            string blobTypeString = reader.ReadElementContentAsString();
+                                            string blobTypeString = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             switch (blobTypeString)
                                             {
                                                 case Constants.BlockBlobValue:
@@ -306,101 +173,100 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                                             break;
 
                                         case Constants.LeaseStatusElement:
-                                            blob.Properties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(reader.ReadElementContentAsString());
+                                            blob.Properties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.LeaseStateElement:
-                                            blob.Properties.LeaseState = BlobHttpResponseParsers.GetLeaseState(reader.ReadElementContentAsString());
+                                            blob.Properties.LeaseState = BlobHttpResponseParsers.GetLeaseState(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.LeaseDurationElement:
-                                            blob.Properties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(reader.ReadElementContentAsString());
+                                            blob.Properties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.CopyIdElement:
-                                            copyId = reader.ReadElementContentAsString();
+                                            copyId = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.CopyCompletionTimeElement:
-                                            copyCompletionTime = reader.ReadElementContentAsString();
+                                            copyCompletionTime = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.CopyStatusElement:
-                                            copyStatus = reader.ReadElementContentAsString();
+                                            copyStatus = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.CopyProgressElement:
-                                            copyProgress = reader.ReadElementContentAsString();
+                                            copyProgress = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.CopySourceElement:
-                                            copySource = reader.ReadElementContentAsString();
+                                            copySource = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.CopyStatusDescriptionElement:
-                                            copyStatusDescription = reader.ReadElementContentAsString();
+                                            copyStatusDescription = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.ServerEncryptionElement:
-                                            blob.Properties.IsServerEncrypted = BlobHttpResponseParsers.GetServerEncrypted(reader.ReadElementContentAsString());
+                                            blob.Properties.IsServerEncrypted = BlobHttpResponseParsers.GetServerEncrypted(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.IncrementalCopy:
-                                            blob.Properties.IsIncrementalCopy = BlobHttpResponseParsers.GetIncrementalCopyStatus(reader.ReadElementContentAsString());
+                                            blob.Properties.IsIncrementalCopy = BlobHttpResponseParsers.GetIncrementalCopyStatus(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.CopyDestinationSnapshotElement:
-                                            copyDestinationSnapshotTime = reader.ReadElementContentAsString();
+                                            copyDestinationSnapshotTime = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.AccessTierElement:
-                                            blobTierString = reader.ReadElementContentAsString();
+                                            blobTierString = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.ArchiveStatusElement:
-                                            rehydrationStatusString = reader.ReadElementContentAsString();
+                                            rehydrationStatusString = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.AccessTierInferred:
-                                            blobTierInferred = reader.ReadElementContentAsBoolean();
+                                            blobTierInferred = await reader.ReadElementContentAsBooleanAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.AccessTierChangeTimeElement:
-                                            string t = reader.ReadElementContentAsString();
+                                            string t = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             blobTierLastModifiedTime = DateTimeOffset.Parse(t, CultureInfo.InvariantCulture);
                                             break;
 
-
                                         case Constants.DeletedTimeElement:
-                                            blob.Properties.DeletedTime = reader.ReadElementContentAsString().ToUTCTime();
+                                            blob.Properties.DeletedTime = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                                             break;
 
                                         case Constants.RemainingRetentionDaysElement:
-                                            blob.Properties.RemainingDaysBeforePermanentDelete = int.Parse(reader.ReadElementContentAsString());
+                                            blob.Properties.RemainingDaysBeforePermanentDelete = int.Parse(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)); // TODO should this read as int instead?
                                             break;
 
                                         default:
-                                            reader.Skip();
+                                            await reader.SkipAsync().ConfigureAwait(false);
                                             break;
                                     }
                                 }
                             }
 
-                            this.reader.ReadEndElement();
+                            await reader.ReadEndElementAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.MetadataElement:
-                            blob.Metadata = Response.ParseMetadata(this.reader);
+                            blob.Metadata = await Response.ParseMetadataAsync(reader).ConfigureAwait(false);
                             break;
 
                         default:
-                            this.reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             Uri uri = NavigationHelper.AppendPathToSingleUri(baseUri, name);
 
@@ -445,33 +311,37 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// Parses a blob prefix entry in a blob listing response.
         /// </summary>
         /// <returns>Blob listing entry</returns>
-        private IListBlobEntry ParseBlobPrefixEntry()
+        private static async Task<ListBlobPrefixEntry> ParseBlobPrefixEntryAsync(XmlReader reader, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             ListBlobPrefixEntry commonPrefix = new ListBlobPrefixEntry();
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.NameElement:
-                            commonPrefix.Name = reader.ReadElementContentAsString();
+                            commonPrefix.Name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         default:
-                            reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             return commonPrefix;
         }
@@ -480,99 +350,100 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// Parses the response XML for a blob listing operation.
         /// </summary>
         /// <returns>An enumerable collection of objects that implement <see cref="IListBlobEntry"/>.</returns>
-        protected override IEnumerable<IListBlobEntry> ParseXml()
+        internal static async Task<ListBlobsResponse> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.EnumerationResultsElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                List<IListBlobEntry> entries = new List<IListBlobEntry>();
+                string nextMarker = default(string);
+
+                if (await reader.ReadToFollowingAsync(Constants.EnumerationResultsElement).ConfigureAwait(false))
                 {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    Uri baseUri;
-                    string serviceEndpoint = this.reader.GetAttribute(Constants.ServiceEndpointElement);
-                    if (!string.IsNullOrEmpty(serviceEndpoint))
+                    if (reader.IsEmptyElement)
                     {
-                        baseUri = NavigationHelper.AppendPathToSingleUri(
-                                new Uri(serviceEndpoint),
-                                this.reader.GetAttribute(Constants.ContainerNameElement));
+                        await reader.SkipAsync().ConfigureAwait(false);
                     }
                     else
                     {
-                        baseUri = new Uri(this.reader.GetAttribute(Constants.ContainerNameElement));
-                    }
-
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement())
-                    {
-                        if (this.reader.IsEmptyElement)
+                        Uri baseUri;
+                        string serviceEndpoint = reader.GetAttribute(Constants.ServiceEndpointElement);
+                        if (!string.IsNullOrEmpty(serviceEndpoint))
                         {
-                            this.reader.Skip();
+                            baseUri = NavigationHelper.AppendPathToSingleUri(
+                                    new Uri(serviceEndpoint),
+                                    reader.GetAttribute(Constants.ContainerNameElement));
                         }
                         else
                         {
-                            switch (this.reader.Name)
+                            baseUri = new Uri(reader.GetAttribute(Constants.ContainerNameElement));
+                        }
+
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
+                        {
+                            token.ThrowIfCancellationRequested();
+
+                            if (reader.IsEmptyElement)
                             {
-                                case Constants.DelimiterElement:
-                                    this.delimiter = reader.ReadElementContentAsString();
-                                    this.delimiterConsumable = true;
-                                    yield return null;
-                                    break;
+                                await reader.SkipAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                switch (reader.Name)
+                                {
+                                    case Constants.DelimiterElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.MarkerElement:
-                                    this.marker = reader.ReadElementContentAsString();
-                                    this.markerConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.MarkerElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.NextMarkerElement:
-                                    this.nextMarker = reader.ReadElementContentAsString();
-                                    this.nextMarkerConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.NextMarkerElement:
+                                        nextMarker = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.MaxResultsElement:
-                                    this.maxResults = reader.ReadElementContentAsInt();
-                                    this.maxResultsConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.MaxResultsElement:
+                                        await reader.ReadElementContentAsInt32Async().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.PrefixElement:
-                                    this.prefix = reader.ReadElementContentAsString();
-                                    this.prefixConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.PrefixElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.BlobsElement:
-                                    this.reader.ReadStartElement();
-                                    while (this.reader.IsStartElement())
-                                    {
-                                        switch (this.reader.Name)
+                                    case Constants.BlobsElement:
+                                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                                         {
-                                            case Constants.BlobElement:
-                                                yield return this.ParseBlobEntry(baseUri);
-                                                break;
+                                            switch (reader.Name)
+                                            {
+                                                case Constants.BlobElement:
+                                                    entries.Add(await ParseBlobEntryAsync(reader, baseUri, token).ConfigureAwait(false));
+                                                    break;
 
-                                            case Constants.BlobPrefixElement:
-                                                yield return this.ParseBlobPrefixEntry();
-                                                break;
+                                                case Constants.BlobPrefixElement:
+                                                    entries.Add(await ParseBlobPrefixEntryAsync(reader, token).ConfigureAwait(false));
+                                                    break;
+                                            }
                                         }
-                                    }
 
-                                    this.reader.ReadEndElement();
-                                    this.allObjectsParsed = true;
-                                    break;
+                                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                                        break;
 
-                                default:
-                                    reader.Skip();
-                                    break;
+                                    default:
+                                        await reader.SkipAsync().ConfigureAwait(false);
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    this.reader.ReadEndElement();
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
                 }
+
+                return new ListBlobsResponse { Blobs = entries, NextMarker = nextMarker };
             }
         }
     }

@@ -1,13 +1,12 @@
 ﻿{
-  "version": "9.0.0.0",
+  "version": "9.1.1.0",
   "supports": {},
   "dependencies": {
-    "WindowsAzure.Storage": "9.0.0-facade"
+    "WindowsAzure.Storage": "9.1.1"
   },
   "frameworks": {
     ".NETPortable,Version=v4.5,Profile=Profile259": {}
   },
-
   "buildOptions": {
     "delaySign": true,
     "keyFile": "MSSharedLibKey.snk"

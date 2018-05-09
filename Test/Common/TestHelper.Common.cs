@@ -17,20 +17,18 @@
 
 using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.File.Protocol;
+using Microsoft.Azure.Storage.File;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
+using System.Net;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.File;
-using Microsoft.Azure.Storage.File.Protocol;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.Azure.Storage.File.Protocol;
-using Microsoft.Azure.Storage.File;
 #endif
 
 namespace Microsoft.Azure.Storage
@@ -125,10 +123,8 @@ namespace Microsoft.Azure.Storage
         internal static void AssertCancellation(OperationContext ctx)
         {
             TestHelper.AssertNAttempts(ctx, 1);
-            Assert.IsInstanceOfType(ctx.LastResult.Exception, typeof(StorageException));
-            Assert.AreEqual("Operation was canceled by user.", ctx.LastResult.Exception.Message);
-            Assert.AreEqual((int)HttpStatusCode.Unused, ((StorageException)ctx.LastResult.Exception).RequestInformation.HttpStatusCode);
-            Assert.AreEqual("Unused", ((StorageException)ctx.LastResult.Exception).RequestInformation.HttpStatusMessage);
+            Assert.IsInstanceOfType(ctx.LastResult.Exception.InnerException, typeof(OperationCanceledException));
+            Assert.AreEqual("A task was canceled.", ctx.LastResult.Exception.InnerException.Message);
         }
 
         /// <summary>
@@ -570,7 +566,7 @@ namespace Microsoft.Azure.Storage
                 Assert.IsNull(propsA.Cors);
                 Assert.IsNull(propsB.Cors);
             }
-
+            
             if (propsA.DeleteRetentionPolicy != null && propsB.DeleteRetentionPolicy != null)
             {
                 Assert.AreEqual(propsA.DeleteRetentionPolicy.Enabled, propsB.DeleteRetentionPolicy.Enabled);
@@ -580,6 +576,7 @@ namespace Microsoft.Azure.Storage
             {
                 Assert.IsNull(propsA.DeleteRetentionPolicy);
                 Assert.IsNull(propsB.DeleteRetentionPolicy);
+
             }
         }
 
@@ -607,6 +604,106 @@ namespace Microsoft.Azure.Storage
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Compares the streams from the current position to the end.
+        /// </summary>
+        /// <param name="src">source stream for comparison</param>
+        /// <param name="dst">destination stream for comparison</param>
+        /// <returns></returns>
+        internal static async Task AssertStreamsAreEqualAsync(Stream src, Stream dst)
+        {
+            Stream srcAsStream = src;
+            Stream dstAsStream = dst;
+
+            byte[] srcBuffer = new byte[64 * 1024];
+            int srcRead;
+
+            byte[] dstBuffer = new byte[64 * 1024];
+            int dstRead;
+
+            do
+            {
+                srcRead = await srcAsStream.ReadAsync(srcBuffer, 0, srcBuffer.Length);
+                dstRead = await dstAsStream.ReadAsync(dstBuffer, 0, dstBuffer.Length);
+
+                Assert.AreEqual(srcRead, dstRead);
+
+                for (int i = 0; i < srcRead; i++)
+                {
+                    Assert.AreEqual(srcBuffer[i], dstBuffer[i]);
+                }
+            }
+            while (srcRead > 0);
+        }
+
+        /// <summary>
+        /// Runs a given operation that is expected to throw an exception.
+        /// </summary>
+        /// <typeparam name="T">Exeption type</typeparam>
+        /// <param name="operation">operation to run</param>
+        /// <param name="operationDescription">operation description</param>
+        internal static async Task<T> ExpectedExceptionAsync<T>(Func<Task> operation, string operationDescription)
+            where T : Exception
+        {
+            try
+            {
+                await operation();
+            }
+            catch (T e)
+            {
+                return e;
+            }
+            catch (Exception ex)
+            {
+                T e = ex as T; // Test framework changes the value under debugger
+                if (e != null)
+                {
+                    return e;
+                }
+                Assert.Fail("Invalid exception {0} for operation: {1}", ex.GetType(), operationDescription);
+            }
+
+            Assert.Fail("No exception received while expecting {0}: {1}", typeof(T).ToString(), operationDescription);
+            return null;
+        }
+
+        /// <summary>
+        /// Runs a given operation that is expected to throw an exception.
+        /// </summary>
+        /// <param name="operation">operation to run</param>
+        /// <param name="operationDescription">operation description</param>
+        /// <param name="expectedStatusCode">Expected status code</param>
+        internal static async Task ExpectedExceptionAsync(Func<Task> operation, OperationContext operationContext, string operationDescription, HttpStatusCode expectedStatusCode, string requestErrorCode = null)
+        {
+            try
+            {
+                await operation();
+            }
+            catch (StorageException storageException)
+            {
+                Assert.AreEqual((int)expectedStatusCode, storageException.RequestInformation.HttpStatusCode, "Http status code is unexpected.");
+                if (!string.IsNullOrEmpty(requestErrorCode))
+                {
+                    Assert.IsNotNull(storageException.RequestInformation.ExtendedErrorInformation);
+                    Assert.AreEqual(requestErrorCode, storageException.RequestInformation.ExtendedErrorInformation.ErrorCode);
+                }
+
+                return;
+            }
+            catch (Exception)
+            {
+                Assert.AreEqual((int)expectedStatusCode, operationContext.LastResult.HttpStatusCode, "Http status code is unexpected.");
+                if (!string.IsNullOrEmpty(requestErrorCode))
+                {
+                    Assert.IsNotNull(operationContext.LastResult.ExtendedErrorInformation);
+                    Assert.AreEqual(requestErrorCode, operationContext.LastResult.ExtendedErrorInformation.ErrorCode);
+                }
+                return;
+            }
+
+            Assert.Fail("No exception received while expecting {0}: {1}", expectedStatusCode, operationDescription);
         }
     }
 }

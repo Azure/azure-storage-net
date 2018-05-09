@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             Task uploadTask = blob.UploadFromStreamAsync(blobData, tokenSource.Token);
 
-            TestHelper.ExpectedExceptionTask<OperationCanceledException>(uploadTask, "Operation was canceled by user.");
+            TestHelper.ExpectedExceptionTask<StorageException>(uploadTask, "Operation was canceled by user.");
 
             tokenSource.Dispose();
 
@@ -111,7 +111,7 @@ namespace Microsoft.Azure.Storage.Blob
             // Test cancel after starting task
             tokenSource.Cancel();
 
-            TestHelper.ExpectedExceptionTask<OperationCanceledException>(uploadTask2, "Operation was canceled by user.");
+            TestHelper.ExpectedExceptionTask<StorageException>(uploadTask2, "Operation was canceled by user.");
             
             tokenSource.Dispose();
 

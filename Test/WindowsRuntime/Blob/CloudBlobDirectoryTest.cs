@@ -532,6 +532,7 @@ namespace Microsoft.Azure.Storage.Blob
                     CloudPageBlob blob2 = directory6.GetPageBlobReference("Blob1");
                     Assert.AreEqual(blob2.Name, delimiter + delimiter + delimiter + "Blob1");
                     Assert.AreEqual(blob2.Uri, blob.Uri);
+                    Assert.AreEqual(blob2.ServiceClient, directory6.ServiceClient); // service client should be inherited
                 }
                 finally
                 {

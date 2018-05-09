@@ -121,16 +121,16 @@ namespace Microsoft.Azure.Storage.Blob
                     // locally. No service call is made.
                     if (this.KeyResolver != null)
                     {
-                        IKey keyEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).Result);
+                        IKey keyEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => this.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, CancellationToken.None).GetAwaiter().GetResult());
 
                         CommonUtility.AssertNotNull("KeyEncryptionKey", keyEncryptionKey);
-                        contentEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => keyEncryptionKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result);
+                        contentEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => keyEncryptionKey.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).GetAwaiter().GetResult());
                     }
                     else
                     {
                         if (this.Key.Kid == encryptionData.WrappedContentKey.KeyId)
                         {
-                            contentEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => this.Key.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).Result);
+                            contentEncryptionKey = CommonUtility.RunWithoutSynchronizationContext(() => this.Key.UnwrapKeyAsync(encryptionData.WrappedContentKey.EncryptedKey, encryptionData.WrappedContentKey.Algorithm, CancellationToken.None).GetAwaiter().GetResult());
                         }
                         else
                         {
@@ -237,7 +237,7 @@ namespace Microsoft.Azure.Storage.Blob
                 encryptionData.EncryptionAgent = new EncryptionAgent(Constants.EncryptionConstants.EncryptionProtocolV1, EncryptionAlgorithm.AES_CBC_256);
 
                 // Wrap always happens locally, irrespective of local or cloud key. So it is ok to call it synchronously.
-                Tuple<byte[], string> wrappedKey = CommonUtility.RunWithoutSynchronizationContext(() => this.Key.WrapKeyAsync(aesProvider.Key, null /* algorithm */, CancellationToken.None).Result);
+                Tuple<byte[], string> wrappedKey = CommonUtility.RunWithoutSynchronizationContext(() => this.Key.WrapKeyAsync(aesProvider.Key, null /* algorithm */, CancellationToken.None).GetAwaiter().GetResult());
                 encryptionData.WrappedContentKey = new WrappedKey(this.Key.Kid, wrappedKey.Item1, wrappedKey.Item2);
                 encryptionData.EncryptionMode = this.EncryptionMode.ToString();
                 encryptionData.KeyWrappingMetadata = new Dictionary<string, string>();

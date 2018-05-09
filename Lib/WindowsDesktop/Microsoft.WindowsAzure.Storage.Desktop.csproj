@@ -13,6 +13,7 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,6 +27,7 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisWindowsDesktop.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <SignAssembly>true</SignAssembly>
@@ -56,6 +58,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Spatial, Version=5.8.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\System.Spatial.5.8.2\lib\net40\System.Spatial.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
@@ -79,7 +86,25 @@
     <Compile Include="..\ClassLibraryCommon\Blob\Protocol\*.cs">
       <Link>Blob\Protocol\Protocol</Link>
     </Compile>
-    <Compile Include="..\ClassLibraryCommon\File\*.cs">
+    <Compile Include="..\ClassLibraryCommon\File\CloudFile.cs">
+      <Link>File\File</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\CloudFileClient.cs">
+      <Link>File\File</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\CloudFileDirectory.cs">
+      <Link>File\File</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\CloudFileShare.cs">
+      <Link>File\File</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\FileReadStream.cs">
+      <Link>File\File</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\FileReadStream_old.cs">
+      <Link>File\File</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\File\FileWriteStream.cs">
       <Link>File\File</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\File\Protocol\*.cs">
@@ -90,12 +115,6 @@
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Queue\Protocol\*.cs">
       <Link>Queue\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\*.cs">
-      <Link>Table\Tables</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\Protocol\*.cs">
-      <Link>Table\Protocol\Protocol</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Shared\Protocol\*.cs">
       <Link>Shared\Protocol\Protocol</Link>
@@ -109,7 +128,34 @@
     <Compile Include="..\ClassLibraryCommon\Core\Auth\*.cs">
       <Link>Core\Auth\Auth</Link>
     </Compile>
-    <Compile Include="..\ClassLibraryCommon\Core\Util\*.cs">
+    <Compile Include="..\ClassLibraryCommon\Core\Util\APMWithTimeout.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\AsyncExtensions.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\AsyncSemaphore.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\AsyncStreamCopier.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\CancellableAsyncResultTaskWrapper.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\CancellableOperationBase.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\NativeMD5.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\NativeMethods.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\StorageAsyncResult.cs">
+      <Link>Core\Util\Util</Link>
+    </Compile>
+    <Compile Include="..\ClassLibraryCommon\Core\Util\StorageCommandAsyncResult.cs">
       <Link>Core\Util\Util</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Core\Executor\*.cs">
@@ -125,6 +171,9 @@
     <!-- Auth -->
     <Compile Include="..\Common\Auth\*.cs">
       <Link>Auth\Auth</Link>
+    </Compile>
+    <Compile Include="..\Common\Auth\Protocol\*.cs">
+      <Link>Auth\Protocol\Protocol</Link>
     </Compile>
     <!-- Core -->
     <Compile Include="..\Common\Core\*.cs">
@@ -161,16 +210,7 @@
     <Compile Include="..\Common\Queue\Protocol\*.cs">
       <Link>Queue\Protocol\Protocol</Link>
     </Compile>
-    <Compile Include="..\Common\Table\Queryable\*.cs">
-      <Link>Table\Queryable\Queryable</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\Protocol\*.cs">
-      <Link>Table\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\Common\Shared\*.cs">
+     <Compile Include="..\Common\Shared\*.cs">
       <Link>Shared\Shared</Link>
     </Compile>
     <Compile Include="..\Common\Shared\Protocol\*.cs">

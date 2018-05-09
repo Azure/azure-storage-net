@@ -24,6 +24,8 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Azure.Storage.Core.Util;
+using System.Threading;
 
 #if NETCORE
 using System.Security.Cryptography;
@@ -746,6 +748,29 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobUploadFromStreamWithSeekableStreamAsyncWithProgress()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            await container.CreateAsync();
+            try
+            {
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 0, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 1024, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 0, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 1024, true);
+            }
+            finally
+            {
+                container.DeleteAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlockBlobUploadFromStreamAsync()
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -1001,7 +1026,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        private async Task CloudBlockBlobUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool testMd5)
+        private async Task CloudBlockBlobUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool testMd5, bool trackProgress = false)
         {
             byte[] buffer = GetRandomBuffer(size);
 
@@ -1061,18 +1086,44 @@ namespace Microsoft.Azure.Storage.Blob
                     await blob.FetchAttributesAsync();
                     Assert.AreEqual(md5, blob.Properties.ContentMD5);
                 }
+#if !WINDOWS_RT
+                if (!trackProgress)
 
-                using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())
                 {
-                    await blob.DownloadToStreamAsync(downloadedBlobStream);
-                    Assert.AreEqual(copyLength ?? originalBlobStream.Length, downloadedBlobStream.UnderlyingStream.Length);
-                    TestHelper.AssertStreamsAreEqualAtIndex(
-                        originalBlobStream,
-                        downloadedBlobStream.UnderlyingStream,
-                        0,
-                        0,
-                        copyLength.HasValue ? (int)copyLength : (int)originalBlobStream.Length);
+#endif
+                    using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())
+                    {
+                        await blob.DownloadToStreamAsync(downloadedBlobStream);
+                        Assert.AreEqual(copyLength ?? originalBlobStream.Length, downloadedBlobStream.UnderlyingStream.Length);
+                        TestHelper.AssertStreamsAreEqualAtIndex(
+                            originalBlobStream,
+                            downloadedBlobStream.UnderlyingStream,
+                            0,
+                            0,
+                            copyLength.HasValue ? (int)copyLength : (int)originalBlobStream.Length);
+                    }
+#if !WINDOWS_RT
                 }
+
+                else
+                {
+                    List<StorageProgress> progressList = new List<StorageProgress>();
+
+                    using (MemoryOutputStream downloadedBlobStream = new MemoryOutputStream())
+                    {
+                        CancellationToken cancellationToken = new CancellationToken();
+                        IProgress<StorageProgress> progressHandler = new Progress<StorageProgress>(progress => progressList.Add(progress));
+
+                        await blob.DownloadToStreamAsync(downloadedBlobStream, null, null, null, progressHandler, cancellationToken);
+
+                        Assert.IsTrue(progressList.Count > 2, "Too few progress received");
+
+                        StorageProgress lastProgress = progressList.Last();
+
+                        Assert.AreEqual(downloadedBlobStream.Length, lastProgress.BytesTransferred, "Final progress has unexpected value");
+                    }
+                }
+#endif
             }
         }
 

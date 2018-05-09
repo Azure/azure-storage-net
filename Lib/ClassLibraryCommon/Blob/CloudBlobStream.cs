@@ -17,8 +17,11 @@
 
 namespace Microsoft.Azure.Storage.Blob
 {
+    using Core.Util;
     using System;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Represents a stream for writing to a blob.
@@ -31,7 +34,6 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         public abstract void Commit();
 #endif
-
         /// <summary>
         /// Begins an asynchronous commit operation.
         /// </summary>
@@ -43,7 +45,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Waits for the pending asynchronous commit to complete.
         /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> object containing a reference to the pending asynchronous request to finish.</param>
+        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
         public abstract void EndCommit(IAsyncResult asyncResult);
 
         /// <summary>
@@ -57,7 +59,16 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Waits for the pending asynchronous flush to complete.
         /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> object containing a reference to the pending asynchronous request to finish.</param>
+        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
         public abstract void EndFlush(IAsyncResult asyncResult);
+
+        /// <summary>
+        /// Asynchronously clears all buffers for this stream, causes any buffered data to be written to the underlying file, and commits the file.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        public abstract Task CommitAsync();
+
+
+
     }
 }

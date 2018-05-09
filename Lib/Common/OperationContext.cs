@@ -141,62 +141,30 @@ namespace Microsoft.Azure.Storage
 
         internal void FireSendingRequest(RequestEventArgs args)
         {
-            EventHandler<RequestEventArgs> handler = this.SendingRequest;
-            if (handler != null)
-            {
-                handler(this, args);
-            }
+            this.SendingRequest?.Invoke(this, args);
 
-            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalSendingRequest;
-            if (handlerStatic != null)
-            {
-                handlerStatic(this, args);
-            }
+            OperationContext.GlobalSendingRequest?.Invoke(this, args);
         }
 
         internal void FireResponseReceived(RequestEventArgs args)
         {
-            EventHandler<RequestEventArgs> handler = this.ResponseReceived;
-            if (handler != null)
-            {
-                handler(this, args);
-            }
+            this.ResponseReceived?.Invoke(this, args);
 
-            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalResponseReceived;
-            if (handlerStatic != null)
-            {
-                handlerStatic(this, args);
-            }
+            OperationContext.GlobalResponseReceived?.Invoke(this, args);
         }
 
         internal void FireRequestCompleted(RequestEventArgs args)
         {
-            EventHandler<RequestEventArgs> handler = this.RequestCompleted;
-            if (handler != null)
-            {
-                handler(this, args);
-            }
+            this.RequestCompleted?.Invoke(this, args);
 
-            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalRequestCompleted;
-            if (handlerStatic != null)
-            {
-                handlerStatic(this, args);
-            }
+            OperationContext.GlobalRequestCompleted?.Invoke(this, args);
         }
 
         internal void FireRetrying(RequestEventArgs args)
         {
-            EventHandler<RequestEventArgs> handler = this.Retrying;
-            if (handler != null)
-            {
-                handler(this, args);
-            }
+            this.Retrying?.Invoke(this, args);
 
-            EventHandler<RequestEventArgs> handlerStatic = OperationContext.GlobalRetrying;
-            if (handlerStatic != null)
-            {
-                handlerStatic(this, args);
-            }
+            OperationContext.GlobalRetrying?.Invoke(this, args);
         }
         #endregion
 

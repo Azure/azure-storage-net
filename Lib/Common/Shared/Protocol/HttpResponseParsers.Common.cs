@@ -25,6 +25,8 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
     using System.Xml;
     using System.Xml.Linq;
 
@@ -115,14 +117,20 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service properties.</param>
         /// <returns>The service properties stored in the stream.</returns>
-        internal static ServiceProperties ReadServiceProperties(Stream inputStream)
+        internal static Task<ServiceProperties> ReadServicePropertiesAsync(Stream inputStream, CancellationToken token)
         {
-            using (XmlReader reader = XmlReader.Create(inputStream))
-            {
-                XDocument servicePropertyDocument = XDocument.Load(reader);
+            return Task.Run(
+                () =>
+                {
+                    using (XmlReader reader = XmlReader.Create(inputStream))
+                    {
+                        XDocument servicePropertyDocument = XDocument.Load(reader);
 
-                return ServiceProperties.FromServiceXml(servicePropertyDocument);
-            }
+                        return ServiceProperties.FromServiceXml(servicePropertyDocument);
+                    }
+                },
+                token
+                );
         }
 
         /// <summary>
@@ -130,29 +138,20 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service stats.</param>
         /// <returns>The service stats stored in the stream.</returns>
-        internal static ServiceStats ReadServiceStats(Stream inputStream)
+        internal static Task<ServiceStats> ReadServiceStatsAsync(Stream inputStream, CancellationToken token)
         {
-            using (XmlReader reader = XmlReader.Create(inputStream))
-            {
-                XDocument serviceStatsDocument = XDocument.Load(reader);
+            return Task.Run(
+                () =>
+                {
+                    using (XmlReader reader = XmlReader.Create(inputStream))
+                    {
+                        XDocument serviceStatsDocument = XDocument.Load(reader);
 
-                return ServiceStats.FromServiceXml(serviceStatsDocument);
-            }
-        }
-
-        /// <summary>
-        /// Reads a collection of shared access policies from the specified <see cref="AccessPolicyResponseBase&lt;T&gt;"/> object.
-        /// </summary>
-        /// <param name="sharedAccessPolicies">A collection of shared access policies to be filled.</param>
-        /// <param name="policyResponse">A policy response object for reading the stream.</param>
-        /// <typeparam name="T">The type of policy to read.</typeparam>
-        internal static void ReadSharedAccessIdentifiers<T>(IDictionary<string, T> sharedAccessPolicies, AccessPolicyResponseBase<T> policyResponse)
-            where T : new()
-        {
-            foreach (KeyValuePair<string, T> pair in policyResponse.AccessIdentifiers)
-            {
-                sharedAccessPolicies.Add(pair.Key, pair.Value);
-            }
+                        return ServiceStats.FromServiceXml(serviceStatsDocument);
+                    }
+                },
+                token
+                );
         }
     }
 }

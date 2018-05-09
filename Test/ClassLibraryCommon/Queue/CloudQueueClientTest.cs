@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -295,7 +296,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void QueueContinuationTokenVerifySerializer()
+        public async Task QueueContinuationTokenVerifySerializer()
         {
             XmlSerializer serializer = new XmlSerializer(typeof(QueueContinuationToken));
 
@@ -326,18 +327,18 @@ namespace Microsoft.Azure.Storage.Queue
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
             // Read with token.ReadXml()
-            using (XmlReader xmlReader = XmlReader.Create(new StringReader(tokenxml)))
+            using (XmlReader xmlReader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(tokenxml))))
             {
                 readToken = new QueueContinuationToken();
-                readToken.ReadXml(xmlReader);
+                await readToken.ReadXmlAsync(xmlReader);
             }
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
             // Read with token.ReadXml()
-            using (XmlReader xmlReader = XmlReader.Create(new StringReader(tokenxml)))
+            using (XmlReader xmlReader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(tokenxml))))
             {
                 readToken = new QueueContinuationToken();
-                readToken.ReadXml(xmlReader);
+                await readToken.ReadXmlAsync(xmlReader);
             }
 
             // Write with token.WriteXml
@@ -353,10 +354,10 @@ namespace Microsoft.Azure.Storage.Queue
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
             // Read with token.ReadXml()
-            using (XmlReader xmlReader = XmlReader.Create(new StringReader(sb.ToString())))
+            using (XmlReader xmlReader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
             {
                 readToken = new QueueContinuationToken();
-                readToken.ReadXml(xmlReader);
+                await readToken.ReadXmlAsync(xmlReader);
             }
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
         }
@@ -367,7 +368,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void QueueContinuationTokenVerifyEmptyTargetDeserializer()
+        public async Task QueueContinuationTokenVerifyEmptyTargetDeserializer()
         {
             QueueContinuationToken queueContinuationToken = new QueueContinuationToken { TargetLocation = null };
             StringBuilder stringBuilder = new StringBuilder();
@@ -378,7 +379,7 @@ namespace Microsoft.Azure.Storage.Queue
 
             string stringToken = stringBuilder.ToString();
             QueueContinuationToken parsedToken = new QueueContinuationToken();
-            parsedToken.ReadXml(XmlReader.Create(new System.IO.StringReader(stringToken)));
+            await parsedToken.ReadXmlAsync(XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(stringToken))));
             Assert.AreEqual(parsedToken.TargetLocation, null);
         }
 
@@ -388,7 +389,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void QueueContinuationTokenVerifyXmlFunctions()
+        public async Task QueueContinuationTokenVerifyXmlFunctions()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
@@ -420,10 +421,10 @@ namespace Microsoft.Azure.Storage.Queue
                         token.WriteXml(writer);
                     }
 
-                    using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                    using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                     {
                         token = new QueueContinuationToken();
-                        token.ReadXml(reader);
+                        await token.ReadXmlAsync(reader);
                     }
                 }
             }
@@ -450,7 +451,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void QueueContinuationTokenVerifyXmlWithinXml()
+        public async Task QueueContinuationTokenVerifyXmlWithinXml()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
@@ -486,14 +487,14 @@ namespace Microsoft.Azure.Storage.Queue
                         writer.WriteEndElement();
                     }
 
-                    using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                    using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                     {
                         token = new QueueContinuationToken();
-                        reader.ReadStartElement();
-                        reader.ReadStartElement();
-                        token.ReadXml(reader);
-                        reader.ReadEndElement();
-                        reader.ReadEndElement();
+                        await reader.ReadStartElementAsync();
+                        await reader.ReadStartElementAsync();
+                        await token.ReadXmlAsync(reader);
+                        await reader.ReadEndElementAsync();
+                        await reader.ReadEndElementAsync();
                     }
                 }
             }

@@ -20,12 +20,13 @@ namespace Microsoft.Azure.Storage.Core.Util
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Xml;
 
 #if TASK
     /// <summary>
     /// Helper class to convert an APM method to a Task method.
     /// </summary>
-    internal static class AsyncExtensions
+    internal static partial class AsyncExtensions
     {
         private static CancellationTokenRegistration? RegisterCancellationToken(CancellationToken cancellationToken, out CancellableOperationBase cancellableOperation)
         {

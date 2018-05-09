@@ -17,7 +17,7 @@
 
 namespace Microsoft.Azure.Storage.File
 {
-    using Microsoft.Azure.Storage.Auth.Protocol;
+    using Microsoft.Azure.Storage.Auth;
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Executor;
     using Microsoft.Azure.Storage.Core.Util;
@@ -226,9 +226,9 @@ namespace Microsoft.Azure.Storage.File
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                ListSharesResponse listSharesResponse = new ListSharesResponse(cmd.ResponseStream);
+                ListSharesResponse listSharesResponse = await ListSharesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
                 List<CloudFileShare> sharesList = listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, item.SnapshotTime, this)).ToList();
                 FileContinuationToken continuationToken = null;
                 if (listSharesResponse.NextMarker != null)
@@ -240,10 +240,10 @@ namespace Microsoft.Azure.Storage.File
                     };
                 }
 
-                return Task.FromResult(new ResultSegment<CloudFileShare>(sharesList)
+                return new ResultSegment<CloudFileShare>(sharesList)
                 {
                     ContinuationToken = continuationToken,
-                });
+                };
             };
 
             return getCmd;
@@ -260,10 +260,7 @@ namespace Microsoft.Azure.Storage.File
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
 
-            retCmd.PostProcessResponse = (cmd, resp, ctx) =>
-            {
-                return Task.FromResult(FileHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
-            };
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => FileHttpResponseParsers.ReadServicePropertiesAsync(cmd.ResponseStream, ct);
 
             requestOptions.ApplyToStorageCommand(retCmd);
             return retCmd;

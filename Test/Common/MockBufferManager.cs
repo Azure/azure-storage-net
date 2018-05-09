@@ -23,7 +23,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -34,6 +34,7 @@ namespace Microsoft.Azure.Storage
     public class MockBufferManager : IBufferManager
     {
         private int defaultBufferSize = 0;
+        private int totalTakeBufferCalls = 0;
 
         public MockBufferManager(int defaultBufferSize)
         {
@@ -62,12 +63,21 @@ namespace Microsoft.Azure.Storage
         public byte[] TakeBuffer(int bufferSize)
         {
             Interlocked.Increment(ref outstandingBufferCount);
+            Interlocked.Increment(ref totalTakeBufferCalls);
             return new byte[bufferSize];
         }
 
         public int GetDefaultBufferSize()
         {
             return this.defaultBufferSize;
+        }
+
+        public int TotalTakeBufferCalls
+        {
+            get
+            {
+                return this.totalTakeBufferCalls;
+            }
         }
     }
 }

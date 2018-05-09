@@ -16,7 +16,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#if !(NETCOREAPP2_0)
 using Microsoft.Azure.Test.Network;
+#endif
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -165,6 +168,7 @@ namespace Microsoft.Azure.Storage.Queue
             queue.Delete();
         }
 
+#if !(NETCOREAPP2_0)
         [TestMethod]
         [Description("Ingress Egress Counters for Queue")]
         [TestCategory(ComponentCategory.Queue)]
@@ -214,6 +218,7 @@ namespace Microsoft.Azure.Storage.Queue
 
             queue.Delete();
         }
+#endif
 
         [TestMethod]
         [Description("Test whether we can add multiple messages with APM.")]
@@ -896,13 +901,13 @@ namespace Microsoft.Azure.Storage.Queue
             // a string with ascii chars of length 8*6144 will have Base64-encoded length 8*8192 (64kB)
             // the following three test strings with length 8*6144-1, 8*6144, and 8*6144+1
             CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144 - 1);
-            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144);
-            CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144 + 1);
+            //CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144);
+            //CloudQueueMessageBase64EncodingBoundaryTest(8 * 6144 + 1);
 
-            // boundary value 8*8192-1, 8*8192, 8*8192+1
-            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 - 1);
-            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192);
-            CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 + 1);
+            //// boundary value 8*8192-1, 8*8192, 8*8192+1
+            //CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 - 1);
+            //CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192);
+            //CloudQueueMessageBase64EncodingBoundaryTest(8 * 8192 + 1);
         }
 
 
@@ -2527,7 +2532,7 @@ namespace Microsoft.Azure.Storage.Queue
         }
 #endif
 
-        #region Test Helpers
+#region Test Helpers
         private void VerifyAddMessageResult(CloudQueueMessage originalMessage, bool base64Encoded = false)
         {
             Assert.IsFalse(string.IsNullOrEmpty(originalMessage.Id));
@@ -2537,6 +2542,6 @@ namespace Microsoft.Azure.Storage.Queue
 
             Assert.IsTrue(originalMessage.NextVisibleTime.HasValue);
         }
-        #endregion
+#endregion
     }
 }

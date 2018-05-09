@@ -36,6 +36,7 @@ namespace Microsoft.Azure.Storage
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
+    using System.Net.Http;
 #elif WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
@@ -56,7 +57,7 @@ namespace Microsoft.Azure.Storage
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpResponseMessage response, string contentType)
 #else
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream,
-                HttpWebResponse response, string contentType)
+                HttpResponseMessage response, string contentType)
 #endif
 
         {
@@ -67,17 +68,19 @@ namespace Microsoft.Azure.Storage
             {
                 return null;
             }
+<<<<<<< HEAD
 
 
 #if WINDOWS_RT || NETCORE
+=======
+            
+>>>>>>> ea7d0914016bd6ad5dca15535dbd7eac6bca8b78
             string actualContentType = response.Content.Headers.ContentType.ToString();
-#else
-            string actualContentType = response.ContentType;
-#endif
+
             // Some table operations respond with XML - request body too large, for example.
             if (actualContentType.Contains(@"xml"))
             {
-                return StorageExtendedErrorInformation.ReadFromStream(inputStream);
+                return StorageExtendedErrorInformation.ReadFromStreamAsync(inputStream).GetAwaiter().GetResult();
             }
 
             return ReadAndParseExtendedError(new NonCloseableStream(inputStream));
@@ -109,14 +112,14 @@ namespace Microsoft.Azure.Storage
                     reader.DateParseHandling = DateParseHandling.None;
                     JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
 
-                    Dictionary<string, object> properties = dataSet.ToObject<Dictionary<string, object>>();
+                    Dictionary<string, object> properties = dataSet.ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
 
                     StorageExtendedErrorInformation errorInformation = new StorageExtendedErrorInformation();
 
                     errorInformation.AdditionalDetails = new Dictionary<string, string>();
                     if (properties.ContainsKey(@"odata.error"))
                     {
-                        Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>();
+                        Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
                         if (errorProperties.ContainsKey(@"code"))
                         {
 #pragma warning disable 618
@@ -125,7 +128,7 @@ namespace Microsoft.Azure.Storage
                         }
                         if (errorProperties.ContainsKey(@"message"))
                         {
-                            Dictionary<string, object> errorMessageProperties = ((JObject)errorProperties[@"message"]).ToObject<Dictionary<string, object>>();
+                            Dictionary<string, object> errorMessageProperties = ((JObject)errorProperties[@"message"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
                             if (errorMessageProperties.ContainsKey(@"value"))
                             {
                                 errorInformation.ErrorMessage = (string)errorMessageProperties[@"value"];
@@ -133,7 +136,7 @@ namespace Microsoft.Azure.Storage
                         }
                         if (errorProperties.ContainsKey(@"innererror"))
                         {
-                            Dictionary<string, object> innerErrorDictionary = ((JObject)errorProperties[@"innererror"]).ToObject<Dictionary<string, object>>();
+                            Dictionary<string, object> innerErrorDictionary = ((JObject)errorProperties[@"innererror"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
                             if (innerErrorDictionary.ContainsKey(@"message"))
                             {
                                 errorInformation.AdditionalDetails[Constants.ErrorExceptionMessage] = (string)innerErrorDictionary[@"message"];

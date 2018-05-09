@@ -19,43 +19,29 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
 {
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
-    using System;
     using System.Collections.Generic;
-    using System.Net;
+    using System.Net.Http;
+    using System;
 
-    /// <summary>
-    /// Provides a set of methods for parsing a response containing queue data from the Queue service.
-    /// </summary>
     public static partial class QueueHttpResponseParsers
     {
-        /// <summary>
-        /// Gets the request ID from the response.
-        /// </summary>
-        /// <param name="response">The web response.</param>
-        /// <returns>A unique value associated with the request.</returns>
-        public static string GetRequestId(HttpWebResponse response)
-        {
-            return Response.GetRequestId(response);
-        }
-
         /// <summary>
         /// Gets the approximate message count for the queue.
         /// </summary>
         /// <param name="response">The web response.</param>
         /// <returns>The approximate count for the queue.</returns>
-        public static string GetApproximateMessageCount(HttpWebResponse response)
+        public static string GetApproximateMessageCount(HttpResponseMessage response)
         {
             CommonUtility.AssertNotNull("response", response);
-
-            return response.Headers[Constants.HeaderConstants.ApproximateMessagesCount];
+            return response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ApproximateMessagesCount);
         }
 
         /// <summary>
         /// Gets the user-defined metadata.
         /// </summary>
         /// <param name="response">The response from server.</param>
-        /// <returns>An object of type <see cref="System.Collections.IDictionary"/> containing the metadata.</returns>
-        public static IDictionary<string, string> GetMetadata(HttpWebResponse response)
+        /// <returns>A <see cref="IDictionary"/> of the metadata.</returns>
+        public static IDictionary<string, string> GetMetadata(HttpResponseMessage response)
         {
             return HttpResponseParsers.GetMetadata(response);
         }
@@ -65,24 +51,24 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="response">The web response.</param>
         /// <returns>The pop receipt stored in the header of the response.</returns>
-        public static string GetPopReceipt(HttpWebResponse response)
+        public static string GetPopReceipt(HttpResponseMessage response)
         {
             CommonUtility.AssertNotNull("response", response);
 
-            return response.Headers[Constants.HeaderConstants.PopReceipt];
+            return HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.PopReceipt);
         }
 
         /// <summary>
-        /// Extracts the next visibility time from a web response header.
+        /// Extracts the next visibility time from a response message header.
         /// </summary>
         /// <param name="response">The web response.</param>
         /// <returns>The time of next visibility stored in the header of the response.</returns>
-        public static DateTime GetNextVisibleTime(HttpWebResponse response)
+        public static DateTime GetNextVisibleTime(HttpResponseMessage response)
         {
             CommonUtility.AssertNotNull("response", response);
 
             return DateTime.Parse(
-                response.Headers[Constants.HeaderConstants.NextVisibleTime],
+                HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.NextVisibleTime),
                 System.Globalization.DateTimeFormatInfo.InvariantInfo,
                 System.Globalization.DateTimeStyles.AdjustToUniversal);
         }

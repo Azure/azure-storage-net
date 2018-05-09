@@ -22,6 +22,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from a container listing operation.
@@ -31,224 +34,105 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 #else
     public
 #endif
-        sealed class ListContainersResponse : ResponseParsingBase<BlobContainerEntry>
+        sealed class ListContainersResponse
     {
-        /// <summary>
-        /// Stores the container prefix.
-        /// </summary>
-        private string prefix;
+        public string NextMarker { get; private set; }
+        public IEnumerable<BlobContainerEntry> Containers { get; private set; }
 
-        /// <summary>
-        /// Signals when the container prefix can be consumed.
-        /// </summary>
-        private bool prefixConsumable;
-
-        /// <summary>
-        /// Stores the marker.
-        /// </summary>
-        private string marker;
-
-        /// <summary>
-        /// Signals when the marker can be consumed.
-        /// </summary>
-        private bool markerConsumable;
-
-        /// <summary>
-        /// Stores the max results.
-        /// </summary>
-        private int maxResults;
-
-        /// <summary>
-        /// Signals when the max results can be consumed.
-        /// </summary>
-        private bool maxResultsConsumable;
-
-        /// <summary>
-        /// Stores the next marker.
-        /// </summary>
-        private string nextMarker;
-
-        /// <summary>
-        /// Signals when the next marker can be consumed.
-        /// </summary>
-        private bool nextMarkerConsumable;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ListContainersResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream to be parsed.</param>
-        public ListContainersResponse(Stream stream)
-            : base(stream)
+        private ListContainersResponse()
         {
-        }
-
-        /// <summary>
-        /// Gets the listing context from the XML response.
-        /// </summary>
-        /// <value>A <see cref="ListingContext"/> object.</value>
-        public ListingContext ListingContext
-        {
-            get
-            {
-                // Force a parsing in order
-                ListingContext listingContext = new ListingContext(this.Prefix, this.MaxResults);
-                listingContext.Marker = this.NextMarker;
-                return listingContext;
-            }
-        }
-
-        /// <summary>
-        /// Gets an enumerable collection of <see cref="BlobContainerEntry"/> objects from the response.
-        /// </summary>
-        /// <value>An enumerable collection of <see cref="BlobContainerEntry"/> objects.</value>
-        public IEnumerable<BlobContainerEntry> Containers
-        {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Prefix value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>A string containing the Prefix value.</value>
-        public string Prefix
-        {
-            get
-            {
-                this.Variable(ref this.prefixConsumable);
-
-                return this.prefix;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Marker value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>A string containing the Marker value.</value>
-        public string Marker
-        {
-            get
-            {
-                this.Variable(ref this.markerConsumable);
-
-                return this.marker;
-            }
-        }
-
-        /// <summary>
-        /// Gets the MaxResults value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>An integer containing the MaxResults value.</value>
-        public int MaxResults
-        {
-            get
-            {
-                this.Variable(ref this.maxResultsConsumable);
-
-                return this.maxResults;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the NextMarker value from the XML response, if the listing was not complete.
-        /// </summary>
-        /// <value>A string containing the NextMarker value.</value>
-        public string NextMarker
-        {
-            get
-            {
-                this.Variable(ref this.nextMarkerConsumable);
-
-                return this.nextMarker;
-            }
         }
 
         /// <summary>
         /// Reads a container entry completely including its properties and metadata.
         /// </summary>
         /// <returns>Container listing entry</returns>
-        private BlobContainerEntry ParseContainerEntry(Uri baseUri)
+        private static async Task<BlobContainerEntry> ParseContainerEntryAsync(XmlReader reader, Uri baseUri, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             string name = null;
             IDictionary<string, string> metadata = null;
             BlobContainerProperties containerProperties = new BlobContainerProperties();
             containerProperties.PublicAccess = BlobContainerPublicAccessType.Off;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.NameElement:
-                            name = this.reader.ReadElementContentAsString();
+                            name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.PropertiesElement:
-                            this.reader.ReadStartElement();
-                            while (this.reader.IsStartElement())
+                            await reader.ReadStartElementAsync().ConfigureAwait(false);
+                            while (await reader.IsStartElementAsync().ConfigureAwait(false))
                             {
-                                if (this.reader.IsEmptyElement)
+                                token.ThrowIfCancellationRequested();
+
+                                if (reader.IsEmptyElement)
                                 {
-                                    this.reader.Skip();
+                                    await reader.SkipAsync().ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    switch (this.reader.Name)
+                                    switch (reader.Name)
                                     {
                                         case Constants.LastModifiedElement:
-                                            containerProperties.LastModified = reader.ReadElementContentAsString().ToUTCTime();
+                                            containerProperties.LastModified = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                                             break;
 
                                         case Constants.EtagElement:
-                                            containerProperties.ETag = reader.ReadElementContentAsString();
+                                            containerProperties.ETag = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.LeaseStatusElement:
-                                            containerProperties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(reader.ReadElementContentAsString());
+                                            containerProperties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.LeaseStateElement:
-                                            containerProperties.LeaseState = BlobHttpResponseParsers.GetLeaseState(reader.ReadElementContentAsString());
+                                            containerProperties.LeaseState = BlobHttpResponseParsers.GetLeaseState(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.LeaseDurationElement:
-                                            containerProperties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(reader.ReadElementContentAsString());
+                                            containerProperties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         case Constants.PublicAccessElement:
-                                            containerProperties.PublicAccess = ContainerHttpResponseParsers.GetContainerAcl(reader.ReadElementContentAsString());
+                                            containerProperties.PublicAccess = ContainerHttpResponseParsers.GetContainerAcl(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         default:
-                                            reader.Skip();
+                                            await reader.SkipAsync().ConfigureAwait(false);
                                             break;
                                     }
                                 }
                             }
 
-                            this.reader.ReadEndElement();
+                            await reader.ReadEndElementAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.MetadataElement:
-                            metadata = Response.ParseMetadata(this.reader);
+                            metadata = await Response.ParseMetadataAsync(reader).ConfigureAwait(false);
                             break;
 
                         default:
-                            reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             if (metadata == null)
             {
@@ -268,73 +152,77 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// Parses the response XML for a container listing operation.
         /// </summary>
         /// <returns>An enumerable collection of <see cref="BlobContainerEntry"/> objects.</returns>
-        protected override IEnumerable<BlobContainerEntry> ParseXml()
+        internal static async Task<ListContainersResponse> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.EnumerationResultsElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
-                {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    Uri baseUri = new Uri(this.reader.GetAttribute(Constants.ServiceEndpointElement));
+                token.ThrowIfCancellationRequested();
 
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement())
+                List<BlobContainerEntry> entries = new List<BlobContainerEntry>();
+
+                string nextMarker = default(string);
+
+                if (await reader.ReadToFollowingAsync(Constants.EnumerationResultsElement).ConfigureAwait(false))
+                {
+                    if (reader.IsEmptyElement)
                     {
-                        if (this.reader.IsEmptyElement)
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        Uri baseUri = new Uri(reader.GetAttribute(Constants.ServiceEndpointElement));
+
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                         {
-                            this.reader.Skip();
-                        }
-                        else
-                        {
-                            switch (this.reader.Name)
+                            token.ThrowIfCancellationRequested();
+
+                            if (reader.IsEmptyElement)
                             {
-                                case Constants.MarkerElement:
-                                    this.marker = this.reader.ReadElementContentAsString();
-                                    this.markerConsumable = true;
-                                    yield return null;
-                                    break;
+                                await reader.SkipAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                switch (reader.Name)
+                                {
+                                    case Constants.MarkerElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.NextMarkerElement:
-                                    this.nextMarker = this.reader.ReadElementContentAsString();
-                                    this.nextMarkerConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.NextMarkerElement:
+                                        nextMarker = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.MaxResultsElement:
-                                    this.maxResults = this.reader.ReadElementContentAsInt();
-                                    this.maxResultsConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.MaxResultsElement:
+                                        await reader.ReadElementContentAsInt32Async().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.PrefixElement:
-                                    this.prefix = this.reader.ReadElementContentAsString();
-                                    this.prefixConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.PrefixElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.ContainersElement:
-                                    this.reader.ReadStartElement();
-                                    while (this.reader.IsStartElement(Constants.ContainerElement))
-                                    {
-                                        yield return this.ParseContainerEntry(baseUri);
-                                    }
+                                    case Constants.ContainersElement:
+                                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                                        while (await reader.IsStartElementAsync(Constants.ContainerElement).ConfigureAwait(false))
+                                        {
+                                            entries.Add(await ParseContainerEntryAsync(reader, baseUri, token).ConfigureAwait(false));
+                                        }
 
-                                    this.reader.ReadEndElement();
-                                    this.allObjectsParsed = true;
-                                    break;
+                                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                                        break;
 
-                                default:
-                                    reader.Skip();
-                                    break;
+                                    default:
+                                        await reader.SkipAsync().ConfigureAwait(false);
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    this.reader.ReadEndElement();
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
                 }
+
+                return new ListContainersResponse { Containers = entries, NextMarker = nextMarker };
             }
         }
     }

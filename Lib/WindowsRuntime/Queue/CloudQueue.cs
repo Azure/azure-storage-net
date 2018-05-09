@@ -1079,12 +1079,12 @@ namespace Microsoft.Azure.Storage.Queue
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
                 this.GetMessageCountAndMetadataFromResponse(resp);
                 QueuePermissions queueAcl = new QueuePermissions();
-                QueueHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, queueAcl);
-                return Task.FromResult(queueAcl);
+                await QueueHttpResponseParsers.ReadSharedAccessIdentifiersAsync(cmd.ResponseStream, queueAcl, ct).ConfigureAwait(false);
+                return queueAcl;
             };
 
             return getCmd;
@@ -1142,11 +1142,11 @@ namespace Microsoft.Azure.Storage.Queue
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
-            putCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            putCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
-                CopyMessage(message, messageResponse.Messages.ToList().First());
-                return NullType.ValueTask;
+                var messages = await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
+                CopyMessage(message, messages.First());
+                return NullType.Value;
             };
 
             return putCmd;
@@ -1232,13 +1232,12 @@ namespace Microsoft.Azure.Storage.Queue
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetMessages(uri, serverTimeout, messageCount, visibilityTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
-
-                IEnumerable<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item)).ToList();
-
-                return Task.FromResult(messagesList);
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectGetMessageResponse(m, options))
+                    .ToList();
             };
 
             return getCmd;
@@ -1259,20 +1258,20 @@ namespace Microsoft.Azure.Storage.Queue
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.PeekMessages(uri, serverTimeout, messageCount, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
-
-                IEnumerable<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item)).ToList();
-
-                return Task.FromResult(messagesList);
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectPeekMessageResponse(m, options))
+                    .ToList()
+                    ;
             };
 
             return getCmd;
         }
 
         /// <summary>
-        /// Implementation for the GetPermissions method.
+        /// Implementation for the GetMessage method.
         /// </summary>
         /// <param name="visibilityTimeout">The visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
@@ -1285,17 +1284,12 @@ namespace Microsoft.Azure.Storage.Queue
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetMessages(uri, serverTimeout, 1, visibilityTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                using (IEnumerator<QueueMessage> enumerator = new GetMessagesResponse(cmd.ResponseStream).Messages.GetEnumerator())
-                {
-                    if (enumerator.MoveNext())
-                    {
-                        return Task.FromResult(SelectGetMessageResponse(enumerator.Current));
-                    }
-                }
-
-                return Null;
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectGetMessageResponse(m, options))
+                    .FirstOrDefault();
             };
 
             return getCmd;
@@ -1314,17 +1308,12 @@ namespace Microsoft.Azure.Storage.Queue
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.PeekMessages(uri, serverTimeout, 1, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                using (IEnumerator<QueueMessage> enumerator = new GetMessagesResponse(cmd.ResponseStream).Messages.GetEnumerator())
-                {
-                    if (enumerator.MoveNext())
-                    {
-                        return Task.FromResult(SelectPeekMessageResponse(enumerator.Current));
-                    }
-                }
-
-                return Null;
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectPeekMessageResponse(m, options))
+                    .FirstOrDefault();
             };
 
             return getCmd;

@@ -18,9 +18,6 @@
 namespace Microsoft.Azure.Storage.File
 {
     using Microsoft.Azure.Storage.Auth;
-#if ALL_SERVICES
-    using Microsoft.Azure.Storage.Blob;
-#endif
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Auth;
     using Microsoft.Azure.Storage.Core.Util;

@@ -19,10 +19,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.File.Protocol
 {
@@ -44,7 +45,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             FileContext = new FileContext(owner, async, timeout);
         }
 
-        public void Initialize()
+        public async Task Initialize()
         {
             ShareName = "defaultshare14";
             PublicShareName = "publicshare14";
@@ -54,45 +55,41 @@ namespace Microsoft.Azure.Storage.File.Protocol
             Content = new byte[7000];
             random.NextBytes(Content);
 
-            CreateShare(ShareName);
-            CreateFile(ShareName, FileName, false);
-            CreateShare(PublicShareName);
-            CreateFile(PublicShareName, PublicFileName, true);
+            await CreateShare(ShareName);
+            await CreateFile(ShareName, FileName, false);
+            await CreateShare(PublicShareName);
+            await CreateFile(PublicShareName, PublicFileName, true);
         }
 
-        public void Cleanup()
+        public async Task Cleanup()
         {
-            DeleteShare(ShareName);
-            DeleteShare(PublicShareName);
+            await DeleteShare(ShareName);
+            await DeleteShare(PublicShareName);
         }
 
-        public void CreateShare(string shareName)
+        public async Task CreateShare(string shareName)
         {
-            CreateShare(shareName, 3);
+            await CreateShare(shareName, 3);
         }
 
-        public void CreateShare(string shareName, int retries)
+        public async Task CreateShare(string shareName, int retries)
         {
             // by default, sleep 35 seconds between retries
-            CreateShare(shareName, retries, 35000);
+            await CreateShare(shareName, retries, 35000);
         }
 
-        public void CreateShare(string shareName, int retries, int millisecondsBetweenRetries)
+        public async Task CreateShare(string shareName, int retries, int millisecondsBetweenRetries)
         {
             while (true)
             {
-                HttpWebRequest request = FileTests.CreateShareRequest(FileContext, shareName);
-                Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-         
-                if (FileContext.Credentials != null)
-                {
-                    FileTests.SignRequest(request, FileContext);
-                }
-                HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+                HttpRequestMessage request = FileTests.CreateShareRequest(FileContext, shareName);
+                Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+
+                HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
                 HttpStatusCode statusCode = response.StatusCode;
-                string statusDescription = response.StatusDescription;
-                StorageExtendedErrorInformation error = StorageExtendedErrorInformation.ReadFromStream(response.GetResponseStream());
-                response.Close();
+                string statusDescription = response.ReasonPhrase;
+                StorageExtendedErrorInformation error = await StorageExtendedErrorInformation.ReadFromStreamAsync(await response.Content.ReadAsStreamAsync());
+                response.Dispose();
 
                 // if the share is being deleted, retry up to the specified times.
                 if (statusCode == HttpStatusCode.Conflict && error != null && error.ErrorCode == FileErrorCodeStrings.ShareBeingDeleted && retries > 0)
@@ -102,101 +99,85 @@ namespace Microsoft.Azure.Storage.File.Protocol
                     continue;
                 }
 
+                Assert.AreNotEqual(HttpStatusCode.NotFound, statusCode, "Failed to create share");
+
                 break;
             }
         }
 
-        public void DeleteShare(string shareName)
+        public async Task DeleteShare(string shareName)
         {
-            HttpWebRequest request = FileTests.DeleteShareRequest(FileContext, shareName, null);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpRequestMessage request = FileTests.DeleteShareRequest(FileContext, shareName, null);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
             HttpStatusCode statusCode = response.StatusCode;
-            string statusDescription = response.StatusDescription;
-            response.Close();
+            string statusDescription = response.ReasonPhrase;
+            response.Dispose();
         }
 
-        public void CreateFile(string shareName, string fileName, bool isPublic)
+        public async Task CreateFile(string shareName, string fileName, bool isPublic)
         {
             Properties = new FileProperties();
-            HttpWebRequest request = FileTests.PutFileRequest(FileContext, shareName, fileName, Properties, Content, 7000, null);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
+            HttpRequestMessage request = FileTests.PutFileRequest(FileContext, shareName, fileName, Properties, Content, 7000, null);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
 
-            request.Timeout = 30000;
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
+            CancellationTokenSource timeout = new CancellationTokenSource(30000);
 
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext, timeout);
             HttpStatusCode statusCode = response.StatusCode;
-            string statusDescription = response.StatusDescription;
-            response.Close();
+            string statusDescription = response.ReasonPhrase;
+            response.Dispose();
             if (statusCode != HttpStatusCode.Created)
             {
                 Assert.Fail(string.Format("Failed to create file: {0}, Status: {1}, Status Description: {2}", shareName, statusCode, statusDescription));
             }
         }
 
-        public void WriteRange(string fileName, string shareName, byte[] content, HttpStatusCode? expectedError)
+        public async Task WriteRange(string fileName, string shareName, byte[] content, HttpStatusCode? expectedError)
         {
             FileRange range = new FileRange(0, content.Length-1);
-            HttpWebRequest request = FileTests.WriteRangeRequest(FileContext, shareName, fileName, range, content.Length, null);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-            FileTestUtils.SetRequest(request, FileContext, content);
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpRequestMessage request = FileTests.WriteRangeRequest(FileContext, shareName, fileName, range, content.Length, null);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+            
+            request.Content = new ByteArrayContent(content);
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
             try
             {
                 FileTests.WriteRangeResponse(response, FileContext, expectedError);
             }
             finally
             {
-                response.Close();
+                response.Dispose();
             }
 
         }
-        public void DeleteFile(string shareName, string fileName)
+        public async Task DeleteFile(string shareName, string fileName)
         {
-            HttpWebRequest request = FileTests.DeleteFileRequest(FileContext, shareName, fileName, null);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
-            response.Close();
+            HttpRequestMessage request = FileTests.DeleteFileRequest(FileContext, shareName, fileName, null);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
+            response.Dispose();
         }
 
-        public void PutFileScenarioTest(string shareName, string fileName, FileProperties properties, byte[] content, HttpStatusCode? expectedError)
+        public async Task PutFileScenarioTest(string shareName, string fileName, FileProperties properties, byte[] content, HttpStatusCode? expectedError)
         {
-            HttpWebRequest request = FileTests.PutFileRequest(FileContext, shareName, fileName, properties, content, content.Length, null);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-            request.ContentLength = content.Length;
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-            FileTestUtils.SetRequest(request, FileContext, content);
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpRequestMessage request = FileTests.PutFileRequest(FileContext, shareName, fileName, properties, content, content.Length, null);
+            request.Content = new ByteArrayContent(content);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+            HttpRequestHandler.SetContentLength(request, content.Length);
+
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
             try
             {
                 FileTests.PutFileResponse(response, FileContext, expectedError);
             }
             finally
             {
-                response.Close();
+                response.Dispose();
             }
         }
 
-        public void ClearRangeScenarioTest(string shareName, string fileName, HttpStatusCode? expectedError)
+        public async Task ClearRangeScenarioTest(string shareName, string fileName, HttpStatusCode? expectedError)
         {
             // 1. Create Sparse File
             int fileSize = 128 * 1024;
@@ -204,11 +185,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
             FileProperties properties = new FileProperties();
             Uri uri = FileTests.ConstructPutUri(FileContext.Address, shareName, fileName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest webRequest = FileHttpWebRequestFactory.Create(uri, FileContext.Timeout, properties, fileSize, null, true, opContext);
+            HttpRequestMessage webRequest = FileHttpRequestMessageFactory.Create(uri, FileContext.Timeout, properties, fileSize, null, null, opContext, null, null);
 
-            FileTests.SignRequest(webRequest, FileContext);
-
-            using (HttpWebResponse response = webRequest.GetResponse() as HttpWebResponse)
+            using (HttpResponseMessage response = await FileTestUtils.GetResponse(webRequest, FileContext))
             {
                 FileTests.PutFileResponse(response, FileContext, expectedError);
             }
@@ -221,19 +200,15 @@ namespace Microsoft.Azure.Storage.File.Protocol
 
                 FileRange range = new FileRange(startOffset, startOffset + length - 1);
                 opContext = new OperationContext();
-                HttpWebRequest rangeRequest = FileHttpWebRequestFactory.PutRange(uri, FileContext.Timeout, range, FileRangeWrite.Update, null, true, opContext);
-                rangeRequest.ContentLength = 512;
-                FileTests.SignRequest(rangeRequest, FileContext);
+                HttpRequestMessage rangeRequest = FileHttpRequestMessageFactory.PutRange(uri, FileContext.Timeout, range, FileRangeWrite.Update, null, null, opContext, null, null);
+                HttpRequestHandler.SetContentLength(rangeRequest, 512);
 
-                Stream outStream = rangeRequest.GetRequestStream();
+                byte[] content = new byte[length];
+                random.NextBytes(content);
 
-                for (int n = 0; n < 512; n++)
-                {
-                    outStream.WriteByte((byte)m);
-                }
+                rangeRequest.Content = new ByteArrayContent(content);
 
-                outStream.Close();
-                using (HttpWebResponse rangeResponse = rangeRequest.GetResponse() as HttpWebResponse)
+                using (HttpResponseMessage rangeResponse = await FileTestUtils.GetResponse(rangeRequest, FileContext))
                 {
                 }
             }
@@ -241,12 +216,11 @@ namespace Microsoft.Azure.Storage.File.Protocol
             // 3. Now do a List Ranges
             List<FileRange> fileRanges = new List<FileRange>();
             opContext = new OperationContext();
-            HttpWebRequest listRangesRequest = FileHttpWebRequestFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, true, opContext);
-            FileTests.SignRequest(listRangesRequest, FileContext);
-            using (HttpWebResponse rangeResponse = listRangesRequest.GetResponse() as HttpWebResponse)
+            HttpRequestMessage listRangesRequest = FileHttpRequestMessageFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, null, opContext, null, null);
+            using (HttpResponseMessage rangeResponse = await FileTestUtils.GetResponse(listRangesRequest, FileContext))
             {
-                ListRangesResponse listRangesResponse = new ListRangesResponse(rangeResponse.GetResponseStream());
-                fileRanges.AddRange(listRangesResponse.Ranges.ToList());
+                var ranges = await ListRangesResponse.ParseAsync(await rangeResponse.Content.ReadAsStreamAsync(), CancellationToken.None);
+                fileRanges.AddRange(ranges);
             }
 
             // 4. Now Clear some ranges
@@ -260,10 +234,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 }
 
                 opContext = new OperationContext();
-                HttpWebRequest clearRangeRequest = FileHttpWebRequestFactory.PutRange(uri, FileContext.Timeout, pRange, FileRangeWrite.Clear, null, true, opContext);
-                clearRangeRequest.ContentLength = 0;
-                FileTests.SignRequest(clearRangeRequest, FileContext);
-                using (HttpWebResponse clearResponse = clearRangeRequest.GetResponse() as HttpWebResponse)
+                HttpRequestMessage clearRangeRequest = FileHttpRequestMessageFactory.PutRange(uri, FileContext.Timeout, pRange, FileRangeWrite.Clear, null, null, opContext, null, null);
+                HttpRequestHandler.SetContentLength(clearRangeRequest, 0);
+                using (HttpResponseMessage clearResponse = await FileTestUtils.GetResponse(clearRangeRequest, FileContext))
                 {
                 }
             }
@@ -272,12 +245,11 @@ namespace Microsoft.Azure.Storage.File.Protocol
             List<FileRange> newFileRanges = new List<FileRange>();
 
             opContext = new OperationContext();
-            HttpWebRequest newFileRangeRequest = FileHttpWebRequestFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, true, opContext);
-            FileTests.SignRequest(newFileRangeRequest, FileContext);
-            using (HttpWebResponse newFileRangeResponse = newFileRangeRequest.GetResponse() as HttpWebResponse)
+            HttpRequestMessage newFileRangeRequest = FileHttpRequestMessageFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, null, opContext, null, null);
+            using (HttpResponseMessage newFileRangeResponse =   await FileTestUtils.GetResponse(newFileRangeRequest, FileContext))
             {
-                ListRangesResponse listNewRangesResponse = new ListRangesResponse(newFileRangeResponse.GetResponseStream());
-                newFileRanges.AddRange(listNewRangesResponse.Ranges.ToList());
+                var ranges = await ListRangesResponse.ParseAsync(await newFileRangeResponse.Content.ReadAsStreamAsync(), CancellationToken.None);
+                newFileRanges.AddRange(ranges);
             }
 
             Assert.AreEqual(fileRanges.Count(), newFileRanges.Count() * 2);
@@ -288,23 +260,19 @@ namespace Microsoft.Azure.Storage.File.Protocol
             }
         }
 
-        public void GetFileScenarioTest(string shareName, string fileName, FileProperties properties,
+        public async Task GetFileScenarioTest(string shareName, string fileName, FileProperties properties,
             HttpStatusCode? expectedError)
         {
-            HttpWebRequest request = FileTests.GetFileRequest(FileContext, shareName, fileName, null);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpRequestMessage request = FileTests.GetFileRequest(FileContext, shareName, fileName, null);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
             try
             {
                 FileTests.GetFileResponse(response, FileContext, properties, expectedError);
             }
             finally
             {
-                response.Close();
+                response.Dispose();
             }
         }
 
@@ -318,17 +286,12 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="offset">The offset of the contents we will get.</param>
         /// <param name="count">The number of bytes we will get, or null to get the rest of the file.</param>
         /// <param name="expectedError">The error code we expect from this operation, or null if we expect it to succeed.</param>
-        public void GetFileRangeScenarioTest(string shareName, string fileName, byte[] content, long offset, long? count, HttpStatusCode? expectedError)
+        public async Task GetFileRangeScenarioTest(string shareName, string fileName, byte[] content, long offset, long? count, HttpStatusCode? expectedError)
         {
-            HttpWebRequest request = FileTests.GetFileRangeRequest(FileContext, shareName, fileName, offset, count, null);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
+            HttpRequestMessage request = FileTests.GetFileRangeRequest(FileContext, shareName, fileName, offset, count, null);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
 
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
 
             try
             {
@@ -346,23 +309,19 @@ namespace Microsoft.Azure.Storage.File.Protocol
             }
             finally
             {
-                response.Close();
+                response.Dispose();
             }
         }
 
-        public void ListFilesAndDirectoriesScenarioTest(string shareName, FileListingContext listingContext, HttpStatusCode? expectedError, params string[] expectedFiles)
+        public async Task ListFilesAndDirectoriesScenarioTest(string shareName, FileListingContext listingContext, HttpStatusCode? expectedError, params string[] expectedFiles)
         {
-            HttpWebRequest request = FileTests.ListFilesAndDirectoriesRequest(FileContext, shareName, listingContext);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpRequestMessage request = FileTests.ListFilesAndDirectoriesRequest(FileContext, shareName, listingContext);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
             try
             {
                 FileTests.ListFilesAndDirectoriesResponse(response, FileContext, expectedError);
-                ListFilesAndDirectoriesResponse listFilesResponse = new ListFilesAndDirectoriesResponse(response.GetResponseStream());
+                ListFilesAndDirectoriesResponse listFilesResponse = await ListFilesAndDirectoriesResponse.ParseAsync(await response.Content.ReadAsStreamAsync(), CancellationToken.None);
                 int i = 0;
                 foreach (IListFileEntry item in listFilesResponse.Files)
                 {
@@ -381,23 +340,20 @@ namespace Microsoft.Azure.Storage.File.Protocol
             }
             finally
             {
-                response.Close();
+                response.Dispose();
             }
         }
 
-        public void ListSharesScenarioTest(ListingContext listingContext, HttpStatusCode? expectedError, params string[] expectedShares)
+        public async Task ListSharesScenarioTest(ListingContext listingContext, HttpStatusCode? expectedError, params string[] expectedShares)
         {
-            HttpWebRequest request = FileTests.ListSharesRequest(FileContext, listingContext);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
-            if (FileContext.Credentials != null)
-            {
-                FileTests.SignRequest(request, FileContext);
-            }
-            HttpWebResponse response = FileTestUtils.GetResponse(request, FileContext);
+            HttpRequestMessage request = FileTests.ListSharesRequest(FileContext, listingContext);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
+
+            HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
             try
             {
                 FileTests.ListSharesResponse(response, FileContext, expectedError);
-                ListSharesResponse listSharesResponse = new ListSharesResponse(response.GetResponseStream());
+                ListSharesResponse listSharesResponse = await ListSharesResponse.ParseAsync(await response.Content.ReadAsStreamAsync(), CancellationToken.None);
                 int i = 0;
                 foreach (FileShareEntry item in listSharesResponse.Shares)
                 {
@@ -415,7 +371,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             }
             finally
             {
-                response.Close();
+                response.Dispose();
             }
         }
 

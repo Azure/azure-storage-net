@@ -54,8 +54,7 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(0, TestBase.FileBufferManager.OutstandingBufferCount);
             }
         }
-
-#if !(WINDOWS_RT || NETCORE)
+        
         [TestMethod]
         [Description("Download a file, with progress")]
         [TestCategory(ComponentCategory.File)]
@@ -100,7 +99,6 @@ namespace Microsoft.Azure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
-#endif
 
         [TestMethod]
         [Description("Download a specific range of the file to a stream")]
@@ -139,8 +137,7 @@ namespace Microsoft.Azure.Storage.File
                 AssertAreEqual(file, file2);
             }
         }
-
-#if !(WINDOWS_RT || NETCORE)
+        
         [TestMethod]
         [Description("Upload a stream to a file, with progress")]
         [TestCategory(ComponentCategory.File)]
@@ -180,7 +177,8 @@ namespace Microsoft.Azure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
-#endif
+
+
         [TestMethod]
         [Description("Upload a stream to a file")]
         [TestCategory(ComponentCategory.File)]
@@ -329,13 +327,15 @@ namespace Microsoft.Azure.Storage.File
             this.DoUploadDownloadFile(file, 0, true);
             this.DoUploadDownloadFile(file, 4096, true);
 
-            TestHelper.ExpectedException<IOException>(
-                () => file.BeginUploadFromFile("non_existent.file", null, null),
-                "UploadFromFile requires an existing file");
-
             IAsyncResult result;
             using (AutoResetEvent waitHandle = new AutoResetEvent(false))
             {
+                result = file.BeginUploadFromFile("non_existent.file", ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                TestHelper.ExpectedException<IOException>(
+                    () => file.EndUploadFromFile(result),
+                    "UploadFromFile requires an existing file");
+
                 OperationContext context = new OperationContext();
                 result = nullFile.BeginDownloadToFile("garbage.file", FileMode.Create, null, null, context,
                     ar => waitHandle.Set(),
@@ -376,7 +376,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileUploadDownloadFileTask()
+        public async Task CloudFileUploadDownloadFileTask()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
             CloudFile nullFile = this.testShare.GetRootDirectoryReference().GetFileReference("null");
@@ -384,7 +384,7 @@ namespace Microsoft.Azure.Storage.File
             this.DoUploadDownloadFileTask(file, 4096);
 
             TestHelper.ExpectedException<IOException>(
-                () => file.UploadFromFileAsync("non_existent.file"),
+                () => file.UploadFromFileAsync("non_existent.file").GetAwaiter().GetResult(),
                 "UploadFromFile requires an existing file");
 
             AggregateException e = TestHelper.ExpectedException<AggregateException>(
@@ -402,17 +402,17 @@ namespace Microsoft.Azure.Storage.File
             byte[] buffer = GetRandomBuffer(100);
             using (FileStream systemFile = new FileStream("garbage.file", FileMode.Create, FileAccess.Write))
             {
-                systemFile.WriteAsync(buffer, 0, buffer.Length);
+                await systemFile.WriteAsync(buffer, 0, buffer.Length);
             }
             try
             {
-                nullFile.DownloadToFileAsync("garbage.file", FileMode.CreateNew).Wait();
+                nullFile.DownloadToFileAsync("garbage.file", FileMode.CreateNew).GetAwaiter().GetResult();
                 Assert.Fail("DownloadToFileAsync should leave an unchanged file behind after failing, depending on the mode.");
             }
             catch (System.IO.IOException)
             {
                 // Success if test reaches here meaning the expected exception was thrown.
-                Assert.IsTrue(System.IO.File.Exists("garbage.file"));
+                Assert.IsTrue(File.Exists("garbage.file"));
                 System.IO.File.Delete("garbage.file");
             }
 
@@ -443,8 +443,8 @@ namespace Microsoft.Azure.Storage.File
                 file.UploadFromFileAsync(inputFileName, null, null, context).Wait();
                 Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
-                TestHelper.ExpectedException<IOException>(
-                    () => file.DownloadToFileAsync(outputFileName, FileMode.CreateNew),
+                 TestHelper.ExpectedException<IOException>(
+                    () => file.DownloadToFileAsync(outputFileName, FileMode.CreateNew).GetAwaiter().GetResult(),
                     "CreateNew on an existing file should fail");
 
                 context = new OperationContext();
@@ -527,8 +527,10 @@ namespace Microsoft.Azure.Storage.File
                         file.EndUploadFromFile(result);
                         Assert.IsNotNull(context.LastResult.ServiceRequestID);
 
+                        result = file.BeginDownloadToFile(outputFileName, FileMode.CreateNew, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
                         TestHelper.ExpectedException<IOException>(
-                            () => file.BeginDownloadToFile(outputFileName, FileMode.CreateNew, null, null),
+                            () => file.EndDownloadToFile(result),
                             "CreateNew on an existing file should fail");
 
                         context = new OperationContext();

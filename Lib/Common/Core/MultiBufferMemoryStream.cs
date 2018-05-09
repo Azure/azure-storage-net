@@ -23,11 +23,8 @@ namespace Microsoft.Azure.Storage.Core
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
-
-#if WINDOWS_RT || NETCORE
     using System.Threading;
     using System.Threading.Tasks;
-#endif
 
     /// <summary>
     /// Creates a multi-buffer stream whose backing store is memory.
@@ -381,7 +378,51 @@ namespace Microsoft.Azure.Storage.Core
         }
 #endif
 
-#if WINDOWS_DESKTOP 
+#if WINDOWS_DESKTOP
+        /// <summary>
+        /// Reads the bytes from the current stream and writes them to another stream. This method writes directly to the destination stream, 
+        /// rather than copying the data into a temporary buffer.
+        /// </summary>
+        /// <param name="destination">The stream to which the contents of the current stream will be copied.</param>
+        /// <param name="expiryTime">A DateTime indicating the expiry time.</param>
+        public async Task FastCopyToAsync(Stream destination, DateTime? expiryTime, CancellationToken token)
+        {
+            CommonUtility.AssertNotNull("destination", destination);
+
+            // Maximum amount you can read is from current spot to the end.
+            long leftToRead = this.Length - this.Position;
+
+            try
+            {
+                while (leftToRead != 0)
+                {
+                    if (expiryTime.HasValue && DateTime.Now.CompareTo(expiryTime.Value) > 0)
+                    {
+                        throw new TimeoutException();
+                    }
+
+                    ArraySegment<byte> currentBlock = this.GetCurrentBlock();
+
+                    // Copy the block
+                    int blockReadLength = (int)Math.Min(leftToRead, currentBlock.Count);
+                    await destination.WriteAsync(currentBlock.Array, currentBlock.Offset, blockReadLength, token).ConfigureAwait(false);
+
+                    this.AdvancePosition(ref leftToRead, blockReadLength);
+                }
+            }
+            catch (Exception)
+            {
+                if (expiryTime.HasValue && DateTime.Now.CompareTo(expiryTime.Value) > 0)
+                {
+                    throw new TimeoutException();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
         /// <summary>
         /// Reads the bytes from the current stream and writes them to another stream. This method writes directly to the destination stream, 
         /// rather than copying the data into a temporary buffer.

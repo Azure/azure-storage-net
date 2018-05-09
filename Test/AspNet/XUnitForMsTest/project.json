@@ -4,7 +4,10 @@
 
   "dependencies": {
     "xunit": "2.1.0",
-    "Microsoft.Azure.Storage.Common": "9.0.0.0-preview",
+<<<<<<< HEAD
+    "Microsoft.Azure.Storage.Common": "9.0.0-preview",
+=======
+>>>>>>> ea7d0914016bd6ad5dca15535dbd7eac6bca8b78
     "dotnet-test-xunit": "2.2.0-preview2-build1029"
   },
 

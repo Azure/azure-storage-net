@@ -1230,12 +1230,12 @@ namespace Microsoft.Azure.Storage.Blob
                 };
                 return containerAcl;
             };
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
                 this.UpdateETagAndLastModified(resp);
-                ContainerHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, containerAcl);
+                await ContainerHttpResponseParsers.ReadSharedAccessIdentifiersAsync(cmd.ResponseStream, containerAcl, ct).ConfigureAwait(false);
                 this.Properties.PublicAccess = containerAcl.PublicAccess;
-                return Task.FromResult(containerAcl);
+                return containerAcl;
             };
 
             return getCmd;
@@ -1312,9 +1312,9 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ContainerHttpRequestMessageFactory.ListBlobs(uri, serverTimeout, listingContext, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                ListBlobsResponse listBlobsResponse = new ListBlobsResponse(cmd.ResponseStream);
+                ListBlobsResponse listBlobsResponse = await ListBlobsResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
                 List<IListBlobItem> blobList = listBlobsResponse.Blobs.Select(item => this.SelectListBlobItem(item)).ToList();
                 BlobContinuationToken continuationToken = null;
                 if (listBlobsResponse.NextMarker != null)
@@ -1326,10 +1326,10 @@ namespace Microsoft.Azure.Storage.Blob
                     };
                 }
 
-                return Task.FromResult(new ResultSegment<IListBlobItem>(blobList)
+                return new ResultSegment<IListBlobItem>(blobList)
                 {
                     ContinuationToken = continuationToken,
-                });
+                };
             };
 
             return getCmd;

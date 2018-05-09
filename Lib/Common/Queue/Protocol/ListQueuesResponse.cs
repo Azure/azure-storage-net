@@ -5,6 +5,9 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from a queue listing operation.
@@ -14,255 +17,142 @@
 #else
     public
 #endif
- sealed class ListQueuesResponse : ResponseParsingBase<QueueEntry>
+ sealed class ListQueuesResponse
     {
-        /// <summary>
-        /// Stores the container prefix.
-        /// </summary>
-        private string prefix;
-
-        /// <summary>
-        /// Signals when the container prefix can be consumed.
-        /// </summary>
-        private bool prefixConsumable;
-
-        /// <summary>
-        /// Stores the marker.
-        /// </summary>
-        private string marker;
-
-        /// <summary>
-        /// Signals when the marker can be consumed.
-        /// </summary>
-        private bool markerConsumable;
-
-        /// <summary>
-        /// Stores the max results.
-        /// </summary>
-        private int maxResults;
-
-        /// <summary>
-        /// Signals when the max results can be consumed.
-        /// </summary>
-        private bool maxResultsConsumable;
-
-        /// <summary>
-        /// Stores the next marker.
-        /// </summary>
-        private string nextMarker;
-
-        /// <summary>
-        /// Signals when the next marker can be consumed.
-        /// </summary>
-        private bool nextMarkerConsumable;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ListQueuesResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream to be parsed.</param>
-        public ListQueuesResponse(Stream stream)
-            : base(stream)
-        {
-        }
-
-        /// <summary>
-        /// Gets the listing context from the XML response.
-        /// </summary>
-        /// <value>A set of parameters for the listing operation.</value>
-        public ListingContext ListingContext
-        {
-            get
-            {
-                // Force a parsing in order
-                ListingContext listingContext = new ListingContext(this.Prefix, this.MaxResults);
-                listingContext.Marker = this.NextMarker;
-                return listingContext;
-            }
-        }
-
         /// <summary>
         /// Gets an enumerable collection of <see cref="QueueEntry"/> objects from the response.
         /// </summary>
         /// <value>An enumerable collection of <see cref="QueueEntry"/> objects.</value>
-        public IEnumerable<QueueEntry> Queues
-        {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
+        public IEnumerable<QueueEntry> Queues { get; private set; }
 
-        /// <summary>
-        /// Gets the Prefix value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The Prefix value.</value>
-        public string Prefix
-        {
-            get
-            {
-                this.Variable(ref this.prefixConsumable);
-
-                return this.prefix;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Marker value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The Marker value.</value>
-        public string Marker
-        {
-            get
-            {
-                this.Variable(ref this.markerConsumable);
-
-                return this.marker;
-            }
-        }
-
-        /// <summary>
-        /// Gets the MaxResults value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The MaxResults value.</value>
-        public int MaxResults
-        {
-            get
-            {
-                this.Variable(ref this.maxResultsConsumable);
-
-                return this.maxResults;
-            }
-        }
-
-        /// <summary>
+/// <summary>
         /// Gets the NextMarker value from the XML response, if the listing was not complete.
         /// </summary>
         /// <value>The NextMarker value.</value>
-        public string NextMarker
-        {
-            get
-            {
-                this.Variable(ref this.nextMarkerConsumable);
-
-                return this.nextMarker;
-            }
-        }
+        public string NextMarker { get; private set; }
 
         /// <summary>
         /// Parses a queue entry in a queue listing response.
         /// </summary>
         /// <returns>Queue listing entry</returns>
-        private QueueEntry ParseQueueEntry(Uri baseUri)
+        private static async Task<QueueEntry> ParseQueueEntryAsync(XmlReader reader, Uri baseUri, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             string name = null;
             IDictionary<string, string> metadata = null;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
                     switch (reader.Name)
                     {
                         case Constants.NameElement:
-                            name = reader.ReadElementContentAsString();
+                            name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.MetadataElement:
-                            metadata = Response.ParseMetadata(this.reader);
+                            metadata = await Response.ParseMetadataAsync(reader).ConfigureAwait(false);
                             break;
 
                         default:
-                            this.reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
-            if (metadata == null)
-            {
-                metadata = new Dictionary<string, string>();
-            }
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
-            return new QueueEntry(name, NavigationHelper.AppendPathToSingleUri(baseUri, name), metadata);
+            return new QueueEntry(
+                name, 
+                NavigationHelper.AppendPathToSingleUri(baseUri, name), 
+                metadata ?? new Dictionary<string, string>()
+                );
         }
 
         /// <summary>
         /// Parses the response XML for a queue listing operation.
         /// </summary>
         /// <returns>An enumerable collection of <see cref="QueueEntry"/> objects.</returns>
-        protected override IEnumerable<QueueEntry> ParseXml()
+        internal static async Task<ListQueuesResponse> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.EnumerationResultsElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
-                {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    Uri baseUri = new Uri(this.reader.GetAttribute(Constants.ServiceEndpointElement));
+                token.ThrowIfCancellationRequested();
 
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement())
+                List<QueueEntry> entries = new List<QueueEntry>();
+                string nextMarker = default(string);
+
+                if (await reader.ReadToFollowingAsync(Constants.EnumerationResultsElement).ConfigureAwait(false))
+                {
+                    if (reader.IsEmptyElement)
                     {
-                        if (this.reader.IsEmptyElement)
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        Uri baseUri = new Uri(reader.GetAttribute(Constants.ServiceEndpointElement));
+
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                         {
-                            this.reader.Skip();
-                        }
-                        else
-                        {
-                            switch (reader.Name)
+                            token.ThrowIfCancellationRequested();
+
+                            if (reader.IsEmptyElement)
                             {
-                                case Constants.MarkerElement:
-                                    this.marker = reader.ReadElementContentAsString();
-                                    this.markerConsumable = true;
-                                    yield return null;
-                                    break;
+                                await reader.SkipAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                switch (reader.Name)
+                                {
+                                    case Constants.MarkerElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.NextMarkerElement:
-                                    this.nextMarker = reader.ReadElementContentAsString();
-                                    this.nextMarkerConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.NextMarkerElement:
+                                        nextMarker = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.MaxResultsElement:
-                                    this.maxResults = reader.ReadElementContentAsInt();
-                                    this.maxResultsConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.MaxResultsElement:
+                                        await reader.ReadElementContentAsInt32Async().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.PrefixElement:
-                                    this.prefix = reader.ReadElementContentAsString();
-                                    this.prefixConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.PrefixElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.QueuesElement:
-                                    this.reader.ReadStartElement();
-                                    while (this.reader.IsStartElement())
-                                    {
-                                        yield return this.ParseQueueEntry(baseUri);
-                                    }
+                                    case Constants.QueuesElement:
+                                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
+                                        {
+                                            entries.Add(await ParseQueueEntryAsync(reader, baseUri, token).ConfigureAwait(false));
+                                        }
 
-                                    this.reader.ReadEndElement();
-                                    this.allObjectsParsed = true;
-                                    break;
+                                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                                        break;
 
-                                default:
-                                    reader.Skip();
-                                    break;
+                                    default:
+                                        await reader.SkipAsync().ConfigureAwait(false);
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    this.reader.ReadEndElement();
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
                 }
+
+                return new ListQueuesResponse { Queues = entries, NextMarker = nextMarker };
             }
         }
     }

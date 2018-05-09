@@ -20,12 +20,16 @@ namespace Microsoft.Azure.Storage
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Runtime.Serialization.Formatters.Binary;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
     using System.Xml;
 
     [TestClass]
@@ -87,7 +91,7 @@ namespace Microsoft.Azure.Storage
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ExtendedErrorInfoVerifyXml()
+        public async Task ExtendedErrorInfoVerifyXml()
         {
             Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
             CloudBlobClient client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials);
@@ -110,9 +114,9 @@ namespace Microsoft.Azure.Storage
                     e.RequestInformation.ExtendedErrorInformation.WriteXml(writer);
                 }
 
-                using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                 {
-                    retrErrorInfo.ReadXml(reader);
+                    await retrErrorInfo.ReadXmlAsync(reader, CancellationToken.None);
                 }
 
                 Assert.AreEqual(e.RequestInformation.ExtendedErrorInformation.ErrorCode, retrErrorInfo.ErrorCode);
@@ -130,7 +134,7 @@ namespace Microsoft.Azure.Storage
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ExtendedErrorInfoVerifyXmlWithAdditionalDetails()
+        public async Task ExtendedErrorInfoVerifyXmlWithAdditionalDetails()
         {
             Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
             CloudBlobClient client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials);
@@ -172,9 +176,9 @@ namespace Microsoft.Azure.Storage
                         e.RequestInformation.ExtendedErrorInformation.WriteXml(writer);
                     }
 
-                    using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                    using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                     {
-                        retrErrorInfo.ReadXml(reader);
+                        await retrErrorInfo.ReadXmlAsync(reader, CancellationToken.None);
                     }
 
                     Assert.AreEqual(e.RequestInformation.ExtendedErrorInformation.ErrorCode, retrErrorInfo.ErrorCode);
@@ -195,7 +199,7 @@ namespace Microsoft.Azure.Storage
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
-        public void RequestResultVerifyXml()
+        public async Task RequestResultVerifyXml()
         {
             Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
             CloudBlobClient blobClient = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials);
@@ -223,9 +227,9 @@ namespace Microsoft.Azure.Storage
             }
 
             RequestResult retrResult = new RequestResult();
-            using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
             {
-                retrResult.ReadXml(reader);
+                await retrResult.ReadXmlAsync(reader);
             }
 
             Assert.AreEqual(opContext.LastResult.RequestDate, retrResult.RequestDate);
@@ -245,9 +249,9 @@ namespace Microsoft.Azure.Storage
             }
 
             retrResult = new RequestResult();
-            using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
             {
-                retrResult.ReadXml(reader);
+                await retrResult.ReadXmlAsync(reader);
             }
 
             Assert.AreEqual(opContext.LastResult.RequestDate, retrResult.RequestDate);
@@ -266,7 +270,7 @@ namespace Microsoft.Azure.Storage
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
-        public void RequestResultErrorCode()
+        public async Task RequestResultErrorCode()
         {
             Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
             CloudBlobClient client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials);
@@ -312,9 +316,9 @@ namespace Microsoft.Azure.Storage
                         e.RequestInformation.WriteXml(writer);
                     }
 
-                    using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                    using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                     {
-                        requestResult.ReadXml(reader);
+                        await requestResult.ReadXmlAsync(reader);
                     }
 
                     // ExtendedErrorInformation.ErrorCode will be depricated, but it should still match on a non HEAD request
@@ -326,9 +330,9 @@ namespace Microsoft.Azure.Storage
                 CloudAppendBlob blob2 = container.GetAppendBlobReference("blob2");
                 blob2.CreateOrReplace();
                 StorageException e2 = TestHelper.ExpectedException<StorageException>(
-                    () => blob2.FetchAttributes(AccessCondition.GenerateIfMatchCondition("garbage")),
+                    () => blob2.FetchAttributes(AccessCondition.GenerateIfMatchCondition("\"garbage\"")), // must supply our own quotes for a valid etag
                     "Mismatched etag should fail");
-                Assert.AreEqual(e2.RequestInformation.ErrorCode, StorageErrorCodeStrings.ConditionNotMet);
+                    Assert.AreEqual(e2.RequestInformation.ErrorCode, StorageErrorCodeStrings.ConditionNotMet);
 
                 // Verify the ErrorCode property is not set on a successful request and that it is serialized correctly
                 OperationContext ctx = new OperationContext();
@@ -343,9 +347,9 @@ namespace Microsoft.Azure.Storage
                     ctx.RequestResults[0].WriteXml(writer);
                 }
 
-                using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                 {
-                    requestResult.ReadXml(reader);
+                    await requestResult.ReadXmlAsync(reader);
                 }
 
                 Assert.AreEqual(ctx.RequestResults[0].ErrorCode, requestResult.ErrorCode);

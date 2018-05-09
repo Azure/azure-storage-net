@@ -203,7 +203,11 @@ namespace Microsoft.Azure.Storage.Table
                     switch (entityProperty.PropertyType)
                     {
                         case EdmType.String:
-                            if (property.PropertyType != typeof(string))
+                            if (property.PropertyType == typeof(double) || property.PropertyType == typeof(double?))
+                            {
+                                property.SetValue(entity, entityProperty.DoubleValue, null);
+                            }
+                            else if (property.PropertyType != typeof(string))
                             {
                                 continue;
                             }
@@ -743,17 +747,61 @@ namespace Microsoft.Azure.Storage.Table
             }
             else if (property.PropertyType == typeof(double?))
             {
-                return Expression.IfThen(Expression.Equal(Expression.Call(currentEntityProperty, EntityProperty_PropTypeGetter), Expression.Constant(EdmType.Double)),
-                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Call(currentEntityProperty, EntityProperty_DoublePI.FindGetProp())));
+                return
+                    Expression.IfThenElse(
+                        Expression.Equal(Expression.Call(currentEntityProperty, EntityProperty_PropTypeGetter), Expression.Constant(EdmType.String)),
+                        Expression.Switch(
+                            Expression.Call(currentEntityProperty, EntityProperty_StringPI.FindGetProp()),
+                            Expression.SwitchCase(
+                                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Convert(Expression.Constant(double.NaN), typeof(double?))),
+                                Expression.Constant("NaN")
+                                ),
+                            Expression.SwitchCase(
+                                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Convert(Expression.Constant(double.PositiveInfinity), typeof(double?))),
+                                Expression.Constant("Infinity")
+                                ),
+                            Expression.SwitchCase(
+                                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Convert(Expression.Constant(double.NegativeInfinity), typeof(double?))),
+                                Expression.Constant("-Infinity")
+                                )
+                            ),
+                        Expression.IfThen(
+                            Expression.Equal(Expression.Call(currentEntityProperty, EntityProperty_PropTypeGetter), Expression.Constant(EdmType.Double)),
+                            Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Call(currentEntityProperty, EntityProperty_DoublePI.FindGetProp()))
+                            )
+                        );
             }
             else if (property.PropertyType == typeof(double))
             {
                 MethodInfo hasValuePI = typeof(double?).FindProperty("HasValue").FindGetProp();
                 MethodInfo valuePI = typeof(double?).FindProperty("Value").FindGetProp();
 
-                return Expression.IfThen(Expression.Equal(Expression.Call(currentEntityProperty, EntityProperty_PropTypeGetter), Expression.Constant(EdmType.Double)),
-                     Expression.IfThen(Expression.IsTrue(Expression.Call(Expression.Call(currentEntityProperty, EntityProperty_DoublePI.FindGetProp()), hasValuePI)),
-                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Call(Expression.Call(currentEntityProperty, EntityProperty_DoublePI.FindGetProp()), valuePI))));
+                return
+                    Expression.IfThenElse(
+                        Expression.Equal(Expression.Call(currentEntityProperty, EntityProperty_PropTypeGetter), Expression.Constant(EdmType.String)),
+                        Expression.Switch(
+                            Expression.Call(currentEntityProperty, EntityProperty_StringPI.FindGetProp()),
+                            Expression.SwitchCase(
+                                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Constant(double.NaN)),
+                                Expression.Constant("NaN")
+                                ),
+                            Expression.SwitchCase(
+                                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Constant(double.PositiveInfinity)),
+                                Expression.Constant("Infinity")
+                                ),
+                            Expression.SwitchCase(
+                                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Constant(double.NegativeInfinity)),
+                                Expression.Constant("-Infinity")
+                                )
+                            ),
+                        Expression.IfThen(
+                            Expression.Equal(Expression.Call(currentEntityProperty, EntityProperty_PropTypeGetter), Expression.Constant(EdmType.Double)),
+                            Expression.IfThen(
+                                Expression.IsTrue(Expression.Call(Expression.Call(currentEntityProperty, EntityProperty_DoublePI.FindGetProp()), hasValuePI)),
+                                Expression.Call(Expression.Convert(instanceParam, type), property.FindSetProp(), Expression.Call(Expression.Call(currentEntityProperty, EntityProperty_DoublePI.FindGetProp()), valuePI))
+                                )
+                            )
+                        );
             }
             else if (property.PropertyType == typeof(Guid?))
             {

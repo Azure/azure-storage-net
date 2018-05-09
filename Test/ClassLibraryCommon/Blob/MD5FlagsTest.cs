@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -533,9 +534,9 @@ namespace Microsoft.Azure.Storage.Blob
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.SendingRequest += (_, args) =>
             {
-                if (args.Request.ContentLength >= buffer.Length)
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Request.Headers[HttpRequestHeader.ContentMd5];
+                    lastCheckMD5 = HttpRequestParsers.GetContentHeader(args.Request, "Content-MD5");
                     checkCount++;
                 }
             };
@@ -688,9 +689,9 @@ namespace Microsoft.Azure.Storage.Blob
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.SendingRequest += (_, args) =>
             {
-                if (args.Request.ContentLength >= buffer.Length)
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Request.Headers[HttpRequestHeader.ContentMd5];
+                    lastCheckMD5 = HttpRequestParsers.GetContentHeader(args.Request, "Content-MD5");
                     checkCount++;
                 }
             };
@@ -838,9 +839,9 @@ namespace Microsoft.Azure.Storage.Blob
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.ResponseReceived += (_, args) =>
             {
-                if (args.Response.ContentLength >= buffer.Length)
+                if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Response.Headers[HttpResponseHeader.ContentMd5];
+                    lastCheckMD5 = HttpResponseParsers.GetContentMD5(args.Response);
                     checkCount++;
                 }
             };
@@ -877,7 +878,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.AreEqual(md5, lastCheckMD5);
 
                     lastCheckMD5 = "invalid_md5";
-                    blockBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoMD5, opContextWithMD5Check);
+                    blockBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024  + 1, null, optionsWithNoMD5, opContextWithMD5Check);
                     Assert.IsNull(lastCheckMD5);
 
                     StorageException storageEx = TestHelper.ExpectedException<StorageException>(
@@ -933,7 +934,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.IsNull(lastCheckMD5);
 
                     storageEx = TestHelper.ExpectedException<StorageException>(
-                        () => pageBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithMD5, opContextWithMD5Check),
+                        () => pageBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024  + 1, null, optionsWithMD5, opContextWithMD5Check),
                         "Downloading more than 4MB with transactional MD5 should not be supported");
                     Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
 
@@ -986,9 +987,9 @@ namespace Microsoft.Azure.Storage.Blob
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.ResponseReceived += (_, args) =>
             {
-                if (args.Response.ContentLength >= buffer.Length)
+                if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Response.Headers[HttpResponseHeader.ContentMd5];
+                    lastCheckMD5 = HttpResponseParsers.GetContentMD5(args.Response);
                     checkCount++;
                 }
             };
@@ -1044,7 +1045,7 @@ namespace Microsoft.Azure.Storage.Blob
                         Assert.AreEqual(md5, lastCheckMD5);
 
                         lastCheckMD5 = "invalid_md5";
-                        result = blockBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoMD5, opContextWithMD5Check,
+                        result = blockBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 +  1, null, optionsWithNoMD5, opContextWithMD5Check,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();

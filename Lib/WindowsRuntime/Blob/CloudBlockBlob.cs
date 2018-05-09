@@ -31,9 +31,7 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Text;
     using System.Threading.Tasks;
     using System.Threading;
-#if ALL_SERVICES
-    using Microsoft.Azure.Storage.File;
-#endif
+
 #if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -355,14 +353,14 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     StreamDescriptor streamCopyState = new StreamDescriptor();
                     long startPosition = sourceAsStream.Position;
-                    await sourceAsStream.WriteToAsync(Stream.Null, length, null /* maxLength */, true, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await sourceAsStream.WriteToAsync(Stream.Null, this.ServiceClient.BufferManager, length, null /* maxLength */, true, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     sourceAsStream.Position = startPosition;
                     contentMD5 = streamCopyState.Md5;
                 }
                 else
                 {
-                    if (modifiedOptions.UseTransactionalMD5.Value)
-                    {
+                    if (modifiedOptions.UseTransactionalMD5.Value) 
+                    { 
                         throw new ArgumentException(SR.PutBlobNeedsStoreBlobContentMD5, "options");
                     }
                 }
@@ -389,7 +387,7 @@ namespace Microsoft.Azure.Storage.Blob
                     {
                         // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                         // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-                        await sourceAsStream.WriteToAsync(blobStream, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                        await sourceAsStream.WriteToAsync(blobStream, this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
                         await blobStream.CommitAsync().ConfigureAwait(false);
                     }
                 }
@@ -985,7 +983,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     StreamDescriptor streamCopyState = new StreamDescriptor();
                     long startPosition = seekableStream.Position;
-                    await blockDataAsStream.WriteToAsync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await blockDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     seekableStream.Position = startPosition;
 
                     if (requiresContentMD5)
@@ -1422,12 +1420,10 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetBlockList(uri, serverTimeout, this.SnapshotTime, typesOfBlocks, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) =>
             {
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, true);
-                GetBlockListResponse responseParser = new GetBlockListResponse(cmd.ResponseStream);
-                IEnumerable<ListBlockItem> blocks = new List<ListBlockItem>(responseParser.Blocks);
-                return Task.FromResult(blocks);
+                return GetBlockListResponse.ParseAsync(cmd.ResponseStream, ct);
             };
 
             return getCmd;

@@ -97,6 +97,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const int MinLargeBlockSize = (int)(4 * Constants.MB) + 1;
 
         /// <summary>
+        /// The maximum number of retained versions per blob.
+        /// </summary>
+        public const int MaxRetainedVersionsPerBlob = 10;
+
+        /// <summary>
         /// Constant for the max value of MaximumExecutionTime.
         /// </summary>
         public static readonly TimeSpan MaxMaximumExecutionTime = TimeSpan.FromDays(24.0);
@@ -844,10 +849,14 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 
         internal const string OdataTypeString = "@odata.type";
 
-        internal const string EdmDateTime = @"Edm.DateTime";
         internal const string EdmBinary = @"Edm.Binary";
-        internal const string EdmInt64 = @"Edm.Int64";
+        internal const string EdmBoolean = @"Emd.Boolean";
+        internal const string EdmDateTime = @"Edm.DateTime";
+        internal const string EdmDouble = @"Edm.Double";
         internal const string EdmGuid = @"Edm.Guid";
+        internal const string EdmInt32 = @"Edm.Int32";
+        internal const string EdmInt64 = @"Edm.Int64";
+        internal const string EdmString = @"Edm.String";
 
         internal const string BatchBoundaryMarker = @"multipart/mixed; boundary=batch_";
         internal const string ChangesetBoundaryMarker = @"Content-Type: multipart/mixed; boundary=changeset_";
@@ -880,14 +889,12 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                 UserAgentComment = "(Windows Runtime)";
 #elif NETCORE
                 UserAgentComment = "(.NET Core)";
-#else
+#elif WINDOWS_DESKTOP && !NETSTANDARD2_0
                 UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET CLR {0}; {1} {2})", Environment.Version, Environment.OSVersion.Platform, Environment.OSVersion.Version);
-#endif
-#if ALL_SERVICES
-                UserAgent = UserAgentProductName + "/" + UserAgentProductVersion + " " + UserAgentComment;
 #else
-                UserAgent = BuildPackageSpecificUserAgent();
+                UserAgentComment = string.Format(CultureInfo.InvariantCulture, "(.NET Core; {0} {1})", Environment.OSVersion.Platform, Environment.OSVersion.Version);
 #endif
+                UserAgent = UserAgentProductName + "/" + UserAgentProductVersion + " " + UserAgentComment;
             }
 
             /// <summary>
@@ -908,7 +915,8 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "9.0.0-preview";
+            public const string UserAgentProductVersion = "9.2.0-preview";
+
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -1567,6 +1575,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// </summary>
             public const string CopyId = "copyid";
             
+            /// <summary>
+            /// Query component for the permanent delete type.
+            /// </summary>
+            public const string DeleteType = "deletetype";
+
         }
 
         /// <summary>
@@ -1806,17 +1819,5 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// </summary>
             public const string AgentMetadataValue = ".NET " + Constants.HeaderConstants.UserAgentProductVersion;
         }
-
-#if !ALL_SERVICES
-        internal static string BuildPackageSpecificUserAgent()
-        {
-            if (!string.IsNullOrEmpty(OperationContext.StorageVersion))
-            {
-                return HeaderConstants.UserAgentProductName + "/" + HeaderConstants.UserAgentProductVersion + "-" + OperationContext.PackageVersion + HeaderConstants.UserAgentComment;
-            }
-
-            return HeaderConstants.UserAgentProductName + "/" + HeaderConstants.UserAgentProductVersion + " " + HeaderConstants.UserAgentComment;
-        }
-#endif
     }
 }

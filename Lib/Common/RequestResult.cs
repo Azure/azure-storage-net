@@ -25,6 +25,8 @@ namespace Microsoft.Azure.Storage
     using System.Globalization;
     using System.IO;
     using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
     using System.Xml;
 
     /// <summary>
@@ -163,7 +165,7 @@ namespace Microsoft.Azure.Storage
 
             using (XmlReader reader = XmlReader.Create(new StringReader(message)))
             {
-                res.ReadXml(reader);
+                res.ReadXmlAsync(reader).GetAwaiter().GetResult();
             }
 
             return res;
@@ -200,57 +202,57 @@ namespace Microsoft.Azure.Storage
 #else
         public
 #endif
-        void ReadXml(XmlReader reader)
+        async Task ReadXmlAsync(XmlReader reader)
         {
             CommonUtility.AssertNotNull("reader", reader);
 
-            reader.Read();
+            await reader.ReadAsync().ConfigureAwait(false);
 
             if (reader.NodeType == XmlNodeType.Comment)
             {
-                reader.Read();
+                await reader.ReadAsync().ConfigureAwait(false);
             }
 
-            reader.ReadStartElement("RequestResult");
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
 
-            this.HttpStatusCode = int.Parse(CommonUtility.ReadElementAsString("HTTPStatusCode", reader), CultureInfo.InvariantCulture);
-            this.HttpStatusMessage = CommonUtility.ReadElementAsString("HttpStatusMessage", reader);
+            this.HttpStatusCode = int.Parse(await CommonUtility.ReadElementAsStringAsync("HTTPStatusCode", reader).ConfigureAwait(false), CultureInfo.InvariantCulture);
+            this.HttpStatusMessage = await CommonUtility.ReadElementAsStringAsync("HttpStatusMessage", reader).ConfigureAwait(false);
 
             StorageLocation targetLocation;
-            if (Enum.TryParse<StorageLocation>(CommonUtility.ReadElementAsString("TargetLocation", reader), out targetLocation))
+            if (Enum.TryParse<StorageLocation>(await CommonUtility.ReadElementAsStringAsync("TargetLocation", reader).ConfigureAwait(false), out targetLocation))
             {
                 this.TargetLocation = targetLocation;
             }
 
-            this.ServiceRequestID = CommonUtility.ReadElementAsString("ServiceRequestID", reader);
-            this.ContentMd5 = CommonUtility.ReadElementAsString("ContentMd5", reader);
-            this.Etag = CommonUtility.ReadElementAsString("Etag", reader);
-            this.RequestDate = CommonUtility.ReadElementAsString("RequestDate", reader);
+            this.ServiceRequestID = await CommonUtility.ReadElementAsStringAsync("ServiceRequestID", reader).ConfigureAwait(false);
+            this.ContentMd5 = await CommonUtility.ReadElementAsStringAsync("ContentMd5", reader).ConfigureAwait(false);
+            this.Etag = await CommonUtility.ReadElementAsStringAsync("Etag", reader).ConfigureAwait(false);
+            this.RequestDate = await CommonUtility.ReadElementAsStringAsync("RequestDate", reader).ConfigureAwait(false);
             try
             {
-                this.ErrorCode = CommonUtility.ReadElementAsString("ErrorCode", reader);
+                this.ErrorCode = await CommonUtility.ReadElementAsStringAsync("ErrorCode", reader).ConfigureAwait(false);
             }
             catch (XmlException)
-            { 
+            {
                 /* The ErrorCode property only exists after service version 07-17. 
                  * If it is not present, we are reading an old version and can ignore this property.
                  */
             }
 #if WINDOWS_RT || NETCORE
-            this.StartTime = DateTimeOffset.Parse(CommonUtility.ReadElementAsString("StartTime", reader), CultureInfo.InvariantCulture);
-            this.EndTime = DateTimeOffset.Parse(CommonUtility.ReadElementAsString("EndTime", reader), CultureInfo.InvariantCulture);
+            this.StartTime = DateTimeOffset.Parse(await CommonUtility.ReadElementAsStringAsync("StartTime", reader).ConfigureAwait(false), CultureInfo.InvariantCulture);
+            this.EndTime = DateTimeOffset.Parse(await CommonUtility.ReadElementAsStringAsync("EndTime", reader).ConfigureAwait(false), CultureInfo.InvariantCulture);
 #else
-            this.StartTime = DateTime.Parse(CommonUtility.ReadElementAsString("StartTime", reader), CultureInfo.InvariantCulture);
-            this.EndTime = DateTime.Parse(CommonUtility.ReadElementAsString("EndTime", reader), CultureInfo.InvariantCulture);
+            this.StartTime = DateTime.Parse(await CommonUtility.ReadElementAsStringAsync("StartTime", reader).ConfigureAwait(false), CultureInfo.InvariantCulture);
+            this.EndTime = DateTime.Parse(await CommonUtility.ReadElementAsStringAsync("EndTime", reader).ConfigureAwait(false), CultureInfo.InvariantCulture);
 #endif
             this.ExtendedErrorInformation = new StorageExtendedErrorInformation();
-            this.ExtendedErrorInformation.ReadXml(reader);
+            await this.ExtendedErrorInformation.ReadXmlAsync(reader, CancellationToken.None).ConfigureAwait(false);
 
 #if WINDOWS_RT || NETCORE
-            this.ExceptionInfo = ExceptionInfo.ReadFromXMLReader(reader);
+            this.ExceptionInfo = await ExceptionInfo.ReadFromXMLReaderAsync(reader).ConfigureAwait(false);
 #endif
             // End request Result
-            reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
         }
 
         /// <summary>

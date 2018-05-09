@@ -16,8 +16,12 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#if !(NETCOREAPP2_0)
 using Microsoft.Azure.Test.Network;
 using Microsoft.Azure.Test.Network.Behaviors;
+#endif
+
 using System.IO;
 using System.Threading;
 
@@ -87,9 +91,10 @@ namespace Microsoft.Azure.Storage.Blob
                             }
                             catch (StorageException ex)
                             {
-                                Assert.AreEqual(ex.Message, "Operation was canceled by user.");
+                                Assert.AreEqual("The operation was canceled.", ex.Message);
                                 Assert.AreEqual(ex.RequestInformation.HttpStatusCode, 306);
-                                Assert.AreEqual(ex.RequestInformation.HttpStatusMessage, "Unused");
+                                //TODO: HttpClient clean up: "Unused or null"?
+                                Assert.AreEqual(ex.RequestInformation.HttpStatusMessage, null);
                             }
                             TestHelper.AssertNAttempts(operationContext, 1);
                         }
@@ -134,9 +139,9 @@ namespace Microsoft.Azure.Storage.Blob
                         }
                         catch (StorageException ex)
                         {
-                            Assert.AreEqual(ex.Message, "Operation was canceled by user.");
+                            Assert.AreEqual(ex.Message, "A task was canceled.");
                             Assert.AreEqual(ex.RequestInformation.HttpStatusCode, 306);
-                            Assert.AreEqual(ex.RequestInformation.HttpStatusMessage, "Unused");
+                            Assert.AreEqual(ex.RequestInformation.HttpStatusMessage, null);
                         }
 
                         TestHelper.AssertNAttempts(operationContext, 1);
@@ -149,6 +154,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
+#if !(NETCOREAPP2_0)
         [TestMethod]
         [Description("Create a container with metadata")]
         [TestCategory(ComponentCategory.Blob)]
@@ -173,5 +179,6 @@ namespace Microsoft.Azure.Storage.Blob
                 container.DeleteIfExists();
             }
         }
+#endif
     }
 }

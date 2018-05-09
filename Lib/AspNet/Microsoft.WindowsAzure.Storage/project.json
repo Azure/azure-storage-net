@@ -1,5 +1,5 @@
 {
-    "version": "9.0.0.0",
+    "version": "9.1.1.0",
 
     "authors": [ "Microsoft Corporation" ],
     "description": "Azure Storage SDK for NetCore",
@@ -11,7 +11,12 @@
         "netstandard1.3": {
             "dependencies": {
                 "NETStandard.Library": "1.6.1"
+<<<<<<< HEAD
             }
+=======
+            },
+            "imports": "dnxcore50" 
+>>>>>>> ea7d0914016bd6ad5dca15535dbd7eac6bca8b78
         }
 
     },
@@ -22,6 +27,7 @@
         "warningsAsErrors": true,
         "delaySign": true,
         "keyFile": "MSSharedLibKey.snk",
+<<<<<<< HEAD
       "compile": {
         "include" :
         [
@@ -65,4 +71,32 @@
         ]
       }
       }
+=======
+      "compile": [
+        "**/*.cs",
+
+        "../../Common/*.cs",
+        "../../Common/Shared/**/*.cs",
+        "../../Common/Auth/**/*.cs",
+        "../../Common/Core/**/*.cs",
+        "../../Common/RetryPolicies/**/*.cs",
+        "../../Common/Blob/**/*.cs",
+        "../../Common/File/**/*.cs",
+        "../../Common/Queue/**/*.cs",
+        "../../Common/Table/*.cs",
+        "../../Common/Table/Protocol/*.cs",
+
+        "../../WindowsRuntime/*.cs",
+        "../../WindowsRuntime/Auth/**/*.cs",
+        "../../WindowsRuntime/Blob/Protocol/*.cs",
+        "../../WindowsRuntime/Blob/*.cs",
+        "../../WindowsRuntime/Core/**/*.cs",
+        "../../WindowsRuntime/Shared/**/*.cs",
+        "../../WindowsRuntime/Queue/*.cs",
+        "../../WindowsRuntime/Queue/Protocol/*.cs",
+        "../../WindowsRuntime/File/*.cs",
+        "../../WindowsRuntime/File/Protocol/*.cs"
+      ]
+    }
+>>>>>>> ea7d0914016bd6ad5dca15535dbd7eac6bca8b78
 }

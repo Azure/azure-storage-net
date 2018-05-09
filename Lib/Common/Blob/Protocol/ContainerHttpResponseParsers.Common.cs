@@ -17,13 +17,13 @@
 
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage.Core;
+
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
-    using System;
     using System.Diagnostics.CodeAnalysis;
-    using System.Globalization;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
 #if WINDOWS_RT
     internal
@@ -37,11 +37,11 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="inputStream">The stream of XML policies.</param>
         /// <param name="permissions">The permissions object to which the policies are to be written.</param>
-        public static void ReadSharedAccessIdentifiers(Stream inputStream, BlobContainerPermissions permissions)
+        public static Task ReadSharedAccessIdentifiersAsync(Stream inputStream, BlobContainerPermissions permissions, CancellationToken token)
         {
             CommonUtility.AssertNotNull("permissions", permissions);
 
-            Response.ReadSharedAccessIdentifiers(permissions.SharedAccessPolicies, new BlobAccessPolicyResponse(inputStream));
+            return Response.ReadSharedAccessIdentifiersAsync(permissions.SharedAccessPolicies, new BlobAccessPolicyResponse(inputStream), token);
         }
 
         /// <summary>

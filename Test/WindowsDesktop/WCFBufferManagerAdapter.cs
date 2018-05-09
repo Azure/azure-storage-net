@@ -15,8 +15,8 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using System.ServiceModel.Channels;
 using System.Threading;
+using System.ServiceModel.Channels;
 
 namespace Microsoft.Azure.Storage
 {

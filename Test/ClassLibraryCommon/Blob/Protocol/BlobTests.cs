@@ -22,6 +22,7 @@ using Microsoft.Azure.Storage.Core.Auth;
 using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -29,7 +30,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     internal class BlobTests
     {
-        public static HttpWebRequest PutBlobRequest(BlobContext context, string containerName, string blobName,
+        public static HttpRequestMessage PutBlobRequest(BlobContext context, string containerName, string blobName,
             BlobProperties properties, BlobType blobType, byte[] content, long pageBlobSize, AccessCondition accessCondition)
         {
             bool valid = BlobTests.ContainerNameValidator(containerName) &&
@@ -40,11 +41,11 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             bool fatal = !BlobTests.PutPropertiesValidator(properties);
 
             Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
             try
             {
-                request = BlobHttpWebRequestFactory.Put(uri, context.Timeout, properties, blobType, pageBlobSize, accessCondition, opContext);
+                request = BlobHttpRequestMessageFactory.Put(uri, context.Timeout, properties, blobType, pageBlobSize, null, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
                 if (fatal)
                 {
                     Assert.Fail();
@@ -61,7 +62,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             {
                 Assert.IsNotNull(request);
                 Assert.IsNotNull(request.Method);
-                Assert.AreEqual("PUT", request.Method);
+                Assert.AreEqual(HttpMethod.Put, request.Method);
                 BlobTestUtils.VersionHeader(request, false);
                 BlobTestUtils.ContentTypeHeader(request, null);
                 BlobTestUtils.ContentDispositionHeader(request, properties.ContentDisposition);
@@ -75,12 +76,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             return request;
         }
 
-        public static void PutBlobResponse(HttpWebResponse response, BlobContext context, HttpStatusCode? expectedError)
+        public static void PutBlobResponse(HttpResponseMessage response, BlobContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ETagHeader(response);
                 BlobTestUtils.LastModifiedHeader(response);
                 BlobTestUtils.ContentMd5Header(response);
@@ -89,23 +90,23 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
-            response.Close();
+            response.Dispose();
         }
 
-        public static HttpWebRequest GetBlobRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
+        public static HttpRequestMessage GetBlobRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
         {
             bool valid = BlobTests.ContainerNameValidator(containerName) &&
                 BlobTests.BlobNameValidator(blobName) &&
                 BlobTests.LeaseIdValidator(accessCondition);
 
             Uri uri = BlobTests.ConstructGetUri(context.Address, containerName, blobName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
             try
             {
-                request = BlobHttpWebRequestFactory.Get(uri, context.Timeout, null /* snapshot */, accessCondition, opContext);
+                request = BlobHttpRequestMessageFactory.Get(uri, context.Timeout, null /* snapshot */, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             }
             catch (InvalidOperationException)
             {
@@ -118,14 +119,14 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             {
                 Assert.IsNotNull(request);
                 Assert.IsNotNull(request.Method);
-                Assert.AreEqual("GET", request.Method);
+                Assert.AreEqual(HttpMethod.Get, request.Method);
                 BlobTestUtils.RangeHeader(request, null);
                 BlobTestUtils.LeaseIdHeader(request, accessCondition == null ? null : accessCondition.LeaseId);
             }
             return request;
         }
 
-        public static void GetBlobResponse(HttpWebResponse response, BlobContext context, BlobProperties properties, byte[] content, HttpStatusCode? expectedError)
+        public static void GetBlobResponse(HttpResponseMessage response, BlobContext context, BlobProperties properties, byte[] content, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
@@ -139,9 +140,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
-            response.Close();
+            response.Dispose();
         }
 
         /// <summary>
@@ -154,19 +155,19 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="count">The number of elements in the range.</param>
         /// <param name="leaseId">The lease ID, or null if the blob is not leased.</param>
         /// <returns>A web request for getting a blob range.</returns>
-        public static HttpWebRequest GetBlobRangeRequest(BlobContext context, string containerName, string blobName, long offset, long? count, AccessCondition accessCondition)
+        public static HttpRequestMessage GetBlobRangeRequest(BlobContext context, string containerName, string blobName, long offset, long? count, AccessCondition accessCondition)
         {
             bool valid = BlobTests.ContainerNameValidator(containerName) &&
                 BlobTests.BlobNameValidator(blobName) &&
                 BlobTests.LeaseIdValidator(accessCondition);
 
             Uri uri = BlobTests.ConstructGetUri(context.Address, containerName, blobName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
 
             try
             {
-                request = BlobHttpWebRequestFactory.Get(uri, context.Timeout, null /* snapshot */, offset, count, false, accessCondition, opContext);
+                request = BlobHttpRequestMessageFactory.Get(uri, context.Timeout, null /* snapshot */, offset, count, false, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             }
             catch (InvalidOperationException)
             {
@@ -180,7 +181,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             {
                 Assert.IsNotNull(request);
                 Assert.IsNotNull(request.Method);
-                Assert.AreEqual("GET", request.Method);
+                Assert.AreEqual(HttpMethod.Get, request.Method);
                 BlobTestUtils.RangeHeader(request, offset, count.HasValue ? (long?)(count.Value + offset - 1) : null);
                 BlobTestUtils.LeaseIdHeader(request, accessCondition == null ? null : accessCondition.LeaseId);
             }
@@ -199,7 +200,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="expectedTotalBytes">The expected total number of bytes in the blob.</param>
         /// <param name="expectedError">The expected error code, or null if the operation is expected to succeed.</param>
         public static void CheckBlobRangeResponse(
-            HttpWebResponse response,
+            HttpResponseMessage response,
             BlobContext context,
             byte[] content,
             long expectedStartRange,
@@ -221,74 +222,74 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
 
-            response.Close();
+            response.Dispose();
         }
 
-        public static HttpWebRequest PutBlockRequest(BlobContext context, string containerName, string blobName, string blockId, AccessCondition accessCondition)
+        public static HttpRequestMessage PutBlockRequest(BlobContext context, string containerName, string blobName, string blockId, AccessCondition accessCondition)
         {
             Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
-            request = BlobHttpWebRequestFactory.PutBlock(uri, context.Timeout, blockId, accessCondition, opContext);
+            request = BlobHttpRequestMessageFactory.PutBlock(uri, context.Timeout, blockId, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.ContentLanguageHeader(request, null);
             BlobTestUtils.ContentMd5Header(request, null);
             return request;
         }
 
-        public static void PutBlockResponse(HttpWebResponse response, BlobContext context, HttpStatusCode? expectedError)
+        public static void PutBlockResponse(HttpResponseMessage response, BlobContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ContentMd5Header(response);
                 BlobTestUtils.RequestIdHeader(response);
                 BlobTestUtils.ContentLengthHeader(response, -1);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
-            response.Close();
+            response.Dispose();
         }
 
-        public static HttpWebRequest PutBlockListRequest(BlobContext context, string containerName, string blobName, BlobProperties blobProperties, AccessCondition accessCondition)
+        public static HttpRequestMessage PutBlockListRequest(BlobContext context, string containerName, string blobName, BlobProperties blobProperties, AccessCondition accessCondition)
         {
             Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
-            request = BlobHttpWebRequestFactory.PutBlockList(uri, context.Timeout, blobProperties, accessCondition, opContext);
+            request = BlobHttpRequestMessageFactory.PutBlockList(uri, context.Timeout, blobProperties, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.ContentLanguageHeader(request, null);
             BlobTestUtils.ContentMd5Header(request, null);
             return request;
         }
 
-        public static void PutBlockListResponse(HttpWebResponse response, BlobContext context, HttpStatusCode? expectedError)
+        public static void PutBlockListResponse(HttpResponseMessage response, BlobContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ContentMd5Header(response);
                 BlobTestUtils.RequestIdHeader(response);
                 BlobTestUtils.ContentLengthHeader(response, -1);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
-            response.Close();
+            response.Dispose();
         }
 
         /// <summary>
@@ -300,40 +301,46 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="leaseDuration">The lease duration.</param>
         /// <param name="proposedLeaseId">The proposed lease ID.</param>
         /// <returns>A web request for the operation.</returns>
-        public static HttpWebRequest AcquireLeaseRequest(BlobContext context, string containerName, string blobName, int leaseDuration, string proposedLeaseId, AccessCondition accessCondition)
+        public static HttpRequestMessage AcquireLeaseRequest(BlobContext context, string containerName, string blobName, int leaseDuration, string proposedLeaseId, AccessCondition accessCondition)
         {
-            HttpWebRequest request;
+            HttpRequestMessage request;
             OperationContext opContext = new OperationContext();
             if (blobName != null)
             {
                 // blob lease
                 Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-                request = BlobHttpWebRequestFactory.Lease(
+                request = BlobHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Acquire,
                     proposedLeaseId,
                     leaseDuration,
                     null /* break period */,
-                    accessCondition,
-                    opContext);
+                    null,
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             }
             else
             {
                 // container lease
                 Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
-                request = ContainerHttpWebRequestFactory.Lease(
+                request = ContainerHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Acquire,
                     proposedLeaseId,
                     leaseDuration,
                     null /* break period */,
-                    accessCondition,
-                    opContext);
+                    null,
+                    null,
+                    opContext, 
+                    SharedKeyCanonicalizer.Instance, 
+                    context.Credentials);
             }
             Assert.IsNotNull(request);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.LeaseIdHeader(request, null);
             BlobTestUtils.LeaseActionHeader(request, "acquire");
@@ -349,12 +356,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="response">The response to validate.</param>
         /// <param name="expectedLeaseId">The expected lease ID.</param>
         /// <param name="expectedError">The error status code to expect.</param>
-        public static void AcquireLeaseResponse(HttpWebResponse response, string expectedLeaseId, HttpStatusCode? expectedError)
+        public static void AcquireLeaseResponse(HttpResponseMessage response, string expectedLeaseId, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
 
                 if (expectedLeaseId != null)
                 {
@@ -370,7 +377,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
@@ -382,15 +389,15 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="blobName">The blob name.</param>
         /// <param name="leaseID">The lease ID.</param>
         /// <returns>A web request for the operation.</returns>
-        public static HttpWebRequest RenewLeaseRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
+        public static HttpRequestMessage RenewLeaseRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
         {
-            HttpWebRequest request;
+            HttpRequestMessage request;
             OperationContext opContext = new OperationContext();
             if (blobName != null)
             {
                 // blob lease
                 Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-                request = BlobHttpWebRequestFactory.Lease(
+                request = BlobHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Renew,
@@ -398,13 +405,16 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     null /* lease duration */,
                     null /* break period */,
                     accessCondition,
-                    opContext);
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance, 
+                    context.Credentials);
             }
             else
             {
                 // container lease
                 Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
-                request = ContainerHttpWebRequestFactory.Lease(
+                request = ContainerHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Renew,
@@ -412,10 +422,13 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     null /* lease duration */,
                     null /* break period */,
                     accessCondition,
-                    opContext);
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance, 
+                    context.Credentials);
             }
             Assert.IsNotNull(request);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.LeaseIdHeader(request, accessCondition == null ? null : accessCondition.LeaseId);
             BlobTestUtils.LeaseActionHeader(request, "renew");
@@ -431,12 +444,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="response">The response to validate.</param>
         /// <param name="expectedLeaseId">The expected lease ID.</param>
         /// <param name="expectedError">The error status code to expect.</param>
-        public static void RenewLeaseResponse(HttpWebResponse response, string expectedLeaseId, HttpStatusCode? expectedError)
+        public static void RenewLeaseResponse(HttpResponseMessage response, string expectedLeaseId, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
 
                 if (expectedLeaseId != null)
                 {
@@ -452,7 +465,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
@@ -465,15 +478,15 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="leaseID">The lease ID.</param>
         /// <param name="proposedLeaseId">The proposed lease ID.</param>
         /// <returns>A web request for the operation.</returns>
-        public static HttpWebRequest ChangeLeaseRequest(BlobContext context, string containerName, string blobName, string proposedLeaseId, AccessCondition accessCondition)
+        public static HttpRequestMessage ChangeLeaseRequest(BlobContext context, string containerName, string blobName, string proposedLeaseId, AccessCondition accessCondition)
         {
-            HttpWebRequest request;
+            HttpRequestMessage request;
             OperationContext opContext = new OperationContext();
             if (blobName != null)
             {
                 // blob lease
                 Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-                request = BlobHttpWebRequestFactory.Lease(
+                request = BlobHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Change,
@@ -481,24 +494,30 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     null /* lease duration */,
                     null /* break period */,
                     accessCondition,
-                    opContext);
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance, 
+                    context.Credentials);
             }
             else
             {
                 // container lease
                 Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
-                request = ContainerHttpWebRequestFactory.Lease(
+                request = ContainerHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Change,
                     proposedLeaseId,
                     null /* lease duration */,
                     null /* break period */,
-                    accessCondition,
-                    opContext);
+                    null,
+                    null,
+                    opContext, 
+                    SharedKeyCanonicalizer.Instance, 
+                    context.Credentials);
             }
             Assert.IsNotNull(request);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.LeaseIdHeader(request, accessCondition == null ? null : accessCondition.LeaseId);
             BlobTestUtils.LeaseActionHeader(request, "change");
@@ -514,12 +533,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="response">The response to validate.</param>
         /// <param name="expectedLeaseId">The expected lease ID.</param>
         /// <param name="expectedError">The error status code to expect.</param>
-        public static void ChangeLeaseResponse(HttpWebResponse response, string expectedLeaseId, HttpStatusCode? expectedError)
+        public static void ChangeLeaseResponse(HttpResponseMessage response, string expectedLeaseId, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
 
                 if (expectedLeaseId != null)
                 {
@@ -535,7 +554,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
@@ -547,15 +566,15 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="blobName">The blob name.</param>
         /// <param name="leaseID">The lease ID.</param>
         /// <returns>A web request for the operation.</returns>
-        public static HttpWebRequest ReleaseLeaseRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
+        public static HttpRequestMessage ReleaseLeaseRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
         {
-            HttpWebRequest request;
+            HttpRequestMessage request;
             OperationContext opContext = new OperationContext();
             if (blobName != null)
             {
                 // blob lease
                 Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-                request = BlobHttpWebRequestFactory.Lease(
+                request = BlobHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Release,
@@ -563,13 +582,16 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     null /* lease duration */,
                     null /* break period */,
                     accessCondition,
-                    opContext);
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             }
             else
             {
                 // container lease
                 Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
-                request = ContainerHttpWebRequestFactory.Lease(
+                request = ContainerHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Release,
@@ -577,10 +599,13 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     null /* lease duration */,
                     null /* break period */,
                     accessCondition,
-                    opContext);
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             }
             Assert.IsNotNull(request);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.LeaseIdHeader(request, accessCondition == null ? null : accessCondition.LeaseId);
             BlobTestUtils.LeaseActionHeader(request, "release");
@@ -595,19 +620,19 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="response">The response to validate.</param>
         /// <param name="expectedError">The error status code to expect.</param>
-        public static void ReleaseLeaseResponse(HttpWebResponse response, HttpStatusCode? expectedError)
+        public static void ReleaseLeaseResponse(HttpResponseMessage response, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.LeaseIdHeader(response, null);
                 BlobTestUtils.LeaseTimeHeader(response, null, null);
                 BlobTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
@@ -619,15 +644,15 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="blobName">The blob name.</param>
         /// <param name="breakPeriod">The break period.</param>
         /// <returns>A web request for the operation.</returns>
-        public static HttpWebRequest BreakLeaseRequest(BlobContext context, string containerName, string blobName, int? breakPeriod, AccessCondition accessCondition)
+        public static HttpRequestMessage BreakLeaseRequest(BlobContext context, string containerName, string blobName, int? breakPeriod, AccessCondition accessCondition)
         {
-            HttpWebRequest request;
+            HttpRequestMessage request;
             OperationContext opContext = new OperationContext();
             if (blobName != null)
             {
                 // blob lease
                 Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
-                request = BlobHttpWebRequestFactory.Lease(
+                request = BlobHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Break,
@@ -635,13 +660,16 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     null /* lease duration */,
                     breakPeriod,
                     accessCondition,
-                    opContext);
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             }
             else
             {
                 // container lease
                 Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
-                request = ContainerHttpWebRequestFactory.Lease(
+                request = ContainerHttpRequestMessageFactory.Lease(
                     uri,
                     context.Timeout,
                     LeaseAction.Break,
@@ -649,10 +677,13 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     null /* lease duration */,
                     breakPeriod,
                     accessCondition,
-                    opContext);
+                    null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             }
             Assert.IsNotNull(request);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.LeaseIdHeader(request, null);
             BlobTestUtils.LeaseActionHeader(request, "break");
@@ -669,142 +700,160 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="expectedLeaseTime">The expected remaining lease time.</param>
         /// <param name="errorMargin">The error margin on the expected remaining lease time.</param>
         /// <param name="expectedError">The error status code to expect.</param>
-        public static void BreakLeaseResponse(HttpWebResponse response, int expectedLeaseTime, int errorMargin, HttpStatusCode? expectedError)
+        public static void BreakLeaseResponse(HttpResponseMessage response, int expectedLeaseTime, int errorMargin, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.Accepted, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.Accepted, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.LeaseIdHeader(response, null);
                 BlobTestUtils.LeaseTimeHeader(response, expectedLeaseTime, errorMargin);
                 BlobTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
-        public static HttpWebRequest CreateContainerRequest(BlobContext context, string containerName)
+        public static HttpRequestMessage CreateContainerRequest(BlobContext context, string containerName)
         {
             Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ContainerHttpWebRequestFactory.Create(uri, context.Timeout, opContext);
+            HttpRequestMessage request = ContainerHttpRequestMessageFactory.Create(uri, context.Timeout, null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             BlobTestUtils.RangeHeader(request, null);
             BlobTestUtils.LeaseIdHeader(request, null);
             return request;
         }
 
-        public static HttpWebRequest DeleteContainerRequest(BlobContext context, string containerName, AccessCondition accessCondition)
+        public static HttpRequestMessage DeleteContainerRequest(BlobContext context, string containerName, AccessCondition accessCondition)
         {
             Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ContainerHttpWebRequestFactory.Delete(uri, context.Timeout, accessCondition, opContext);
+            HttpRequestMessage request = ContainerHttpRequestMessageFactory.Delete(uri, context.Timeout, accessCondition, null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("DELETE", request.Method);
+            Assert.AreEqual(HttpMethod.Delete, request.Method);
             BlobTestUtils.RangeHeader(request, null);
             BlobTestUtils.LeaseIdHeader(request, null);
             return request;
         }
 
-        public static HttpWebRequest DeleteBlobRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
+        public static HttpRequestMessage DeleteBlobRequest(BlobContext context, string containerName, string blobName, AccessCondition accessCondition)
         {
             Uri uri = BlobClientTests.ConstructUri(context.Address, containerName, blobName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = BlobHttpWebRequestFactory.Delete(uri, context.Timeout, null /* snapshot */, DeleteSnapshotsOption.None, accessCondition, true, opContext);
+            HttpRequestMessage request = BlobHttpRequestMessageFactory.Delete(uri, context.Timeout, null /* snapshot */, DeleteSnapshotsOption.None, accessCondition, null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("DELETE", request.Method);
+            Assert.AreEqual(HttpMethod.Delete, request.Method);
             BlobTestUtils.RangeHeader(request, null);
             BlobTestUtils.LeaseIdHeader(request, null);
             return request;
         }
 
-        public static HttpWebRequest ListBlobsRequest(BlobContext context, string containerName, BlobListingContext listingContext)
+        public static HttpRequestMessage ListBlobsRequest(BlobContext context, string containerName, BlobListingContext listingContext)
         {
             Uri uri = BlobClientTests.ConstructUri(context.Address, containerName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ContainerHttpWebRequestFactory.ListBlobs(uri, context.Timeout, listingContext, opContext);
+            HttpRequestMessage request = ContainerHttpRequestMessageFactory.ListBlobs(uri, context.Timeout, listingContext, null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("GET", request.Method);
+            Assert.AreEqual(HttpMethod.Get, request.Method);
             BlobTestUtils.RangeHeader(request, null);
             BlobTestUtils.LeaseIdHeader(request, null);
             return request;
         }
 
-        public static void ListBlobsResponse(HttpWebResponse response, BlobContext context, HttpStatusCode? expectedError)
+        public static void ListBlobsResponse(HttpResponseMessage response, BlobContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ContentTypeHeader(response, "application/xml");
                 BlobTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
-        public static HttpWebRequest ListContainersRequest(BlobContext context, ListingContext listingContext)
+        public static HttpRequestMessage ListContainersRequest(BlobContext context, ListingContext listingContext)
         {
             Uri uri = BlobClientTests.ConstructUri(context.Address);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ContainerHttpWebRequestFactory.List(uri, context.Timeout, listingContext, ContainerListingDetails.Metadata, opContext);
+            HttpRequestMessage request = ContainerHttpRequestMessageFactory.List(uri, context.Timeout, listingContext, ContainerListingDetails.Metadata, null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance,
+                    context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("GET", request.Method);
+            Assert.AreEqual(HttpMethod.Get, request.Method);
             BlobTestUtils.RangeHeader(request, null);
             BlobTestUtils.LeaseIdHeader(request, null);
             return request;
         }
 
-        public static void ListContainersResponse(HttpWebResponse response, BlobContext context, HttpStatusCode? expectedError)
+        public static void ListContainersResponse(HttpResponseMessage response, BlobContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ContentTypeHeader(response, "application/xml");
                 BlobTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
-        public static HttpWebRequest GetBlockListRequest(BlobContext context, string containerName, string blobName, BlockListingFilter typesOfBlocks, AccessCondition accessCondition)
+        public static HttpRequestMessage GetBlockListRequest(BlobContext context, string containerName, string blobName, BlockListingFilter typesOfBlocks, AccessCondition accessCondition)
         {
             Uri uri = BlobClientTests.ConstructUri(context.Address, containerName, blobName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = BlobHttpWebRequestFactory.GetBlockList(uri, context.Timeout, null /* snapshot */, typesOfBlocks, accessCondition, opContext);
+            HttpRequestMessage request = BlobHttpRequestMessageFactory.GetBlockList(uri, context.Timeout, null /* snapshot */, typesOfBlocks, accessCondition, null,
+                    opContext,
+                    SharedKeyCanonicalizer.Instance, 
+                    context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("GET", request.Method);
+            Assert.AreEqual(HttpMethod.Get, request.Method);
             BlobTestUtils.RangeHeader(request, null);
             BlobTestUtils.LeaseIdHeader(request, null);
             return request;
         }
 
-        public static void GetBlockListResponse(HttpWebResponse response, BlobContext context, HttpStatusCode? expectedError)
+        public static void GetBlockListResponse(HttpResponseMessage response, BlobContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ContentTypeHeader(response, "application/xml");
                 BlobTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
@@ -836,22 +885,6 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             return uri;
         }
 
-        public static void SignRequest(HttpWebRequest request, BlobContext context)
-        {
-            Assert.IsNotNull(request);
-            Assert.IsNotNull(context);
-
-            OperationContext opContext = new OperationContext();
-            SharedKeyAuthenticationHandler handler = new SharedKeyAuthenticationHandler(
-                SharedKeyCanonicalizer.Instance,
-                context.Credentials,
-                context.Account);
-            handler.SignRequest(request, opContext);
-
-            BlobTestUtils.AuthorizationHeader(request, true, context.Account);
-            BlobTestUtils.DateHeader(request, true);
-        }
-
         public static bool ContainerNameValidator(string name)
         {
             Regex nameRegex = new Regex(@"^([a-z0-9]|((?<=[a-z0-9])-(?=[a-z0-9]))){3,63}$");
@@ -881,7 +914,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             return true;
         }
 
-        public static void AcquireAndReleaseLeaseTest(BlobContext context, string containerName, string blobName)
+        public async static void AcquireAndReleaseLeaseTest(BlobContext context, string containerName, string blobName)
         {
             CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(context.Account, context.Key), false);
             CloudBlobClient client = new CloudBlobClient(new Uri(context.Address), account.Credentials);
@@ -892,7 +925,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             // acquire a release on the blob and check LeaseStatus to be "locked"
             OperationContext opContext = new OperationContext();
-            HttpWebRequest blobRequest = BlobHttpWebRequestFactory.Lease(
+            HttpRequestMessage blobRequest = BlobHttpRequestMessageFactory.Lease(
                 blob.Uri,
                 context.Timeout,
                 LeaseAction.Acquire,
@@ -900,12 +933,15 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 60 /* lease duration */,
                 null /* break period */,
                 null /* access condition */,
-                opContext);
-            BlobTests.SignRequest(blobRequest, context);
+                null,
+                opContext,
+                SharedKeyCanonicalizer.Instance,
+                context.Credentials);
+
             string leaseId = null;
-            using (HttpWebResponse response = (HttpWebResponse)blobRequest.GetResponse())
+            using (HttpResponseMessage response = await BlobTestUtils.GetResponse(blobRequest, context))
             {
-                leaseId = response.Headers["x-ms-lease-id"];
+                leaseId = HttpResponseParsers.GetHeader(response, "x-ms-lease-id");
                 Assert.AreEqual<HttpStatusCode>(response.StatusCode, HttpStatusCode.Created);
             }
 
@@ -914,7 +950,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             // release the release on the blob and check LeaseStatus to be "unlocked"
             opContext = new OperationContext();
-            blobRequest = BlobHttpWebRequestFactory.Lease(
+            blobRequest = BlobHttpRequestMessageFactory.Lease(
                 blob.Uri,
                 context.Timeout,
                 LeaseAction.Release,
@@ -922,9 +958,11 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 null /* lease duration */,
                 null /* break period */,
                 AccessCondition.GenerateLeaseCondition(leaseId),
-                opContext);
-            BlobTests.SignRequest(blobRequest, context);
-            using (HttpWebResponse response = (HttpWebResponse)blobRequest.GetResponse())
+                null,
+                opContext,
+                SharedKeyCanonicalizer.Instance,
+                context.Credentials);
+            using (HttpResponseMessage response = await BlobTestUtils.GetResponse(blobRequest, context))
             {
                 Assert.AreEqual<HttpStatusCode>(response.StatusCode, HttpStatusCode.OK);
             }

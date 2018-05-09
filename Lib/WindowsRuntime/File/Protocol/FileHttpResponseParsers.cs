@@ -17,10 +17,6 @@
 
 namespace Microsoft.Azure.Storage.File.Protocol
 {
-#if ALL_SERVICES
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.Blob.Protocol;
-#endif
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;

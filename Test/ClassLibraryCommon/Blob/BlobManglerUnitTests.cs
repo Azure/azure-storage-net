@@ -15,6 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if !(NETCOREAPP2_0)
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Test.Network;
 using Microsoft.Azure.Test.Network.Behaviors;
@@ -292,3 +293,4 @@ namespace Microsoft.Azure.Storage.Blob
         }
     }
 }
+#endif

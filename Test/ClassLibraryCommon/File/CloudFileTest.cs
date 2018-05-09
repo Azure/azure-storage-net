@@ -1673,8 +1673,13 @@ namespace Microsoft.Azure.Storage.File
 
                     using (MemoryStream memoryStream = new MemoryStream())
                     {
+                        //This test and similar ones used to expect for the exception to be thrown with Begin.
+                        //However after moving to AsyncExecutor and changing the begin/end methods to wrap tasks,
+                        //since exceptions wont be thrown on task creation but rather when task is awaited, a breaking change
+                        //happened in the behavior. Now the exceptions are always thrown on End operation.
+                        result = file.BeginWriteRange(memoryStream, 0, null, ar => waitHandle.Set(), null);
                         TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                            () => file.BeginWriteRange(memoryStream, 0, null, null, null),
+                            () => file.EndWriteRange(result),
                             "Zero-length WriteRange should fail");
                     }
 
@@ -1805,7 +1810,7 @@ namespace Microsoft.Azure.Storage.File
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                        () => file.WriteRangeAsync(memoryStream, 0, null),
+                        () => file.WriteRangeAsync(memoryStream, 0, null).GetAwaiter().GetResult(),
                         "Zero-length WriteRange should fail");
                 }
 
@@ -3057,7 +3062,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                file.UploadFromByteArrayAsync(new byte[1024], 0, 1024).Wait();
+                file.UploadFromByteArrayAsync(new byte[1024], 0, 1024).GetAwaiter().GetResult();
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)

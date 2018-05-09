@@ -17,16 +17,7 @@
 
 namespace Microsoft.Azure.Storage
 {
-#if ALL_SERVICES && !(WINDOWS_RT || NETCORE)
-    using Microsoft.Azure.Storage.Analytics;
-#endif
     using Microsoft.Azure.Storage.Auth;
-#if ALL_SERVICES
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.File;
-    using Microsoft.Azure.Storage.Queue;
-    using Microsoft.Azure.Storage.Table;
-#endif
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Auth;
     using Microsoft.Azure.Storage.Core.Util;
@@ -563,108 +554,6 @@ namespace Microsoft.Azure.Storage
             }
         }
 
-#if ALL_SERVICES
-        /// <summary>
-        /// Creates the Table service client.
-        /// </summary>
-        /// <returns>A <see cref="CloudTableClient"/> object.</returns>
-        public virtual CloudTableClient CreateCloudTableClient()
-        {
-            if (this.TableEndpoint == null)
-            {
-                throw new InvalidOperationException(SR.TableEndPointNotConfigured);
-            }
-
-            if (this.Credentials == null)
-            {
-                throw new InvalidOperationException(SR.MissingCredentials);
-            }
-
-            return new CloudTableClient(this.TableStorageUri, this.Credentials);
-        }
-
-        /// <summary>
-        /// Creates the Queue service client.
-        /// </summary>
-        /// <returns>A <see cref="CloudQueueClient"/> object.</returns>
-        public virtual CloudQueueClient CreateCloudQueueClient()
-        {
-            if (this.QueueEndpoint == null)
-            {
-                throw new InvalidOperationException(SR.QueueEndPointNotConfigured);
-            }
-
-            if (this.Credentials == null)
-            {
-                throw new InvalidOperationException(SR.MissingCredentials);
-            }
-
-            return new CloudQueueClient(this.QueueStorageUri, this.Credentials);
-        }
-
-        /// <summary>
-        /// Creates the Blob service client.
-        /// </summary>
-        /// <remarks>
-        ///## Examples
-        ///[!code-csharp[Create_Cloud_Blob_Client_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_UploadBlob_EndToEnd "Create Cloud Blob Client Sample")] 
-        /// </remarks>
-        /// <returns>A <see cref="CloudBlobClient"/> object.</returns>
-        public virtual CloudBlobClient CreateCloudBlobClient()
-        {
-            if (this.BlobEndpoint == null)
-            {
-                throw new InvalidOperationException(SR.BlobEndPointNotConfigured);
-            }
-
-            return new CloudBlobClient(this.BlobStorageUri, this.Credentials);
-        }
-
-#if !(WINDOWS_RT || NETCORE)
-        /// <summary>
-        /// Creates an analytics client.
-        /// </summary>
-        /// <returns>A <see cref="CloudAnalyticsClient"/> object.</returns>
-        public CloudAnalyticsClient CreateCloudAnalyticsClient()
-        {
-            if (this.BlobEndpoint == null)
-            {
-                throw new InvalidOperationException(SR.BlobEndPointNotConfigured);
-            }
-
-            if (this.TableEndpoint == null)
-            {
-                throw new InvalidOperationException(SR.TableEndPointNotConfigured);
-            }
-
-            if (this.Credentials == null)
-            {
-                throw new InvalidOperationException(SR.MissingCredentials);
-            }
-
-            return new CloudAnalyticsClient(this.BlobStorageUri, this.TableStorageUri, this.Credentials);
-        }
-#endif
-
-        /// <summary>
-        /// Creates the File service client.
-        /// </summary>
-        /// <returns>A client object that specifies the File service endpoint.</returns>
-        public virtual CloudFileClient CreateCloudFileClient()
-        {
-            if (this.FileEndpoint == null)
-            {
-                throw new InvalidOperationException(SR.FileEndPointNotConfigured);
-            }
-
-            if (this.Credentials == null)
-            {
-                throw new InvalidOperationException(SR.MissingCredentials);
-            }
-
-            return new CloudFileClient(this.FileStorageUri, this.Credentials);
-        }
-#endif
         /// <summary>
         /// Returns a shared access signature for the account.
         /// </summary>

@@ -164,7 +164,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-            CloudBlockBlob blob2 = new CloudBlockBlob(blob.StorageUri, null, null);
+            CloudBlockBlob blob2 = new CloudBlockBlob(blob.StorageUri, null, credentials:null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
             Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);
@@ -1040,7 +1040,7 @@ namespace Microsoft.Azure.Storage.Blob
                 OperationContext context = new OperationContext();
                 context.SendingRequest += (sender, e) =>
                 {
-                    e.Request.Headers["x-ms-meta-key1"] = string.Empty;
+                    HttpRequestHandler.SetHeader(e.Request, "x-ms-meta-key1", String.Empty);
                 };
 
                 blob.SetMetadata(operationContext: context);
@@ -1930,11 +1930,16 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-                using (MemoryStream stream = new MemoryStream())
+                using (AutoResetEvent waitHandler = new AutoResetEvent(false))
                 {
-                    TestHelper.ExpectedException<ArgumentException>(
-                        () => blob.BeginUploadFromStream(stream, null, options, null, null, null),
-                        "Single put blob with mismatching MD5 options should fail immediately");
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        IAsyncResult result = blob.BeginUploadFromStream(stream, null, options, null, ar => waitHandler.Set(), null);
+                        waitHandler.WaitOne();
+                        TestHelper.ExpectedException<ArgumentException>(
+                            () => blob.EndUploadFromStream(result),
+                            "Single put blob with mismatching MD5 options should fail immediately");
+                    }
                 }
             }
             finally
@@ -1967,7 +1972,7 @@ namespace Microsoft.Azure.Storage.Blob
                 using (MemoryStream stream = new MemoryStream())
                 {
                     TestHelper.ExpectedException<ArgumentException>(
-                        () => blob.UploadFromStreamAsync(stream, null, options, null),
+                        () => blob.UploadFromStreamAsync(stream, null, options, null).GetAwaiter().GetResult(),
                         "Single put blob with mismatching MD5 options should fail immediately");
                 }
             }
@@ -2447,7 +2452,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -2889,12 +2894,15 @@ namespace Microsoft.Azure.Storage.Blob
                     WaitForCopy(snapshotCopy);
                     Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
+                    result = snapshot1.BeginOpenWrite(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
                     TestHelper.ExpectedException<InvalidOperationException>(
-                        () => snapshot1.BeginOpenWrite(ar => waitHandle.Set(), null),
+                        () => snapshot1.EndOpenWrite(result),
                         "Trying to write to a blob snapshot should fail");
-
+                    result = snapshot2.BeginOpenWrite(null, null, null, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
                     TestHelper.ExpectedException<InvalidOperationException>(
-                        () => snapshot2.BeginOpenWrite(null, null, null, ar => waitHandle.Set(), null),
+                        () => snapshot2.EndOpenWrite(result),
                         "Trying to write to a blob snapshot should fail");
 
                     result = snapshot1.BeginOpenRead(ar => waitHandle.Set(), null);
@@ -2988,11 +2996,11 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
                 TestHelper.ExpectedException<InvalidOperationException>(
-                    () => snapshot1.OpenWriteAsync(),
+                    () => snapshot1.OpenWriteAsync().GetAwaiter().GetResult(),
                     "Trying to write to a blob snapshot should fail");
 
                 TestHelper.ExpectedException<InvalidOperationException>(
-                    () => snapshot2.OpenWriteAsync(null, null, null),
+                    () => snapshot2.OpenWriteAsync(null, null, null).GetAwaiter().GetResult(),
                     "Trying to write to a blob snapshot should fail");
 
                 using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
@@ -4228,9 +4236,9 @@ namespace Microsoft.Azure.Storage.Blob
                     HttpStatusCode.Conflict);
                 blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfExistsCondition());
 
-                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("\"etag\""));
                 TestHelper.ExpectedException(
-                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("etag")),
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("\"etag\"")),
                     "Should fail as Match Condition is not met.",
                     HttpStatusCode.PreconditionFailed);
 
@@ -4240,9 +4248,9 @@ namespace Microsoft.Azure.Storage.Blob
                     HttpStatusCode.Conflict);
                 blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfExistsCondition());
 
-                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("abcd"));
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("\"abcd\""));
                 TestHelper.ExpectedException(
-                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("abcd")),
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("\"abcd\"")),
                     "Should fail as Match Condition is not met.",
                 HttpStatusCode.PreconditionFailed);
             }
@@ -4479,9 +4487,9 @@ namespace Microsoft.Azure.Storage.Blob
                     HttpStatusCode.Conflict);
                 blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfExistsCondition());
 
-                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfNoneMatchCondition("\"etag\""));
                 TestHelper.ExpectedException(
-                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("etag")),
+                    () => blockBlobWithSAS.UploadFromByteArray(buffer, 0, bufferSize, AccessCondition.GenerateIfMatchCondition("\"etag\"")),
                     "Should fail as Match Condition is not met.",
                     HttpStatusCode.PreconditionFailed);
 
@@ -4491,9 +4499,9 @@ namespace Microsoft.Azure.Storage.Blob
                     HttpStatusCode.Conflict);
                 blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfExistsCondition());
 
-                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("etag"));
+                blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfNoneMatchCondition("\"etag\""));
                 TestHelper.ExpectedException(
-                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("etag")),
+                    () => blockBlobWithSAS.UploadFromStream(streamBuffer, AccessCondition.GenerateIfMatchCondition("\"etag\"")),
                     "Should fail as Match Condition is not met.",
                     HttpStatusCode.PreconditionFailed);
             }
@@ -4533,7 +4541,7 @@ namespace Microsoft.Azure.Storage.Blob
                     {
                         if (++blockNum >= 3)
                         {
-                            e.Request.ContentLength = 32;
+                            HttpRequestHandler.SetContentLength(e.Request, 32);
                         }
                     }
                 };
@@ -4543,7 +4551,8 @@ namespace Microsoft.Azure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
+                CancellationTokenSource tokenSource = new CancellationTokenSource(30000);
+                Task blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, null /*progressHandler*/, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 uploadList.Clear();
@@ -4554,7 +4563,7 @@ namespace Microsoft.Azure.Storage.Blob
                     {
                         if (++blockNum >= 3)
                         {
-                            e.Request.ContentLength = blockSize * 2;
+                            HttpRequestHandler.SetContentLength(e.Request, blockSize * 2);
                         }
                     }
                 };
@@ -4564,7 +4573,7 @@ namespace Microsoft.Azure.Storage.Blob
                     uploadList.Add(new MemoryStream(GetRandomBuffer(blockSize)));
                 }
 
-                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
+                blockUpload = blob.UploadFromMultiStreamAsync(uploadList, null, options, operationContext, null /*progressHandler*/, CancellationToken.None);
                 TestHelper.ExpectedExceptionTask(blockUpload, "UploadFromMultiStream", 0);
 
                 blob.StreamWriteSizeInBytes = (int)(4 * Constants.MB + 1);

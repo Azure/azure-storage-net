@@ -308,7 +308,7 @@ namespace Microsoft.Azure.Storage.Blob
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return this.ReadAsync(buffer, offset, count).Result;
+            return this.ReadAsync(buffer, offset, count).GetAwaiter().GetResult();
         }
 
         /// <summary>

@@ -594,9 +594,9 @@ namespace Microsoft.Azure.Storage.File
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => DirectoryHttpRequestMessageFactory.List(uri, serverTimeout, this.Share.SnapshotTime, listingContext, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                ListFilesAndDirectoriesResponse listFilesResponse = new ListFilesAndDirectoriesResponse(cmd.ResponseStream);
+                ListFilesAndDirectoriesResponse listFilesResponse = await ListFilesAndDirectoriesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
                 List<IListFileItem> fileList = listFilesResponse.Files.Select(item => this.SelectListFileItem(item)).ToList();
                 FileContinuationToken continuationToken = null;
                 if (listFilesResponse.NextMarker != null)
@@ -608,10 +608,10 @@ namespace Microsoft.Azure.Storage.File
                     };
                 }
 
-                return Task.FromResult(new ResultSegment<IListFileItem>(fileList)
+                return new ResultSegment<IListFileItem>(fileList)
                 {
                     ContinuationToken = continuationToken,
-                });
+                };
             };
 
             return getCmd;

@@ -25,6 +25,8 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Security.Cryptography;
+    using System.Threading;
+    using System.Threading.Tasks;
 
 #if WINDOWS_PHONE
     using System.Threading.Tasks;
@@ -260,22 +262,22 @@ namespace Microsoft.Azure.Storage.Blob
             throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Begins an asynchronous flush operation.
-        /// </summary>
-        /// <param name="callback">An optional asynchronous callback, to be called when the flush is complete.</param>
-        /// <param name="state">A user-provided object that distinguishes this particular asynchronous flush request from other requests.</param>
-        /// <returns>An <c>ICancellableAsyncResult</c> that represents the asynchronous flush, which could still be pending.</returns>
         public override ICancellableAsyncResult BeginFlush(AsyncCallback callback, object state)
         {
             throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// Waits for the pending asynchronous flush to complete.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> object containing a reference to the pending asynchronous request to finish.</param>
         public override void EndFlush(IAsyncResult asyncResult)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Clears all buffers for this stream and causes any buffered data to be written to the underlying blob.
+        /// </summary>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Task</returns>
+        public override Task FlushAsync(CancellationToken token)
         {
             throw new NotSupportedException();
         }
@@ -306,22 +308,34 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <c>ICancellableAsyncResult</c> that represents the asynchronous commit, which could still be pending.</returns>
         public override ICancellableAsyncResult BeginCommit(AsyncCallback callback, object state)
         {
+            return new CancellableAsyncResultTaskWrapper(token => this.CommitAsync(), callback, state);
+        }
+
+        /// <summary>
+        /// Waits for the pending asynchronous commit to complete.
+        /// </summary>
+        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
+        public override void EndCommit(IAsyncResult asyncResult)
+        {
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Asynchronously commit the stream. Clears all buffers for this stream, causes any buffered 
+        /// data to be written to the underlying blob, and commits the blob. This should be the 
+        /// last operation on the stream.
+        /// </summary>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Task</returns>
+        public override Task CommitAsync()
+        {
             // Flush the CryptoStream in order to make sure that the last block of data is flushed. This call is a sync call
             // but it is ok to have it since we are not actually going to do any I/O (IgnoreFlush on WriteStream is true at this point).
             this.cryptoStream.FlushFinalBlock();
 
             // Since the blob should be committed, we should now allow flush to go through and make the service call.
             this.writeStream.IgnoreFlush = false;
-            return this.writeStream.BeginCommit(callback, state);
-        }
-
-        /// <summary>
-        /// Waits for the pending asynchronous commit to complete.
-        /// </summary>
-        /// <param name="asyncResult">An <see cref="IAsyncResult"/> object containing a reference to the pending asynchronous request to finish.</param>
-        public override void EndCommit(IAsyncResult asyncResult)
-        {
-            this.writeStream.EndCommit(asyncResult);
+            return this.writeStream.CommitAsync();
         }
 
         /// <summary>
@@ -351,5 +365,6 @@ namespace Microsoft.Azure.Storage.Blob
                 }
             }
         }
+
     }
 }

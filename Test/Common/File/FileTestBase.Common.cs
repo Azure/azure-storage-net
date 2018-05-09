@@ -17,7 +17,7 @@
 
 using System;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;

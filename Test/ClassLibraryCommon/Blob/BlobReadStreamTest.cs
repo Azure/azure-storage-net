@@ -20,6 +20,11 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading;
+using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Blob;
+using System.Threading.Tasks;
+using Microsoft.Azure.Storage.Core.Util;
 
 namespace Microsoft.Azure.Storage.Blob
 {
@@ -130,7 +135,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             string range = null;
             OperationContext context = new OperationContext();
-            context.SendingRequest += (sender, e) => range = range ?? e.Request.Headers["x-ms-range"];
+            context.SendingRequest += (sender, e) => range = range ?? HttpRequestParsers.GetContentRangeHeader(e.Request);
 
             blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024;
             using (Stream blobStream = blob.OpenRead(null, options, context))
@@ -252,7 +257,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 string range = null;
                 OperationContext context = new OperationContext();
-                context.SendingRequest += (sender, e) => range = range ?? e.Request.Headers["x-ms-range"];
+                //HttpClient: Cleanup with header fetch
+                context.SendingRequest += (sender, e) => range = range ?? HttpRequestParsers.GetHeader(e.Request, "x-ms-range");
 
                 blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024;
                 result = blob.BeginOpenRead(null, options, context,
@@ -1159,5 +1165,481 @@ namespace Microsoft.Azure.Storage.Blob
                 container.DeleteIfExists();
             }
         }
+
+        [TestMethod]
+        [Description("Create a service client with URI and credentials")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobReadStreamBasicTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(5 * 1024 * 1024);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.UploadFromStreamAsync(wholeBlob);
+                }
+
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    using (var blobStream = await blob.OpenReadAsync())
+                    {
+                        await TestHelper.AssertStreamsAreEqualAsync(wholeBlob, blobStream);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Download a blob using CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobReadStreamBasicTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(5 * 1024 * 1024);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.UploadFromStreamAsync(wholeBlob);
+                }
+
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    using (Stream blobStream = (await blob.OpenReadAsync()))
+                    {
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, blobStream);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Download a blob using CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobReadStreamBasicTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                await blob.CreateOrReplaceAsync();
+
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.AppendBlockAsync(wholeBlob, null, null, null, null, CancellationToken.None);
+                }
+
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    using (Stream blobStream = (await blob.OpenReadAsync()))
+                    {
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, blobStream);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Modify a blob while downloading it using CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobReadLockToETagTestAsync()
+        {
+            byte[] outBuffer = new byte[1 * 1024 * 1024];
+            byte[] buffer = GetRandomBuffer(2 * outBuffer.Length);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.UploadFromStreamAsync(wholeBlob);
+                }
+
+                OperationContext opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+                    Stream blobStreamForRead = blobStream;
+                    await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
+                    await blob.SetMetadataAsync();
+                    await TestHelper.ExpectedExceptionAsync(
+                        async () => await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
+                        opContext,
+                        "Blob read stream should fail if blob is modified during read",
+                        HttpStatusCode.PreconditionFailed);
+                }
+
+                opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+                    Stream blobStreamForRead = blobStream;
+                    long length = blobStreamForRead.Length;
+                    await blob.SetMetadataAsync();
+                    await TestHelper.ExpectedExceptionAsync(
+                        async () => await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
+                        opContext,
+                        "Blob read stream should fail if blob is modified during read",
+                        HttpStatusCode.PreconditionFailed);
+                }
+
+                opContext = new OperationContext();
+                AccessCondition accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(DateTimeOffset.Now.Subtract(TimeSpan.FromHours(1)));
+                await blob.SetMetadataAsync();
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await blob.OpenReadAsync(accessCondition, null, opContext),
+                    opContext,
+                    "Blob read stream should fail if blob is modified during read",
+                    HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Modify a blob while downloading it using CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobReadLockToETagTestAsync()
+        {
+            byte[] outBuffer = new byte[1 * 1024 * 1024];
+            byte[] buffer = GetRandomBuffer(2 * outBuffer.Length);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.UploadFromStreamAsync(wholeBlob);
+                }
+
+                OperationContext opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+                    Stream blobStreamForRead = blobStream;
+                    await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
+                    await blob.SetMetadataAsync();
+                    await TestHelper.ExpectedExceptionAsync(
+                        async () => await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
+                        opContext,
+                        "Blob read stream should fail if blob is modified during read",
+                        HttpStatusCode.PreconditionFailed);
+                }
+
+                opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+                    Stream blobStreamForRead = blobStream;
+                    long length = blobStreamForRead.Length;
+                    await blob.SetMetadataAsync();
+                    await TestHelper.ExpectedExceptionAsync(
+                        async () => await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
+                        opContext,
+                        "Blob read stream should fail if blob is modified during read",
+                        HttpStatusCode.PreconditionFailed);
+                }
+
+                opContext = new OperationContext();
+                AccessCondition accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(DateTimeOffset.Now.Subtract(TimeSpan.FromHours(1)));
+                await blob.SetMetadataAsync();
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await blob.OpenReadAsync(accessCondition, null, opContext),
+                    opContext,
+                    "Blob read stream should fail if blob is modified during read",
+                    HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Modify a blob while downloading it using CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobReadLockToETagTestAsync()
+        {
+            byte[] outBuffer = new byte[1 * 1024 * 1024];
+            byte[] buffer = GetRandomBuffer(2 * outBuffer.Length);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                await blob.CreateOrReplaceAsync();
+
+                blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.AppendBlockAsync(wholeBlob, string.Empty, null, null, null, CancellationToken.None);
+                }
+
+                OperationContext opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+                    Stream blobStreamForRead = blobStream;
+                    await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
+                    await blob.SetMetadataAsync();
+                    await TestHelper.ExpectedExceptionAsync(
+                        async () => await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
+                        opContext,
+                        "Blob read stream should fail if blob is modified during read",
+                        HttpStatusCode.PreconditionFailed);
+                }
+
+                opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+                    Stream blobStreamForRead = blobStream;
+                    long length = blobStreamForRead.Length;
+                    await blob.SetMetadataAsync();
+                    await TestHelper.ExpectedExceptionAsync(
+                        async () => await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length),
+                        opContext,
+                        "Blob read stream should fail if blob is modified during read",
+                        HttpStatusCode.PreconditionFailed);
+                }
+
+                opContext = new OperationContext();
+                AccessCondition accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(DateTimeOffset.Now.Subtract(TimeSpan.FromHours(1)));
+                await blob.SetMetadataAsync();
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await blob.OpenReadAsync(accessCondition, null, opContext),
+                    opContext,
+                    "Blob read stream should fail if blob is modified during read",
+                    HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        private static async Task<int> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, long offset, int readSize, int expectedReadCount)
+        {
+            byte[] testBuffer = new byte[readSize];
+
+            int actualReadSize = await blobStream.ReadAsync(testBuffer, 0, (int) readSize);
+            Assert.AreEqual(expectedReadCount, actualReadSize);
+            long bufferOffset = (long)offset;
+            for (int i = 0; i < expectedReadCount; i++, bufferOffset++)
+            {
+                Assert.AreEqual(bufferToCompare[bufferOffset], testBuffer[i]);
+            }
+
+            return expectedReadCount;
+        }
+
+        private static async Task<int> BlobReadStreamSeekTestAsync(Stream blobStream, long streamReadSize, byte[] bufferToCompare)
+        {
+            int attempts = 1;
+            long position = 0;
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
+            attempts++;
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 512, 512);
+            Assert.AreEqual(position, blobStream.Position);
+            position = (bufferToCompare.Length - 128);
+            blobStream.Seek(position);
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 128);
+            attempts++;
+            Assert.AreEqual(position, blobStream.Position);
+            position = 4096;
+            blobStream.Seek(position);
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
+            attempts++;
+            Assert.AreEqual(position, blobStream.Position);
+            position += 4096;
+            blobStream.Seek(position);
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
+            Assert.AreEqual(position, blobStream.Position);
+            position -= 4096;
+            blobStream.Seek(position);
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 128, 128);
+            Assert.AreEqual(position, blobStream.Position);
+            position = (streamReadSize + 4096 - 512);
+            blobStream.Seek(position);
+
+            //don't know why adding these two line will pass, but this this the same as the desktop test
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 512);
+
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
+            attempts++;
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
+            Assert.AreEqual(position, blobStream.Position);
+            position -= 1024;
+            blobStream.Seek(position);
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 2048, 2048);
+            Assert.AreEqual(position, blobStream.Position);
+            position = (bufferToCompare.Length - 128);
+            blobStream.Seek(position);
+            Assert.AreEqual(position, blobStream.Position);
+            position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 128);
+            Assert.AreEqual(position, blobStream.Position);
+            return attempts;
+        }
+
+        [TestMethod]
+        [Description("Seek and read in a CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobReadStreamSeekTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                blob.StreamMinimumReadSizeInBytes = 2 * 1024 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.UploadFromStreamAsync(wholeBlob);
+                }
+
+                OperationContext opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+
+                    int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
+                    TestHelper.AssertNAttempts(opContext, attempts);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Seek and read in a CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobReadStreamSeekTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                blob.StreamMinimumReadSizeInBytes = 2 * 1024 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.UploadFromStreamAsync(wholeBlob);
+                }
+
+                OperationContext opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+
+                    int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
+                    TestHelper.AssertNAttempts(opContext, attempts);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Seek and read in a CloudBlobStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobReadStreamSeekTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                await blob.CreateOrReplaceAsync();
+
+                blob.StreamMinimumReadSizeInBytes = 2 * 1024 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    await blob.AppendBlockAsync(wholeBlob);
+                }
+
+                OperationContext opContext = new OperationContext();
+                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                {
+
+                    int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
+                    TestHelper.AssertNAttempts(opContext, attempts);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
     }
+
 }

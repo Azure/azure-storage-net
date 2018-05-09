@@ -26,6 +26,8 @@ using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Queue.Protocol;
 using Microsoft.Azure.Storage.Auth;
 using Microsoft.Azure.Storage.Shared.Protocol;
+using System.IO;
+using System.Xml.Linq;
 
 #if WINDOWS_DESKTOP
 using System.Threading.Tasks;
@@ -1443,7 +1445,7 @@ namespace Microsoft.Azure.Storage.Queue
                 IPAddress actualIP = null;
                 opContext.ResponseReceived += (sender, e) =>
                 {
-                    Stream stream = e.Response.GetResponseStream();
+                    Stream stream = HttpResponseParsers.GetResponseStream(e.Response);
                     stream.Seek(0, SeekOrigin.Begin);
                     using (StreamReader reader = new StreamReader(stream))
                     {
@@ -1686,7 +1688,7 @@ namespace Microsoft.Azure.Storage.Queue
             try
             {
                 context.UserHeaders = new Dictionary<string, string>();
-                context.UserHeaders.Add("x-ms-foo", String.Empty);
+                context.UserHeaders.Add("x-ms-foo", string.Empty);
                 queue.Create(null, context);
                 CloudQueueMessage message = new CloudQueueMessage("Hello Signing");
                 queue.AddMessage(message, null, null, null, context);

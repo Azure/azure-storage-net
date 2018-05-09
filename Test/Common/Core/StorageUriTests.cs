@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Storage.Core
     using System.Collections.Generic;
     using System.Net;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
@@ -39,7 +39,6 @@ namespace Microsoft.Azure.Storage.Core
         private const string EndpointSuffix = ".core.windows.net";
         private const string BlobService = ".blob";
         private const string QueueService = ".queue";
-        private const string TableService = ".table";
         private const string FileService = ".file";
 
         [TestMethod]
@@ -142,31 +141,24 @@ namespace Microsoft.Azure.Storage.Core
                 new Uri("http://" + AccountName + QueueService + EndpointSuffix),
                 new Uri("http://" + AccountName + SecondarySuffix + QueueService + EndpointSuffix));
 
-            StorageUri tableEndpoint = new StorageUri(
-                new Uri("http://" + AccountName + TableService + EndpointSuffix),
-                new Uri("http://" + AccountName + SecondarySuffix + TableService + EndpointSuffix));
-
             StorageUri fileEndpoint = new StorageUri(
                 new Uri("http://" + AccountName + FileService + EndpointSuffix),
                 new Uri("http://" + AccountName + SecondarySuffix + FileService + EndpointSuffix));
 
-            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(), blobEndpoint, queueEndpoint, tableEndpoint, fileEndpoint);
+            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(), blobEndpoint, queueEndpoint, null, fileEndpoint);
 
             Assert.IsTrue(blobEndpoint.Equals(account.BlobStorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.QueueStorageUri));
-            Assert.IsTrue(tableEndpoint.Equals(account.TableStorageUri));
             Assert.IsTrue(fileEndpoint.Equals(account.FileStorageUri));
 
             account = new CloudStorageAccount(new StorageCredentials(AccountName, TestBase.StorageCredentials.ExportBase64EncodedKey()), false);
             Assert.IsTrue(blobEndpoint.Equals(account.BlobStorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.QueueStorageUri));
-            Assert.IsTrue(tableEndpoint.Equals(account.TableStorageUri));
             Assert.IsTrue(fileEndpoint.Equals(account.FileStorageUri));
 
             account = CloudStorageAccount.Parse(string.Format("DefaultEndpointsProtocol=http;AccountName={0};AccountKey=", AccountName));
             Assert.IsTrue(blobEndpoint.Equals(account.BlobStorageUri));
             Assert.IsTrue(queueEndpoint.Equals(account.QueueStorageUri));
-            Assert.IsTrue(tableEndpoint.Equals(account.TableStorageUri));
             Assert.IsTrue(fileEndpoint.Equals(account.FileStorageUri));
 
             Assert.IsTrue(blobEndpoint.Equals(account.CreateCloudBlobClient().StorageUri));
@@ -175,7 +167,6 @@ namespace Microsoft.Azure.Storage.Core
 
             Assert.IsTrue(blobEndpoint.PrimaryUri.Equals(account.BlobEndpoint));
             Assert.IsTrue(queueEndpoint.PrimaryUri.Equals(account.QueueEndpoint));
-            Assert.IsTrue(tableEndpoint.PrimaryUri.Equals(account.TableEndpoint));
             Assert.IsTrue(fileEndpoint.PrimaryUri.Equals(account.FileEndpoint));
         }
 

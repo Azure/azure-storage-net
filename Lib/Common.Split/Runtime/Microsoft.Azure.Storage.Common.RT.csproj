@@ -42,32 +42,21 @@
     <CodeAnalysisRuleSet>CodeAnalysisWindowsRuntime.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.10.0.2\lib\portable-net45+win8+wpa81+wp8\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\WindowsRuntime\Auth\Protocol\*.cs" />
-    <!--<Compile Include="..\..\WindowsRuntime\Auth\Protocol\StorageAuthenticationHttpHandler.SharedKey.cs" />-->
     <Compile Include="..\..\WindowsRuntime\Core\Auth\*.cs" />
-    <!--<Compile Include="..\..\WindowsRuntime\Core\Auth\SharedKeyCanonicalizer.cs" />
-    <Compile Include="..\..\WindowsRuntime\Core\Auth\SharedKeyLiteCanonicalizer.cs" />
-    <Compile Include="..\..\WindowsRuntime\Core\Auth\SharedKeyLiteTableCanonicalizer.cs" />
-    <Compile Include="..\..\WindowsRuntime\Core\Auth\SharedKeyTableCanonicalizer.cs" />-->
     <Compile Include="..\..\WindowsRuntime\Core\Executor\*.cs" />
     <Compile Include="..\..\WindowsRuntime\Core\*.cs" />
-    <!--<Compile Include="..\..\WindowsRuntime\Core\StorageEventSource.cs" />
-    <Compile Include="..\..\WindowsRuntime\Core\StorageRequestMessage.cs" />-->
     <Compile Include="..\..\WindowsRuntime\Core\Util\*.cs" />
-    <!--<Compile Include="..\..\WindowsRuntime\Core\Util\CultureStringComparer.cs" />
-    <Compile Include="..\..\WindowsRuntime\Core\Util\HttpResponseMessageUtils.cs" />-->
     <Compile Include="..\..\WindowsRuntime\ExceptionInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="..\..\WindowsRuntime\Shared\Protocol\*.cs" />
-    <!--<Compile Include="..\..\WindowsRuntime\Shared\Protocol\HttpContentFactory.cs" />
-    <Compile Include="..\..\WindowsRuntime\Shared\Protocol\HttpRequestMessageFactory.cs" />
-    <Compile Include="..\..\WindowsRuntime\Shared\Protocol\HttpClientFactory.cs" />
-    <Compile Include="..\..\WindowsRuntime\Shared\Protocol\HttpResponseParsers.cs" />
-    <Compile Include="..\..\WindowsRuntime\Shared\Protocol\RequestMessageExtensions.cs" />
-    <Compile Include="..\..\WindowsRuntime\Shared\Protocol\RetryableStreamContent.cs" />-->
   </ItemGroup>
   <ItemGroup>
     <!-- Root -->
@@ -82,6 +71,9 @@
     </Compile>
     <Compile Include="..\..\Common\Core\Auth\*.cs">
       <Link>Core\Auth\Auth</Link>
+    </Compile>
+    <Compile Include="..\..\Common\Auth\Protocol\*.cs">
+      <Link>Auth\Protocol\Protocol</Link>
     </Compile>
     <Compile Include="..\..\Common\Core\Executor\*.cs">
       <Link>Core\Executor\Executor</Link>

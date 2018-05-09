@@ -17,7 +17,6 @@
 
 namespace Microsoft.Azure.Storage.File
 {
-    using Microsoft.Azure.Storage.Auth.Protocol;
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Executor;
     using Microsoft.Azure.Storage.Core.Util;
@@ -25,7 +24,6 @@ namespace Microsoft.Azure.Storage.File
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Threading;
@@ -38,8 +36,6 @@ namespace Microsoft.Azure.Storage.File
     /// it also encapsulates the credentials for accessing the storage account.</remarks>
     public partial class CloudFileClient
     {
-        private IAuthenticationHandler authenticationHandler;
-
         /// <summary>
         /// Gets or sets the authentication scheme to use to sign HTTP requests.
         /// </summary>
@@ -52,41 +48,7 @@ namespace Microsoft.Azure.Storage.File
 
             set
             {
-                if (value != this.authenticationScheme)
-                {
-                    this.authenticationScheme = value;
-                    this.authenticationHandler = null;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the authentication handler used to sign HTTP requests.
-        /// </summary>
-        /// <value>The authentication handler.</value>
-        internal IAuthenticationHandler AuthenticationHandler
-        {
-            get
-            {
-                IAuthenticationHandler result = this.authenticationHandler;
-                if (result == null)
-                {
-                    if (this.Credentials.IsSharedKey)
-                    {
-                        result = new SharedKeyAuthenticationHandler(
-                            this.GetCanonicalizer(),
-                            this.Credentials,
-                            this.Credentials.AccountName);
-                    }
-                    else
-                    {
-                        result = new NoOpAuthenticationHandler();
-                    }
-
-                    this.authenticationHandler = result;
-                }
-
-                return result;
+                this.authenticationScheme = value;
             }
         }
 
@@ -573,14 +535,12 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => ShareHttpWebRequestFactory.List(uri, serverTimeout, listingContext, detailsIncluded, useVersionHeader, ctx);
-            getCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                ListSharesResponse listSharesResponse = new ListSharesResponse(cmd.ResponseStream);
-                List<CloudFileShare> sharesList = new List<CloudFileShare>(
-                    listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, item.SnapshotTime, this)));
+                ListSharesResponse listSharesResponse = await ListSharesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
+                List<CloudFileShare> sharesList = listSharesResponse.Shares.Select(item => new CloudFileShare(item.Properties, item.Metadata, item.Name, item.SnapshotTime, this)).ToList();
                 FileContinuationToken continuationToken = null;
                 if (listSharesResponse.NextMarker != null)
                 {
@@ -603,44 +563,43 @@ namespace Microsoft.Azure.Storage.File
         private RESTCommand<FileServiceProperties> GetServicePropertiesImpl(FileRequestOptions requestOptions)
         {
             RESTCommand<FileServiceProperties> retCmd = new RESTCommand<FileServiceProperties>(this.Credentials, this.StorageUri);
+
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            retCmd.BuildRequestDelegate = FileHttpWebRequestFactory.GetServiceProperties;
-            retCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse =
-                (cmd, resp, ctx) => FileHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream);
+
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => FileHttpResponseParsers.ReadServicePropertiesAsync(cmd.ResponseStream, ct);
+
             requestOptions.ApplyToStorageCommand(retCmd);
             return retCmd;
         }
 
         private RESTCommand<NullType> SetServicePropertiesImpl(FileServiceProperties properties, FileRequestOptions requestOptions)
         {
-            MultiBufferMemoryStream str = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
+            MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.BufferManager, (int)(1 * Constants.KB));
             try
             {
-                properties.WriteServiceProperties(str);
+                properties.WriteServiceProperties(memoryStream);
             }
             catch (InvalidOperationException invalidOpException)
             {
-                str.Dispose();
+                memoryStream.Dispose();
                 throw new ArgumentException(invalidOpException.Message, "properties");
             }
 
-            str.Seek(0, SeekOrigin.Begin);
-
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
-            retCmd.SendStream = str;
-            retCmd.StreamToDispose = str;
-            retCmd.BuildRequestDelegate = FileHttpWebRequestFactory.SetServiceProperties;
+            requestOptions.ApplyToStorageCommand(retCmd);
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
+            retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            retCmd.StreamToDispose = memoryStream;
             retCmd.RecoveryAction = RecoveryActions.RewindStream;
-            retCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
-            requestOptions.ApplyToStorageCommand(retCmd);
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
             return retCmd;
         }
     }

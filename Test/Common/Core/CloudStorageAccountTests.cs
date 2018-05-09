@@ -23,7 +23,7 @@ using Microsoft.Azure.Storage.File;
 using Microsoft.Azure.Storage.Queue;
 using Microsoft.Azure.Storage.Shared.Protocol;
 
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;

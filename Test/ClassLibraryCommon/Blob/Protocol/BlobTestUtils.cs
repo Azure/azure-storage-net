@@ -21,8 +21,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
@@ -30,30 +32,30 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
     {
         #region Request Validation
 
-        public static void DateHeader(HttpWebRequest request, bool required)
+        public static void DateHeader(HttpRequestMessage request, bool required)
         {
-            bool standardHeader = request.Headers[HttpRequestHeader.Date] != null;
-            bool msHeader = request.Headers["x-ms-date"] != null;
+            bool standardHeader = HttpRequestParsers.GetDate(request) != null;
+            bool msHeader = HttpRequestParsers.GetHeader(request, "x-ms-date") != null;
 
             Assert.IsFalse(standardHeader && msHeader);
             Assert.IsFalse(required && !(standardHeader ^ msHeader));
 
-            if (request.Headers[HttpRequestHeader.Date] != null)
+            if (standardHeader)
             {
                 try
                 {
-                    DateTime parsed = DateTime.Parse(request.Headers[HttpRequestHeader.Date]).ToUniversalTime();
+                    DateTime parsed = DateTime.Parse(HttpRequestParsers.GetDate(request)).ToUniversalTime();
                 }
                 catch (Exception)
                 {
                     Assert.Fail();
                 }
             }
-            else if (request.Headers[HttpRequestHeader.Date] != null)
+            else if (msHeader)
             {
                 try
                 {
-                    DateTime parsed = DateTime.Parse(request.Headers["x-ms-date"]).ToUniversalTime();
+                    DateTime parsed = DateTime.Parse(HttpRequestParsers.GetHeader(request, "x-ms-date")).ToUniversalTime();
                 }
                 catch (Exception)
                 {
@@ -62,80 +64,80 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
         }
 
-        public static void VersionHeader(HttpWebRequest request, bool required)
+        public static void VersionHeader(HttpRequestMessage request, bool required)
         {
-            Assert.IsFalse(required && (request.Headers["x-ms-version"] == null));
-            if (request.Headers["x-ms-version"] != null)
+            Assert.IsFalse(required && (HttpRequestParsers.GetHeader(request, "x-ms-version") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-version") != null)
             {
-                Assert.AreEqual(OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, request.Headers["x-ms-version"]);
+                Assert.AreEqual(Constants.HeaderConstants.TargetStorageVersion, HttpRequestParsers.GetHeader(request, "x-ms-version"));
             }
         }
 
-        public static void ContentLengthHeader(HttpWebRequest request, long expectedValue)
+        public static void ContentLengthHeader(HttpRequestMessage request, long expectedValue)
         {
-            Assert.AreEqual(expectedValue, request.ContentLength);
+            Assert.AreEqual(expectedValue, HttpRequestParsers.GetContentLength(request));
         }
 
-        public static void ContentTypeHeader(HttpWebRequest request, string expectedValue)
+        public static void ContentTypeHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.ContentType == null));
-            if (request.ContentType != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetContentType(request) == null));
+            if (HttpRequestParsers.GetContentType(request) != null)
             {
-                Assert.AreEqual(expectedValue, request.ContentType);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetContentType(request));
             }
         }
 
-        public static void ContentDispositionHeader(HttpWebRequest request, string expectedValue)
+        public static void ContentDispositionHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers[Constants.HeaderConstants.BlobContentDispositionRequestHeader] == null));
-            if (request.Headers[Constants.HeaderConstants.BlobContentDispositionRequestHeader] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, Constants.HeaderConstants.BlobContentDispositionRequestHeader) == null));
+            if (HttpRequestParsers.GetHeader(request, Constants.HeaderConstants.BlobContentDispositionRequestHeader) != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers[Constants.HeaderConstants.BlobContentDispositionRequestHeader]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetHeader(request, Constants.HeaderConstants.BlobContentDispositionRequestHeader));
             }
         }
 
-        public static void ContentEncodingHeader(HttpWebRequest request, string expectedValue)
+        public static void ContentEncodingHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers[HttpRequestHeader.ContentEncoding] == null));
-            if (request.Headers[HttpRequestHeader.ContentEncoding] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetContentEncoding(request) == null));
+            if (HttpRequestParsers.GetContentEncoding(request) != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers[HttpRequestHeader.ContentEncoding]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetContentEncoding(request));
             }
         }
 
-        public static void ContentLanguageHeader(HttpWebRequest request, string expectedValue)
+        public static void ContentLanguageHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers[HttpRequestHeader.ContentLanguage] == null));
-            if (request.Headers[HttpRequestHeader.ContentLanguage] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetContentLanguage(request) == null));
+            if (HttpRequestParsers.GetContentLanguage(request) != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers[HttpRequestHeader.ContentLanguage]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetContentLanguage(request));
             }
         }
 
-        public static void ContentMd5Header(HttpWebRequest request, string expectedValue)
+        public static void ContentMd5Header(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers[HttpRequestHeader.ContentMd5] == null));
-            if (request.Headers[HttpRequestHeader.ContentMd5] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetContentMD5(request) == null));
+            if (HttpRequestParsers.GetContentMD5(request) != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers[HttpRequestHeader.ContentMd5]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetContentMD5(request));
             }
         }
 
-        public static void CacheControlHeader(HttpWebRequest request, string expectedValue)
+        public static void CacheControlHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers[HttpRequestHeader.CacheControl] == null));
-            if (request.Headers[HttpRequestHeader.CacheControl] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetCacheControl(request) == null));
+            if (HttpRequestParsers.GetCacheControl(request) != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers[HttpRequestHeader.CacheControl]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetCacheControl(request));
             }
         }
 
-        public static void BlobTypeHeader(HttpWebRequest request, BlobType? expectedValue)
+        public static void BlobTypeHeader(HttpRequestMessage request, BlobType? expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers["x-ms-blob-type"] == null));
-            if (request.Headers["x-ms-blob-type"] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, "x-ms-blob-type") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-blob-type") != null)
             {
-                string blobTypeString = request.Headers["x-ms-blob-type"];
+                string blobTypeString = HttpRequestParsers.GetHeader(request, "x-ms-blob-type");
                 Assert.IsNotNull(blobTypeString);
                 BlobType? blobType = null;
                 switch (blobTypeString)
@@ -152,12 +154,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
         }
 
-        public static void BlobSizeHeader(HttpWebRequest request, long? expectedValue)
+        public static void BlobSizeHeader(HttpRequestMessage request, long? expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers["x-ms-blob-content-length"] == null));
-            if (request.Headers["x-ms-blob-content-length"] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, "x-ms-blob-content-length") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-blob-content-length") != null)
             {
-                long? parsed = long.Parse(request.Headers["x-ms-blob-content-length"]);
+                long? parsed = long.Parse(HttpRequestParsers.GetHeader(request, "x-ms-blob-content-length"));
                 Assert.IsNotNull(parsed);
                 Assert.AreEqual(expectedValue, parsed);
             }
@@ -168,7 +170,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The HTTP request.</param>
         /// <param name="expectedStart">The expected beginning of the range, or null if no range is expected.</param>
-        public static void RangeHeader(HttpWebRequest request, long? expectedStart)
+        public static void RangeHeader(HttpRequestMessage request, long? expectedStart)
         {
             RangeHeader(request, expectedStart, null);
         }
@@ -179,10 +181,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="request">The HTTP request.</param>
         /// <param name="expectedStart">The expected beginning of the range, or null if no range is expected.</param>
         /// <param name="expectedEnd">The expected end of the range, or null if no end is expected.</param>
-        public static void RangeHeader(HttpWebRequest request, long? expectedStart, long? expectedEnd)
+        public static void RangeHeader(HttpRequestMessage request, long? expectedStart, long? expectedEnd)
         {
             // The range in "x-ms-range" is used if it exists, or else "Range" is used.
-            string requestRange = request.Headers["x-ms-range"] ?? request.Headers[HttpRequestHeader.Range];
+            string requestRange = HttpRequestParsers.GetHeader(request, "x-ms-range") ?? HttpRequestParsers.GetContentRange(request);
 
             // We should find a range if and only if we expect one.
             Assert.AreEqual(expectedStart.HasValue, requestRange != null);
@@ -197,44 +199,16 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
         }
 
-        public static void SetRequest(HttpWebRequest request, BlobContext context, byte[] content)
-        {
-            Assert.IsNotNull(request);
-            if (context.IsAsync)
-            {
-                BlobTestUtils.SetRequestAsync(request, context, content);
-            }
-            else
-            {
-                BlobTestUtils.SetRequestSync(request, context, content);
-            }
-        }
-
         static AutoResetEvent setRequestAsyncSem = new AutoResetEvent(false);
         static Stream setRequestAsyncStream;
-        static void SetRequestAsync(HttpWebRequest request, BlobContext context, byte[] content)
-        {
-            request.BeginGetRequestStream(new AsyncCallback(BlobTestUtils.ReadCallback), request);
-            setRequestAsyncSem.WaitOne();
-            Assert.IsNotNull(setRequestAsyncStream);
-            setRequestAsyncStream.Write(content, 0, content.Length);
-            setRequestAsyncStream.Close();
-        }
 
-        static void ReadCallback(IAsyncResult result)
-        {
-            HttpWebRequest request = (HttpWebRequest)result.AsyncState;
-            setRequestAsyncStream = request.EndGetRequestStream(result);
-            setRequestAsyncSem.Set();
-        }
 
-        static void SetRequestSync(HttpWebRequest request, BlobContext context, byte[] content)
-        {
-            Stream stream = request.GetRequestStream();
-            Assert.IsNotNull(stream);
-            stream.Write(content, 0, content.Length);
-            stream.Close();
-        }
+        //static void ReadCallback(IAsyncResult result)
+        //{
+        //    HttpResponseMessage response = ((System.Threading.Tasks.Task<HttpResponseMessage>)(result)).Result;
+        //    setRequestAsyncStream = response.Content.ReadAsStreamAsync().Result;
+        //    setRequestAsyncSem.Set();
+        //}
 
         #endregion
 
@@ -247,12 +221,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="expectedStart">The expected beginning of the range.</param>
         /// <param name="expectedEnd">The expected end of the range.</param>
         /// <param name="expectedTotal">The expected total number of bytes in the range.</param>
-        public static void ContentRangeHeader(HttpWebResponse response, long expectedStart, long expectedEnd, long expectedTotal)
+        public static void ContentRangeHeader(HttpResponseMessage response, long expectedStart, long expectedEnd, long expectedTotal)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[HttpResponseHeader.ContentRange]);
+            Assert.IsNotNull(HttpResponseParsers.GetContentRange(response));
             string expectedRange = string.Format("bytes {0}-{1}/{2}", expectedStart, expectedEnd, expectedTotal);
-            Assert.AreEqual(expectedRange, response.Headers[HttpResponseHeader.ContentRange]);
+            Assert.AreEqual(expectedRange, HttpResponseParsers.GetContentRange(response));
         }
 
         /// <summary>
@@ -260,12 +234,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="expectedValue">The expected value.</param>
-        public static void LeaseIdHeader(HttpWebRequest request, string expectedValue)
+        public static void LeaseIdHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers["x-ms-lease-id"] == null));
-            if (request.Headers["x-ms-lease-id"] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, "x-ms-lease-id") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-lease-id") != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers["x-ms-lease-id"]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetHeader(request, "x-ms-lease-id"));
             }
         }
 
@@ -274,12 +248,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="expectedValue">The expected value.</param>
-        public static void LeaseActionHeader(HttpWebRequest request, string expectedValue)
+        public static void LeaseActionHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers["x-ms-lease-action"] == null));
-            if (request.Headers["x-ms-lease-action"] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, "x-ms-lease-action") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-lease-action") != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers["x-ms-lease-action"]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetHeader(request, "x-ms-lease-action"));
             }
         }
 
@@ -288,12 +262,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="expectedValue">The expected value.</param>
-        public static void ProposedLeaseIdHeader(HttpWebRequest request, string expectedValue)
+        public static void ProposedLeaseIdHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers["x-ms-proposed-lease-id"] == null));
-            if (request.Headers["x-ms-proposed-lease-id"] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, "x-ms-proposed-lease-id") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-proposed-lease-id") != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers["x-ms-proposed-lease-id"]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetHeader(request, "x-ms-proposed-lease-id"));
             }
         }
 
@@ -302,12 +276,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="expectedValue">The expected value.</param>
-        public static void LeaseDurationHeader(HttpWebRequest request, string expectedValue)
+        public static void LeaseDurationHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers["x-ms-lease-duration"] == null));
-            if (request.Headers["x-ms-lease-duration"] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, "x-ms-lease-duration") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-lease-duration") != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers["x-ms-lease-duration"]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetHeader(request, "x-ms-lease-duration"));
             }
         }
 
@@ -316,42 +290,42 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="expectedValue">The expected value.</param>
-        public static void BreakPeriodHeader(HttpWebRequest request, string expectedValue)
+        public static void BreakPeriodHeader(HttpRequestMessage request, string expectedValue)
         {
-            Assert.IsFalse((expectedValue != null) && (request.Headers["x-ms-lease-break-period"] == null));
-            if (request.Headers["x-ms-lease-break-period"] != null)
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetHeader(request, "x-ms-lease-break-period") == null));
+            if (HttpRequestParsers.GetHeader(request, "x-ms-lease-break-period") != null)
             {
-                Assert.AreEqual(expectedValue, request.Headers["x-ms-lease-break-period"]);
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetHeader(request, "x-ms-lease-break-period"));
             }
         }
 
-        public static void AuthorizationHeader(HttpWebRequest request, bool required, string account)
+        public static void AuthorizationHeader(HttpRequestMessage request, bool required, string account)
         {
-            Assert.IsFalse(required && (request.Headers[HttpRequestHeader.Authorization] == null));
-            if (request.Headers[HttpRequestHeader.Authorization] != null)
+            Assert.IsFalse(required && (HttpRequestParsers.GetAuthorization(request) == null));
+            if (HttpRequestParsers.GetAuthorization(request) != null)
             {
-                string authorization = request.Headers[HttpRequestHeader.Authorization];
+                string authorization = HttpRequestParsers.GetAuthorization(request);
                 string pattern = String.Format("^(SharedKey|SharedKeyLite) {0}:[0-9a-zA-Z\\+/=]{{20,}}$", account);
                 Regex authorizationRegex = new Regex(pattern);
                 Assert.IsTrue(authorizationRegex.IsMatch(authorization));
             }
         }
 
-        public static void ETagHeader(HttpWebResponse response)
+        public static void ETagHeader(HttpResponseMessage response)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[HttpResponseHeader.ETag]);
+            Assert.IsNotNull(HttpResponseParsers.GetETag(response));
             Regex eTagRegex = new Regex(@"^""0x[A-F0-9]{15,}""$");
-            Assert.IsTrue(eTagRegex.IsMatch(response.Headers[HttpResponseHeader.ETag]));
+            Assert.IsTrue(eTagRegex.IsMatch(HttpResponseParsers.GetETag(response)));
         }
 
-        public static void LastModifiedHeader(HttpWebResponse response)
+        public static void LastModifiedHeader(HttpResponseMessage response)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[HttpResponseHeader.LastModified]);
+            Assert.IsNotNull(HttpResponseParsers.GetLastModifiedTime(response));
             try
             {
-                DateTime parsed = DateTime.Parse(response.Headers[HttpResponseHeader.LastModified]).ToUniversalTime();
+                DateTime parsed = HttpResponseParsers.GetLastModifiedTime(response).ToUniversalTime().Date;
             }
             catch (Exception)
             {
@@ -359,70 +333,70 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
         }
 
-        public static void ContentMd5Header(HttpWebResponse response)
+        public static void ContentMd5Header(HttpResponseMessage response)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[HttpResponseHeader.ContentMd5]);
+            Assert.IsNotNull(HttpResponseParsers.GetContentMD5(response));
         }
 
-        public static void RequestIdHeader(HttpWebResponse response)
+        public static void RequestIdHeader(HttpResponseMessage response)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers["x-ms-request-id"]);
+            Assert.IsNotNull(HttpResponseParsers.GetHeader(response, "x-ms-request-id"));
         }
 
-        public static void ContentLengthHeader(HttpWebResponse response, long expectedValue)
+        public static void ContentLengthHeader(HttpResponseMessage response, long expectedValue)
         {
             Assert.IsNotNull(response);
-            Assert.AreEqual(expectedValue, response.ContentLength);
+            Assert.AreEqual(expectedValue.ToString(), HttpResponseParsers.GetContentLength(response));
         }
 
-        public static void ContentTypeHeader(HttpWebResponse response, string expectedValue)
+        public static void ContentTypeHeader(HttpResponseMessage response, string expectedValue)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.ContentType);
-            Assert.AreEqual(expectedValue, response.ContentType);
+            Assert.IsNotNull(HttpResponseParsers.GetContentType(response));
+            Assert.AreEqual(expectedValue, HttpResponseParsers.GetContentType(response));
         }
 
-        public static void ContentRangeHeader(HttpWebResponse response, PageRange expectedValue)
+        public static void ContentRangeHeader(HttpResponseMessage response, PageRange expectedValue)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[HttpResponseHeader.ContentRange]);
-            Assert.AreEqual(expectedValue.ToString(), response.Headers[HttpResponseHeader.ContentRange]);
+            Assert.IsNotNull(HttpResponseParsers.GetContentRange(response));
+            Assert.AreEqual(expectedValue.ToString(), HttpResponseParsers.GetContentRange(response));
         }
 
-        public static void ContentDispositionHeader(HttpWebResponse response, string expectedValue)
+        public static void ContentDispositionHeader(HttpResponseMessage response, string expectedValue)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[Constants.HeaderConstants.ContentDispositionResponseHeader]);
-            Assert.AreEqual(expectedValue, response.Headers[Constants.HeaderConstants.ContentDispositionResponseHeader]);
+            Assert.IsNotNull(HttpResponseParsers.GetContentDisposition(response));
+            Assert.AreEqual(expectedValue, HttpResponseParsers.GetContentDisposition(response));
         }
         
-        public static void ContentEncodingHeader(HttpWebResponse response, string expectedValue)
+        public static void ContentEncodingHeader(HttpResponseMessage response, string expectedValue)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.ContentEncoding);
-            Assert.AreEqual(expectedValue, response.ContentEncoding);
+            Assert.IsNotNull(HttpResponseParsers.GetContentEncoding(response));
+            Assert.AreEqual(expectedValue, HttpResponseParsers.GetContentEncoding(response));
         }
 
-        public static void ContentLanguageHeader(HttpWebResponse response, string expectedValue)
+        public static void ContentLanguageHeader(HttpResponseMessage response, string expectedValue)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[HttpResponseHeader.ContentLanguage]);
-            Assert.AreEqual(expectedValue, response.Headers[HttpResponseHeader.ContentLanguage]);
+            Assert.IsNotNull(HttpResponseParsers.GetContentLanguage(response));
+            Assert.AreEqual(expectedValue, HttpResponseParsers.GetContentLanguage(response));
         }
 
-        public static void CacheControlHeader(HttpWebResponse response, string expectedValue)
+        public static void CacheControlHeader(HttpResponseMessage response, string expectedValue)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(response.Headers[HttpResponseHeader.CacheControl]);
-            Assert.AreEqual(expectedValue, response.Headers[HttpResponseHeader.CacheControl]);
+            Assert.IsNotNull(HttpResponseParsers.GetCacheControl(response));
+            Assert.AreEqual(expectedValue, HttpResponseParsers.GetCacheControl(response));
         }
 
-        public static void BlobTypeHeader(HttpWebResponse response, BlobType expectedValue)
+        public static void BlobTypeHeader(HttpResponseMessage response, BlobType expectedValue)
         {
             Assert.IsNotNull(response);
-            string header = response.Headers["x-ms-blob-type"];
+            string header = HttpResponseParsers.GetHeader(response, "x-ms-blob-type");
             BlobType? parsed = null;
             switch (header)
             {
@@ -443,7 +417,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="response">The response.</param>
         /// <param name="expectedValue">The expected value.</param>
         /// <param name="errorMargin">The margin of error in the value.</param>
-        public static void LeaseTimeHeader(HttpWebResponse response, int? expectedValue, int? errorMargin)
+        public static void LeaseTimeHeader(HttpResponseMessage response, int? expectedValue, int? errorMargin)
         {
             int? leaseTime = BlobHttpResponseParsers.GetRemainingLeaseTime(response);
             Assert.IsFalse((expectedValue != null) && (leaseTime == null));
@@ -459,7 +433,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// </summary>
         /// <param name="response">The response.</param>
         /// <param name="expectedValue">The expected value.</param>
-        public static void LeaseIdHeader(HttpWebResponse response, string expectedValue)
+        public static void LeaseIdHeader(HttpResponseMessage response, string expectedValue)
         {
             string leaseId = BlobHttpResponseParsers.GetLeaseId(response);
             Assert.IsFalse((expectedValue != null) && (leaseId == null));
@@ -474,19 +448,19 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// Validates a lease ID header in a response.
         /// </summary>
         /// <param name="response">The response.</param>
-        public static void LeaseIdHeader(HttpWebResponse response)
+        public static void LeaseIdHeader(HttpResponseMessage response)
         {
             string leaseId = BlobHttpResponseParsers.GetLeaseId(response);
             Assert.IsNotNull(leaseId);
             Assert.IsTrue(BlobTests.LeaseIdValidator(AccessCondition.GenerateLeaseCondition(leaseId)));
         }
 
-        public static void Contents(HttpWebResponse response, byte[] expectedContent)
+        public static void Contents(HttpResponseMessage response, byte[] expectedContent)
         {
             Assert.IsNotNull(response);
-            Assert.IsTrue(response.ContentLength >= 0);
-            byte[] buf = new byte[response.ContentLength];
-            Stream stream = response.GetResponseStream();
+            Assert.IsTrue(long.Parse(HttpResponseParsers.GetContentLength(response)) >= 0);
+            byte[] buf = new byte[long.Parse(HttpResponseParsers.GetContentLength(response))];
+            Stream stream = HttpResponseParsers.GetResponseStream(response);
             // Have to read one byte each time because of an issue of this stream.
             for (int i = 0; i < buf.Length; i++)
             {
@@ -500,17 +474,25 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
         #region Helpers
 
-        public static HttpWebResponse GetResponse(HttpWebRequest request, BlobContext context)
+        public static async Task<HttpResponseMessage> GetResponse(HttpRequestMessage request, BlobContext context, CancellationTokenSource token = null)
         {
             Assert.IsNotNull(request);
-            HttpWebResponse response = null;
+            HttpResponseMessage response = null;
             try
             {
-                response = (HttpWebResponse)request.GetResponse();
+                var httpClient = HttpClientFactory.Instance;
+
+                if (token != null)
+                {
+                    response = await httpClient.SendAsync(request, token.Token);
+                }
+                else
+                {
+                    response = await httpClient.SendAsync(request);
+                }
             }
-            catch (WebException ex)
+            catch (HttpRequestException)
             {
-                response = (HttpWebResponse)ex.Response;
             }
             Assert.IsNotNull(response);
             return response;

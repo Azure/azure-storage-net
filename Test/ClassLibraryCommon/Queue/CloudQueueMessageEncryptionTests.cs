@@ -20,11 +20,9 @@ namespace Microsoft.Azure.Storage.Queue
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Core;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Storage.Core;
     using Newtonsoft.Json;
     using System;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
 
     [TestClass]
@@ -80,7 +78,7 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 queue.CreateIfNotExists();
 
-                string messageStr = Guid.NewGuid().ToString();
+                string messageStr = "salam";//s Guid.NewGuid().ToString();
                 CloudQueueMessage message = new CloudQueueMessage(messageStr);
 
                 QueueEncryptionPolicy policy = new QueueEncryptionPolicy(key, null);

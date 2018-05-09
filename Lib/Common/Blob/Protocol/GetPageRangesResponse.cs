@@ -17,9 +17,13 @@
 
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
+    using Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from an operation to get a range of pages for a page blob.
@@ -29,65 +33,48 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 #else
     internal
 #endif
-        sealed class GetPageRangesResponse : ResponseParsingBase<PageRange>
+        static class GetPageRangesResponse
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GetPageRangesResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream of page ranges to be parsed.</param>
-        public GetPageRangesResponse(Stream stream)
-            : base(stream)
-        {
-        }
-
-        /// <summary>
-        /// Gets an enumerable collection of <see cref="PageRange"/> objects from the response.
-        /// </summary>
-        /// <value>An enumerable collection of <see cref="PageRange"/> objects.</value>
-        public IEnumerable<PageRange> PageRanges
-        {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
-
         /// <summary>
         /// Reads a page range.
         /// </summary>
         /// <returns>Page range entry</returns>
-        private PageRange ParsePageRange()
+        private static async Task<PageRange> ParsePageRangeAsync(XmlReader reader, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             long start = 0L;
             long end = 0L;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.StartElement:
-                            start = reader.ReadElementContentAsLong();
+                            start = await reader.ReadElementContentAsInt64Async().ConfigureAwait(false);
                             break;
 
                         case Constants.EndElement:
-                            end = reader.ReadElementContentAsLong();
+                            end = await reader.ReadElementContentAsInt64Async().ConfigureAwait(false);
                             break;
 
                         default:
-                            reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             return new PageRange(start, end);
         }
@@ -96,25 +83,33 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// Parses the XML response for an operation to get a range of pages for a page blob.
         /// </summary>
         /// <returns>An enumerable collection of <see cref="PageRange"/> objects.</returns>
-        protected override IEnumerable<PageRange> ParseXml()
+        internal static async Task<IEnumerable<PageRange>> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.PageListElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
-                {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement(Constants.PageRangeElement))
-                    {
-                        yield return this.ParsePageRange();
-                    }
+                token.ThrowIfCancellationRequested();
 
-                    this.allObjectsParsed = true;
-                    this.reader.ReadEndElement();
+                List<PageRange> ranges = new List<PageRange>();
+
+                if (await reader.ReadToFollowingAsync(Constants.PageListElement).ConfigureAwait(false))
+                {
+                    if (reader.IsEmptyElement)
+                    {
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync(Constants.PageRangeElement).ConfigureAwait(false))
+                        {
+                            ranges.Add(await ParsePageRangeAsync(reader, token).ConfigureAwait(false));
+                        }
+                        
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
                 }
+
+                return ranges;
             }
         }
     }

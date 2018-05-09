@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -13,12 +13,17 @@
     <AssemblyName>Microsoft.WindowsAzure.StorageRT.Test</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>
+    <LangVersion>5</LangVersion>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>Microsoft.WindowsAzure.Storage.RT.Test_TemporaryKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>C6306A6B27B4138AE1AE2ECE3AC0FF655376E964</PackageCertificateThumbprint>
     <PackageCertificateKeyFile>RT_Test_TemporaryKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>7439A8A53DE85A82C0D106973170847C18D74A2D</PackageCertificateThumbprint>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <TargetPlatformVersion>8.1</TargetPlatformVersion>
+    <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
+    <TargetFrameworkVersion />
+    <AppxBundle>Never</AppxBundle>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,6 +33,7 @@
     <DefineConstants>TRACE;DEBUG;NETFX_CORE;WINDOWS_RT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <SignAssembly>true</SignAssembly>
@@ -64,9 +70,6 @@
     <Compile Include="..\Common\Queue\*.cs">
       <Link>Queue\Queue</Link>
     </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
     <Compile Include="..\Common\TestConfigProcess\*.cs">
       <Link>TestConfigProcess\TestConfigProcess</Link>
     </Compile>
@@ -89,7 +92,6 @@
     <Compile Include="Blob\CopyBlobTest.cs" />
     <Compile Include="Blob\LeaseTests.cs" />
     <Compile Include="Blob\MD5FlagsTest.cs" />
-    <Compile Include="Blob\MemoryOutputStream.cs" />
     <Compile Include="Blob\SASTests.cs" />
     <Compile Include="File\CloudFileServiceTest.cs" />
     <Compile Include="File\CopyFileTest.cs" />
@@ -118,20 +120,7 @@
     <Compile Include="Queue\QueueAnalyticsUnitTests.cs" />
     <Compile Include="Queue\CloudQueueMessageTest.cs" />
     <Compile Include="Queue\CloudQueueTest.cs" />
-    <Compile Include="Table\CloudTableClientTest.cs" />
-    <Compile Include="Table\CloudTableCRUDUnitTests.cs" />
-    <Compile Include="Table\SAS\TableSasFunctionalTests.cs" />
-    <Compile Include="Table\SAS\TableSasUnitTests.cs" />
-    <Compile Include="Table\TableAnalyticsUnitTests.cs" />
-    <Compile Include="Table\TableEscapingTests.cs" />
-    <Compile Include="Table\TableQueryGenericTests.cs" />
-    <Compile Include="Table\TableQueryTests.cs" />
-    <Compile Include="Table\TableBatchOperationTest.cs" />
-    <Compile Include="Table\TableEntitySerializationTests.cs" />
-    <Compile Include="Table\TableOperationUnitTests.cs" />
-    <Compile Include="Table\TableTestBase.cs" />
     <Compile Include="TestBase.cs" />
-    <Compile Include="TestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">

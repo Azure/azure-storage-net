@@ -25,6 +25,8 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using System.Net.Http;
+    using System.Net.Http;
     using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
@@ -94,32 +96,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenRead(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            StorageAsyncResult<Stream> storageAsyncResult = new StorageAsyncResult<Stream>(callback, state);
-
-            ICancellableAsyncResult result = this.BeginFetchAttributes(
-                accessCondition,
-                options,
-                operationContext,
-                ar =>
-                {
-                    try
-                    {
-                        this.EndFetchAttributes(ar);
-                        storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-                        AccessCondition streamAccessCondition = AccessCondition.CloneConditionWithETag(accessCondition, this.Properties.ETag);
-                        BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient, false);
-                        storageAsyncResult.Result = new BlobReadStream(this, streamAccessCondition, modifiedOptions, operationContext);
-                        storageAsyncResult.OnComplete();
-                    }
-                    catch (Exception e)
-                    {
-                        storageAsyncResult.OnComplete(e);
-                    }
-                },
-                null /* state */);
-
-            storageAsyncResult.CancelDelegate = result.Cancel;
-            return storageAsyncResult;
+            return new CancellableAsyncResultTaskWrapper<Stream>(token => this.OpenReadAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -134,9 +111,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </remarks>
         public virtual Stream EndOpenRead(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<Stream> storageAsyncResult = (StorageAsyncResult<Stream>)asyncResult;
-            storageAsyncResult.End();
-            return storageAsyncResult.Result;
+            return ((CancellableAsyncResultTaskWrapper<Stream>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -155,7 +130,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<Stream> OpenReadAsync()
         {
-            return this.OpenReadAsync(CancellationToken.None);
+            return this.OpenReadAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -174,7 +149,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginOpenRead, this.EndOpenRead, cancellationToken);
+            return this.OpenReadAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -215,9 +190,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// number of bytes to buffer when reading from the stream. The value must be at least 16 KB.</para>
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task<Stream> OpenReadAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<Stream> OpenReadAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginOpenRead, this.EndOpenRead, accessCondition, options, operationContext, cancellationToken);
+            await this.FetchAttributesAsync(accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
+            AccessCondition streamAccessCondition = AccessCondition.CloneConditionWithETag(accessCondition, this.Properties.ETag);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient, false);
+            return new BlobReadStream(this, streamAccessCondition, modifiedOptions, operationContext);
         }
 #endif
 #if SYNC
@@ -271,14 +249,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        internal ICancellableAsyncResult BeginDownloadToStream(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        internal ICancellableAsyncResult BeginDownloadToStream(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return this.BeginDownloadRangeToStream(target, null /* offset */, null /* length */, accessCondition, options, operationContext, progressIncrementer, callback, state);
+            return new CancellableAsyncResultTaskWrapper(token => this.DownloadToStreamAsync(target, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -287,7 +265,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDownloadToStream(IAsyncResult asyncResult)
         {
-            this.EndDownloadRangeToStream(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -299,7 +277,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target)
         {
-            return this.DownloadToStreamAsync(target, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, CancellationToken.None);
         }
 
         /// <summary>
@@ -311,7 +289,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToStream, this.EndDownloadToStream, target, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, cancellationToken);
         }
 
         /// <summary>
@@ -325,7 +303,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadToStreamAsync(target, accessCondition, options, operationContext, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
         }
 
         /// <summary>
@@ -340,7 +318,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToStream, this.EndDownloadToStream, target, accessCondition, options, operationContext, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, cancellationToken);
         }
 
         /// <summary>
@@ -356,7 +334,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToStream, this.EndDownloadToStream, target, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, accessCondition, options, operationContext, progressHandler, cancellationToken);
         }
 #endif
 
@@ -383,7 +361,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
 
-            WrappedKeyData wrappedKey = CommonUtility.RunWithoutSynchronizationContext(() => this.RotateEncryptionHelper(accessCondition, modifiedOptions, CancellationToken.None).Result);
+            WrappedKeyData wrappedKey = CommonUtility.RunWithoutSynchronizationContext(() => this.RotateEncryptionHelper(accessCondition, modifiedOptions, CancellationToken.None).GetAwaiter().GetResult());
             BlobEncryptionData encryptionData = wrappedKey.encryptionData;
 
             // Update the encryption metadata with the newly wrapped CEK and call SetMetadata.
@@ -473,7 +451,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndRotateEncryptionKey(IAsyncResult asyncResult)
         {
-            ((CancellableAsyncResultTaskWrapper)asyncResult).Wait();
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -666,7 +644,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadToFile(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginDownloadToFile(path, mode, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, callback, state);
+            return this.BeginDownloadToFile(path, mode, accessCondition, options, operationContext, null /*progressHandler*/, callback, state);
         }
 
         /// <summary>
@@ -677,87 +655,15 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private ICancellableAsyncResult BeginDownloadToFile(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        private ICancellableAsyncResult BeginDownloadToFile(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("path", path);
-
-            FileStream fileStream = new FileStream(path, mode, FileAccess.Write, FileShare.None);
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state)
-            {
-                OperationState = Tuple.Create<FileStream, FileMode>(fileStream, mode)
-            };
-
-            try
-            {
-                ICancellableAsyncResult asyncResult = this.BeginDownloadToStream(fileStream, accessCondition, options, operationContext, progressIncrementer, this.DownloadToFileCallback, storageAsyncResult); 
-                storageAsyncResult.CancelDelegate = asyncResult.Cancel;
-                return storageAsyncResult;
-            }
-            catch (Exception)
-            {
-                fileStream.Dispose();
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Called when the asynchronous DownloadToStream operation completes.
-        /// </summary>
-        /// <param name="asyncResult">The result of the asynchronous operation.</param>
-        private void DownloadToFileCallback(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult.AsyncState;
-            Exception exception = null;
-            bool tryFileDelete = false;
-            string filePath = null;
-
-            try
-            {
-                this.EndDownloadToStream(asyncResult);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-                tryFileDelete = true;
-            }
-
-            // We should do FileStream disposal in a separate try-catch block
-            // because we want to close the file even if the operation fails.
-            try
-            {
-                FileStream fileStream = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item1;
-                filePath = fileStream.Name;
-                fileStream.Dispose();
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            if (tryFileDelete)
-            {
-                try
-                {
-                    FileMode mode = ((Tuple<FileStream, FileMode>)storageAsyncResult.OperationState).Item2;
-                    if (mode == FileMode.Create || mode == FileMode.CreateNew)
-                    {
-                        File.Delete(filePath);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Best effort to clean up in the event that download was unsuccessful.
-                    // Do not throw as we want to throw original exception.
-                }
-            }
-
-            storageAsyncResult.OnComplete(exception);
-        }
+            return new CancellableAsyncResultTaskWrapper(token => this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, token), callback, state);
+        }        
 
         /// <summary>
         /// Ends an asynchronous operation to download the contents of a blob to a file.
@@ -765,8 +671,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDownloadToFile(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<NullType> res = (StorageAsyncResult<NullType>)asyncResult;
-            res.End();
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -779,7 +684,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToFileAsync(string path, FileMode mode)
         {
-            return this.DownloadToFileAsync(path, mode, CancellationToken.None);
+            return this.DownloadToFileAsync(path, mode, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, CancellationToken.None);
         }
 
         /// <summary>
@@ -792,7 +697,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToFileAsync(string path, FileMode mode, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToFile, this.EndDownloadToFile, path, mode, cancellationToken);
+            return this.DownloadToFileAsync(path, mode, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, cancellationToken);
         }
 
         /// <summary>
@@ -807,7 +712,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, CancellationToken.None);
+            return this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, null /*progressHandler*/, CancellationToken.None);
         }
 
         /// <summary>
@@ -823,7 +728,49 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToFile, this.EndDownloadToFile, path, mode, accessCondition, options, operationContext, cancellationToken);
+            return this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, null /*progressHandler*/, cancellationToken);
+        }
+        /// <summary>
+        /// Downloads the contents of a blob to a file.
+        /// </summary>
+        /// <param name="path">A string containing the file path providing the blob content.</param>
+        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that specifies how to open the file.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual async Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            CommonUtility.AssertNotNull("path", path);
+            FileStream fileStream = new FileStream(path, mode, FileAccess.Write, FileShare.None);
+
+            try
+            {
+                using (fileStream)
+                {
+                    await this.DownloadToStreamAsync(fileStream, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            catch (Exception)
+            {
+                if (mode == FileMode.Create || mode == FileMode.CreateNew)
+                {
+                    try
+                    {
+                        File.Delete(path);
+                    }
+                    catch (Exception)
+                    {
+                        // Best effort to clean up in the event that download was unsuccessful.
+                        // Do not throw as we want to throw original exception.
+                    }
+                }
+
+                throw;
+            }
         }
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
@@ -918,22 +865,7 @@ namespace Microsoft.Azure.Storage.Blob
             return pdf.Task;
         }
 #endif
-        /// <summary>
-        /// Initiates an asynchronous operation to download the contents of a blob to a file.
-        /// </summary>
-        /// <param name="path">A string containing the path to the target file.</param>
-        /// <param name="mode">A <see cref="System.IO.FileMode"/> enumeration value that determines how to open or create the file.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual Task DownloadToFileAsync(string path, FileMode mode, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadToFile, this.EndDownloadToFile, path, mode, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
-        }
+
 #endif
 
 #if SYNC
@@ -992,14 +924,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private ICancellableAsyncResult BeginDownloadToByteArray(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        private ICancellableAsyncResult BeginDownloadToByteArray(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return this.BeginDownloadRangeToByteArray(target, index, null /* blobOffset */, null /* length */, accessCondition, options, operationContext, progressIncrementer, callback, state);
+            return new CancellableAsyncResultTaskWrapper<int>(token => this.DownloadToByteArrayAsync(target, index, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1009,7 +941,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>The total number of bytes read into the buffer.</returns>
         public virtual int EndDownloadToByteArray(IAsyncResult asyncResult)
         {
-            return this.EndDownloadRangeToByteArray(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<int>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1022,7 +954,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadToByteArrayAsync(byte[] target, int index)
         {
-            return this.DownloadToByteArrayAsync(target, index, CancellationToken.None);
+            return this.DownloadRangeToByteArrayAsync(target, index, null /*blobOffset*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, CancellationToken.None);
         }
 
         /// <summary>
@@ -1035,7 +967,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadToByteArrayAsync(byte[] target, int index, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadToByteArray, this.EndDownloadToByteArray, target, index, cancellationToken);
+            return this.DownloadRangeToByteArrayAsync(target, index, null /*blobOffset*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, cancellationToken);
         }
 
         /// <summary>
@@ -1050,7 +982,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadToByteArrayAsync(target, index, accessCondition, options, operationContext, CancellationToken.None);
+            return this.DownloadRangeToByteArrayAsync(target, index, null /*blobOffset*/, null /*length*/, accessCondition, options, operationContext, null /*progressHandler*/, CancellationToken.None);
         }
 
         /// <summary>
@@ -1066,7 +998,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadToByteArray, this.EndDownloadToByteArray, target, index, accessCondition, options, operationContext, cancellationToken);
+            return this.DownloadRangeToByteArrayAsync(target, index, null /*blobOffset*/, null /*length*/, accessCondition, options, operationContext, null /*progressHandler*/, cancellationToken);
         }
 
         /// <summary>
@@ -1083,7 +1015,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadToByteArrayAsync(byte[] target, int index, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadToByteArray, this.EndDownloadToByteArray, target, index, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+            return this.DownloadRangeToByteArrayAsync(target, index, null /*blobOffset*/, null /*length*/, accessCondition, options, operationContext, progressHandler, cancellationToken);
         }
 #endif
 
@@ -1140,7 +1072,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginDownloadRangeToStream(target, offset, length, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, callback, state);
+            return this.BeginDownloadRangeToStream(target, offset, length, accessCondition, options, operationContext, null /*progressHandler*/, callback, state);
         }
 
         /// <summary>
@@ -1152,22 +1084,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        private ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("target", target);
-
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.GetBlobImpl(this.attributes, progressIncrementer.CreateProgressIncrementingStream(target), offset, length, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1176,7 +1100,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDownloadRangeToStream(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1190,7 +1114,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length)
         {
-            return this.DownloadRangeToStreamAsync(target, offset, length, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, CancellationToken.None);
         }
 
         /// <summary>
@@ -1204,7 +1128,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadRangeToStream, this.EndDownloadRangeToStream, target, offset, length, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, cancellationToken);
         }
 
         /// <summary>
@@ -1220,7 +1144,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
         }
 
         /// <summary>
@@ -1237,7 +1161,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadRangeToStream, this.EndDownloadRangeToStream, target, offset, length, accessCondition, options, operationContext, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, cancellationToken);
         }
 
         /// <summary>
@@ -1255,7 +1179,32 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDownloadRangeToStream, this.EndDownloadRangeToStream, target, offset, length, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to download a range of bytes from a blob to a stream.
+        /// </summary>
+        /// <param name="target">A <see cref="System.IO.Stream"/> object representing the target stream.</param>
+        /// <param name="offset">The offset at which to begin downloading the blob, in bytes.</param>
+        /// <param name="length">The length of the data to download from the blob, in bytes.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressIncrementer"> A <see cref="AggregatingProgressIncrementer"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
+        {
+            CommonUtility.AssertNotNull("target", target);
+
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.GetBlobImpl(this.attributes, progressIncrementer.CreateProgressIncrementingStream(target), offset, length, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1314,7 +1263,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginDownloadRangeToByteArray(target, index, blobOffset, length, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, callback, state);
+            return this.BeginDownloadRangeToByteArray(target, index, blobOffset, length, accessCondition, options, operationContext, null /*progressHandler*/, callback, state);
         }
 
         /// <summary>
@@ -1327,51 +1276,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, AsyncCallback callback, object state)
+        private ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            SyncMemoryStream stream = new SyncMemoryStream(target, index);
-            StorageAsyncResult<int> storageAsyncResult = new StorageAsyncResult<int>(callback, state) { OperationState = stream };
-
-            ICancellableAsyncResult result = this.BeginDownloadRangeToStream(
-                stream,
-                blobOffset,
-                length,
-                accessCondition,
-                options,
-                operationContext,
-                progressIncrementer,
-                this.DownloadRangeToByteArrayCallback,
-                storageAsyncResult);
-
-            storageAsyncResult.CancelDelegate = result.Cancel;
-            return storageAsyncResult;
-        }
-
-        /// <summary>
-        /// Called when the asynchronous DownloadRangeToStream operation completes.
-        /// </summary>
-        /// <param name="asyncResult">The result of the asynchronous operation.</param>
-        private void DownloadRangeToByteArrayCallback(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<int> storageAsyncResult = (StorageAsyncResult<int>)asyncResult.AsyncState;
-
-            try
-            {
-                this.EndDownloadRangeToStream(asyncResult);
-
-                SyncMemoryStream stream = (SyncMemoryStream)storageAsyncResult.OperationState;
-                storageAsyncResult.Result = (int)stream.Position;
-                storageAsyncResult.OnComplete();
-            }
-            catch (Exception e)
-            {
-                storageAsyncResult.OnComplete(e);
-            }
+            return new CancellableAsyncResultTaskWrapper<int>(token => this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1381,9 +1293,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>The total number of bytes read into the buffer.</returns>
         public virtual int EndDownloadRangeToByteArray(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<int> res = (StorageAsyncResult<int>)asyncResult;
-            res.End();
-            return res.Result;
+            return ((CancellableAsyncResultTaskWrapper<int>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1398,7 +1308,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length)
         {
-            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, CancellationToken.None);
+            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, CancellationToken.None);
         }
 
         /// <summary>
@@ -1413,7 +1323,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadRangeToByteArray, this.EndDownloadRangeToByteArray, target, index, blobOffset, length, cancellationToken);
+            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, cancellationToken);
         }
 
         /// <summary>
@@ -1430,7 +1340,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, accessCondition, options, operationContext, CancellationToken.None);
+            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, accessCondition, options, operationContext, null /*progressHandler*/, CancellationToken.None);
         }
 
         /// <summary>
@@ -1448,7 +1358,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadRangeToByteArray, this.EndDownloadRangeToByteArray, target, index, blobOffset, length, accessCondition, options, operationContext, cancellationToken);
+            return this.DownloadRangeToByteArrayAsync(target, index, blobOffset, length, accessCondition, options, operationContext, null /*progressHandler*/, cancellationToken);
         }
 
         /// <summary>
@@ -1465,9 +1375,13 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>int</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        public virtual async Task<int> DownloadRangeToByteArrayAsync(byte[] target, int index, long? blobOffset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDownloadRangeToByteArray, this.EndDownloadRangeToByteArray, target, index, blobOffset, length, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
+            using (SyncMemoryStream stream = new SyncMemoryStream(target, index))
+            {
+                await this.DownloadRangeToStreamAsync(stream, blobOffset, length, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
+                return (int)stream.Position;
+            }
         }
 #endif
 
@@ -1538,13 +1452,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         private ICancellableAsyncResult BeginExists(bool primaryOnly, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.ExistsImpl(this.attributes, modifiedOptions, primaryOnly),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.ExistsAsync(primaryOnly, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1554,7 +1462,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns><c>true</c> if the blob exists.</returns>
         public virtual bool EndExists(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<bool>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1565,7 +1473,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync()
         {
-            return this.ExistsAsync(CancellationToken.None);
+            return this.ExistsAsync(false/*primaryOnly*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -1576,7 +1484,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, cancellationToken);
+            return this.ExistsAsync(false/*primaryOnly*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1588,7 +1496,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync(BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.ExistsAsync(options, operationContext, CancellationToken.None);
+            return this.ExistsAsync(false/*primaryOnly*/, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -1599,9 +1507,28 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> ExistsAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<bool> ExistsAsync( BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, options, operationContext, cancellationToken);
+            return this.ExistsAsync(false/*primaryOnly*/, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to check existence of the blob.
+        /// </summary>
+        /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<bool> ExistsAsync(bool primaryOnly, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.ExistsImpl(this.attributes, modifiedOptions, primaryOnly),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1647,13 +1574,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.FetchAttributesImpl(this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1662,7 +1583,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndFetchAttributes(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1673,7 +1594,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task FetchAttributesAsync()
         {
-            return this.FetchAttributesAsync(CancellationToken.None);
+            return this.FetchAttributesAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -1684,7 +1605,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task FetchAttributesAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, cancellationToken);
+            return this.FetchAttributesAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1711,7 +1632,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task FetchAttributesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.FetchAttributesImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1758,14 +1684,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.SetMetadataImpl(this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1774,7 +1693,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndSetMetadata(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1785,7 +1704,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync()
         {
-            return this.SetMetadataAsync(CancellationToken.None);
+            return this.SetMetadataAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -1796,7 +1715,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, cancellationToken);
+            return this.SetMetadataAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1823,7 +1742,13 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, accessCondition, options, operationContext, cancellationToken);
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.SetMetadataImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1870,14 +1795,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.SetPropertiesImpl(this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.SetPropertiesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1886,7 +1804,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndSetProperties(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1897,7 +1815,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetPropertiesAsync()
         {
-            return this.SetPropertiesAsync(CancellationToken.None);
+            return this.SetPropertiesAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -1908,7 +1826,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetPropertiesAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetProperties, this.EndSetProperties, cancellationToken);
+            return this.SetPropertiesAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1935,7 +1853,13 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetPropertiesAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetProperties, this.EndSetProperties, accessCondition, options, operationContext, cancellationToken);
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.SetPropertiesImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1956,6 +1880,7 @@ namespace Microsoft.Azure.Storage.Blob
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
+
 #endif
 
         /// <summary>
@@ -1970,6 +1895,7 @@ namespace Microsoft.Azure.Storage.Blob
             return this.BeginDelete(DeleteSnapshotsOption.None, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
+
         /// <summary>
         /// Begins an asynchronous operation to delete the blob.
         /// </summary>
@@ -1983,13 +1909,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDelete(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.DeleteBlobImpl(this.attributes, deleteSnapshotsOption, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.DeleteAsync(deleteSnapshotsOption, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1998,7 +1918,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDelete(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2009,7 +1929,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DeleteAsync()
         {
-            return this.DeleteAsync(CancellationToken.None);
+            return this.DeleteAsync(DeleteSnapshotsOption.None, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2020,7 +1940,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DeleteAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, cancellationToken);
+            return this.DeleteAsync(DeleteSnapshotsOption.None, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2049,8 +1969,14 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DeleteAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.DeleteBlobImpl(this.attributes, deleteSnapshotsOption, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
+
 #endif
 
 #if SYNC
@@ -2067,7 +1993,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-           
+
             try
             {
                 this.Delete(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext);
@@ -2094,6 +2020,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
             }
         }
+
 #endif
 
         /// <summary>
@@ -2121,59 +2048,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteIfExists(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-
-            this.DeleteIfExistsHandler(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
-            return storageAsyncResult;
-        }
-
-        private void DeleteIfExistsHandler(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
-        {
-            ICancellableAsyncResult savedDeleteResult = this.BeginDelete(
-                deleteSnapshotsOption,
-                accessCondition,
-                options,
-                operationContext,
-                deleteResult =>
-                {
-                    storageAsyncResult.UpdateCompletedSynchronously(deleteResult.CompletedSynchronously);
-                    storageAsyncResult.CancelDelegate = null;
-                    try
-                    {
-                        this.EndDelete(deleteResult);
-                        storageAsyncResult.Result = true;
-                        storageAsyncResult.OnComplete();
-                    }
-                    catch (StorageException e)
-                    {
-                        if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                            ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
-                            (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound)))
-                        {
-                            storageAsyncResult.Result = false;
-                            storageAsyncResult.OnComplete();
-                        }
-                        else
-                        {
-                            storageAsyncResult.OnComplete(e);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        storageAsyncResult.OnComplete(e);
-                    }
-                },
-                null /* state */);
-
-            storageAsyncResult.CancelDelegate = savedDeleteResult.Cancel;
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(deleteSnapshotsOption, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2183,14 +2058,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns><c>true</c> if the blob did already exist and was deleted; otherwise, <c>false</c>.</returns>
         public virtual bool EndDeleteIfExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = (StorageAsyncResult<bool>)asyncResult;
-            if (res.CancelRequested)
-            {
-                res.Cancel();
-            }
-
-            res.End();
-            return res.Result;
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2201,7 +2069,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<bool> DeleteIfExistsAsync()
         {
-            return this.DeleteIfExistsAsync(CancellationToken.None);
+            return this.DeleteIfExistsAsync(DeleteSnapshotsOption.None, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2212,7 +2080,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<bool> DeleteIfExistsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, cancellationToken);
+            return this.DeleteIfExistsAsync(DeleteSnapshotsOption.None, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2239,10 +2107,38 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, deleteSnapshotsOption, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            try
+            {
+                await this.DeleteAsync(deleteSnapshotsOption, accessCondition, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    if ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.BlobNotFound) ||
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.ContainerNotFound))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
+
 #endif
 
 #if SYNC
@@ -2288,13 +2184,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUndelete(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.UndeleteBlobImpl(this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.UndeleteAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2303,7 +2193,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUndelete(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+           ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 
@@ -2315,7 +2205,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UndeleteAsync()
         {
-            return this.UndeleteAsync(CancellationToken.None);
+            return this.UndeleteAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2326,7 +2216,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UndeleteAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUndelete, this.EndUndelete, cancellationToken);
+            return this.UndeleteAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2353,7 +2243,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task UndeleteAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUndelete, this.EndUndelete, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.UndeleteBlobImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
 #endif
@@ -2413,13 +2308,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAcquireLease(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.AcquireLeaseImpl(this.attributes, leaseTime, proposedLeaseId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<string>(token => AcquireLeaseAsync(leaseTime, proposedLeaseId, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2429,7 +2318,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>The ID of the acquired lease.</returns>
         public virtual string EndAcquireLease(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<string>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<string>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2444,7 +2333,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId = null)
         {
-            return this.AcquireLeaseAsync(leaseTime, proposedLeaseId, CancellationToken.None);
+            return this.AcquireLeaseAsync(leaseTime, proposedLeaseId, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2459,7 +2348,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginAcquireLease, this.EndAcquireLease, leaseTime, proposedLeaseId, cancellationToken);
+            return this.AcquireLeaseAsync(leaseTime, proposedLeaseId, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2494,7 +2383,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> AcquireLeaseAsync(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginAcquireLease, this.EndAcquireLease, leaseTime, proposedLeaseId, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.AcquireLeaseImpl(this.attributes, leaseTime, proposedLeaseId, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -2541,13 +2435,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginRenewLease(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.RenewLeaseImpl(this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.RenewLeaseAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2556,7 +2444,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndRenewLease(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2568,7 +2456,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task RenewLeaseAsync(AccessCondition accessCondition)
         {
-            return this.RenewLeaseAsync(accessCondition, CancellationToken.None);
+            return this.RenewLeaseAsync(accessCondition, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2580,7 +2468,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task RenewLeaseAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginRenewLease, this.EndRenewLease, accessCondition, cancellationToken);
+            return this.RenewLeaseAsync(accessCondition, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2607,7 +2495,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task RenewLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginRenewLease, this.EndRenewLease, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.RenewLeaseImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -2658,13 +2551,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginChangeLease(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.ChangeLeaseImpl(this.attributes, proposedLeaseId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<string>(token => this.ChangeLeaseAsync(proposedLeaseId, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2674,7 +2561,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>The new lease ID.</returns>
         public virtual string EndChangeLease(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<string>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<string>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2687,7 +2574,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition)
         {
-            return this.ChangeLeaseAsync(proposedLeaseId, accessCondition, CancellationToken.None);
+            return this.ChangeLeaseAsync(proposedLeaseId, accessCondition, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2700,7 +2587,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginChangeLease, this.EndChangeLease, proposedLeaseId, accessCondition, cancellationToken);
+            return this.ChangeLeaseAsync(proposedLeaseId, accessCondition, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2729,7 +2616,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> ChangeLeaseAsync(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginChangeLease, this.EndChangeLease, proposedLeaseId, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.ChangeLeaseImpl(this.attributes, proposedLeaseId, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -2776,13 +2668,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginReleaseLease(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.ReleaseLeaseImpl(this.attributes, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => ReleaseLeaseAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2791,7 +2677,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An IAsyncResult that references the pending asynchronous operation.</param>
         public virtual void EndReleaseLease(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2803,7 +2689,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task ReleaseLeaseAsync(AccessCondition accessCondition)
         {
-            return this.ReleaseLeaseAsync(accessCondition, CancellationToken.None);
+            return this.ReleaseLeaseAsync(accessCondition, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2815,7 +2701,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task ReleaseLeaseAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginReleaseLease, this.EndReleaseLease, accessCondition, cancellationToken);
+            return this.ReleaseLeaseAsync(accessCondition, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2842,7 +2728,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task ReleaseLeaseAsync(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginReleaseLease, this.EndReleaseLease, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.ReleaseLeaseImpl(this.attributes, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -2898,13 +2789,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginBreakLease(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.BreakLeaseImpl(this.attributes, breakPeriod, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<TimeSpan>(token => this.BreakLeaseAsync(breakPeriod, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2914,7 +2799,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="System.TimeSpan"/> representing the amount of time before the lease ends, to the second.</returns>
         public virtual TimeSpan EndBreakLease(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<TimeSpan>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<TimeSpan>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2928,7 +2813,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod)
         {
-            return this.BreakLeaseAsync(breakPeriod, CancellationToken.None);
+            return this.BreakLeaseAsync(breakPeriod, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2942,7 +2827,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginBreakLease, this.EndBreakLease, breakPeriod, cancellationToken);
+            return this.BreakLeaseAsync(breakPeriod, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2975,7 +2860,14 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<TimeSpan> BreakLeaseAsync(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginBreakLease, this.EndBreakLease, breakPeriod, accessCondition, options, operationContext, cancellationToken);
+            {
+                BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+                return Executor.ExecuteAsync(
+                    this.BreakLeaseImpl(this.attributes, breakPeriod, accessCondition, modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken);
+            }
         }
 #endif
 
@@ -3071,15 +2963,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         internal virtual ICancellableAsyncResult BeginStartCopy(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("source", source);
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<string>(token => this.StartCopyAsync(source, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -3093,7 +2977,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </remarks>
         public virtual string EndStartCopy(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<string>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<string>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -3119,7 +3003,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, cancellationToken);
+            return this.StartCopyAsync(source, null /*premiumPageBlboTier*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -3152,7 +3036,32 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, null /*premiumPageBlobTier*/, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
+        /// to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            CommonUtility.AssertNotNull("source", source);
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
 #endif
@@ -3202,13 +3111,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAbortCopy(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.AbortCopyImpl(this.attributes, copyId, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.AbortCopyAsync(copyId, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -3217,7 +3120,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndAbortCopy(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -3229,7 +3132,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task AbortCopyAsync(string copyId)
         {
-            return this.AbortCopyAsync(copyId, CancellationToken.None);
+            return this.AbortCopyAsync(copyId, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -3241,7 +3144,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task AbortCopyAsync(string copyId, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginAbortCopy, this.EndAbortCopy, copyId, cancellationToken);
+            return this.AbortCopyAsync(copyId, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -3270,7 +3173,12 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task AbortCopyAsync(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginAbortCopy, this.EndAbortCopy, copyId, accessCondition, options, operationContext, cancellationToken);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.AbortCopyImpl(this.attributes, copyId, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -3320,14 +3228,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            this.attributes.AssertNoSnapshot();
-            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.SnapshotImpl(metadata, accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<CloudBlob>(token => this.SnapshotAsync(metadata, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -3337,7 +3238,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="CloudBlob"/> object that is a blob snapshot.</returns>
         public virtual CloudBlob EndSnapshot(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<CloudBlob>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<CloudBlob>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -3348,7 +3249,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<CloudBlob> SnapshotAsync()
         {
-            return this.SnapshotAsync(CancellationToken.None);
+            return this.SnapshotAsync(null /*metadata*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -3359,7 +3260,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<CloudBlob> SnapshotAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, cancellationToken);
+            return this.SnapshotAsync(null /*metadata*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -3388,7 +3289,13 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<CloudBlob> SnapshotAsync(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginSnapshot, this.EndSnapshot, metadata, accessCondition, options, operationContext, cancellationToken);
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.SnapshotImpl(metadata, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -3487,9 +3394,7 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.RetrieveResponseStream = true;
             getCmd.DestinationStream = destStream;
             getCmd.CalculateMd5ForResponseStream = !options.DisableContentMD5Validation.Value;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) =>
-                BlobHttpWebRequestFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value, accessCondition, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.RecoveryAction = (cmd, ex, ctx) =>
             {
                 if ((lockedAccessCondition == null) && !string.IsNullOrEmpty(lockedETag))
@@ -3510,8 +3415,7 @@ namespace Microsoft.Azure.Storage.Blob
                     }
                 }
 
-                getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, context) =>
-                    BlobHttpWebRequestFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, lockedAccessCondition ?? accessCondition, useVersionHeader, context);
+                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, lockedAccessCondition ?? accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             };
 
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -3521,7 +3425,7 @@ namespace Microsoft.Azure.Storage.Blob
                 if (!arePropertiesPopulated)
                 {
                     CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
-                    storedMD5 = resp.Headers[HttpResponseHeader.ContentMd5];
+                    storedMD5 = HttpResponseParsers.GetContentMD5(resp);
 
                     if (options.EncryptionPolicy != null)
                     {
@@ -3546,10 +3450,7 @@ namespace Microsoft.Azure.Storage.Blob
                     // same storage location is important to prevent a possible ETag mismatch.
                     getCmd.CommandLocationMode = cmd.CurrentResult.TargetLocation == StorageLocation.Primary ? CommandLocationMode.PrimaryOnly : CommandLocationMode.SecondaryOnly;
                     lockedETag = blobAttributes.Properties.ETag;
-                    if (resp.ContentLength >= 0)
-                    {
-                        validateLength = resp.ContentLength;
-                    }
+                    validateLength = resp.Content.Headers.ContentLength;
 
                     arePropertiesPopulated = true;
                 }
@@ -3557,10 +3458,10 @@ namespace Microsoft.Azure.Storage.Blob
                 return NullType.Value;
             };
 
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) =>
             {
                 HttpResponseParsers.ValidateResponseStreamMd5AndLength(validateLength, storedMD5, cmd);
-                return NullType.Value;
+                return NullType.ValueTask;
             };
 
             getCmd.DisposeAction = (cmd) =>
@@ -3615,8 +3516,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.GetProperties(uri, serverTimeout, blobAttributes.SnapshotTime, accessCondition, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, blobAttributes.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -3642,8 +3542,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = primaryOnly ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.GetProperties(uri, serverTimeout, blobAttributes.SnapshotTime, null /* accessCondition */, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, blobAttributes.SnapshotTime, null /* accessCondition */, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
@@ -3673,9 +3572,12 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetMetadata(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, blobAttributes.Metadata);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                BlobHttpRequestMessageFactory.AddMetadata(msg, blobAttributes.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -3701,9 +3603,12 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.SetProperties(uri, serverTimeout, blobAttributes.Properties, accessCondition, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, blobAttributes.Metadata);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.SetProperties(uri, serverTimeout, blobAttributes.Properties, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                BlobHttpRequestMessageFactory.AddMetadata(msg, blobAttributes.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -3717,20 +3622,19 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Implements the DeleteBlob method.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="deleteSnapshotsOption">A <see cref="DeleteSnapshotsOption"/> object indicating whether to only delete the blob, to delete the blob and all snapshots, or to only delete the snapshots.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> that deletes the blob.
         /// </returns>
-        private RESTCommand<NullType> DeleteBlobImpl(BlobAttributes blobAttributes, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> DeleteBlobImpl(BlobAttributes attributes, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options)
         {
-            RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(deleteCmd);
-            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Delete(uri, serverTimeout, blobAttributes.SnapshotTime, deleteSnapshotsOption, accessCondition, useVersionHeader, ctx);
-            deleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            deleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Delete(uri, serverTimeout, attributes.SnapshotTime, deleteSnapshotsOption, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, NullType.Value, cmd, ex);
 
             return deleteCmd;
@@ -3739,7 +3643,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Generates a <see cref="RESTCommand{T}"/> for acquiring a lease.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="leaseTime">A <see cref="System.TimeSpan"/> representing the span of time for which to acquire the lease,
         /// which will be rounded down to seconds. If null, an infinite lease will be acquired. If not null, this must be
         /// 15 to 60 seconds.</param>
@@ -3749,7 +3653,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> implementing the acquire lease operation.
         /// </returns>
-        private RESTCommand<string> AcquireLeaseImpl(BlobAttributes blobAttributes, TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<string> AcquireLeaseImpl(BlobAttributes attributes, TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options)
         {
             int leaseDuration = -1;
             if (leaseTime.HasValue)
@@ -3758,15 +3662,14 @@ namespace Microsoft.Azure.Storage.Blob
                 leaseDuration = (int)leaseTime.Value.TotalSeconds;
             }
 
-            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Acquire, proposedLeaseId, leaseDuration, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Lease(uri, serverTimeout, LeaseAction.Acquire, proposedLeaseId, leaseDuration, null /* leaseBreakPeriod */, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
-                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null, cmd, ex);
-                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(blobAttributes, resp, false);
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return BlobHttpResponseParsers.GetLeaseId(resp);
             };
 
@@ -3776,14 +3679,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Generates a <see cref="RESTCommand{T}"/> for renewing a lease.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> implementing the renew lease operation.
         /// </returns>
         /// <exception cref="System.ArgumentException">accessCondition</exception>
-        private RESTCommand<NullType> RenewLeaseImpl(BlobAttributes blobAttributes, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> RenewLeaseImpl(BlobAttributes attributes, AccessCondition accessCondition, BlobRequestOptions options)
         {
             CommonUtility.AssertNotNull("accessCondition", accessCondition);
             if (accessCondition.LeaseId == null)
@@ -3791,15 +3694,14 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new ArgumentException(SR.MissingLeaseIDRenewing, "accessCondition");
             }
 
-            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Renew, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Lease(uri, serverTimeout, LeaseAction.Renew, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(blobAttributes, resp, false);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -3809,7 +3711,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Generates a <see cref="RESTCommand{T}"/> for changing a lease ID.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="proposedLeaseId">The proposed new lease ID.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -3817,7 +3719,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// A <see cref="RESTCommand{T}"/> implementing the change lease ID operation.
         /// </returns>
         /// <exception cref="System.ArgumentException">accessCondition</exception>
-        private RESTCommand<string> ChangeLeaseImpl(BlobAttributes blobAttributes, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<string> ChangeLeaseImpl(BlobAttributes attributes, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options)
         {
             CommonUtility.AssertNotNull("accessCondition", accessCondition);
             CommonUtility.AssertNotNull("proposedLeaseId", proposedLeaseId);
@@ -3826,15 +3728,14 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new ArgumentException(SR.MissingLeaseIDChanging, "accessCondition");
             }
 
-            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Change, proposedLeaseId, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Lease(uri, serverTimeout, LeaseAction.Change, proposedLeaseId, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(blobAttributes, resp, false);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return BlobHttpResponseParsers.GetLeaseId(resp);
             };
 
@@ -3844,14 +3745,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Generates a <see cref="RESTCommand{T}"/> for releasing a lease.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> implementing the release lease operation.
         /// </returns>
         /// <exception cref="System.ArgumentException">accessCondition</exception>
-        private RESTCommand<NullType> ReleaseLeaseImpl(BlobAttributes blobAttributes, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> ReleaseLeaseImpl(BlobAttributes attributes, AccessCondition accessCondition, BlobRequestOptions options)
         {
             CommonUtility.AssertNotNull("accessCondition", accessCondition);
             if (accessCondition.LeaseId == null)
@@ -3859,15 +3760,14 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new ArgumentException(SR.MissingLeaseIDReleasing, "accessCondition");
             }
 
-            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Release, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Lease(uri, serverTimeout, LeaseAction.Release, null /* proposedLeaseId */, null /* leaseDuration */, null /* leaseBreakPeriod */, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
-                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(blobAttributes, resp, false);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 return NullType.Value;
             };
 
@@ -3877,7 +3777,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Generates a <see cref="RESTCommand{T}"/> for breaking a lease.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="breakPeriod">The amount of time to allow the lease to remain, rounded down to seconds.
         /// If null, the break period is the remainder of the current lease, or zero for infinite leases.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -3885,7 +3785,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> implementing the break lease operation.
         /// </returns>
-        private RESTCommand<TimeSpan> BreakLeaseImpl(BlobAttributes blobAttributes, TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<TimeSpan> BreakLeaseImpl(BlobAttributes attributes, TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options)
         {
             int? breakSeconds = null;
             if (breakPeriod.HasValue)
@@ -3894,15 +3794,14 @@ namespace Microsoft.Azure.Storage.Blob
                 breakSeconds = (int)breakPeriod.Value.TotalSeconds;
             }
 
-            RESTCommand<TimeSpan> putCmd = new RESTCommand<TimeSpan>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<TimeSpan> putCmd = new RESTCommand<TimeSpan>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Lease(uri, serverTimeout, LeaseAction.Break, null /* proposedLeaseId */, null /* leaseDuration */, breakSeconds, accessCondition, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Lease(uri, serverTimeout, LeaseAction.Break, null /* proposedLeaseId */, null /* leaseDuration */, breakSeconds, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, TimeSpan.Zero, cmd, ex);
-                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(blobAttributes, resp, false);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
 
                 int? remainingLeaseTime = BlobHttpResponseParsers.GetRemainingLeaseTime(resp);
                 if (!remainingLeaseTime.HasValue)
@@ -3920,7 +3819,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Implementation of the StartCopy method. Result is a BlobAttributes object derived from the response headers.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="source">The URI of the source blob.</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
@@ -3931,29 +3830,31 @@ namespace Microsoft.Azure.Storage.Blob
         /// A <see cref="RESTCommand{T}"/> that starts to copy.
         /// </returns>
         /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-        internal RESTCommand<string> StartCopyImpl(BlobAttributes blobAttributes, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
                 throw new ArgumentException(SR.LeaseConditionOnSource, "sourceAccessCondition");
             }
 
-            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, incrementalCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, blobAttributes.Metadata);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, incrementalCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
-                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(blobAttributes, resp, false);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 CopyState state = BlobHttpResponseParsers.GetCopyAttributes(resp);
-                blobAttributes.CopyState = state;
-
+                attributes.CopyState = state;
+                this.attributes.Properties.PremiumPageBlobTier = premiumPageBlobTier;
                 if (premiumPageBlobTier.HasValue)
                 {
-                    this.attributes.Properties.PremiumPageBlobTier = premiumPageBlobTier;
                     this.attributes.Properties.BlobTierInferred = false;
                 }
 
@@ -3966,22 +3867,21 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Implementation of the AbortCopy method. No result is produced.
         /// </summary>
-        /// <param name="blobAttributes">The attributes.</param>
+        /// <param name="attributes">The attributes.</param>
         /// <param name="copyId">The copy ID of the copy operation to abort.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> that aborts the copy.
         /// </returns>
-        private RESTCommand<NullType> AbortCopyImpl(BlobAttributes blobAttributes, string copyId, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> AbortCopyImpl(BlobAttributes attributes, string copyId, AccessCondition accessCondition, BlobRequestOptions options)
         {
             CommonUtility.AssertNotNull("copyId", copyId);
 
-            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.AbortCopy(uri, serverTimeout, copyId, accessCondition, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AbortCopy(uri, serverTimeout, copyId, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 
             return putCmd;
@@ -4000,22 +3900,19 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<CloudBlob> putCmd = new RESTCommand<CloudBlob>(this.ServiceClient.Credentials, this.attributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Snapshot(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) =>
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                if (metadata != null)
-                {
-                    BlobHttpWebRequestFactory.AddMetadata(r, metadata);
-                }
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                BlobHttpRequestMessageFactory.AddMetadata(msg, metadata);
+
+                return msg;
             };
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
                 DateTimeOffset snapshotTime = NavigationHelper.ParseSnapshotTime(BlobHttpResponseParsers.GetSnapshotTime(resp));
-
                 CloudBlob snapshot = new CloudBlob(this.Name, snapshotTime, this.Container);
-
                 snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata);
                 snapshot.attributes.Properties = new BlobProperties(this.Properties);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
@@ -4039,8 +3936,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> unDeleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
 
             options.ApplyToStorageCommand(unDeleteCmd);
-            unDeleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.Undelete(uri, serverTimeout, accessCondition, useVersionHeader, ctx);
-            unDeleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            unDeleteCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Undelete(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             unDeleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
 
             return unDeleteCmd;
@@ -4114,7 +4010,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 throw new InvalidOperationException(SR.KeyRotationNoKeyID);
             }
-
+            
             // Use the key resolver to resolve the old KEK.
             Azure.KeyVault.Core.IKey oldKey = await modifiedOptions.EncryptionPolicy.KeyResolver.ResolveKeyAsync(encryptionData.WrappedContentKey.KeyId, cancellationToken).ConfigureAwait(false);
             if (oldKey == null)
@@ -4158,7 +4054,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="blobAttributes">The new attributes.</param>
         /// <param name="response">The response.</param>
         /// <exception cref="System.InvalidOperationException"></exception>
-        internal static void UpdateAfterFetchAttributes(BlobAttributes blobAttributes, HttpWebResponse response)
+        internal static void UpdateAfterFetchAttributes(BlobAttributes blobAttributes, HttpResponseMessage response)
         {
             BlobProperties properties = BlobHttpResponseParsers.GetProperties(response);
 
@@ -4180,7 +4076,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="blobAttributes">The attributes.</param>
         /// <param name="response">The response to parse.</param>
         /// <param name="updateLength">If set to <c>true</c>, update the blob length.</param>
-        internal static void UpdateETagLMTLengthAndSequenceNumber(BlobAttributes blobAttributes, HttpWebResponse response, bool updateLength)
+        internal static void UpdateETagLMTLengthAndSequenceNumber(BlobAttributes blobAttributes, HttpResponseMessage response, bool updateLength)
         {
             BlobProperties parsedProperties = BlobHttpResponseParsers.GetProperties(response);
             blobAttributes.Properties.ETag = parsedProperties.ETag ?? blobAttributes.Properties.ETag;

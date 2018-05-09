@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         public CloudBlob(Uri blobAbsoluteUri)
-            : this(blobAbsoluteUri, null /* credentials */)
+            : this(blobAbsoluteUri, default(StorageCredentials) /* credentials */)
         {
         }
 
@@ -51,7 +51,17 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlob(Uri blobAbsoluteUri, StorageCredentials credentials)
-            : this(blobAbsoluteUri, null /* snapshotTime */, credentials)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlob(Uri blobAbsoluteUri, CloudBlobClient client)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, client)
         {
         }
 
@@ -63,6 +73,17 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlob(Uri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
             : this(new StorageUri(blobAbsoluteUri), snapshotTime, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlob(Uri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+            : this(new StorageUri(blobAbsoluteUri), snapshotTime, client)
         {
         }
 
@@ -84,7 +105,26 @@ namespace Microsoft.Azure.Storage.Blob
             this.Properties.BlobType = BlobType.Unspecified;
         }
 
-         /// <summary>
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        /// <returns>A <see cref="CloudBlob"/> object.</returns>
+        public CloudBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+        {
+            CommonUtility.AssertNotNull("blobAbsoluteUri", blobAbsoluteUri);
+            CommonUtility.AssertNotNull("blobAbsoluteUri", blobAbsoluteUri.PrimaryUri);
+
+            this.attributes = new BlobAttributes();
+            this.SnapshotTime = snapshotTime;
+            this.ServiceClient = client;
+            this.ParseQueryAndVerify(blobAbsoluteUri, client.Credentials);
+            this.Properties.BlobType = BlobType.Unspecified;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlob"/> class using the specified blob name and
         /// the parent container reference.
         /// If snapshotTime is not null, the blob instance represents a Snapshot.

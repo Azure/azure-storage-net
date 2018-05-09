@@ -18,6 +18,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Auth;
 using Microsoft.Azure.Storage.Core;
+using Microsoft.Azure.Storage.Core.Util;
 using Microsoft.Azure.Storage.File.Protocol;
 using System;
 using System.Collections.Generic;
@@ -185,7 +186,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareCreateTaskWithCancellation()
+        public async Task CloudFileShareCreateTaskWithCancellation()
         {
             CloudFileShare share = GetRandomShareReference();
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -196,16 +197,15 @@ namespace Microsoft.Azure.Storage.File
             {
                 Thread.Sleep(0);
                 cts.Cancel();
-                createTask.Wait();
+                await createTask;
 
-                // Should throw aggregate exception
+                // Should throw storage exception
                 Assert.Fail();
             }
-            catch (Exception ex)
+            catch (StorageException ex)
             {
-                Assert.IsInstanceOfType(ex, typeof(AggregateException));
                 Assert.IsNotNull(ex.InnerException);
-                Assert.IsInstanceOfType(ex.InnerException, typeof(OperationCanceledException));
+                Assert.IsInstanceOfType(ex.InnerException, typeof(TaskCanceledException));
             }
 
             // Validate that we did attempt one request and it was cancelled
@@ -545,7 +545,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 #endif
@@ -980,7 +980,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1718,7 +1718,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync();
+                share.DeleteIfExistsAsync().Wait();
             }
         }
 #endif
@@ -1729,7 +1729,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileContinuationTokenVerifySerializer()
+        public async Task FileContinuationTokenVerifySerializer()
         {
             XmlSerializer serializer = new XmlSerializer(typeof(FileContinuationToken));
 
@@ -1760,10 +1760,10 @@ namespace Microsoft.Azure.Storage.File
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
             // Read with token.ReadXml()
-            using (XmlReader xmlReader = XmlReader.Create(new StringReader(tokenxml)))
+            using (XmlReader xmlReader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(tokenxml))))
             {
                 readToken = new FileContinuationToken();
-                readToken.ReadXml(xmlReader);
+                await readToken.ReadXmlAsync(xmlReader);
             }
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
@@ -1780,10 +1780,10 @@ namespace Microsoft.Azure.Storage.File
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
             // Read with token.ReadXml()
-            using (XmlReader xmlReader = XmlReader.Create(new StringReader(sb.ToString())))
+            using (XmlReader xmlReader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
             {
                 readToken = new FileContinuationToken();
-                readToken.ReadXml(xmlReader);
+                await readToken.ReadXmlAsync(xmlReader);
             }
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
         }
@@ -1794,7 +1794,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileContinuationTokenVerifyEmptyTargetDeserializer()
+        public async Task FileContinuationTokenVerifyEmptyTargetDeserializer()
         {
             FileContinuationToken fileContinuationToken = new FileContinuationToken { TargetLocation = null };
             StringBuilder stringBuilder = new StringBuilder();
@@ -1805,7 +1805,7 @@ namespace Microsoft.Azure.Storage.File
 
             string stringToken = stringBuilder.ToString();
             FileContinuationToken parsedToken = new FileContinuationToken();
-            parsedToken.ReadXml(XmlReader.Create(new System.IO.StringReader(stringToken)));
+            await parsedToken.ReadXmlAsync(XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(stringToken))));
             Assert.AreEqual(parsedToken.TargetLocation, null);
         }
 
@@ -1815,7 +1815,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileContinuationTokenVerifyXmlFunctions()
+        public async Task FileContinuationTokenVerifyXmlFunctions()
         {
             CloudFileShare share = GetRandomShareReference();
             try
@@ -1850,10 +1850,10 @@ namespace Microsoft.Azure.Storage.File
                             token.WriteXml(writer);
                         }
 
-                        using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                        using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                         {
                             token = new FileContinuationToken();
-                            token.ReadXml(reader);
+                            await token.ReadXmlAsync(reader);
                         }
                     }
                 }
@@ -1872,7 +1872,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileContinuationTokenVerifyXmlWithinXml()
+        public async Task FileContinuationTokenVerifyXmlWithinXml()
         {
             CloudFileShare share = GetRandomShareReference();
             try
@@ -1911,14 +1911,14 @@ namespace Microsoft.Azure.Storage.File
                             writer.WriteEndElement();
                         }
 
-                        using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                        using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                         {
                             token = new FileContinuationToken();
-                            reader.ReadStartElement();
-                            reader.ReadStartElement();
-                            token.ReadXml(reader);
-                            reader.ReadEndElement();
-                            reader.ReadEndElement();
+                            await reader.ReadStartElementAsync();
+                            await reader.ReadStartElementAsync();
+                            await token.ReadXmlAsync(reader);
+                            await reader.ReadEndElementAsync();
+                            await reader.ReadEndElementAsync();
                         }
                     }
                 }
@@ -2691,7 +2691,7 @@ namespace Microsoft.Azure.Storage.File
                 {
                     result = snapshot.BeginCreate(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
-                    share.EndSnapshot(result);
+                    share.EndCreate(result);
                 }
                 catch (InvalidOperationException e)
                 {
@@ -2775,7 +2775,8 @@ namespace Microsoft.Azure.Storage.File
             CloudFileShare snapshot = share.SnapshotAsync().Result;
             try
             {
-                snapshot.CreateAsync().Wait();
+                //snapshot.CreateAsync().Wait();
+                var t = snapshot.DeleteIfExistsAsync().Result;
             }
             catch (InvalidOperationException e)
             {
@@ -2992,8 +2993,8 @@ namespace Microsoft.Azure.Storage.File
             CloudFileDirectory myDir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
 
             myDir.CreateAsync().Wait();
-            myDir.GetFileReference("myfile").CreateAsync(1024);
-            myDir.GetDirectoryReference("yourDir").CreateAsync();
+            myDir.GetFileReference("myfile").CreateAsync(1024).Wait();
+            myDir.GetDirectoryReference("yourDir").CreateAsync().Wait();
             Assert.IsTrue(share.ExistsAsync().Result);
             CloudFileShare snapshot = share.SnapshotAsync().Result;
             CloudFileClient client = GenerateCloudFileClient();

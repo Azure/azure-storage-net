@@ -15,8 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Queue.Protocol;
+
 using Microsoft.Azure.Test.Network;
 using Microsoft.Azure.Test.Network.Behaviors;
 using System;

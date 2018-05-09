@@ -44,6 +44,7 @@ namespace Microsoft.Azure.Storage.Core.Util
     {
         internal IAsyncResult internalAsyncResult;
         protected CancellationTokenSource cancellationTokenSource;
+        protected bool completedSync = false;
 
         /// <summary>
         /// Creates a new ICancellableAsyncResult task wrapper object.
@@ -54,15 +55,25 @@ namespace Microsoft.Azure.Storage.Core.Util
         public CancellableAsyncResultTaskWrapper(Func<CancellationToken, Task> generateTask, AsyncCallback callback, Object state) : this()
         {
             // We cannot pass the user callback into the AsApm method, because it breaks the general APM contract - namely, that the IAsyncResult returned from the Begin method
-            // is what's passed into the callback. The AsApm method will pass in this.internalAsyncResult to its callback, not this.
+            // (this) is what's passed into the callback. The AsApm method will pass in this.internalAsyncResult to its callback, not this.
             AsyncCallback newCallback = ar =>
             {
                 // Avoid the potential race condition where the callback is called before AsApm returns.
                 this.internalAsyncResult = ar;
-                callback(this);
+                if (callback != null)
+                {
+                    callback(this);
+                }
             };
 
-            this.internalAsyncResult = generateTask(cancellationTokenSource.Token).AsApm(newCallback, state);
+            Task t = generateTask(cancellationTokenSource.Token);
+
+            if (t.IsCompleted)
+            {
+                this.completedSync = true;
+            }
+
+            this.internalAsyncResult = t.AsApm(newCallback, state);
         }
 
         /// <summary>
@@ -93,7 +104,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         {
             get
             {
-                return this.internalAsyncResult.CompletedSynchronously;
+                return this.completedSync;
             }
         }
 
@@ -113,6 +124,11 @@ namespace Microsoft.Azure.Storage.Core.Util
         internal void Wait()
         {
             ((Task)this.internalAsyncResult).Wait();
+        }
+
+        internal System.Runtime.CompilerServices.TaskAwaiter GetAwaiter()
+        {
+            return ((Task)this.internalAsyncResult).GetAwaiter();
         }
     }
 
@@ -136,10 +152,18 @@ namespace Microsoft.Azure.Storage.Core.Util
             {
                 // Avoid the potential race condition where the callback is called before AsApm returns.
                 this.internalAsyncResult = ar;
-                callback(this);
+                if (callback != null)
+                {
+                    callback(this);
+                }
             };
 
-            this.internalAsyncResult = generateTask(cancellationTokenSource.Token).AsApm(newCallback, state);
+            Task<TResult> t = generateTask(cancellationTokenSource.Token);
+            if (t.IsCompleted)
+            {
+                this.completedSync = true;
+            }
+            this.internalAsyncResult = t.AsApm(newCallback, state);
         }
 
         internal TResult Result
@@ -148,6 +172,11 @@ namespace Microsoft.Azure.Storage.Core.Util
             {
                 return ((Task<TResult>)this.internalAsyncResult).Result;
             }
+        }
+
+        internal new System.Runtime.CompilerServices.TaskAwaiter<TResult> GetAwaiter()
+        {
+            return ((Task<TResult>)this.internalAsyncResult).GetAwaiter();
         }
     }
 }

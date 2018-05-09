@@ -22,6 +22,8 @@ namespace Microsoft.Azure.Storage.File.Protocol
 {
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
     using System.Xml;
     using System.Xml.Linq;
 
@@ -37,14 +39,20 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service properties.</param>
         /// <returns>The service properties stored in the stream.</returns>
-        public static FileServiceProperties ReadServiceProperties(Stream inputStream)
+        public static Task<FileServiceProperties> ReadServicePropertiesAsync(Stream inputStream, CancellationToken token)
         {
-            using (XmlReader reader = XmlReader.Create(inputStream))
-            {
-                XDocument servicePropertyDocument = XDocument.Load(reader);
+            return Task.Run(
+                () =>
+                {
+                    using (XmlReader reader = XmlReader.Create(inputStream))
+                    {
+                        XDocument servicePropertyDocument = XDocument.Load(reader);
 
-                return FileServiceProperties.FromServiceXml(servicePropertyDocument);
-            }
+                        return FileServiceProperties.FromServiceXml(servicePropertyDocument);
+                    }
+                },
+                token
+                );
         }
 
         /// <summary>
@@ -52,9 +60,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service stats.</param>
         /// <returns>The service stats stored in the stream.</returns>
-        public static ServiceStats ReadServiceStats(Stream inputStream)
+        public static Task<ServiceStats> ReadServiceStatsAsync(Stream inputStream, CancellationToken token)
         {
-            return HttpResponseParsers.ReadServiceStats(inputStream);
+            return HttpResponseParsers.ReadServiceStatsAsync(inputStream, token);
         }
     }
 }

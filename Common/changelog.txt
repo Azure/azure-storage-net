@@ -1,3 +1,12 @@
+Changes in 9.1.1:
+- Table: Updated Table related APIs to use the default Json Serializer settings.
+- Table: Fixed a bug introduced after OData dependencies were removed, where support for double.NaN, double.PositiveInfinity and double.NegativeInfinity were lost.
+
+Changes in 9.1.0:
+- All: Updated Get*BlobReference APIs to inherit the existing ServiceClient instance.
+- All: Removed the un-necessary stream wrapping when progress tracking is not requested.
+- Blob(RT/NetCore): Removed Task.Run from CloudBlob Undelete API.
+
 Changes in 9.0.0:
 - All: Support for 2017-07-29 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.3.
 - Tables: Removed dependencies on OData libraries.

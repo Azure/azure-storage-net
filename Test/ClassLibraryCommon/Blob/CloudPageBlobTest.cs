@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 blob.Create(0);
                 Assert.IsTrue(blob.Exists());
-                blob.Delete();
+                blob.Delete(DeleteSnapshotsOption.IncludeSnapshots);
             }
             finally
             {
@@ -151,7 +151,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             CloudBlobContainer container = GetRandomContainerReference();
             CloudPageBlob blob = container.GetPageBlobReference("blob1");
-            CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, null);
+            CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, credentials: null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
             Assert.AreEqual(blob.Container.StorageUri, blob2.Container.StorageUri);
@@ -1493,7 +1493,7 @@ namespace Microsoft.Azure.Storage.Blob
                 OperationContext context = new OperationContext();
                 context.SendingRequest += (sender, e) =>
                 {
-                    e.Request.Headers["x-ms-meta-key1"] = string.Empty;
+                    HttpRequestHandler.SetHeader(e.Request, "x-ms-meta-key1", string.Empty);
                 };
 
                 blob.SetMetadata(operationContext: context);
@@ -2143,13 +2143,17 @@ namespace Microsoft.Azure.Storage.Blob
 
                     using (MemoryStream memoryStream = new MemoryStream())
                     {
+                        result = blob.BeginWritePages(memoryStream, 0, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
                         TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                            () => blob.BeginWritePages(memoryStream, 0, null, null, null),
+                            () => blob.EndWritePages(result),
                             "Zero-length WritePages should fail");
 
+                        result = blob.BeginWritePages(memoryStream, 0, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
                         memoryStream.SetLength(4 * 1024 * 1024 + 1);
                         TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                            () => blob.BeginWritePages(memoryStream, 0, null, null, null),
+                            () => blob.EndWritePages(result),
                             ">4MB WritePages should fail");
                     }
 
@@ -2280,12 +2284,12 @@ namespace Microsoft.Azure.Storage.Blob
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                        () => blob.WritePagesAsync(memoryStream, 0, null),
+                        () => blob.WritePagesAsync(memoryStream, 0, null).GetAwaiter().GetResult(),
                         "Zero-length WritePages should fail");
 
                     memoryStream.SetLength(4 * 1024 * 1024 + 1);
                     TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                        () => blob.WritePagesAsync(memoryStream, 0, null),
+                        () => blob.WritePagesAsync(memoryStream, 0, null).GetAwaiter().GetResult(),
                         ">4MB WritePages should fail");
                 }
 
@@ -2824,11 +2828,11 @@ namespace Microsoft.Azure.Storage.Blob
 
                         if (copyLength.HasValue)
                         {
-                            blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, null).Wait();
+                            blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, null).GetAwaiter().GetResult();
                         }
                         else
                         {
-                            blob.UploadFromStreamAsync(sourceStream, accessCondition, options, null).Wait();
+                            blob.UploadFromStreamAsync(sourceStream, accessCondition, options, null).GetAwaiter().GetResult();
                         }
                     }
 
@@ -2994,8 +2998,10 @@ namespace Microsoft.Azure.Storage.Blob
                     WaitForCopy(snapshotCopy);
                     Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
+                    result = snapshot1.BeginOpenWrite(1024, ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
                     TestHelper.ExpectedException<InvalidOperationException>(
-                        () => snapshot1.BeginOpenWrite(1024, ar => waitHandle.Set(), null),
+                        () => snapshot1.EndOpenWrite(result),
                         "Trying to write to a blob snapshot should fail");
 
                     result = snapshot1.BeginOpenRead(ar => waitHandle.Set(), null);
@@ -3084,7 +3090,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
                 TestHelper.ExpectedException<InvalidOperationException>(
-                    () => snapshot1.OpenWriteAsync(1024),
+                    () => snapshot1.OpenWriteAsync(1024).GetAwaiter().GetResult(),
                     "Trying to write to a blob snapshot should fail");
 
                 using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)

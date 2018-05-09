@@ -17,16 +17,16 @@
 
 namespace Microsoft.Azure.Storage.Core.Util
 {
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
-#if NETCORE || WINDOWS_RT
     using System.Net.Http.Headers;
-#endif
 
 #if WINDOWS_DESKTOP
     using System.Net;
+    using System.Net.Http;
 #endif
 
     /// <summary>
@@ -102,7 +102,6 @@ namespace Microsoft.Azure.Storage.Core.Util
             return dateTime.UtcDateTime.ToString("R", CultureInfo.InvariantCulture);
         }
 
-#if WINDOWS_RT || NETCORE
         /// <summary>
         /// Combine all the header values in the IEnumerable to a single comma separated string.
         /// </summary>
@@ -119,8 +118,7 @@ namespace Microsoft.Azure.Storage.Core.Util
                 null :
                 string.Join(",", headerValues);
         }
-#endif
-#if NETCORE
+
         public static string GetHeaderValues(string headerName, HttpHeaders headers)
         {
             IEnumerable<string> headerValues = null;
@@ -132,28 +130,5 @@ namespace Microsoft.Azure.Storage.Core.Util
 
             return null;
         }
-#endif
-
-#if WINDOWS_DESKTOP 
-        /// <summary>
-        /// Try to get the value of the specified header name.
-        /// </summary>
-        /// <param name="resp">The Http web response from which to get the header value.</param>
-        /// <param name="headerName">The name of the header whose value is to be retrieved.</param>
-        /// <param name="defaultValue">The default value for the header that is returned if we can't get the actual header value.</param>
-        /// <returns>A string representing the header value.</returns>
-        public static string TryGetHeader(HttpWebResponse resp, string headerName, string defaultValue)
-        {
-            string value = resp.Headers[headerName];
-            if (string.IsNullOrEmpty(value))
-            {
-                return defaultValue;
-            }
-            else
-            {
-                return value;
-            }
-        }
-#endif
     }
 }

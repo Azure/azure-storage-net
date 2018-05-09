@@ -391,8 +391,10 @@ namespace Microsoft.Azure.Storage.Core
 
             using (ManualResetEvent waitHandle = new ManualResetEvent(false))
             {
-                input.WriteToAsync(output, copyLength, maxLength, false, state, copyState, _ => waitHandle.Set());
+                var mockBufferManager = new MockBufferManager(Constants.DefaultBufferSize);
+                input.WriteToAsync(output, mockBufferManager, copyLength, maxLength, false, state, copyState, CancellationToken.None, _ => waitHandle.Set());
                 Assert.IsTrue(waitHandle.WaitOne(totalDelayInMs + 10 * 1000));
+                Assert.AreEqual(0, mockBufferManager.OutstandingBufferCount, "Outstanding buffers not returned to IBufferManager");
             }
 
             if (inputFailRequest >= 0)

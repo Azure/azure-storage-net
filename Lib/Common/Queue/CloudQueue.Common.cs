@@ -239,7 +239,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="protocolMessage">The protocol message.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>The parsed message.</returns>
-        private CloudQueueMessage SelectPeekMessageResponse(QueueMessage protocolMessage, QueueRequestOptions options = null)
+        private CloudQueueMessage SelectPeekMessageResponse(QueueMessage protocolMessage, QueueRequestOptions options)
         {
             CloudQueueMessage message = null;
             byte[] dest = null;

@@ -16,11 +16,13 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Azure.Storage.Blob;
 using System;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.File
 {
@@ -516,6 +518,7 @@ namespace Microsoft.Azure.Storage.File
             }
         }
 
+
         [TestMethod]
         [Description("Upload a file using file stream and verify contents")]
         [TestCategory(ComponentCategory.File)]
@@ -534,6 +537,7 @@ namespace Microsoft.Azure.Storage.File
 
             try
             {
+                ServicePointManager.DefaultConnectionLimit = fileClient.DefaultRequestOptions.ParallelOperationThreadCount.Value;
                 share.Create();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
@@ -546,19 +550,22 @@ namespace Microsoft.Azure.Storage.File
                         StoreFileContentMD5 = true,
                     };
 
+                    IAsyncResult result;
                     using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                     {
-                        IAsyncResult result = file.BeginOpenWrite(fileClient.DefaultRequestOptions.ParallelOperationThreadCount.Value * 2 * buffer.Length, null, options, null,
+                         result = file.BeginOpenWrite(fileClient.DefaultRequestOptions.ParallelOperationThreadCount.Value * 2 * buffer.Length, null, options, null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
                         using (CloudFileStream fileStream = file.EndOpenWrite(result))
                         {
+
                             IAsyncResult[] results = new IAsyncResult[fileClient.DefaultRequestOptions.ParallelOperationThreadCount.Value * 2];
                             for (int i = 0; i < results.Length; i++)
                             {
                                 results[i] = fileStream.BeginWrite(buffer, 0, buffer.Length, null, null);
                                 wholeFile.Write(buffer, 0, buffer.Length);
+                               // fileStream.EndWrite(results[i]);
                                 Assert.AreEqual(wholeFile.Position, fileStream.Position);
                             }
 
@@ -597,14 +604,14 @@ namespace Microsoft.Azure.Storage.File
                     }
 
                     fileClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
-
-                    TestHelper.ExpectedException<ArgumentException>(
-                        () => file.BeginOpenWrite(null, null, options, null, null, null),
-                        "BeginOpenWrite with StoreFileContentMD5 on an existing file should fail");
-
                     using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                     {
-                        IAsyncResult result = file.BeginOpenWrite(null,
+                        result = file.BeginOpenWrite(null, null, options, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        TestHelper.ExpectedException<ArgumentException>(
+                            () => file.EndOpenWrite(result),
+                            "BeginOpenWrite with StoreFileContentMD5 on an existing file should fail");
+                         result = file.BeginOpenWrite(null,
                             ar => waitHandle.Set(),
                             null);
                         waitHandle.WaitOne();
@@ -824,23 +831,17 @@ namespace Microsoft.Azure.Storage.File
                             result = fileStream.BeginFlush(
                                 ar => waitHandle.Set(),
                                 null);
-                            Assert.IsFalse(result.IsCompleted);
-                            TestHelper.ExpectedException<InvalidOperationException>(
-                                () => fileStream.BeginFlush(null, null),
-                                null);
                             waitHandle.WaitOne();
-                            TestHelper.ExpectedException<InvalidOperationException>(
-                                () => fileStream.BeginFlush(null, null),
-                                null);
                             fileStream.EndFlush(result);
-                            Assert.IsFalse(result.CompletedSynchronously);
-
+                            //In the new Async Flush we will not throw in case of multiple flushes
+                            fileStream.BeginFlush(ar => waitHandle.Set(), null);
+                            waitHandle.WaitOne();
+                            result = fileStream.BeginFlush(null, null);
                             Assert.AreEqual(3, opContext.RequestResults.Count);
 
                             result = fileStream.BeginFlush(
                                 ar => waitHandle.Set(),
                                 null);
-                            Assert.IsTrue(result.CompletedSynchronously);
                             waitHandle.WaitOne();
                             fileStream.EndFlush(result);
 
@@ -882,5 +883,360 @@ namespace Microsoft.Azure.Storage.File
                 share.DeleteIfExists();
             }
         }
+
+        [TestMethod]
+        /// [Description("Upload a file using file stream and verify contents")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileWriteStreamRandomSeekTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+
+            CloudFileShare share = GetRandomShareReference();
+            share.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                using (MemoryStream wholeFile = new MemoryStream())
+                {
+                    using (var writeStream = await file.OpenWriteAsync(buffer.Length))
+                    {
+                        Stream fileStream = writeStream;
+                        await fileStream.WriteAsync(buffer, 0, buffer.Length);
+                        await wholeFile.WriteAsync(buffer, 0, buffer.Length);
+                        Random random = new Random();
+                        for (int i = 0; i < 10; i++)
+                        {
+                            int offset = random.Next(buffer.Length);
+                            TestHelper.SeekRandomly(fileStream, offset);
+                            await fileStream.WriteAsync(buffer, 0, buffer.Length - offset);
+                            wholeFile.Seek(offset, SeekOrigin.Begin);
+                            await wholeFile.WriteAsync(buffer, 0, buffer.Length - offset);
+                        }
+                    }
+
+                    wholeFile.Seek(0, SeekOrigin.End);
+                    await file.FetchAttributesAsync();
+                    Assert.IsNull(file.Properties.ContentMD5);
+
+                    using (MemoryOutputStream downloadedFile = new MemoryOutputStream())
+                    {
+                        await file.DownloadToStreamAsync(downloadedFile);
+                        TestHelper.AssertStreamsAreEqual(wholeFile, downloadedFile.UnderlyingStream);
+                    }
+                }
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+        
+       
+        [TestMethod]
+        /// [Description("Create files using file stream")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileWriteStreamOpenAndCloseAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file");
+                OperationContext opContext = new OperationContext();
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await file.OpenWriteAsync(null, null, null, opContext),
+                    opContext,
+                    "Opening a file stream with no size should fail on a file that does not exist",
+                    HttpStatusCode.NotFound);
+                using (var writeStream = await file.OpenWriteAsync(1024))
+                {
+                }
+                using (var writeStream = await file.OpenWriteAsync(null))
+                {
+                }
+
+                CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file");
+                await file2.FetchAttributesAsync();
+                Assert.AreEqual(1024, file2.Properties.Length);
+            }
+            finally
+            {
+                share.DeleteAsync().Wait();
+            }
+        }
+
+        /*
+        [TestMethod]
+        /// [Description("Create a file using file stream by specifying an access condition")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileWriteStreamOpenWithAccessConditionAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+
+            try
+            {
+                OperationContext context = new OperationContext();
+
+                CloudFile existingFile = share.GetRootDirectoryReference().GetFileReference("file");
+                await existingFile.CreateAsync(1024);
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file2");
+                AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingFile.Properties.ETag);
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await file.OpenWriteAsync(1024, accessCondition, null, context),
+                    context,
+                    "OpenWriteAsync with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                file = share.GetRootDirectoryReference().GetFileReference("file3");
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingFile.Properties.ETag);
+                IOutputStream fileStream = await file.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                file = share.GetRootDirectoryReference().GetFileReference("file4");
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                fileStream = await file.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                file = share.GetRootDirectoryReference().GetFileReference("file5");
+                accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingFile.Properties.LastModified.Value.AddMinutes(1));
+                fileStream = await file.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                file = share.GetRootDirectoryReference().GetFileReference("file6");
+                accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingFile.Properties.LastModified.Value.AddMinutes(-1));
+                fileStream = await file.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfMatchCondition(existingFile.Properties.ETag);
+                fileStream = await existingFile.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfMatchCondition(file.Properties.ETag);
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await existingFile.OpenWriteAsync(1024, accessCondition, null, context),
+                    context,
+                    "OpenWriteAsync with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition(file.Properties.ETag);
+                fileStream = await existingFile.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingFile.Properties.ETag);
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await existingFile.OpenWriteAsync(1024, accessCondition, null, context),
+                    context,
+                    "OpenWriteAsync with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await existingFile.OpenWriteAsync(1024, accessCondition, null, context),
+                    context,
+                    "FileWriteStream.Dispose with a non-met condition should fail",
+                    HttpStatusCode.Conflict);
+
+                accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingFile.Properties.LastModified.Value.AddMinutes(-1));
+                fileStream = await existingFile.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfModifiedSinceCondition(existingFile.Properties.LastModified.Value.AddMinutes(1));
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await existingFile.OpenWriteAsync(1024, accessCondition, null, context),
+                    context,
+                    "OpenWriteAsync with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+
+                accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingFile.Properties.LastModified.Value.AddMinutes(1));
+                fileStream = await existingFile.OpenWriteAsync(1024, accessCondition, null, context);
+                fileStream.Dispose();
+
+                accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(existingFile.Properties.LastModified.Value.AddMinutes(-1));
+                await TestHelper.ExpectedExceptionAsync(
+                    async () => await existingFile.OpenWriteAsync(1024, accessCondition, null, context),
+                    context,
+                    "OpenWriteAsync with a non-met condition should fail",
+                    HttpStatusCode.PreconditionFailed);
+            }
+            finally
+            {
+                share.DeleteAsync().Wait();
+            }
+        }
+        */
+
+        [TestMethod]
+        /// [Description("Upload a file using file stream and verify contents")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileWriteStreamBasicTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(6 * 512);
+
+            MD5 hasher = MD5.Create();
+
+            CloudFileShare share = GetRandomShareReference();
+            share.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                file.StreamWriteSizeInBytes = 8 * 512;
+
+                using (MemoryStream wholeFile = new MemoryStream())
+                {
+                    FileRequestOptions options = new FileRequestOptions()
+                    {
+                        StoreFileContentMD5 = true,
+                    };
+                    using (var writeStream = await file.OpenWriteAsync(buffer.Length * 3, null, options, null))
+                    {
+                        Stream fileStream = writeStream;
+
+                        for (int i = 0; i < 3; i++)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, buffer.Length);
+                            await wholeFile.WriteAsync(buffer, 0, buffer.Length);
+                            Assert.AreEqual(wholeFile.Position, fileStream.Position);
+
+                        }
+
+                        await fileStream.FlushAsync();
+                    }
+
+                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeFile.ToArray()));
+
+                    await file.FetchAttributesAsync();
+                    Assert.AreEqual(md5, file.Properties.ContentMD5);
+
+                    using (MemoryOutputStream downloadedFile = new MemoryOutputStream())
+                    {
+                        await file.DownloadToStreamAsync(downloadedFile);
+                        TestHelper.AssertStreamsAreEqual(wholeFile, downloadedFile.UnderlyingStream);
+                    }
+
+                    await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                        async () => await file.OpenWriteAsync(null, null, options, null),
+                        "OpenWrite with StoreFileContentMD5 on an existing file should fail");
+
+                    using (var writeStream = await file.OpenWriteAsync(null))
+                    {
+                        Stream fileStream = writeStream;
+                        fileStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
+                        wholeFile.Seek(buffer.Length / 2, SeekOrigin.Begin);
+
+                        for (int i = 0; i < 2; i++)
+                        {
+                            fileStream.Write(buffer, 0, buffer.Length);
+                            wholeFile.Write(buffer, 0, buffer.Length);
+                            Assert.AreEqual(wholeFile.Position, fileStream.Position);
+                        }
+
+                        await fileStream.FlushAsync();
+                    }
+
+                    await file.FetchAttributesAsync();
+                    Assert.AreEqual(md5, file.Properties.ContentMD5);
+
+                    using (MemoryOutputStream downloadedFile = new MemoryOutputStream())
+                    {
+                        options.DisableContentMD5Validation = true;
+                        await file.DownloadToStreamAsync(downloadedFile, null, options, null);
+                        TestHelper.AssertStreamsAreEqual(wholeFile, downloadedFile.UnderlyingStream);
+                    }
+                }
+            }
+            finally
+            {
+                share.DeleteAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        /// [Description("Upload a file using file stream and verify contents")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileWriteStreamFlushTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(512);
+
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                file.StreamWriteSizeInBytes = 1024;
+                using (MemoryStream wholeFile = new MemoryStream())
+                {
+                    FileRequestOptions options = new FileRequestOptions() { StoreFileContentMD5 = true };
+                    OperationContext opContext = new OperationContext();
+                    using (var fileStream = await file.OpenWriteAsync(4 * 512, null, options, opContext))
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, buffer.Length);
+                            await wholeFile.WriteAsync(buffer, 0, buffer.Length);
+                        }
+                        // todo: Make some other better logic for this test to be reliable.
+                        System.Threading.Thread.Sleep(500);
+                        Task.Delay(500).GetAwaiter().GetResult();
+
+                        Assert.AreEqual(2, opContext.RequestResults.Count);
+
+                        await fileStream.FlushAsync();
+
+                        Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                        await fileStream.FlushAsync();
+
+                        Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                        await fileStream.WriteAsync(buffer, 0, buffer.Length);
+                        await wholeFile.WriteAsync(buffer, 0, buffer.Length);
+
+                        Assert.AreEqual(3, opContext.RequestResults.Count);
+
+                        await fileStream.CommitAsync();
+
+                        Assert.AreEqual(5, opContext.RequestResults.Count);
+                    }
+
+                    Assert.AreEqual(5, opContext.RequestResults.Count);
+
+                    using (MemoryOutputStream downloadedFile = new MemoryOutputStream())
+                    {
+                        await file.DownloadToStreamAsync(downloadedFile);
+                        TestHelper.AssertStreamsAreEqual(wholeFile, downloadedFile.UnderlyingStream);
+                    }
+                }
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+
     }
 }

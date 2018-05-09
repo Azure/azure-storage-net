@@ -17,8 +17,11 @@
 
 namespace Microsoft.Azure.Storage.Core.Util
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// This class provides asynchronous semaphore functionality (based on Stephen Toub's blog).
@@ -26,45 +29,37 @@ namespace Microsoft.Azure.Storage.Core.Util
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed - Stephen Toub is a proper noun.")]
     internal partial class AsyncSemaphore
     {
-        public delegate void AsyncSemaphoreCallback(bool calledSynchronously);
+        private readonly static Task<bool> CompletedTask = Task.FromResult(true);
 
-        private readonly Queue<AsyncSemaphoreCallback> pendingWaits =
-            new Queue<AsyncSemaphoreCallback>();
+        private readonly Queue<TaskCompletionSource<bool>> pendingWaits =
+            new Queue<TaskCompletionSource<bool>>();
 
-        public bool WaitAsync(AsyncSemaphoreCallback callback)
+        public Task<bool> WaitAsync()
         {
-            CommonUtility.AssertNotNull("callback", callback);
-
             lock (this.pendingWaits)
             {
                 if (this.count > 0)
                 {
                     this.count--;
+                    return AsyncSemaphore.CompletedTask;
                 }
                 else
                 {
-                    this.pendingWaits.Enqueue(callback);
-                    callback = null;
+                    TaskCompletionSource<bool> waiter = new TaskCompletionSource<bool>();
+                    this.pendingWaits.Enqueue(waiter);
+                    return waiter.Task;
                 }
             }
-
-            if (callback != null)
-            {
-                callback(true);
-                return true;
-            }
-
-            return false;
         }
 
         public void Release()
         {
-            AsyncSemaphoreCallback callback = null;
+            TaskCompletionSource<bool> waiter = null;
             lock (this.pendingWaits)
             {
                 if (this.pendingWaits.Count > 0)
                 {
-                    callback = this.pendingWaits.Dequeue();
+                    waiter = this.pendingWaits.Dequeue();
                 }
                 else
                 {
@@ -72,9 +67,9 @@ namespace Microsoft.Azure.Storage.Core.Util
                 }
             }
 
-            if (callback != null)
+            if (waiter != null)
             {
-                callback(false);
+                waiter.SetResult(false);
             }
         }
     }

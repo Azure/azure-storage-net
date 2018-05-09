@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.IO;
 using System.Net;
@@ -365,9 +366,9 @@ namespace Microsoft.Azure.Storage.File
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.SendingRequest += (_, args) =>
             {
-                if (args.Request.ContentLength >= buffer.Length)
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Request.Headers[HttpRequestHeader.ContentMd5];
+                    lastCheckMD5 = HttpRequestParsers.GetContentMD5(args.Request);
                     checkCount++;
                 }
             };
@@ -447,9 +448,9 @@ namespace Microsoft.Azure.Storage.File
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.SendingRequest += (_, args) =>
             {
-                if (args.Request.ContentLength >= buffer.Length)
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Request.Headers[HttpRequestHeader.ContentMd5];
+                    lastCheckMD5 = HttpRequestParsers.GetContentMD5(args.Request);
                     checkCount++;
                 }
             };
@@ -525,9 +526,9 @@ namespace Microsoft.Azure.Storage.File
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.ResponseReceived += (_, args) =>
             {
-                if (args.Response.ContentLength >= buffer.Length)
+                if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Response.Headers[HttpResponseHeader.ContentMd5];
+                    lastCheckMD5 = HttpResponseParsers.GetContentMD5(args.Response);
                     checkCount++;
                 }
             };
@@ -614,9 +615,9 @@ namespace Microsoft.Azure.Storage.File
             OperationContext opContextWithMD5Check = new OperationContext();
             opContextWithMD5Check.ResponseReceived += (_, args) =>
             {
-                if (args.Response.ContentLength >= buffer.Length)
+                if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
                 {
-                    lastCheckMD5 = args.Response.Headers[HttpResponseHeader.ContentMd5];
+                    lastCheckMD5 = HttpResponseParsers.GetContentMD5(args.Response);
                     checkCount++;
                 }
             };

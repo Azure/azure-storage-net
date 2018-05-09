@@ -18,12 +18,11 @@
 namespace Microsoft.Azure.Storage.Blob
 {
 #if !WINDOWS_PHONE && !WINDOWS_RT && !WINDOWS_PHONE_RT
-#if WINDOWS_DESKTOP
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
-
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
@@ -195,8 +194,9 @@ namespace Microsoft.Azure.Storage.Blob
 
                     Assert.Fail("Expected a cancellation exception to be thrown");
                 }
-                catch (OperationCanceledException)
+                catch (StorageException ex)
                 {
+                    var s = ex.InnerException;
                 }
 
                 blob.Delete();

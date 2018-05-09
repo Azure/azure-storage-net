@@ -22,7 +22,9 @@ namespace Microsoft.Azure.Storage
     using System.IO;
     using System.Net;
     using System.Text;
-
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Net.Http;
 #if WINDOWS_DESKTOP 
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System.Collections.Generic;
@@ -32,9 +34,7 @@ namespace Microsoft.Azure.Storage
     using System.Runtime.InteropServices;
 #endif
 
-#if NETCORE
-    using System.Net.Http;
-#endif
+
 
     /// <summary>
     /// Represents an exception thrown by the Azure Storage service.
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.Storage
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageException"/> class.
         /// </summary>
-        public StorageException() : this(null /* res */, null /* message */, null /* inner */) 
+        public StorageException() : this(null /* res */, null /* message */, null /* inner */)
         {
         }
 
@@ -67,8 +67,8 @@ namespace Microsoft.Azure.Storage
         /// Initializes a new instance of the <see cref="StorageException"/> class using the specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public StorageException(string message) : 
-            this(null /* res */, message, null /* inner */) 
+        public StorageException(string message) :
+            this(null /* res */, message, null /* inner */)
         {
         }
 
@@ -78,7 +78,7 @@ namespace Microsoft.Azure.Storage
         /// <param name="message">The exception error message.</param>
         /// <param name="innerException">The inner exception.</param>
         public StorageException(string message, Exception innerException) :
-            this(null /* res */, message, innerException) 
+            this(null /* res */, message, innerException)
         {
         }
 
@@ -126,19 +126,8 @@ namespace Microsoft.Azure.Storage
             : base(message, inner)
         {
             this.RequestInformation = res;
+            //HttpClient errors: retrying might lead to hang becuse of the maximum number of connections
             this.IsRetryable = true;
-        }
-
-        /// <summary>
-        /// Translates the specified exception into a <see cref="StorageException"/>.
-        /// </summary>
-        /// <param name="ex">The exception to translate.</param>
-        /// <param name="reqResult">The request result.</param>
-        /// <returns>The storage exception.</returns>
-        /// <returns>An exception of type <see cref="StorageException"/>.</returns>
-        public static StorageException TranslateException(Exception ex, RequestResult reqResult)
-        {
-            return TranslateException(ex, reqResult, null);
         }
 
         /// <summary>
@@ -146,43 +135,43 @@ namespace Microsoft.Azure.Storage
         /// </summary>
         /// <param name="ex">The exception to translate.</param>
         /// <param name="reqResult">The request result.</param>
-        /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
+        /// <param name="parseErrorAsync">The delegate used to parse the error to get extended error information.</param>
+        /// <param name="cancellationToken">cancellation token for the async operation</param>
+        /// 
         /// <returns>The storage exception.</returns>
-        public static StorageException TranslateException(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError)
+        public static async Task<StorageException> TranslateExceptionAsync(Exception ex, RequestResult reqResult, Func<Stream, CancellationToken, Task<StorageExtendedErrorInformation>> parseErrorAsync, CancellationToken cancellationToken, HttpResponseMessage response)
         {
             StorageException storageException;
 
             try
             {
-                if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
+                if (parseErrorAsync == null)
+                {
+                    parseErrorAsync = StorageExtendedErrorInformation.ReadFromStreamAsync;
+                }
+
+                if ((storageException = CoreTranslateAsync(ex, reqResult, cancellationToken)) != null)
                 {
                     return storageException;
                 }
-
-#if !(NETCORE)
-                WebException we = ex as WebException;
-                if (we != null)
+                
+                if (response != null)
                 {
-                    HttpWebResponse response = we.Response as HttpWebResponse;
-                    if (response != null)
-                    {
-                        StorageException.PopulateRequestResult(reqResult, response);
-                        reqResult.ExtendedErrorInformation = parseError(response.GetResponseStream());
-                    }
+                    StorageException.PopulateRequestResult(reqResult, response);
+                    reqResult.ExtendedErrorInformation = await parseErrorAsync(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
                 }
-#endif
             }
             catch (Exception)
             {
                 // if there is an error thrown while parsing the service error, just wrap the service error in a StorageException.
-                // no op
+                // The idea is that it's more helpful for the user to get the actual service error than a "parsing failed" error.
             }
 
             // Just wrap in StorageException
             return new StorageException(reqResult, ex.Message, ex);
         }
 
-#if NETCORE
+#if NETCORE || WINDOWS_RT
         /// <summary>
         /// Translates the specified exception into a storage exception.
         /// </summary>
@@ -205,7 +194,7 @@ namespace Microsoft.Azure.Storage
                 if (response != null)
                 {
                     StorageException.PopulateRequestResult(reqResult, response);
-                    reqResult.ExtendedErrorInformation = CommonUtility.RunWithoutSynchronizationContext(() => StorageExtendedErrorInformation.ReadFromStream(response.Content.ReadAsStreamAsync().Result));
+                    reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStreamAsync(response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()).GetAwaiter().GetResult();
                 }
             }
             catch (Exception)
@@ -219,49 +208,6 @@ namespace Microsoft.Azure.Storage
         }
 #endif
 
-        /// <summary>
-        /// Translates the specified exception into a storage exception.
-        /// </summary>
-        /// <param name="ex">The exception to translate.</param>
-        /// <param name="reqResult">The request result.</param>
-        /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
-        /// <param name="responseStream">The error stream that contains the error information.</param>
-        /// <returns>The storage exception.</returns>
-        internal static StorageException TranslateExceptionWithPreBufferedStream(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError, Stream responseStream)
-        {
-            StorageException storageException;
-
-            try
-            {
-                if ((storageException = CoreTranslate(ex, reqResult, ref parseError)) != null)
-                {
-                    return storageException;
-                }
-
-#if !(NETCORE)
-                WebException we = ex as WebException;
-                if (we != null)
-                {
-                    HttpWebResponse response = we.Response as HttpWebResponse;
-                    if (response != null)
-                    {
-                        PopulateRequestResult(reqResult, response);
-                        reqResult.ExtendedErrorInformation = parseError(responseStream);
-                    }
-                }
-#endif
-            }
-            catch (Exception)
-            {
-                // if there is an error thrown while parsing the service error, just wrap the service error in a StorageException.
-                // no op
-            }
-
-            // Just wrap in StorageException
-            return new StorageException(reqResult, ex.Message, ex);
-        }
-
-#if NETCORE
         /// <summary>
         /// Translates the specified exception into a storage exception.
         /// </summary>
@@ -285,7 +231,7 @@ namespace Microsoft.Azure.Storage
                 if (response != null)
                 {
                     PopulateRequestResult(reqResult, response);
-                    reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStream(responseStream);
+                    reqResult.ExtendedErrorInformation = StorageExtendedErrorInformation.ReadFromStreamAsync(responseStream).GetAwaiter().GetResult();
                 }
             }
             catch (Exception)
@@ -297,7 +243,6 @@ namespace Microsoft.Azure.Storage
             // Just wrap in StorageException
             return new StorageException(reqResult, ex.Message, ex);
         }
-#endif
 
         /// <summary>
         /// Tries to translate the specified exception into a storage exception.
@@ -313,7 +258,7 @@ namespace Microsoft.Azure.Storage
 
             if (parseError == null)
             {
-                parseError = StorageExtendedErrorInformation.ReadFromStream;
+                parseError = s => StorageExtendedErrorInformation.ReadFromStreamAsync(s).GetAwaiter().GetResult();
             }
 
             // Dont re-wrap storage exceptions
@@ -335,7 +280,42 @@ namespace Microsoft.Azure.Storage
                 reqResult.ExtendedErrorInformation = null;
                 return new StorageException(reqResult, ex.Message, ex) { IsRetryable = false };
             }
-#if WINDOWS_RT || NETCORE
+            // return null and check in the caller
+            return null;
+        }
+
+        /// <summary>
+        /// Tries to translate the specified exception into a storage exception.
+        /// Note: we can probably combine this with the above CoreTranslate, this doesn't need to be async.
+        /// </summary>
+        /// <param name="ex">The exception to translate.</param>
+        /// <param name="reqResult">The request result.</param>
+        /// <param name="parseError">The delegate used to parse the error to get extended error information.</param>
+        /// <returns>The storage exception or <c>null</c>.</returns>
+        private static StorageException CoreTranslateAsync(Exception ex, RequestResult reqResult, CancellationToken token)
+        {
+            CommonUtility.AssertNotNull("reqResult", reqResult);
+            CommonUtility.AssertNotNull("ex", ex);
+
+            // Dont re-wrap storage exceptions
+            if (ex is StorageException)
+            {
+                return (StorageException)ex;
+            }
+            else if (ex is TimeoutException)
+            {
+                reqResult.HttpStatusMessage = null;
+                reqResult.HttpStatusCode = (int)HttpStatusCode.RequestTimeout;
+                reqResult.ExtendedErrorInformation = null;
+                return new StorageException(reqResult, ex.Message, ex);
+            }
+            else if (ex is ArgumentException)
+            {
+                reqResult.HttpStatusMessage = null;
+                reqResult.HttpStatusCode = (int)HttpStatusCode.Unused;
+                reqResult.ExtendedErrorInformation = null;
+                return new StorageException(reqResult, ex.Message, ex) { IsRetryable = false };
+            }
             else if (ex is OperationCanceledException)
             {
                 reqResult.HttpStatusMessage = null;
@@ -343,10 +323,10 @@ namespace Microsoft.Azure.Storage
                 reqResult.ExtendedErrorInformation = null;
                 return new StorageException(reqResult, ex.Message, ex);
             }
-#endif
             // return null and check in the caller
             return null;
         }
+
 
         /// <summary>
         /// Populate the RequestResult.
@@ -360,26 +340,24 @@ namespace Microsoft.Azure.Storage
             reqResult.HttpStatusCode = (int)response.StatusCode;
         }
 #else
-        private static void PopulateRequestResult(RequestResult reqResult, HttpWebResponse response)
+        private static void PopulateRequestResult(RequestResult reqResult, HttpResponseMessage response)
         {
-            reqResult.HttpStatusMessage = response.StatusDescription;
+            reqResult.HttpStatusMessage = response.ReasonPhrase;
             reqResult.HttpStatusCode = (int)response.StatusCode;
+#if !WINDOWS_RT
             if (response.Headers != null)
             {
-#if WINDOWS_DESKTOP
-                reqResult.ServiceRequestID = HttpWebUtility.TryGetHeader(response, Constants.HeaderConstants.RequestIdHeader, null);
-                reqResult.ContentMd5 = HttpWebUtility.TryGetHeader(response, "Content-MD5", null);
-                string tempDate = HttpWebUtility.TryGetHeader(response, "Date", null);
-                reqResult.RequestDate = string.IsNullOrEmpty(tempDate) ? DateTime.Now.ToString("R", CultureInfo.InvariantCulture) : tempDate;
-                reqResult.Etag = response.Headers[HttpResponseHeader.ETag];
-                reqResult.ErrorCode = HttpWebUtility.TryGetHeader(response, Constants.HeaderConstants.StorageErrorCodeHeader, null);
-#endif
+
+                reqResult.ServiceRequestID = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(response.Headers, Constants.HeaderConstants.RequestIdHeader);
+                reqResult.RequestDate = response.Headers.Date.HasValue ? response.Headers.Date.Value.UtcDateTime.ToString("R", CultureInfo.InvariantCulture) : null;
+                reqResult.Etag = response.Headers.ETag?.ToString();
+                reqResult.ErrorCode = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(response.Headers, Constants.HeaderConstants.StorageErrorCodeHeader);
             }
 
-#if !WINDOWS_RT
-            if (response.ContentLength > 0) 
+            if (response.Content != null && response.Content.Headers != null) 
             {
-                reqResult.IngressBytes += response.ContentLength;
+                reqResult.ContentMd5 = response.Content.Headers.ContentMD5 != null ? Convert.ToBase64String(response.Content.Headers.ContentMD5) : null;
+                reqResult.IngressBytes += response.Content.Headers.ContentLength.HasValue ? (long)response.Content.Headers.ContentLength : 0;
             }
 #endif
         }

@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Storage.Core.Util
 {
     using System;
     using System.Threading;
+    using System.Threading.Tasks;
 
     internal sealed class CounterEvent : IDisposable
     {
@@ -92,6 +93,52 @@ namespace Microsoft.Azure.Storage.Core.Util
                 this.internalEvent.Dispose();
                 this.internalEvent = null;
             }
+        }
+    }
+
+    internal sealed class CounterEventAsync
+    {
+        private AsyncManualResetEvent internalEvent = new AsyncManualResetEvent(true);
+        private object counterLock = new object();
+        private int counter = 0;
+
+        /// <summary>
+        /// Increments the counter by one and thus sets the state of the event to non-signaled, causing threads to block.
+        /// </summary>
+        public void Increment()
+        {
+            lock (this.counterLock)
+            {
+                this.counter++;
+                this.internalEvent.Reset();
+            }
+        }
+
+        /// <summary>
+        /// Decrements the counter by one. If the counter reaches zero, sets the state of the event to signaled, allowing one or more waiting threads to proceed.
+        /// </summary>
+        public async Task DecrementAsync()
+        {
+            bool setEvent = false;
+            lock (this.counterLock)
+            {
+                if (--this.counter == 0)
+                {
+                    setEvent = true;
+                }
+            }
+            if (setEvent)
+            {
+                await this.internalEvent.Set();
+            }
+        }
+
+        /// <summary>
+        /// Blocks the current thread until the CounterEvent is set.
+        /// </summary>
+        public Task WaitAsync()
+        {
+            return this.internalEvent.WaitAsync();
         }
     }
 }

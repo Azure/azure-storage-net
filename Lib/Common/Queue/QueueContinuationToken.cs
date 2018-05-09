@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Storage.Queue
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
+    using System.Threading.Tasks;
     using System.Xml;
     using System.Xml.Schema;
     using System.Xml.Serialization;
@@ -39,9 +40,6 @@ namespace Microsoft.Azure.Storage.Queue
 #endif
     [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1001:CommasMustBeSpacedCorrectly", Justification = "Reviewed.")]
     public sealed class QueueContinuationToken : IContinuationToken
-#if WINDOWS_DESKTOP
-, IXmlSerializable
-#endif
     {
         private string version = Constants.ContinuationConstants.CurrentVersion;
         private string type = Constants.ContinuationConstants.QueueType;
@@ -116,36 +114,36 @@ namespace Microsoft.Azure.Storage.Queue
         /// Generates a serializable continuation token from its XML representation.
         /// </summary>
         /// <param name="reader">The <see cref="T:System.Xml.XmlReader"/> stream from which the continuation token is deserialized.</param>
-        public void ReadXml(XmlReader reader)
+        public async Task ReadXmlAsync(XmlReader reader)
         {
             CommonUtility.AssertNotNull("reader", reader);
 
             // Read the xml root node
-            reader.MoveToContent();
-            reader.ReadStartElement();
+            await reader.MoveToContentAsync().ConfigureAwait(false);
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
 
             // Read the additional xml node that will be present if an XmlSerializer was used to serialize this token
-            reader.MoveToContent();
+            await reader.MoveToContentAsync().ConfigureAwait(false);
             if (reader.Name == Constants.ContinuationConstants.ContinuationTopElement)
             {
-                reader.ReadStartElement();
+                await reader.ReadStartElementAsync().ConfigureAwait(false);
             }
 
             // Read the ContinuationToken content
-            while (reader.IsStartElement())
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
                 switch (reader.Name)
                 {
                     case Constants.ContinuationConstants.VersionElement:
-                        this.Version = reader.ReadElementContentAsString();
+                        this.Version = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                         break;
 
                     case Constants.ContinuationConstants.NextMarkerElement:
-                        this.NextMarker = reader.ReadElementContentAsString();
+                        this.NextMarker = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                         break;
 
                     case Constants.ContinuationConstants.TargetLocationElement:
-                        string targetLocation = reader.ReadElementContentAsString();
+                        string targetLocation = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                         StorageLocation location;
                         if (Enum.TryParse(targetLocation, out location))
                         {
@@ -159,7 +157,7 @@ namespace Microsoft.Azure.Storage.Queue
                         break;
 
                     case Constants.ContinuationConstants.TypeElement:
-                        this.Type = reader.ReadElementContentAsString();
+                        this.Type = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                         break;
 
                     default:

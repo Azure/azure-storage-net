@@ -836,14 +836,15 @@ namespace Microsoft.Azure.Storage.File
                 shareAcl = new FileSharePermissions();
                 return shareAcl;
             };
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
                 this.UpdateETagAndLastModified(resp);
-                ShareHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, shareAcl);
-                return Task.FromResult(shareAcl);
+                await ShareHttpResponseParsers.ReadSharedAccessIdentifiersAsync(cmd.ResponseStream, shareAcl, ct).ConfigureAwait(false);
+
+                return shareAcl;
             };
 
-            return getCmd;
+                return getCmd;
         }
 
         /// <summary>
@@ -859,7 +860,7 @@ namespace Microsoft.Azure.Storage.File
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ShareHttpRequestMessageFactory.GetStats(uri, serverTimeout, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.FromResult(ShareHttpResponseParsers.ReadShareStats(cmd.ResponseStream));
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => ShareHttpResponseParsers.ReadShareStatsAsync(cmd.ResponseStream, ct);
             return retCmd;
         }
 

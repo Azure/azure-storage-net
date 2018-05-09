@@ -18,6 +18,7 @@
 namespace Microsoft.Azure.Storage
 {
     using System;
+    using System.Net.Http;
 
 #if !(WINDOWS_RT || NETCORE)
     using System.Net;
@@ -56,13 +57,13 @@ namespace Microsoft.Azure.Storage
         /// Gets the HTTP request associated with this event.
         /// </summary>
         /// <value>The HTTP request associated with this event.</value>
-        public HttpWebRequest Request { get; internal set; }
+        public HttpRequestMessage Request { get; internal set; }
 
         /// <summary>
         /// Gets the HTTP response associated with this event.
         /// </summary>
         /// <value>The HTTP response associated with this event.</value>
-        public HttpWebResponse Response { get; internal set; }
+        public HttpResponseMessage Response { get; internal set; }
 #endif
     }
 }

@@ -23,11 +23,10 @@ namespace Microsoft.Azure.Storage.Core.Executor
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Net;
-#if NETCORE || WINDOWS_RT
     using System.Net.Http;
     using System.Net.Http.Headers;
-#endif
+    using System.Threading;
+    using System.Threading.Tasks;
 
     internal abstract class ExecutorBase
     {
@@ -38,27 +37,12 @@ namespace Microsoft.Azure.Storage.Core.Executor
                 executionState.Req.Headers.Add(Constants.HeaderConstants.ClientRequestIdHeader, executionState.OperationContext.ClientRequestID);
             }
 
-#if !ALL_SERVICES
-            if(!string.IsNullOrEmpty(OperationContext.StorageVersion))
-            {
-#if WINDOWS_DESKTOP
-            executionState.Req.UserAgent = Constants.HeaderConstants.UserAgentProductName + "/" + Constants.HeaderConstants.UserAgentProductVersion + "-" + OperationContext.PackageVersion + " " + Constants.HeaderConstants.UserAgentComment;
-#elif NETCORE || WINDOWS_RT
-            //executionState.Req.Headers.UserAgent   = string.Empty;            
-#endif
-            }
-#endif
-
-
             if (!string.IsNullOrEmpty(executionState.OperationContext.CustomUserAgent))
             {
-#if WINDOWS_DESKTOP
-                executionState.Req.UserAgent = executionState.OperationContext.CustomUserAgent + " " + Constants.HeaderConstants.UserAgent;
-#elif NETCORE || WINDOWS_RT
                 executionState.Req.Headers.UserAgent.TryParseAdd(executionState.OperationContext.CustomUserAgent);
                 executionState.Req.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
                 executionState.Req.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
-#endif
+
             }
 
             if (executionState.OperationContext.UserHeaders != null && executionState.OperationContext.UserHeaders.Count > 0)
@@ -206,49 +190,37 @@ namespace Microsoft.Azure.Storage.Core.Executor
             return false;
         }
 
-#if WINDOWS_DESKTOP
-        protected static bool CheckCancellation<T>(ExecutionState<T> executionState)
+#if !(NETCORE || WINDOWS_RT)
+        protected static bool CheckCancellation<T>(ExecutionState<T> executionState, CancellationToken token, bool throwOnCancellation = false)
         {
-            lock (executionState.CancellationLockerObject)
+            if (CancellationTokenSource.CreateLinkedTokenSource(executionState.CancellationTokenSource.Token, token).IsCancellationRequested)
             {
-                if (executionState.CancelRequested)
+                executionState.ExceptionRef = Exceptions.GenerateCancellationException(executionState.Cmd.CurrentResult, null);
+
+                if (throwOnCancellation)
                 {
-                    executionState.ExceptionRef = Exceptions.GenerateCancellationException(executionState.Cmd.CurrentResult, null);
+                    throw executionState.ExceptionRef;
                 }
 
-                return executionState.CancelRequested;
+                return true;
             }
-        }
-#endif
 
-#if NETCORE
-        internal static StorageException TranslateExceptionBasedOnParseError(Exception ex, RequestResult currentResult, HttpResponseMessage response, Func<Stream, HttpResponseMessage, string, StorageExtendedErrorInformation> parseError)
-        {
-            if (parseError != null)
-            {
-                return StorageException.TranslateException(
-                    ex,
-                    currentResult,
-                    (stream) => parseError(stream, response, null), response);
-            }
-            else
-            {
-               return StorageException.TranslateException(ex, currentResult, null, response);
-            }
+            return false;
         }
-#else
-        internal static StorageException TranslateExceptionBasedOnParseError(Exception ex, RequestResult currentResult, HttpWebResponse response, Func<Stream, HttpWebResponse, string, StorageExtendedErrorInformation> parseError)
+
+        internal static async Task<StorageException> TranslateExceptionBasedOnParseErrorAsync(Exception ex, RequestResult currentResult, HttpResponseMessage response, Func<Stream, HttpResponseMessage, string, CancellationToken, Task<StorageExtendedErrorInformation>> parseErrorAsync, CancellationToken cancellationToken)
         {
-            if (parseError != null)
+            if (parseErrorAsync != null)
             {
-                return StorageException.TranslateException(
+                return await StorageException.TranslateExceptionAsync(
                     ex,
                     currentResult,
-                    (stream) => parseError(stream, response, null));
+                    async (stream, token) => await parseErrorAsync(stream, response, null, token).ConfigureAwait(false),
+                    cancellationToken, response).ConfigureAwait(false);
             }
             else
             {
-                return StorageException.TranslateException(ex, currentResult, null);
+                return await StorageException.TranslateExceptionAsync(ex, currentResult, null, cancellationToken, response).ConfigureAwait(false);
             }
         }
 #endif

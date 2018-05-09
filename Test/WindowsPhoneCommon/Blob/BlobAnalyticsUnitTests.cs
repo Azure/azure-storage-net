@@ -334,7 +334,15 @@ namespace Microsoft.Azure.Storage.Blob
 
         private static ServiceProperties DefaultServiceProperties()
         {
+<<<<<<< HEAD
+<<<<<<< HEAD
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties());
+=======
             ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), null, new DeleteRetentionPolicy());
+>>>>>>> parent of a321d216... Revert "Soft-Delete Updated Server Changes + CR"
+=======
+            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), null, new DeleteRetentionPolicyProperties());
+>>>>>>> parent of b61c31a5... Revert "[Jul17] Soft-delete-NCR"
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
@@ -348,8 +356,17 @@ namespace Microsoft.Azure.Storage.Blob
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.Version = "1.0";
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
             props.DeleteRetentionPolicy.RetentionDays = 5;
 
+>>>>>>> parent of a321d216... Revert "Soft-Delete Updated Server Changes + CR"
+=======
+            props.DeleteRetentionProperties.RetainedVersionsPerBlob = 2;
+            props.DeleteRetentionProperties.Days = 5;
+
+>>>>>>> parent of b61c31a5... Revert "[Jul17] Soft-delete-NCR"
             props.DefaultServiceVersion = "2013-08-15";
 
             return props;

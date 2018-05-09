@@ -20,7 +20,9 @@ using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
@@ -39,13 +41,20 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [ClassInitialize]
         public static void InitialInitialize(TestContext testContext)
         {
-            cloudSetup.Initialize();
+            try
+            {
+                cloudSetup.Initialize().Wait();
+            }
+            catch
+            {
+                FinalCleanup();
+            }
         }
 
         [ClassCleanup]
         public static void FinalCleanup()
         {
-            cloudSetup.Cleanup();
+            cloudSetup.Cleanup().Wait();
 
             // sleep for 40s so that if the test is re-run, we can recreate the container
             Thread.Sleep(35000);
@@ -58,10 +67,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutPageBlobCloudOwnerSync()
+        public async Task BlobProtocolPutPageBlobCloudOwnerSync()
         {
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.PageBlob };
-            cloudOwnerSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.PageBlob, new byte[0], HttpStatusCode.Created);
+            await cloudOwnerSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.PageBlob, new byte[0], HttpStatusCode.Created);
         }
 
         [TestMethod]
@@ -70,10 +79,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutPageBlobCloudAnonSync()
+        public async Task BlobProtocolPutPageBlobCloudAnonSync()
         {
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.PageBlob };
-            cloudAnonSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
+            await cloudAnonSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
                 properties, BlobType.PageBlob, new byte[0], HttpStatusCode.NotFound);
         }
 
@@ -83,10 +92,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutPageBlobCloudOwnerAsync()
+        public async Task BlobProtocolPutPageBlobCloudOwnerAsync()
         {
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.PageBlob };
-            cloudOwnerAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.PageBlob, new byte[0], HttpStatusCode.Created);
+            await cloudOwnerAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.PageBlob, new byte[0], HttpStatusCode.Created);
         }
 
         [TestMethod]
@@ -95,10 +104,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutPageBlobCloudAnonAsync()
+        public async Task BlobProtocolPutPageBlobCloudAnonAsync()
         {
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.PageBlob };
-            cloudAnonAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
+            await cloudAnonAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
                 properties, BlobType.PageBlob, new byte[0], HttpStatusCode.NotFound);
         }
         #endregion
@@ -110,12 +119,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutBlockBlobCloudOwnerSync()
+        public async Task BlobProtocolPutBlockBlobCloudOwnerSync()
         {
             byte[] content = new byte[6000];
             random.NextBytes(content);
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.BlockBlob };
-            cloudOwnerSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.BlockBlob, content, null);
+            await cloudOwnerSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.BlockBlob, content, null);
         }
 
         [TestMethod]
@@ -124,12 +133,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutBlockBlobCloudAnonSync()
+        public async Task BlobProtocolPutBlockBlobCloudAnonSync()
         {
             byte[] content = new byte[6000];
             random.NextBytes(content);
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.BlockBlob };
-            cloudAnonSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
+            await cloudAnonSync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
                 properties, BlobType.BlockBlob, content, HttpStatusCode.NotFound);
         }
 
@@ -139,12 +148,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutBlockBlobCloudOwnerAsync()
+        public async Task BlobProtocolPutBlockBlobCloudOwnerAsync()
         {
             byte[] content = new byte[6000];
             random.NextBytes(content);
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.BlockBlob };
-            cloudOwnerAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.BlockBlob, content, null);
+            await cloudOwnerAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(), properties, BlobType.BlockBlob, content, null);
         }
 
         [TestMethod]
@@ -153,12 +162,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutBlockBlobCloudAnonAsync()
+        public async Task BlobProtocolPutBlockBlobCloudAnonAsync()
         {
             byte[] content = new byte[6000];
             random.NextBytes(content);
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.BlockBlob };
-            cloudAnonAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
+            await cloudAnonAsync.PutBlobScenarioTest(cloudSetup.ContainerName, Guid.NewGuid().ToString(),
                 properties, BlobType.BlockBlob, content, HttpStatusCode.NotFound);
         }
         #endregion
@@ -170,9 +179,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetBlobCloudOwnerSync()
+        public async Task BlobProtocolGetBlobCloudOwnerSync()
         {
-            cloudOwnerSync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
+            await cloudOwnerSync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, null);
         }
 
@@ -182,9 +191,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetBlobCloudOwnerAsync()
+        public async Task BlobProtocolGetBlobCloudOwnerAsync()
         {
-            cloudOwnerAsync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
+            await cloudOwnerAsync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, null);
         }
 
@@ -194,9 +203,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetBlobCloudAnonSync()
+        public async Task BlobProtocolGetBlobCloudAnonSync()
         {
-            cloudAnonSync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
+            await cloudAnonSync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, HttpStatusCode.NotFound);
         }
 
@@ -206,9 +215,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetBlobCloudAnonAsync()
+        public async Task BlobProtocolGetBlobCloudAnonAsync()
         {
-            cloudAnonAsync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
+            await cloudAnonAsync.GetBlobScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, HttpStatusCode.NotFound);
         }
 
@@ -218,9 +227,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetPublicBlobCloudOwnerSync()
+        public async Task BlobProtocolGetPublicBlobCloudOwnerSync()
         {
-            cloudOwnerSync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
+            await cloudOwnerSync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, null);
         }
 
@@ -230,9 +239,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetPublicBlobCloudOwnerAsync()
+        public async Task BlobProtocolGetPublicBlobCloudOwnerAsync()
         {
-            cloudOwnerAsync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
+            await cloudOwnerAsync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, null);
         }
 
@@ -242,9 +251,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetPublicBlobCloudAnonSync()
+        public async Task BlobProtocolGetPublicBlobCloudAnonSync()
         {
-            cloudAnonSync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
+            await cloudAnonSync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, null);
         }
 
@@ -254,9 +263,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetPublicBlobCloudAnonAsync()
+        public async Task BlobProtocolGetPublicBlobCloudAnonAsync()
         {
-            cloudAnonAsync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
+            await cloudAnonAsync.GetBlobScenarioTest(cloudSetup.PublicContainerName, cloudSetup.PublicBlobName, cloudSetup.Properties,
                 cloudSetup.LeaseId, cloudSetup.Content, null);
         }
 
@@ -266,23 +275,23 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetBlobRangeCloudOwnerSync()
+        public async Task BlobProtocolGetBlobRangeCloudOwnerSync()
         {
             int all = cloudSetup.Content.Length;
             int quarter = cloudSetup.Content.Length / 4;
             int half = cloudSetup.Content.Length / 2;
 
             // Full content, as complete range. (0-end)
-            cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, all, null);
+            await cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, all, null);
 
             // Partial content, as complete range. (quarter-quarterPlusHalf)
-            cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, quarter, half, null);
+            await cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, quarter, half, null);
 
             // Full content, as open range. (0-)
-            cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, null, null);
+            await cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, null, null);
 
             // Partial content, as open range. (half-)
-            cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, half, null, null);
+            await cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, half, null, null);
         }
 
         [TestMethod]
@@ -291,12 +300,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetBlobRangeCloudOwnerSyncInvalidRange()
+        public async Task BlobProtocolGetBlobRangeCloudOwnerSyncInvalidRange()
         {
             int all = cloudSetup.Content.Length;
 
             // Invalid range starting after the end of the blob (endPlusOne-)
-            cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, all, null, HttpStatusCode.RequestedRangeNotSatisfiable);
+            await cloudOwnerSync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, all, null, HttpStatusCode.RequestedRangeNotSatisfiable);
         }
 
         [TestMethod]
@@ -305,23 +314,23 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetBlobRangeCloudOwnerAsync()
+        public async Task BlobProtocolGetBlobRangeCloudOwnerAsync()
         {
             int all = cloudSetup.Content.Length;
             int quarter = cloudSetup.Content.Length / 4;
             int half = cloudSetup.Content.Length / 2;
 
             // Full content, as complete range. (0-end)
-            cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, all, null);
+            await cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, all, null);
 
             // Partial content, as complete range. (quarter-quarterPlusHalf)
-            cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, quarter, half, null);
+            await cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, quarter, half, null);
 
             // Full content, as open range. (0-)
-            cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, null, null);
+            await cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, 0, null, null);
 
             // Partial content, as open range. (half-)
-            cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, half, null, null);
+            await cloudOwnerAsync.GetBlobRangeScenarioTest(cloudSetup.ContainerName, cloudSetup.BlobName, cloudSetup.LeaseId, cloudSetup.Content, half, null, null);
         }
         #endregion
 
@@ -332,26 +341,26 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolListBlobsCloudAnonSync()
+        public async Task BlobProtocolListBlobsCloudAnonSync()
         {
             BlobListingContext listingContext = new BlobListingContext("p", null, null, BlobListingDetails.All);
-            cloudAnonSync.ListBlobsScenarioTest(cloudSetup.PublicContainerName, listingContext, null, cloudSetup.PublicBlobName);
+            await cloudAnonSync.ListBlobsScenarioTest(cloudSetup.PublicContainerName, listingContext, null, cloudSetup.PublicBlobName);
 
-            cloudSetup.CreateBlob(cloudSetup.PublicContainerName, "newblob1", true);
-            cloudSetup.CreateBlob(cloudSetup.PublicContainerName, "newblob2", true);
+            await cloudSetup.CreateBlob(cloudSetup.PublicContainerName, "newblob1", true);
+            await cloudSetup.CreateBlob(cloudSetup.PublicContainerName, "newblob2", true);
 
             try
             {
-                cloudAnonSync.ListBlobsScenarioTest(cloudSetup.PublicContainerName, listingContext, null, cloudSetup.PublicBlobName);
+                await cloudAnonSync.ListBlobsScenarioTest(cloudSetup.PublicContainerName, listingContext, null, cloudSetup.PublicBlobName);
 
                 // snapshots cannot be listed along with delimiter
                 listingContext = new BlobListingContext("n", 10, "/", BlobListingDetails.Metadata);
-                cloudAnonSync.ListBlobsScenarioTest(cloudSetup.PublicContainerName, listingContext, null, "newblob1", "newblob2");
+                await cloudAnonSync.ListBlobsScenarioTest(cloudSetup.PublicContainerName, listingContext, null, "newblob1", "newblob2");
             }
             finally
             {
-                cloudSetup.DeleteBlob(cloudSetup.PublicContainerName, "newblob1");
-                cloudSetup.DeleteBlob(cloudSetup.PublicContainerName, "newblob2");
+                await cloudSetup.DeleteBlob(cloudSetup.PublicContainerName, "newblob1");
+                await cloudSetup.DeleteBlob(cloudSetup.PublicContainerName, "newblob2");
             }
         }
 
@@ -361,24 +370,24 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolListBlobsCloudOwnerSync()
+        public async Task BlobProtocolListBlobsCloudOwnerSync()
         {
             BlobListingContext listingContext = new BlobListingContext("def", null, null, BlobListingDetails.All);
-            cloudOwnerSync.ListBlobsScenarioTest(cloudSetup.ContainerName, listingContext, null, cloudSetup.BlobName);
+            await cloudOwnerSync.ListBlobsScenarioTest(cloudSetup.ContainerName, listingContext, null, cloudSetup.BlobName);
 
-            cloudSetup.CreateBlob(cloudSetup.ContainerName, "newblob1", false);
-            cloudSetup.CreateBlob(cloudSetup.ContainerName, "newblob2", false);
+            await cloudSetup.CreateBlob(cloudSetup.ContainerName, "newblob1", false);
+            await cloudSetup.CreateBlob(cloudSetup.ContainerName, "newblob2", false);
 
             try
             {
-                cloudOwnerSync.ListBlobsScenarioTest(cloudSetup.ContainerName, listingContext, null, cloudSetup.BlobName);
+                await cloudOwnerSync.ListBlobsScenarioTest(cloudSetup.ContainerName, listingContext, null, cloudSetup.BlobName);
                 listingContext = new BlobListingContext("n", 10, "/", BlobListingDetails.Metadata);
-                cloudOwnerSync.ListBlobsScenarioTest(cloudSetup.ContainerName, listingContext, null, "newblob1", "newblob2");
+                await cloudOwnerSync.ListBlobsScenarioTest(cloudSetup.ContainerName, listingContext, null, "newblob1", "newblob2");
             }
             finally
             {
-                cloudSetup.DeleteBlob(cloudSetup.ContainerName, "newblob1");
-                cloudSetup.DeleteBlob(cloudSetup.ContainerName, "newblob2");
+                await cloudSetup.DeleteBlob(cloudSetup.ContainerName, "newblob1");
+                await cloudSetup.DeleteBlob(cloudSetup.ContainerName, "newblob2");
             }
         }
 
@@ -412,24 +421,24 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolListContainersCloud()
+        public async Task BlobProtocolListContainersCloud()
         {
             ListingContext listingContext = new ListingContext("default", null);
-            cloudOwnerAsync.ListContainersScenarioTest(listingContext, null, cloudSetup.ContainerName);
+            await cloudOwnerAsync.ListContainersScenarioTest(listingContext, null, cloudSetup.ContainerName);
 
-            cloudSetup.CreateContainer("newcontainer1", true);
-            cloudSetup.CreateContainer("newcontainer2", true);
+            await cloudSetup.CreateContainer("newcontainer1", true);
+            await cloudSetup.CreateContainer("newcontainer2", true);
 
             try
             {
-                cloudOwnerAsync.ListContainersScenarioTest(listingContext, null, cloudSetup.ContainerName);
+                await cloudOwnerAsync.ListContainersScenarioTest(listingContext, null, cloudSetup.ContainerName);
                 listingContext = new ListingContext("newcontainer", 10);
-                cloudOwnerAsync.ListContainersScenarioTest(listingContext, null, "newcontainer1", "newcontainer2");
+                await cloudOwnerAsync.ListContainersScenarioTest(listingContext, null, "newcontainer1", "newcontainer2");
             }
             finally
             {
-                cloudSetup.DeleteContainer("newcontainer1");
-                cloudSetup.DeleteContainer("newcontainer2");
+                await cloudSetup.DeleteContainer("newcontainer1");
+                await cloudSetup.DeleteContainer("newcontainer2");
             }
         }
 
@@ -439,31 +448,29 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolGetContainerWithEmptyHeader()
+        public async Task BlobProtocolGetContainerWithEmptyHeader()
         {
             ListingContext listingContext = new ListingContext("default", null);
-            cloudOwnerAsync.CreateContainer("emptyheadercontainer", true);
+            await cloudOwnerAsync.CreateContainer("emptyheadercontainer", true);
 
-            HttpWebRequest request = BlobTests.ListContainersRequest(cloudOwnerAsync.BlobContext, listingContext);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
+            HttpRequestMessage request = BlobTests.ListContainersRequest(cloudOwnerAsync.BlobContext, listingContext);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
             if (cloudOwnerAsync.BlobContext.Credentials != null)
             {
-                BlobTests.SignRequest(request, cloudOwnerAsync.BlobContext);
                 request.Headers.Add("x-ms-blob-application-metadata", "");
             }
-            using (HttpWebResponse response = BlobTestUtils.GetResponse(request, cloudOwnerAsync.BlobContext))
+            using (HttpResponseMessage response = await BlobTestUtils.GetResponse(request, cloudOwnerAsync.BlobContext))
             {
                 BlobTests.ListContainersResponse(response, cloudOwnerAsync.BlobContext, HttpStatusCode.Forbidden);
             }
 
             request = BlobTests.ListContainersRequest(cloudOwnerAsync.BlobContext, listingContext);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
             if (cloudOwnerAsync.BlobContext.Credentials != null)
             {
                 request.Headers.Add("x-ms-blob-application-metadata", "");
-                BlobTests.SignRequest(request, cloudOwnerAsync.BlobContext);
             }
-            using (HttpWebResponse response = BlobTestUtils.GetResponse(request, cloudOwnerAsync.BlobContext))
+            using (HttpResponseMessage response = await BlobTestUtils.GetResponse(request, cloudOwnerAsync.BlobContext))
             {
                 BlobTests.ListContainersResponse(response, cloudOwnerAsync.BlobContext, HttpStatusCode.OK);
             }
@@ -477,13 +484,13 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutGetBlockListCloudOwnerAsync()
+        public async Task BlobProtocolPutGetBlockListCloudOwnerAsync()
         {
             string blockId1 = Convert.ToBase64String(new byte[] { 99, 100, 101 });
             string blockId2 = Convert.ToBase64String(new byte[] { 102, 103, 104 });
 
             // use a unique name since temp blocks from previous runs can exist
-            string blobName = "blob1" + DateTime.UtcNow.Ticks;
+            string blobName = "blob1"  + DateTime.UtcNow.Ticks;
             BlobProperties blobProperties = new BlobProperties();
             List<PutBlockListItem> blocks = new List<PutBlockListItem>();
             PutBlockListItem block1 = new PutBlockListItem(blockId1, BlockSearchMode.Uncommitted);
@@ -492,24 +499,24 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             blocks.Add(block2);
             try
             {
-                cloudOwnerAsync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId1, cloudSetup.LeaseId, cloudSetup.Content, null);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
+                await cloudOwnerAsync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId1, cloudSetup.LeaseId, cloudSetup.Content, null);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
 
-                cloudOwnerAsync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId2, cloudSetup.LeaseId, cloudSetup.Content, null);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1, blockId2);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
+                await cloudOwnerAsync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId2, cloudSetup.LeaseId, cloudSetup.Content, null);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
 
-                cloudOwnerAsync.PutBlockListScenarioTest(cloudSetup.ContainerName, blobName, blocks, blobProperties, cloudSetup.LeaseId, null);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null);
-                cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerAsync.PutBlockListScenarioTest(cloudSetup.ContainerName, blobName, blocks, blobProperties, cloudSetup.LeaseId, null);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null);
+                await cloudOwnerAsync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null, blockId1, blockId2);
             }
             finally
             {
-                cloudOwnerAsync.DeleteBlob(cloudSetup.ContainerName, blobName);
+                await cloudOwnerAsync.DeleteBlob(cloudSetup.ContainerName, blobName);
             }
         }
 
@@ -519,7 +526,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobProtocolPutGetBlockListCloudOwnerSync()
+        public async Task BlobProtocolPutGetBlockListCloudOwnerSync()
         {
             string blockId1 = Convert.ToBase64String(new byte[] { 99, 100, 101 });
             string blockId2 = Convert.ToBase64String(new byte[] { 102, 103, 104 });
@@ -534,24 +541,24 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             blocks.Add(block2);
             try
             {
-                cloudOwnerSync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId1, cloudSetup.LeaseId, cloudSetup.Content, null);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
+                await cloudOwnerSync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId1, cloudSetup.LeaseId, cloudSetup.Content, null);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
 
-                cloudOwnerSync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId2, cloudSetup.LeaseId, cloudSetup.Content, null);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1, blockId2);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
+                await cloudOwnerSync.PutBlockScenarioTest(cloudSetup.ContainerName, blobName, blockId2, cloudSetup.LeaseId, cloudSetup.Content, null);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null);
 
-                cloudOwnerSync.PutBlockListScenarioTest(cloudSetup.ContainerName, blobName, blocks, blobProperties, cloudSetup.LeaseId, null);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null);
-                cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerSync.PutBlockListScenarioTest(cloudSetup.ContainerName, blobName, blocks, blobProperties, cloudSetup.LeaseId, null);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.All, cloudSetup.LeaseId, null, blockId1, blockId2);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Uncommitted, cloudSetup.LeaseId, null);
+                await cloudOwnerSync.GetBlockListScenarioTest(cloudSetup.ContainerName, blobName, BlockListingFilter.Committed, cloudSetup.LeaseId, null, blockId1, blockId2);
             }
             finally
             {
-                cloudOwnerSync.DeleteBlob(cloudSetup.ContainerName, blobName);
+                await cloudOwnerSync.DeleteBlob(cloudSetup.ContainerName, blobName);
             }
         }
         #endregion

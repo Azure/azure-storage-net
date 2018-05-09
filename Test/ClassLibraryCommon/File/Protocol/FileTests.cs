@@ -20,14 +20,16 @@ using Microsoft.Azure.Storage.Auth.Protocol;
 using Microsoft.Azure.Storage.Core.Auth;
 using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
+using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Azure.Storage.File.Protocol
 {
     internal class FileTests
     {
-        public static HttpWebRequest PutFileRequest(FileContext context, string shareName, string fileName,
+        public static HttpRequestMessage PutFileRequest(FileContext context, string shareName, string fileName,
             FileProperties properties, byte[] content, long fileSize, AccessCondition accessCondition)
         {
             bool valid = FileTests.ShareNameValidator(shareName) &&
@@ -35,11 +37,11 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 FileTestUtils.ContentValidator(content);
 
             Uri uri = FileTests.ConstructPutUri(context.Address, shareName, fileName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
             try
             {
-                request = FileHttpWebRequestFactory.Create(uri, context.Timeout, properties, fileSize, accessCondition, true, opContext);
+                request = FileHttpRequestMessageFactory.Create(uri, context.Timeout, properties, fileSize, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             }
             catch (InvalidOperationException)
             {
@@ -52,7 +54,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             {
                 Assert.IsNotNull(request);
                 Assert.IsNotNull(request.Method);
-                Assert.AreEqual("PUT", request.Method);
+                Assert.AreEqual(HttpMethod.Put, request.Method);
                 FileTestUtils.VersionHeader(request, false);
                 FileTestUtils.ContentTypeHeader(request, null);
                 FileTestUtils.ContentDispositionHeader(request, properties.ContentDisposition);
@@ -65,33 +67,33 @@ namespace Microsoft.Azure.Storage.File.Protocol
             return request;
         }
 
-        public static void PutFileResponse(HttpWebResponse response, FileContext context, HttpStatusCode? expectedError)
+        public static void PutFileResponse(HttpResponseMessage response, FileContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
                 FileTestUtils.ETagHeader(response);
                 FileTestUtils.LastModifiedHeader(response);
                 FileTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
-            response.Close();
+            response.Dispose();
         }
 
-        public static HttpWebRequest GetFileRequest(FileContext context, string shareName, string fileName, AccessCondition accessCondition)
+        public static HttpRequestMessage GetFileRequest(FileContext context, string shareName, string fileName, AccessCondition accessCondition)
         {
             bool valid = FileTests.ShareNameValidator(shareName) &&
                 FileTests.FileNameValidator(fileName);
             Uri uri = FileTests.ConstructGetUri(context.Address, shareName, fileName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
             try
             {
-                request = FileHttpWebRequestFactory.Get(uri, context.Timeout, null, accessCondition, true, opContext);
+                request = FileHttpRequestMessageFactory.Get(uri, context.Timeout, null, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             }
             catch (InvalidOperationException)
             {
@@ -104,13 +106,13 @@ namespace Microsoft.Azure.Storage.File.Protocol
             {
                 Assert.IsNotNull(request);
                 Assert.IsNotNull(request.Method);
-                Assert.AreEqual("GET", request.Method);
+                Assert.AreEqual(HttpMethod.Get, request.Method);
                 FileTestUtils.RangeHeader(request, null);
             }
             return request;
         }
 
-        public static void GetFileResponse(HttpWebResponse response, FileContext context, FileProperties properties, HttpStatusCode? expectedError)
+        public static void GetFileResponse(HttpResponseMessage response, FileContext context, FileProperties properties, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
@@ -122,22 +124,25 @@ namespace Microsoft.Azure.Storage.File.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
-            response.Close();
+            response.Dispose();
         }
 
-        public static HttpWebRequest WriteRangeRequest(FileContext context, string shareName, string fileName, FileRange range, int length, AccessCondition accessCondition)
+        public static HttpRequestMessage WriteRangeRequest(FileContext context, string shareName, string fileName, FileRange range, int length, AccessCondition accessCondition)
         {
             bool valid = FileTests.ShareNameValidator(shareName) &&
                 FileTests.FileNameValidator(fileName);
             Uri uri = FileTests.ConstructPutUri(context.Address, shareName, fileName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
             try
             {
-                request = FileHttpWebRequestFactory.PutRange(uri, context.Timeout, range, FileRangeWrite.Update, accessCondition, true, opContext);
-                request.ContentLength = length;
+                using (var ms = new MemoryStream())
+                {
+                    request = FileHttpRequestMessageFactory.PutRange(uri, context.Timeout, range, FileRangeWrite.Update, accessCondition, new StreamContent(ms), opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
+                }
+                HttpRequestHandler.SetContentLength(request, length);
             }
             catch (InvalidOperationException)
             {
@@ -150,13 +155,13 @@ namespace Microsoft.Azure.Storage.File.Protocol
             {
                 Assert.IsNotNull(request);
                 Assert.IsNotNull(request.Method);
-                Assert.AreEqual("PUT", request.Method);
+                Assert.AreEqual(HttpMethod.Put, request.Method);
                 FileTestUtils.RangeHeader(request, range.StartOffset, range.EndOffset);
             }
             return request;
         }
 
-        public static void WriteRangeResponse(HttpWebResponse response, FileContext context, HttpStatusCode? expectedError)
+        public static void WriteRangeResponse(HttpResponseMessage response, FileContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
@@ -168,9 +173,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
-            response.Close();
+            response.Dispose();
         }
 
         /// <summary>
@@ -183,18 +188,18 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="count">The number of elements in the range.</param>
         /// <param name="leaseId">The lease ID, or null if the file is not leased.</param>
         /// <returns>A web request for getting a file range.</returns>
-        public static HttpWebRequest GetFileRangeRequest(FileContext context, string shareName, string fileName, long offset, long? count, AccessCondition accessCondition)
+        public static HttpRequestMessage GetFileRangeRequest(FileContext context, string shareName, string fileName, long offset, long? count, AccessCondition accessCondition)
         {
             bool valid = FileTests.ShareNameValidator(shareName) &&
                 FileTests.FileNameValidator(fileName);
 
             Uri uri = FileTests.ConstructGetUri(context.Address, shareName, fileName);
-            HttpWebRequest request = null;
+            HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
 
             try
             {
-                request = FileHttpWebRequestFactory.Get(uri, context.Timeout, offset, count, false, null, accessCondition, true, opContext);
+                request = FileHttpRequestMessageFactory.Get(uri, context.Timeout, offset, count, false, null, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             }
             catch (InvalidOperationException)
             {
@@ -208,7 +213,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             {
                 Assert.IsNotNull(request);
                 Assert.IsNotNull(request.Method);
-                Assert.AreEqual("GET", request.Method);
+                Assert.AreEqual(HttpMethod.Get, request.Method);
                 FileTestUtils.RangeHeader(request, offset, count.HasValue ? (long?)(count.Value + offset - 1) : null);
             }
 
@@ -226,7 +231,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="expectedTotalBytes">The expected total number of bytes in the file.</param>
         /// <param name="expectedError">The expected error code, or null if the operation is expected to succeed.</param>
         public static void CheckFileRangeResponse(
-            HttpWebResponse response,
+            HttpResponseMessage response,
             FileContext context,
             byte[] content,
             long expectedStartRange,
@@ -248,100 +253,100 @@ namespace Microsoft.Azure.Storage.File.Protocol
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
 
-            response.Close();
+            response.Dispose();
         }
 
-        public static HttpWebRequest CreateShareRequest(FileContext context, string shareName)
+        public static HttpRequestMessage CreateShareRequest(FileContext context, string shareName)
         {
             Uri uri = FileClientTests.ConstructUri(context.Address, shareName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ShareHttpWebRequestFactory.Create(uri, context.Timeout, true, opContext);
+            HttpRequestMessage request = ShareHttpRequestMessageFactory.Create(uri, null, context.Timeout, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("PUT", request.Method);
+            Assert.AreEqual(HttpMethod.Put, request.Method);
             FileTestUtils.RangeHeader(request, null);
             FileTestUtils.VersionHeader(request, false);
             return request;
         }
 
-        public static HttpWebRequest DeleteShareRequest(FileContext context, string shareName, AccessCondition accessCondition)
+        public static HttpRequestMessage DeleteShareRequest(FileContext context, string shareName, AccessCondition accessCondition)
         {
             Uri uri = FileClientTests.ConstructUri(context.Address, shareName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ShareHttpWebRequestFactory.Delete(uri, context.Timeout, null, DeleteShareSnapshotsOption.None, accessCondition, true, opContext);
+            HttpRequestMessage request = ShareHttpRequestMessageFactory.Delete(uri, context.Timeout, null, DeleteShareSnapshotsOption.None, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("DELETE", request.Method);
+            Assert.AreEqual(HttpMethod.Delete, request.Method);
             FileTestUtils.RangeHeader(request, null);
             return request;
         }
 
-        public static HttpWebRequest DeleteFileRequest(FileContext context, string shareName, string fileName, AccessCondition accessCondition)
+        public static HttpRequestMessage DeleteFileRequest(FileContext context, string shareName, string fileName, AccessCondition accessCondition)
         {
             Uri uri = FileClientTests.ConstructUri(context.Address, shareName, fileName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = FileHttpWebRequestFactory.Delete(uri, context.Timeout, accessCondition, true, opContext);
+            HttpRequestMessage request = FileHttpRequestMessageFactory.Delete(uri, context.Timeout, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("DELETE", request.Method);
+            Assert.AreEqual(HttpMethod.Delete, request.Method);
             FileTestUtils.RangeHeader(request, null);
             return request;
         }
 
-        public static HttpWebRequest ListFilesAndDirectoriesRequest(FileContext context, string shareName, FileListingContext listingContext)
+        public static HttpRequestMessage ListFilesAndDirectoriesRequest(FileContext context, string shareName, FileListingContext listingContext)
         {
             Uri uri = FileClientTests.ConstructUri(context.Address, shareName);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = DirectoryHttpWebRequestFactory.List(uri, context.Timeout, listingContext, null, true, opContext);
+            HttpRequestMessage request = DirectoryHttpRequestMessageFactory.List(uri, context.Timeout, null, listingContext, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("GET", request.Method);
+            Assert.AreEqual(HttpMethod.Get, request.Method);
             FileTestUtils.RangeHeader(request, null);
             return request;
         }
 
-        public static void ListFilesAndDirectoriesResponse(HttpWebResponse response, FileContext context, HttpStatusCode? expectedError)
+        public static void ListFilesAndDirectoriesResponse(HttpResponseMessage response, FileContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
                 FileTestUtils.ContentTypeHeader(response, "application/xml");
                 FileTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
-        public static HttpWebRequest ListSharesRequest(FileContext context, ListingContext listingContext)
+        public static HttpRequestMessage ListSharesRequest(FileContext context, ListingContext listingContext)
         {
             Uri uri = FileClientTests.ConstructUri(context.Address);
             OperationContext opContext = new OperationContext();
-            HttpWebRequest request = ShareHttpWebRequestFactory.List(uri, context.Timeout, listingContext, ShareListingDetails.Metadata, true, opContext);
+            HttpRequestMessage request = ShareHttpRequestMessageFactory.List(uri, context.Timeout, listingContext, ShareListingDetails.Metadata, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
-            Assert.AreEqual("GET", request.Method);
+            Assert.AreEqual(HttpMethod.Get, request.Method);
             FileTestUtils.RangeHeader(request, null);
             return request;
         }
 
-        public static void ListSharesResponse(HttpWebResponse response, FileContext context, HttpStatusCode? expectedError)
+        public static void ListSharesResponse(HttpResponseMessage response, FileContext context, HttpStatusCode? expectedError)
         {
             Assert.IsNotNull(response);
             if (expectedError == null)
             {
-                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, response.ReasonPhrase);
                 FileTestUtils.ContentTypeHeader(response, "application/xml");
                 FileTestUtils.RequestIdHeader(response);
             }
             else
             {
-                Assert.AreEqual(expectedError, response.StatusCode, response.StatusDescription);
+                Assert.AreEqual(expectedError, response.StatusCode, response.ReasonPhrase);
             }
         }
 
@@ -371,22 +376,6 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 Assert.Fail("Cannot create URI with given arguments.");
             }
             return uri;
-        }
-
-        public static void SignRequest(HttpWebRequest request, FileContext context)
-        {
-            Assert.IsNotNull(request);
-            Assert.IsNotNull(context);
-
-            OperationContext opContext = new OperationContext();
-            SharedKeyAuthenticationHandler handler = new SharedKeyAuthenticationHandler(
-                SharedKeyCanonicalizer.Instance,
-                context.Credentials,
-                context.Account);
-            handler.SignRequest(request, opContext);
-
-            FileTestUtils.AuthorizationHeader(request, true, context.Account);
-            FileTestUtils.DateHeader(request, true);
         }
 
         public static bool ShareNameValidator(string name)

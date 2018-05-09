@@ -26,6 +26,8 @@ namespace Microsoft.Azure.Storage.File.Protocol
     using System.Globalization;
     using System.IO;
     using System.Net.Http;
+    using System.Threading;
+    using System.Threading.Tasks;
     using System.Xml;
     using System.Xml.Linq;
 
@@ -79,11 +81,11 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// </summary>
         /// <param name="inputStream">The stream of XML policies.</param>
         /// <param name="permissions">The permissions object to which the policies are to be written.</param>
-        public static void ReadSharedAccessIdentifiers(Stream inputStream, FileSharePermissions permissions)
+        public static Task ReadSharedAccessIdentifiersAsync(Stream inputStream, FileSharePermissions permissions, CancellationToken token)
         {
             CommonUtility.AssertNotNull("permissions", permissions);
 
-            Response.ReadSharedAccessIdentifiers(permissions.SharedAccessPolicies, new FileAccessPolicyResponse(inputStream));
+            return Response.ReadSharedAccessIdentifiersAsync(permissions.SharedAccessPolicies, new FileAccessPolicyResponse(inputStream), token);
         }
 
         /// <summary>
@@ -109,6 +111,27 @@ namespace Microsoft.Azure.Storage.File.Protocol
 
                 return ShareStats.FromServiceXml(shareStatsDocument);
             }
+        }
+
+        /// <summary>
+        /// Reads share stats from a stream.
+        /// </summary>
+        /// <param name="inputStream">The stream from which to read the share stats.</param>
+        /// <returns>The share stats stored in the stream.</returns>
+        public static Task<ShareStats> ReadShareStatsAsync(Stream inputStream, CancellationToken token)
+        {
+            return Task.Run(
+                () =>
+                {
+                    using (XmlReader reader = XmlReader.Create(inputStream))
+                    {
+                        XDocument shareStatsDocument = XDocument.Load(reader);
+
+                        return ShareStats.FromServiceXml(shareStatsDocument);
+                    }
+                },
+                token
+                );
         }
     }
 }

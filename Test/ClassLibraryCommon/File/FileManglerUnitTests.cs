@@ -15,6 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+#if !(NETCOREAPP2_0)
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Test.Network;
 using Microsoft.Azure.Test.Network.Behaviors;
@@ -47,7 +48,7 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(0, TestBase.FileBufferManager.OutstandingBufferCount);
             }
         }
-
+        
         [TestMethod]
         [Description("Force file download to retry")]
         [TestCategory(ComponentCategory.File)]
@@ -205,3 +206,4 @@ namespace Microsoft.Azure.Storage.File
         }
     }
 }
+#endif

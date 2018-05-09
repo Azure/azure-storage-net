@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Storage.Core
             MemoryStream stream1 = new MemoryStream(buffer);
 
             MultiBufferMemoryStream stream2 = new MultiBufferMemoryStream(null /* bufferManager */);
-            await stream1.WriteToAsync(stream2, null, null, false, tempExecutionState, null, CancellationToken.None);
+            await stream1.WriteToAsync(stream2, default(IBufferManager), null, null, false, tempExecutionState, null, CancellationToken.None);
             stream1.Seek(0, SeekOrigin.Begin);
             stream2.Seek(0, SeekOrigin.Begin);
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -69,7 +69,7 @@ namespace Microsoft.Azure.Storage.Core
             TestHelper.AssertStreamsAreEqual(stream3, stream4);
 
             MemoryStream stream5 = new MemoryStream();
-            await stream4.WriteToAsync(stream5, null, null, false, tempExecutionState, null, CancellationToken.None);
+            await stream4.WriteToAsync(stream5, default(IBufferManager), null, null, false, tempExecutionState, null, CancellationToken.None);
             stream4.Seek(0, SeekOrigin.Begin);
             stream5.Seek(0, SeekOrigin.Begin);
             TestHelper.AssertStreamsAreEqual(stream4, stream5);

@@ -61,21 +61,21 @@ namespace Microsoft.Azure.Storage.Core
                     HttpStatusCode.NotFound);
                 Assert.AreEqual(1, TestLogListener.RequestCount);
                 Assert.AreEqual(1, TestLogListener.ErrorCount);
-                Assert.AreEqual(2, TestLogListener.WarningCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
                 Assert.AreEqual(operationContext.ClientRequestID, TestLogListener.LastRequestID);
 
                 operationContext.ClientRequestID = Guid.NewGuid().ToString();
                 container.Exists(null, operationContext);
                 Assert.AreEqual(2, TestLogListener.RequestCount);
                 Assert.AreEqual(1, TestLogListener.ErrorCount);
-                Assert.AreEqual(3, TestLogListener.WarningCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
                 Assert.AreEqual(operationContext.ClientRequestID, TestLogListener.LastRequestID);
 
                 operationContext.ClientRequestID = Guid.NewGuid().ToString();
                 container.CreateIfNotExists(null, operationContext);
                 Assert.AreEqual(3, TestLogListener.RequestCount);
                 Assert.AreEqual(1, TestLogListener.ErrorCount);
-                Assert.AreEqual(3, TestLogListener.WarningCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
                 Assert.AreEqual(operationContext.ClientRequestID, TestLogListener.LastRequestID);
 
                 string lastLoggedRequestID = TestLogListener.LastRequestID;
@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Storage.Core
                 container.DeleteIfExists(null, null, operationContext);
                 Assert.AreEqual(3, TestLogListener.RequestCount);
                 Assert.AreEqual(1, TestLogListener.ErrorCount);
-                Assert.AreEqual(3, TestLogListener.WarningCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
                 Assert.AreEqual(lastLoggedRequestID, TestLogListener.LastRequestID);
             }
             finally
@@ -131,7 +131,7 @@ namespace Microsoft.Azure.Storage.Core
                     container.EndExists(result);
                     Assert.AreEqual(2, TestLogListener.RequestCount);
                     Assert.AreEqual(1, TestLogListener.ErrorCount);
-                    Assert.AreEqual(2, TestLogListener.WarningCount);
+                    Assert.AreEqual(1, TestLogListener.WarningCount);
                     Assert.AreEqual(operationContext.ClientRequestID, TestLogListener.LastRequestID);
 
                     operationContext.ClientRequestID = Guid.NewGuid().ToString();
@@ -142,7 +142,7 @@ namespace Microsoft.Azure.Storage.Core
                     container.EndCreateIfNotExists(result);
                     Assert.AreEqual(3, TestLogListener.RequestCount);
                     Assert.AreEqual(1, TestLogListener.ErrorCount);
-                    Assert.AreEqual(2, TestLogListener.WarningCount);
+                    Assert.AreEqual(1, TestLogListener.WarningCount);
                     Assert.AreEqual(operationContext.ClientRequestID, TestLogListener.LastRequestID);
 
                     string lastLoggedRequestID = TestLogListener.LastRequestID;
@@ -155,7 +155,7 @@ namespace Microsoft.Azure.Storage.Core
                     container.EndDeleteIfExists(result);
                     Assert.AreEqual(3, TestLogListener.RequestCount);
                     Assert.AreEqual(1, TestLogListener.ErrorCount);
-                    Assert.AreEqual(2, TestLogListener.WarningCount);
+                    Assert.AreEqual(1, TestLogListener.WarningCount);
                     Assert.AreEqual(lastLoggedRequestID, TestLogListener.LastRequestID);
                 }
             }
@@ -195,14 +195,14 @@ namespace Microsoft.Azure.Storage.Core
                 container.ExistsAsync(null, operationContext).Wait();
                 Assert.AreEqual(2, TestLogListener.RequestCount);
                 Assert.AreEqual(1, TestLogListener.ErrorCount);
-                Assert.AreEqual(2, TestLogListener.WarningCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
                 Assert.AreEqual(operationContext.ClientRequestID, TestLogListener.LastRequestID);
 
                 operationContext.ClientRequestID = Guid.NewGuid().ToString();                
                 container.CreateIfNotExistsAsync(null, operationContext).Wait();
                 Assert.AreEqual(3, TestLogListener.RequestCount);
                 Assert.AreEqual(1, TestLogListener.ErrorCount);
-                Assert.AreEqual(2, TestLogListener.WarningCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
                 Assert.AreEqual(operationContext.ClientRequestID, TestLogListener.LastRequestID);
 
                 string lastLoggedRequestID = TestLogListener.LastRequestID;
@@ -212,7 +212,7 @@ namespace Microsoft.Azure.Storage.Core
                 container.DeleteIfExistsAsync(null, null, operationContext).Wait();
                 Assert.AreEqual(3, TestLogListener.RequestCount);
                 Assert.AreEqual(1, TestLogListener.ErrorCount);
-                Assert.AreEqual(2, TestLogListener.WarningCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
                 Assert.AreEqual(lastLoggedRequestID, TestLogListener.LastRequestID);
             }
             finally

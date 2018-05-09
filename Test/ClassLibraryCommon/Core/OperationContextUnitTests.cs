@@ -18,7 +18,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.Queue;
+#if !(NETCOREAPP2_0)
 using Microsoft.Azure.Test.Network;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +33,7 @@ namespace Microsoft.Azure.Storage.Core
     [TestClass]
     public class OperationContextUnitTests : TestBase
     {
-        #region Locals + Ctors
+#region Locals + Ctors
         public OperationContextUnitTests()
         {
         }
@@ -53,9 +55,9 @@ namespace Microsoft.Azure.Storage.Core
                 testContextInstance = value;
             }
         }
-        #endregion
+#endregion
 
-        #region Additional test attributes
+#region Additional test attributes
         //
         // You can use the following additional attributes as you write your tests:
         //
@@ -75,7 +77,7 @@ namespace Microsoft.Azure.Storage.Core
         // [TestCleanup()]
         // public void MyTestCleanup() { }
         //
-        #endregion
+#endregion
 
         [TestMethod]
         [Description("Test last result")]
@@ -100,6 +102,7 @@ namespace Microsoft.Azure.Storage.Core
             Assert.IsTrue(opContext.LastResult.HttpStatusCode > 0);
         }
 
+#if !(NETCOREAPP2_0)
         [TestMethod]
         [Description("Test client request id on blob request")]
         [TestCategory(ComponentCategory.Blob)]
@@ -251,6 +254,7 @@ namespace Microsoft.Azure.Storage.Core
             TestHelper.VerifyHeaderWasSent("User-Agent", userAgentValue, AzureStorageSelectors.BlobTraffic().IfHostNameContains(blobClient.Credentials.AccountName), act);
 #endif
         }
+#endif
 
         [TestMethod]
         [Description("Test start / end time on OperationContext")]

@@ -17,10 +17,14 @@
 
 namespace Microsoft.Azure.Storage.Queue.Protocol
 {
+    using Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from an operation to get messages from a queue.
@@ -30,110 +34,96 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
 #else
     public
 #endif
- sealed class GetMessagesResponse : ResponseParsingBase<QueueMessage>
+ static class GetMessagesResponse
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GetMessagesResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream of messages to parse.</param>
-        public GetMessagesResponse(Stream stream)
-            : base(stream)
-        {
-        }
-
-        /// <summary>
-        /// Gets an enumerable collection of <see cref="QueueMessage"/> objects from the response.
-        /// </summary>
-        /// <value>An enumerable collection of <see cref="QueueMessage"/> objects.</value>
-        public IEnumerable<QueueMessage> Messages
-        {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
-
         /// <summary>
         /// Parses a message entry in a queue get messages response.
         /// </summary>
         /// <returns>Message entry</returns>
-        private QueueMessage ParseMessageEntry()
+        private static async Task<QueueMessage> ParseMessageEntryAsync(XmlReader reader, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             QueueMessage message = null;
             string id = null;
             string popReceipt = null;
-            DateTime? insertionTime = null;
-            DateTime? expirationTime = null;
-            DateTime? timeNextVisible = null;
+            DateTimeOffset? insertionTime = null;
+            DateTimeOffset? expirationTime = null;
+            DateTimeOffset? timeNextVisible = null;
             string text = null;
             int dequeueCount = 0;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
                     switch (reader.Name)
                     {
                         case Constants.MessageIdElement:
-                            id = reader.ReadElementContentAsString();
+                            id = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.PopReceiptElement:
-                            popReceipt = reader.ReadElementContentAsString();
+                            popReceipt = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.InsertionTimeElement:
-                            insertionTime = reader.ReadElementContentAsString().ToUTCTime();
+                            insertionTime = await reader.ReadElementContentAsDateTimeOffsetAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.ExpirationTimeElement:
-                            expirationTime = reader.ReadElementContentAsString().ToUTCTime();
+                            expirationTime = await reader.ReadElementContentAsDateTimeOffsetAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.TimeNextVisibleElement:
-                            timeNextVisible = reader.ReadElementContentAsString().ToUTCTime();
+                            timeNextVisible = await reader.ReadElementContentAsDateTimeOffsetAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.MessageTextElement:
-                            text = reader.ReadElementContentAsString();
+                            text = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.DequeueCountElement:
-                            dequeueCount = reader.ReadElementContentAsInt();
+                            dequeueCount = await reader.ReadElementContentAsInt32Async().ConfigureAwait(false);
                             break;
 
                         default:
-                            reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
-            message = new QueueMessage();
-            message.Text = text;
-            message.Id = id;
-            message.PopReceipt = popReceipt;
-            message.DequeueCount = dequeueCount;
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
+            message =
+                new QueueMessage
+                {
+                    Text = text,
+                    Id = id,
+                    PopReceipt = popReceipt,
+                    DequeueCount = dequeueCount,
+                };
 
             if (insertionTime != null)
             {
-                message.InsertionTime = (DateTime)insertionTime;
+                message.InsertionTime = (DateTimeOffset)insertionTime;
             }
 
             if (expirationTime != null)
             {
-                message.ExpirationTime = (DateTime)expirationTime;
+                message.ExpirationTime = (DateTimeOffset)expirationTime;
             }
 
             if (timeNextVisible != null)
             {
-                message.NextVisibleTime = (DateTime)timeNextVisible;
+                message.NextVisibleTime = (DateTimeOffset)timeNextVisible;
             }
 
             return message;
@@ -143,45 +133,55 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
         /// Parses the XML response returned by an operation to get messages from a queue.
         /// </summary>
         /// <returns>An enumerable collection of <see cref="QueueMessage"/> objects.</returns>
-        protected override IEnumerable<QueueMessage> ParseXml()
+        internal static async Task<IEnumerable<QueueMessage>> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.MessagesElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                List<QueueMessage> messages = new List<QueueMessage>();
+
+                if (await reader.ReadToFollowingAsync(Constants.MessagesElement).ConfigureAwait(false))
                 {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement())
+                    if (reader.IsEmptyElement)
                     {
-                        if (this.reader.IsEmptyElement)
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                         {
-                            this.reader.Skip();
-                        }
-                        else
-                        {
-                            switch (this.reader.Name)
+                            token.ThrowIfCancellationRequested();
+
+                            if (reader.IsEmptyElement)
                             {
-                                case Constants.MessageElement:
-                                    while (this.reader.IsStartElement())
-                                    {
-                                        yield return this.ParseMessageEntry();
-                                    }
+                                await reader.SkipAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                switch (reader.Name)
+                                {
+                                    case Constants.MessageElement:
+                                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
+                                        {
+                                            messages.Add(await ParseMessageEntryAsync(reader, token).ConfigureAwait(false));
+                                        }
 
-                                    break;
+                                        break;
 
-                                default:
-                                    reader.Skip();
-                                    break;
+                                    default:
+                                        await reader.SkipAsync().ConfigureAwait(false);
+                                        break;
+                                }
                             }
                         }
+                        
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
                     }
-
-                    this.allObjectsParsed = true;
-                    this.reader.ReadEndElement();
                 }
+
+                return messages;
             }
         }
     }

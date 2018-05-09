@@ -1,11 +1,15 @@
 ﻿{
-    "version": "9.0.0.0",
+    "version": "9.1.1.0",
     "testRunner": "xunit",
 
     "dependencies": {
         "xunit": "2.1.0",
         "dotnet-test-xunit": "2.2.0-preview2-build1029",
+<<<<<<< HEAD
         "Microsoft.Azure.Storage": "9.0.0.0",
+=======
+        "Microsoft.WindowsAzure.Storage": "9.1.1.0",
+>>>>>>> ea7d0914016bd6ad5dca15535dbd7eac6bca8b78
         "XUnitForMsTest": "1.0.0-*"
     },
 
@@ -35,15 +39,13 @@
             "../../Common/Core/*.cs",
             "../../Common/File/*.cs",
             "../../Common/Queue/*.cs",
-            "../../Common/Table/*.cs",
-            "../../Common/Table/Entities/*.cs",
             "../../Common/TestConfigProcess/**/*.cs",
 
             "../../WindowsRuntime/Core/**/*.cs",
             "../../WindowsRuntime/Blob/**/*.cs",
             "../../WindowsRuntime/Queue/**/*.cs",
-            "../../WindowsRuntime/File/**/*.cs",
-            "../../WindowsRuntime/Table/**/*.cs"
+          "../../WindowsRuntime/File/**/*.cs"
+
         ]
     }
 }

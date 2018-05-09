@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
 #if WINDOWS_RT || NETCORE
     using System.Net.Http;
 #else
-    using System.Net;
+    using System.Net.Http;
     using System.Threading;
 #endif
 
@@ -46,6 +46,9 @@ namespace Microsoft.Azure.Storage.Core.Executor
             this.Cmd = cmd;
             this.RetryPolicy = policy != null ? policy.CreateInstance() : new NoRetry();
             this.OperationContext = operationContext ?? new OperationContext();
+#if !(WINDOWS_RT || NETCORE)
+            this.CancellationTokenSource = new CancellationTokenSource();
+#endif
             this.InitializeLocation();
 
 #if WINDOWS_RT || NETCORE
@@ -61,7 +64,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
 #endif
         }
 
-#if WINDOWS_DESKTOP 
+#if WINDOWS_DESKTOP
         public ExecutionState(StorageCommandBase<T> cmd, IRetryPolicy policy, OperationContext operationContext, AsyncCallback callback, object asyncState)
             : base(callback, asyncState)
         {
@@ -287,11 +290,13 @@ namespace Microsoft.Azure.Storage.Core.Executor
             }
         }
 #else
-        internal HttpWebRequest Req { get; set; }
+        internal CancellationTokenSource CancellationTokenSource { get; set; }
 
-        private HttpWebResponse resp = null;
+        internal HttpRequestMessage Req { get; set; }
 
-        internal HttpWebResponse Resp
+        private HttpResponseMessage resp = null;
+
+        internal HttpResponseMessage Resp
         {
             get
             {
@@ -306,16 +311,19 @@ namespace Microsoft.Azure.Storage.Core.Executor
                 {
                     if (value.Headers != null)
                     {
-#if WINDOWS_DESKTOP 
-                        this.Cmd.CurrentResult.ServiceRequestID = HttpWebUtility.TryGetHeader(this.resp, Constants.HeaderConstants.RequestIdHeader, null);
-                        this.Cmd.CurrentResult.ContentMd5 = HttpWebUtility.TryGetHeader(this.resp, "Content-MD5", null);
-                        string tempDate = HttpWebUtility.TryGetHeader(this.resp, "Date", null);
-                        this.Cmd.CurrentResult.RequestDate = string.IsNullOrEmpty(tempDate) ? DateTime.Now.ToString("R", CultureInfo.InvariantCulture) : tempDate;
-                        this.Cmd.CurrentResult.Etag = this.resp.Headers[HttpResponseHeader.ETag];
+#if WINDOWS_DESKTOP
+                        this.Cmd.CurrentResult.ServiceRequestID = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(this.resp.Headers, Constants.HeaderConstants.RequestIdHeader);
+                        this.Cmd.CurrentResult.RequestDate = this.resp.Headers.Date.HasValue ? this.resp.Headers.Date.Value.UtcDateTime.ToString("R", CultureInfo.InvariantCulture) : null;
+                        this.Cmd.CurrentResult.Etag = this.resp.Headers.ETag != null ? this.resp.Headers.ETag.ToString() : null; ;
 #endif
                     }
 
-                    this.Cmd.CurrentResult.HttpStatusMessage = this.resp.StatusDescription;
+                    if (this.resp.Content != null && this.resp.Content.Headers != null)
+                    {
+                        this.Cmd.CurrentResult.ContentMd5 = this.resp.Content.Headers.ContentMD5 != null ? Convert.ToBase64String(this.resp.Content.Headers.ContentMD5) : null;
+                    }
+
+                    this.Cmd.CurrentResult.HttpStatusMessage = this.resp.ReasonPhrase;
                     this.Cmd.CurrentResult.HttpStatusCode = (int)this.resp.StatusCode;
                 }
             }

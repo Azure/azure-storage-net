@@ -26,6 +26,10 @@ namespace Microsoft.Azure.Storage.Core.Util
     /// <summary>
     /// Holds information about the progress data transfers for both request and response streams in a single operation.
     /// </summary>
+    /// <remarks>
+    /// ## Examples
+    /// [!code-csharp[StorageProgress](~/azure-storage-net/Test/WindowsRuntime/Blob/BlobUploadDownloadTest.cs#sample_StorageProgress_NetCore "StorageProgress Sample")]
+    /// </remarks>
     public sealed class StorageProgress
     {
         /// <summary>
@@ -56,7 +60,7 @@ namespace Microsoft.Azure.Storage.Core.Util
 
         public Stream CreateProgressIncrementingStream(Stream stream)
         {
-            return new ProgressIncrementingStream(stream, this);
+            return innerHandler != null ? new ProgressIncrementingStream(stream, this) : stream;
         }
 
         public AggregatingProgressIncrementer(IProgress<StorageProgress> innerHandler)
@@ -188,7 +192,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         {
             var oldPosition = this.innerStream.Position;
 
-            await this.innerStream.CopyToAsync(destination, bufferSize, cancellationToken);
+            await this.innerStream.CopyToAsync(destination, bufferSize, cancellationToken).ConfigureAwait(false);
 
             var newPosition = this.innerStream.Position;
 
@@ -204,7 +208,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         {
             var oldPosition = this.innerStream.Position;
 
-            await this.innerStream.FlushAsync(cancellationToken);
+            await this.innerStream.FlushAsync(cancellationToken).ConfigureAwait(false);
 
             var newPosition = this.innerStream.Position;
 
@@ -256,7 +260,7 @@ namespace Microsoft.Azure.Storage.Core.Util
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            var n = await this.innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+            var n = await this.innerStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
             this.incrementer.Report(n);
             return n;
         }
@@ -311,7 +315,7 @@ namespace Microsoft.Azure.Storage.Core.Util
 
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            await this.innerStream.WriteAsync(buffer, offset, count, cancellationToken);
+            await this.innerStream.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
 
             this.incrementer.Report(count);
         }

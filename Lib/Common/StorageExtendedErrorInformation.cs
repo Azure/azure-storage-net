@@ -25,11 +25,12 @@ namespace Microsoft.Azure.Storage
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 #if WINDOWS_RT || NETCORE
     using System.Net.Http;
-    using System.Threading.Tasks;
 #endif
-    using System.Xml;
 
 #if WINDOWS_RT
     using Windows.Storage.Streams;
@@ -54,7 +55,6 @@ namespace Microsoft.Azure.Storage
         /// Gets the storage service error code.
         /// </summary>
         /// <value>A string containing the storage service error code.</value>
-        [System.Obsolete("Use RequestResult.ErrorCode instead", false)]
         public string ErrorCode { get; internal set; }
 
         /// <summary>
@@ -70,50 +70,11 @@ namespace Microsoft.Azure.Storage
         public IDictionary<string, string> AdditionalDetails { get; internal set; }
 
 #if WINDOWS_RT
-        public static StorageExtendedErrorInformation ReadFromStream(IInputStream inputStream)
-        {
-            return ReadFromStream(inputStream.AsStreamForRead());
-        }
-
         public static Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
         {
             return ReadFromStreamAsync(inputStream.AsStreamForRead());
         }
 #endif
-
-        /// <summary>
-        /// Gets the error details from an XML-formatted error stream.
-        /// </summary>
-        /// <param name="inputStream">The input stream.</param>
-        /// <returns>The error details.</returns>
-        public static StorageExtendedErrorInformation ReadFromStream(Stream inputStream)
-        {
-            CommonUtility.AssertNotNull("inputStream", inputStream);
-
-            if (inputStream.CanSeek && inputStream.Length < 1)
-            {
-                return null;
-            }
-
-            StorageExtendedErrorInformation extendedErrorInfo = new StorageExtendedErrorInformation();
-            try
-            {
-                using (XmlReader reader = XmlReader.Create(inputStream))
-                {
-                    reader.Read();
-                    extendedErrorInfo.ReadXml(reader);
-                }
-
-                return extendedErrorInfo;
-            }
-            catch (XmlException)
-            {
-                // If there is a parsing error we cannot return extended error information
-                return null;
-            }
-        }
-
-#if WINDOWS_RT || NETCORE
 
         /// <summary>
         /// Gets the error details from an XML-formatted error stream.
@@ -132,13 +93,10 @@ namespace Microsoft.Azure.Storage
             StorageExtendedErrorInformation extendedErrorInfo = new StorageExtendedErrorInformation();
             try
             {
-                XmlReaderSettings settings = new XmlReaderSettings();
-                settings.Async = true;
-
-                using (XmlReader reader = XmlReader.Create(inputStream, settings))
+                using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(inputStream))
                 {
                     await reader.ReadAsync().ConfigureAwait(false);
-                    extendedErrorInfo.ReadXml(reader);
+                    await extendedErrorInfo.ReadXmlAsync(reader, CancellationToken.None).ConfigureAwait(false);
                 }
 
                 return extendedErrorInfo;
@@ -149,7 +107,41 @@ namespace Microsoft.Azure.Storage
                 return null;
             }
         }
-#endif
+
+        /// <summary>
+        /// Gets the error details from an XML-formatted error stream.
+        /// </summary>
+        /// <param name="inputStream">The input stream.</param>
+        /// <returns>The error details.</returns>
+        public static async Task<StorageExtendedErrorInformation> ReadFromStreamAsync(Stream inputStream, CancellationToken cancellationToken)
+        {
+            CommonUtility.AssertNotNull("inputStream", inputStream);
+
+            if (inputStream.CanSeek && inputStream.Length < 1)
+            {
+                return null;
+            }
+
+            StorageExtendedErrorInformation extendedErrorInfo = new StorageExtendedErrorInformation();
+            try
+            {
+                using (XmlReader reader = XmlReader.Create(inputStream, new XmlReaderSettings { Async = true }))
+                {
+                    await reader.ReadAsync().ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    await extendedErrorInfo.ReadXmlAsync(reader, cancellationToken).ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+
+                return extendedErrorInfo;
+            }
+            catch (XmlException)
+            {
+                // If there is a parsing error we cannot return extended error information
+                return null;
+            }
+        }
 
 #region IXmlSerializable
 
@@ -162,68 +154,81 @@ namespace Microsoft.Azure.Storage
 #else
         public
 #endif
- void ReadXml(XmlReader reader)
+        /// <summary>
+        /// Generates a serializable <see cref="StorageExtendedErrorInformation"/> object from its XML representation.
+        /// </summary>
+        /// <param name="reader">The <see cref="T:System.Xml.XmlReader"/> stream from which the <see cref="StorageExtendedErrorInformation"/> object is deserialized.</param>
+        async Task ReadXmlAsync(XmlReader reader, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("reader", reader);
 
             this.AdditionalDetails = new Dictionary<string, string>();
 
-            reader.ReadStartElement();
-            while (reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
                 if (reader.IsEmptyElement)
                 {
-                    reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
                 else
                 {
                     if ((string.Compare(reader.LocalName, Constants.ErrorCode, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorCodePreview, StringComparison.Ordinal) == 0))
                     {
-#pragma warning disable 618
-                        this.ErrorCode = reader.ReadElementContentAsString();
-#pragma warning restore 618
+                        this.ErrorCode = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                        cancellationToken.ThrowIfCancellationRequested();
                     }
                     else if ((string.Compare(reader.LocalName, Constants.ErrorMessage, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorMessagePreview, StringComparison.Ordinal) == 0))
                     {
-                        this.ErrorMessage = reader.ReadElementContentAsString();
+                        this.ErrorMessage = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                        cancellationToken.ThrowIfCancellationRequested();
                     }
                     else if (string.Compare(reader.LocalName, Constants.ErrorException, StringComparison.OrdinalIgnoreCase) == 0)
                     {
-                        reader.ReadStartElement();
-                        while (reader.IsStartElement())
+                        await reader.ReadStartElementAsync(null, null).ConfigureAwait(false);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                         {
                             switch (reader.LocalName)
                             {
                                 case Constants.ErrorExceptionMessage:
                                     this.AdditionalDetails.Add(
                                     Constants.ErrorExceptionMessage,
-                                    reader.ReadElementContentAsString(Constants.ErrorExceptionMessage, string.Empty));
+                                    await reader.ReadElementContentAsStringAsync(Constants.ErrorExceptionMessage, string.Empty).ConfigureAwait(false));
+                                    cancellationToken.ThrowIfCancellationRequested();
                                     break;
 
                                 case Constants.ErrorExceptionStackTrace:
                                     this.AdditionalDetails.Add(
                                     Constants.ErrorExceptionStackTrace,
-                                    reader.ReadElementContentAsString(Constants.ErrorExceptionStackTrace, string.Empty));
+                                    await reader.ReadElementContentAsStringAsync(Constants.ErrorExceptionStackTrace, string.Empty).ConfigureAwait(false));
+                                    cancellationToken.ThrowIfCancellationRequested();
                                     break;
 
                                 default:
-                                    reader.Skip();
+                                    await reader.SkipAsync().ConfigureAwait(false);
+                                    cancellationToken.ThrowIfCancellationRequested();
                                     break;
                             }
                         }
 
-                        reader.ReadEndElement();
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                        cancellationToken.ThrowIfCancellationRequested();
                     }
                     else
                     {
                         this.AdditionalDetails.Add(
                         reader.LocalName,
-                        reader.ReadInnerXml());
+                        await reader.ReadInnerXmlAsync().ConfigureAwait(false));
+                        cancellationToken.ThrowIfCancellationRequested();
                     }
                 }
             }
 
-            reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         /// <summary>

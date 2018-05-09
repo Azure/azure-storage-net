@@ -17,9 +17,6 @@
 
 namespace Microsoft.Azure.Storage.File
 {
-#if ALL_SERVICES
-    using Microsoft.Azure.Storage.Blob;
-#endif
     using Microsoft.Azure.Storage.Core;
     using System;
     using System.Collections.Generic;

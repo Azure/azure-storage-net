@@ -178,6 +178,7 @@ namespace Microsoft.Azure.Storage.Table
             table.CreateIfNotExists();
 
             BaseEntity entity = new BaseEntity("mypk", "myrk");
+            entity.Populate();
             TableOperation operation = TableOperation.Insert(entity);
             table.Execute(operation);
 

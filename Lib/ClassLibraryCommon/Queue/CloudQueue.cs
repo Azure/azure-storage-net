@@ -29,6 +29,7 @@ namespace Microsoft.Azure.Storage.Queue
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -79,15 +80,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.CreateQueueImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.CreateAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -96,7 +89,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndCreate(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -118,7 +111,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task CreateAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginCreate, this.EndCreate, cancellationToken);
+            return this.CreateAsync(options: null, operationContext: null, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -143,7 +136,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task CreateAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginCreate, this.EndCreate, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.CreateQueueImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -215,22 +215,7 @@ namespace Microsoft.Azure.Storage.Queue
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            ICancellableAsyncResult savedCreateResult = this.BeginCreate(
-                modifiedOptions,
-                operationContext,
-                createResult =>
-                {
-                    if (callback != null)
-                    {
-                        callback(createResult);
-                    }
-                },
-                null);
-
-            return savedCreateResult;
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.CreateIfNotExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -240,38 +225,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndCreateIfNotExists(IAsyncResult asyncResult)
         {
-            ExecutionState<NullType> executionResult = asyncResult as ExecutionState<NullType>;
-            CommonUtility.AssertNotNull("AsyncResult", executionResult);
-            try
-            {
-                this.EndCreate(executionResult);
-                if ((executionResult.OperationContext.LastResult != null) &&
-                    (executionResult.OperationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Created))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            catch (StorageException e)
-            {
-                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
-                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists)))
-                {
-                    return false;
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }            
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -295,7 +249,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<bool> CreateIfNotExistsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginCreateIfNotExists, this.EndCreateIfNotExists, cancellationToken);
+            return this.CreateIfNotExistsAsync(options: null, operationContext: null, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -320,9 +274,36 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
-        public virtual Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> CreateIfNotExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginCreateIfNotExists, this.EndCreateIfNotExists, options, operationContext, cancellationToken);
+            operationContext = operationContext ?? new OperationContext();
+            try
+            {
+                await this.CreateAsync(options, operationContext).ConfigureAwait(false);
+            }
+            catch (StorageException e)
+            {
+                if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict) &&
+                    ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                    (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueAlreadyExists)))
+                {
+                    return false;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            if ((operationContext.LastResult != null) &&
+                (operationContext.LastResult.HttpStatusCode == (int)HttpStatusCode.Created))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 #endif
 
@@ -405,103 +386,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteIfExists(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            StorageAsyncResult<bool> storageAsyncResult = new StorageAsyncResult<bool>(callback, state)
-            {
-                RequestOptions = modifiedOptions,
-                OperationContext = operationContext,
-            };
-
-            this.DeleteIfExistsHandler(modifiedOptions, operationContext, storageAsyncResult);
-            return storageAsyncResult;
-        }
-
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void DeleteIfExistsHandler(QueueRequestOptions options, OperationContext operationContext, StorageAsyncResult<bool> storageAsyncResult)
-        {
-            ICancellableAsyncResult savedExistsResult = this.BeginExists(
-                true,
-                options,
-                operationContext,
-                existsResult =>
-                {
-                    storageAsyncResult.UpdateCompletedSynchronously(existsResult.CompletedSynchronously);
-                    lock (storageAsyncResult.CancellationLockerObject)
-                    {
-                        storageAsyncResult.CancelDelegate = null;
-                        try
-                        {
-                            bool exists = this.EndExists(existsResult);
-                            if (!exists)
-                            {
-                                storageAsyncResult.Result = false;
-                                storageAsyncResult.OnComplete();
-                                return;
-                            }
-                        }
-                        catch (StorageException e)
-                        {
-                            if ((e.RequestInformation != null) &&
-                                (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden))
-                            {
-                                storageAsyncResult.OnComplete(e);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            storageAsyncResult.OnComplete(e);
-                            return;
-                        }
-
-                        ICancellableAsyncResult currentRes = this.BeginDelete(
-                            options,
-                            operationContext,
-                            (deleteRes) =>
-                            {
-                                storageAsyncResult.CancelDelegate = null;
-                                storageAsyncResult.UpdateCompletedSynchronously(deleteRes.CompletedSynchronously);
-
-                                try
-                                {
-                                    this.EndDelete(deleteRes);
-                                    storageAsyncResult.Result = true;
-                                    storageAsyncResult.OnComplete();
-                                }
-                                catch (StorageException e)
-                                {
-                                    if ((e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound) &&
-                                        ((e.RequestInformation.ExtendedErrorInformation == null) ||
-                                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueNotFound)))
-                                    {
-                                        storageAsyncResult.Result = false;
-                                        storageAsyncResult.OnComplete();
-                                    }
-                                    else
-                                    {
-                                        storageAsyncResult.OnComplete(e);
-                                    }
-                                }
-                                catch (Exception createEx)
-                                {
-                                    storageAsyncResult.OnComplete(createEx);
-                                }
-                            },
-                            null);
-
-                        storageAsyncResult.CancelDelegate = currentRes.Cancel;
-                        if (storageAsyncResult.CancelRequested)
-                        {
-                            storageAsyncResult.Cancel();
-                        }
-                    }
-                },
-                null /* state */);
-
-            // We do not need to do this inside a lock, as storageAsyncResult is
-            // not returned to the user yet.
-            storageAsyncResult.CancelDelegate = savedExistsResult.Cancel;
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -511,10 +396,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns><c>true</c> if the queue did not already exist and was created; otherwise, <c>false</c>.</returns>
         public virtual bool EndDeleteIfExists(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<bool> res = asyncResult as StorageAsyncResult<bool>;
-            CommonUtility.AssertNotNull("AsyncResult", res);
-            res.End();
-            return res.Result;
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -536,7 +418,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<bool> DeleteIfExistsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, cancellationToken);
+            return this.DeleteIfExistsAsync(null, null, cancellationToken);
         }
 
         /// <summary>
@@ -559,9 +441,51 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<bool> DeleteIfExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<bool> DeleteIfExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginDeleteIfExists, this.EndDeleteIfExists, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            try
+            {
+                bool exists = await this.ExistsAsync(true, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                if (!exists)
+                {
+                    return false;
+                }
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode != (int)HttpStatusCode.Forbidden)
+                {
+                    throw;
+                }
+            }
+
+            try
+            {
+                await this.DeleteAsync(modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (StorageException e)
+            {
+                if (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    if ((e.RequestInformation.ExtendedErrorInformation == null) ||
+                        (e.RequestInformation.ExtendedErrorInformation.ErrorCode == QueueErrorCodeStrings.QueueNotFound))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 #endif
 
@@ -607,15 +531,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDelete(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.DeleteQueueImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.DeleteAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -624,7 +540,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDelete(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -646,7 +562,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task DeleteAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, cancellationToken);
+            return this.DeleteAsync(null, null, cancellationToken);
         }
 
         /// <summary>
@@ -671,7 +587,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task DeleteAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.DeleteQueueImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -720,15 +643,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetPermissions(QueuePermissions permissions, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.SetPermissionsImpl(permissions, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.SetPermissionsAsync(permissions, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -737,7 +652,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndSetPermissions(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -761,7 +676,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task SetPermissionsAsync(QueuePermissions permissions, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPermissions, this.EndSetPermissions, permissions, cancellationToken);
+            return this.SetPermissionsAsync(permissions, options:null, operationContext:null, cancellationToken:cancellationToken);
         }
 
         /// <summary>
@@ -788,7 +703,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task SetPermissionsAsync(QueuePermissions permissions, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPermissions, this.EndSetPermissions, permissions, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.SetPermissionsImpl(permissions, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -835,15 +757,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetPermissions(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.GetPermissionsImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<QueuePermissions>(token => this.GetPermissionsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -853,7 +767,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>A <see cref="QueuePermissions"/> object.</returns>
         public virtual QueuePermissions EndGetPermissions(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<QueuePermissions>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<QueuePermissions>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -875,7 +789,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<QueuePermissions> GetPermissionsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetPermissions, this.EndGetPermissions, cancellationToken);
+            return this.GetPermissionsAsync(options:null, operationContext: null, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -900,7 +814,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<QueuePermissions> GetPermissionsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetPermissions, this.EndGetPermissions, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.GetPermissionsImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -973,15 +894,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         private ICancellableAsyncResult BeginExists(bool primaryOnly, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.ExistsImpl(modifiedOptions, primaryOnly),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<bool>(token => this.ExistsAsync(primaryOnly, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -991,7 +904,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns><c>true</c> if the queue exists.</returns>
         public virtual bool EndExists(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<bool>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<bool>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1013,7 +926,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, cancellationToken);
+            return this.ExistsAsync(null, null, cancellationToken);
         }
 
         /// <summary>
@@ -1038,7 +951,28 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<bool> ExistsAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginExists, this.EndExists, options, operationContext, cancellationToken);
+           return this.ExistsAsync(false, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to check the existence of the queue.
+        /// </summary>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <param name="primaryOnly">If <c>true</c>, the command will be executed against the primary location.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>bool</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private Task<bool> ExistsAsync(bool primaryOnly, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.ExistsImpl(modifiedOptions, primaryOnly),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1084,15 +1018,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.SetMetadataImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.SetMetadataAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1101,7 +1027,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndSetMetadata(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1123,7 +1049,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, cancellationToken);
+            return this.SetMetadataAsync(options:null, operationContext:null, cancellationToken:cancellationToken);
         }
 
         /// <summary>
@@ -1148,7 +1074,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task SetMetadataAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetMetadata, this.EndSetMetadata, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.SetMetadataImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1194,15 +1127,8 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
+            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(options, operationContext, token), callback, state);
 
-            return Executor.BeginExecuteAsync(
-                this.FetchAttributesImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
         }
 
         /// <summary>
@@ -1211,7 +1137,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndFetchAttributes(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1233,7 +1159,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task FetchAttributesAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, cancellationToken);
+            return this.FetchAttributesAsync(options:null, operationContext:null, cancellationToken:cancellationToken);
         }
 
         /// <summary>
@@ -1258,7 +1184,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task FetchAttributesAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFetchAttributes, this.EndFetchAttributes, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.FetchAttributesImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1316,17 +1249,8 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAddMessage(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("message", message);
+            return new CancellableAsyncResultTaskWrapper(token => this.AddMessageAsync(message, timeToLive, initialVisibilityDelay, options, operationContext, token), callback, state);
 
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.AddMessageImpl(message, timeToLive, initialVisibilityDelay, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
         }
 
         /// <summary>
@@ -1336,7 +1260,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <remarks>The <see cref="CloudQueueMessage"/> message passed in will be populated with the pop receipt, message ID, and the insertion/expiration time.</remarks>
         public virtual void EndAddMessage(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1349,7 +1273,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message)
         {
-            return this.AddMessageAsync(message, CancellationToken.None);
+            return this.AddMessageAsync(message, null, null, null, null, CancellationToken.None);
         }
 
         /// <summary>
@@ -1362,7 +1286,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginAddMessage, this.EndAddMessage, message, cancellationToken);
+            return this.AddMessageAsync(message, null, null, null, null, cancellationToken);
         }
 
         /// <summary>
@@ -1397,7 +1321,16 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task AddMessageAsync(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginAddMessage, this.EndAddMessage, message, timeToLive, initialVisibilityDelay, options, operationContext, cancellationToken);
+            CommonUtility.AssertNotNull("message", message);
+
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.AddMessageImpl(message, timeToLive, initialVisibilityDelay, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1452,17 +1385,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUpdateMessage(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("message", message);
-
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.UpdateMessageImpl(message, visibilityTimeout, updateFields, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.UpdateMessageAsync(message, visibilityTimeout, updateFields, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1471,7 +1394,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndUpdateMessage(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1499,7 +1422,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUpdateMessage, this.EndUpdateMessage, message, visibilityTimeout, updateFields, cancellationToken);
+            return this.UpdateMessageAsync(message, visibilityTimeout, updateFields, null, null, cancellationToken);
         }
 
         /// <summary>
@@ -1530,7 +1453,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task UpdateMessageAsync(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginUpdateMessage, this.EndUpdateMessage, message, visibilityTimeout, updateFields, options, operationContext, cancellationToken);
+                QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+                operationContext = operationContext ?? new OperationContext();
+
+                return Executor.ExecuteAsync(
+                    this.UpdateMessageImpl(message, visibilityTimeout, updateFields, modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken);
         }
 #endif
 
@@ -1629,18 +1559,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteMessage(string messageId, string popReceipt, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("messageId", messageId);
-            CommonUtility.AssertNotNull("popReceipt", popReceipt);
-
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.DeleteMessageImpl(messageId, popReceipt, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.DeleteMessageAsync(messageId, popReceipt, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1649,7 +1568,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDeleteMessage(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1700,7 +1619,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task DeleteMessageAsync(CloudQueueMessage message, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDeleteMessage, this.EndDeleteMessage, message, options, operationContext, cancellationToken);
+            return this.DeleteMessageAsync(message.Id, message.PopReceipt, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -1754,7 +1673,17 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task DeleteMessageAsync(string messageId, string popReceipt, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDeleteMessage, this.EndDeleteMessage, messageId, popReceipt, options, operationContext, cancellationToken);
+            CommonUtility.AssertNotNull("messageId", messageId);
+            CommonUtility.AssertNotNull("popReceipt", popReceipt);
+
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.DeleteMessageImpl(messageId, popReceipt, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1764,7 +1693,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// operation context. This operation marks the retrieved messages as invisible in the queue for the default 
         /// visibility timeout period. 
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1785,7 +1714,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to get messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -1800,7 +1729,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1810,15 +1739,9 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetMessages(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
+            return new CancellableAsyncResultTaskWrapper<IEnumerable<CloudQueueMessage>>(token => this.GetMessagesAsync(messageCount, visibilityTimeout, options, operationContext, token), callback, state);
 
-            return Executor.BeginExecuteAsync(
-                this.GetMessagesImpl(messageCount, visibilityTimeout, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+
         }
 
         /// <summary>
@@ -1828,14 +1751,14 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>An enumerable collection of messages.</returns>
         public virtual IEnumerable<CloudQueueMessage> EndGetMessages(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<IEnumerable<CloudQueueMessage>>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<IEnumerable<CloudQueueMessage>>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
         /// <summary>
         /// Initiates an asynchronous operation to get messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount)
@@ -1846,13 +1769,13 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to get messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetMessages, this.EndGetMessages, messageCount, cancellationToken);
+            return this.GetMessagesAsync(messageCount, null, null, null, cancellationToken);
         }
 
         /// <summary>
@@ -1860,7 +1783,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1876,7 +1799,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// specified request options and operation context. This operation marks the retrieved messages as invisible in the 
         /// queue for the default visibility timeout period.
         /// </summary>
-        /// <param name="messageCount">The number of messages to retrieve.</param>
+        /// <param name="messageCount">The number of messages to retrieve. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1885,7 +1808,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> GetMessagesAsync(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetMessages, this.EndGetMessages, messageCount, visibilityTimeout, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.GetMessagesImpl(messageCount, visibilityTimeout, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -1929,7 +1859,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetMessage(TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginGetMessages(1, visibilityTimeout, options, operationContext, callback, state);
+            return new CancellableAsyncResultTaskWrapper<CloudQueueMessage>(token => this.GetMessageAsync(visibilityTimeout, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1939,9 +1869,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
         public virtual CloudQueueMessage EndGetMessage(IAsyncResult asyncResult)
         {
-            IEnumerable<CloudQueueMessage> resultList = Executor.EndExecuteAsync<IEnumerable<CloudQueueMessage>>(asyncResult);
-
-            return resultList.FirstOrDefault();
+            return ((CancellableAsyncResultTaskWrapper<CloudQueueMessage>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -1963,7 +1891,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<CloudQueueMessage> GetMessageAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetMessage, this.EndGetMessage, cancellationToken);
+            return this.GetMessageAsync(visibilityTimeout:null, options:null, operationContext:null, cancellationToken:cancellationToken);
         }
 
         /// <summary>
@@ -1992,7 +1920,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<CloudQueueMessage> GetMessageAsync(TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetMessage, this.EndGetMessage, visibilityTimeout, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.GetMessageImpl(visibilityTimeout, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -2000,7 +1935,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// Peeks a message from the queue, using the specified request options and operation context. A peek request retrieves a message from the queue without changing its visibility. 
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>An enumerable collection of <see cref="CloudQueueMessage"/> objects.</returns>
@@ -2020,7 +1955,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -2033,7 +1968,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// Begins an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -2042,15 +1977,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginPeekMessages(int messageCount, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.PeekMessagesImpl(messageCount, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper<IEnumerable<CloudQueueMessage>>(token => this.PeekMessagesAsync(messageCount, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2060,14 +1987,14 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>An enumerable collection of <see cref="CloudQueueMessage"/> objects.</returns>
         public virtual IEnumerable<CloudQueueMessage> EndPeekMessages(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<IEnumerable<CloudQueueMessage>>(asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<IEnumerable<CloudQueueMessage>>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount)
@@ -2078,19 +2005,19 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginPeekMessages, this.EndPeekMessages, messageCount, cancellationToken);
+            return this.PeekMessagesAsync(messageCount, options:null, operationContext:null, cancellationToken:cancellationToken);
         }
 
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object that is an enumerable collection of type <see cref="CloudQueueMessage"/> that represents the asynchronous operation.</returns>
@@ -2103,7 +2030,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <summary>
         /// Initiates an asynchronous operation to peek messages from the queue.
         /// </summary>
-        /// <param name="messageCount">The number of messages to peek.</param>
+        /// <param name="messageCount">The number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -2111,7 +2038,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<IEnumerable<CloudQueueMessage>> PeekMessagesAsync(int messageCount, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginPeekMessages, this.EndPeekMessages, messageCount, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.PeekMessagesImpl(messageCount, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -2152,7 +2086,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginPeekMessage(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginPeekMessages(1, options, operationContext, callback, state);
+            return new CancellableAsyncResultTaskWrapper<CloudQueueMessage>(token => this.PeekMessageAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2162,9 +2096,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
         public virtual CloudQueueMessage EndPeekMessage(IAsyncResult asyncResult)
         {
-            IEnumerable<CloudQueueMessage> resultList = Executor.EndExecuteAsync<IEnumerable<CloudQueueMessage>>(asyncResult);
-
-            return resultList.FirstOrDefault();
+            return ((CancellableAsyncResultTaskWrapper<CloudQueueMessage>)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2186,7 +2118,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<CloudQueueMessage> PeekMessageAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginPeekMessage, this.EndPeekMessage, cancellationToken);
+            return this.PeekMessageAsync(options: null, operationContext: null, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -2211,7 +2143,14 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task<CloudQueueMessage> PeekMessageAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginPeekMessage, this.EndPeekMessage, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.PeekMessageImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -2257,15 +2196,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginClear(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            operationContext = operationContext ?? new OperationContext();
-
-            return Executor.BeginExecuteAsync(
-                this.ClearMessagesImpl(modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+            return new CancellableAsyncResultTaskWrapper(token => this.ClearAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2274,7 +2205,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndClear(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -2296,7 +2227,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task ClearAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginClear, this.EndClear, cancellationToken);
+            return this.ClearAsync(options: null, operationContext: null, cancellationToken:cancellationToken);
         }
 
         /// <summary>
@@ -2321,10 +2252,17 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task ClearAsync(QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginClear, this.EndClear, options, operationContext, cancellationToken);
+            QueueRequestOptions modifiedOptions = QueueRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Executor.ExecuteAsync(
+                this.ClearMessagesImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
-
+        //TODO: HTTPClient: Add Clear messages to the MessageFactory or use Delete Instead??
         /// <summary>
         /// Implementation for the ClearMessages method.
         /// </summary>
@@ -2335,11 +2273,11 @@ namespace Microsoft.Azure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.ClearMessages(uri, serverTimeout, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.ClearMessages(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 
             return putCmd;
+
         }
 
         /// <summary>
@@ -2352,15 +2290,19 @@ namespace Microsoft.Azure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.Create(uri, serverTimeout, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) => QueueHttpWebRequestFactory.AddMetadata(r, this.Metadata);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = QueueHttpRequestMessageFactory.Create(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                QueueHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpStatusCode[] expectedHttpStatusCodes = new HttpStatusCode[2];
                 expectedHttpStatusCodes[0] = HttpStatusCode.Created;
                 expectedHttpStatusCodes[1] = HttpStatusCode.NoContent;
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(expectedHttpStatusCodes, resp, NullType.Value, cmd, ex);
+                GetMessageCountAndMetadataFromResponse(resp);
                 return NullType.Value;
             };
 
@@ -2374,14 +2316,13 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>A <see cref="RESTCommand{T}"/> that deletes the queue.</returns>
         private RESTCommand<NullType> DeleteQueueImpl(QueueRequestOptions options)
         {
-            RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
-            options.ApplyToStorageCommand(deleteCmd);
-            deleteCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.Delete(uri, serverTimeout, useVersionHeader, ctx);
-            deleteCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            deleteCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.Delete(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 
-            return deleteCmd;
+            return putCmd;
         }
 
         /// <summary>
@@ -2395,8 +2336,7 @@ namespace Microsoft.Azure.Storage.Queue
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetMetadata(uri, serverTimeout, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetMetadata(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
@@ -2419,13 +2359,17 @@ namespace Microsoft.Azure.Storage.Queue
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = primaryOnly ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetMetadata(uri, serverTimeout, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetMetadata(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
                 {
                     return false;
+                }
+
+                if (resp.StatusCode == HttpStatusCode.PreconditionFailed)
+                {
+                    return true;
                 }
 
                 return HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, true, cmd, ex);
@@ -2444,12 +2388,16 @@ namespace Microsoft.Azure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.SetMetadata(uri, serverTimeout, useVersionHeader, ctx);
-            putCmd.SetHeaders = (r, ctx) => QueueHttpWebRequestFactory.AddMetadata(r, this.Metadata);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = QueueHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                QueueHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
+                GetMessageCountAndMetadataFromResponse(resp);
                 return NullType.Value;
             };
 
@@ -2471,14 +2419,14 @@ namespace Microsoft.Azure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.SetAcl(uri, serverTimeout, useVersionHeader, ctx);
-            putCmd.SendStream = memoryStream;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
             putCmd.RecoveryAction = RecoveryActions.RewindStream;
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
+                GetMessageCountAndMetadataFromResponse(resp);
                 return NullType.Value;
             };
 
@@ -2497,13 +2445,13 @@ namespace Microsoft.Azure.Storage.Queue
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetAcl(uri, serverTimeout, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
+                this.GetMessageCountAndMetadataFromResponse(resp);
                 QueuePermissions queueAcl = new QueuePermissions();
-                QueueHttpResponseParsers.ReadSharedAccessIdentifiers(cmd.ResponseStream, queueAcl);
+                await QueueHttpResponseParsers.ReadSharedAccessIdentifiersAsync(cmd.ResponseStream, queueAcl, ct).ConfigureAwait(false);
                 return queueAcl;
             };
 
@@ -2558,37 +2506,15 @@ namespace Microsoft.Azure.Storage.Queue
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.RetrieveResponseStream = true;
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, useVersionHeader, ctx);
-            putCmd.SendStream = memoryStream;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.AddMessage(uri, serverTimeout, timeToLiveInSeconds, initialVisibilityDelayInSeconds, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
-            putCmd.RecoveryAction = RecoveryActions.RewindStream;
-            putCmd.SetHeaders = (r, ctx) =>
-            {
-                if (timeToLive != null)
-                {
-#if WINDOWS_PHONE
-                    r.Headers[Constants.QueryConstants.MessageTimeToLive] = timeToLive.Value.TotalSeconds.ToString(CultureInfo.InvariantCulture);
-#else
-                    r.Headers.Set(Constants.QueryConstants.MessageTimeToLive, timeToLive.Value.TotalSeconds.ToString(CultureInfo.InvariantCulture));
-#endif
-                }
-
-                if (initialVisibilityDelay != null)
-                {
-#if WINDOWS_PHONE
-                    r.Headers[Constants.QueryConstants.VisibilityTimeout] = initialVisibilityDelay.Value.TotalSeconds.ToString(CultureInfo.InvariantCulture);
-#else
-                    r.Headers.Set(Constants.QueryConstants.VisibilityTimeout, initialVisibilityDelay.Value.TotalSeconds.ToString(CultureInfo.InvariantCulture));
-#endif
-                }
-            };
-
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
-            putCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            putCmd.RecoveryAction = RecoveryActions.RewindStream;
+            putCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                GetMessagesResponse messageResponse = new GetMessagesResponse(cmd.ResponseStream);
-                CopyMessage(message, messageResponse.Messages.ToList().First());
+                var messages = await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
+                CopyMessage(message, messages.First());
                 return NullType.Value;
             };
 
@@ -2619,20 +2545,19 @@ namespace Microsoft.Azure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, messageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.UpdateMessage(uri, serverTimeout, message.PopReceipt, visibilityTimeout.RoundUpToSeconds(), useVersionHeader, ctx);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.UpdateMessage(uri, serverTimeout, message.PopReceipt, visibilityTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
 
             if ((updateFields & MessageUpdateFields.Content) != 0)
             {
-                MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager, (int)(1 * Constants.KB));
+                MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(this.ServiceClient.BufferManager);
                 QueueRequest.WriteMessageContent(message.GetMessageContentForTransfer(this.EncodeMessage, options), memoryStream);
                 memoryStream.Seek(0, SeekOrigin.Begin);
 
-                putCmd.SendStream = memoryStream;
+                putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
                 putCmd.StreamToDispose = memoryStream;
                 putCmd.RecoveryAction = RecoveryActions.RewindStream;
             }
 
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
@@ -2641,6 +2566,57 @@ namespace Microsoft.Azure.Storage.Queue
             };
 
             return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the GetMessage method.
+        /// </summary>
+        /// <param name="visibilityTimeout">The visibility timeout interval.</param>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand"/> of CloudQueueMessage type.</returns>
+        private RESTCommand<CloudQueueMessage> GetMessageImpl(TimeSpan? visibilityTimeout, QueueRequestOptions options)
+        {
+            options.AssertPolicyIfRequired();
+            RESTCommand<CloudQueueMessage> getCmd = new RESTCommand<CloudQueueMessage>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
+
+            options.ApplyToStorageCommand(getCmd);
+            getCmd.RetrieveResponseStream = true;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetMessages(uri, serverTimeout, 1, visibilityTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
+            {
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectGetMessageResponse(m, options))
+                    .FirstOrDefault();
+            };
+
+            return getCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the PeekMessage method.
+        /// </summary>
+        /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand"/> of CloudQueueMessage type.</returns>
+        private RESTCommand<CloudQueueMessage> PeekMessageImpl(QueueRequestOptions options)
+        {
+            options.AssertPolicyIfRequired();
+            RESTCommand<CloudQueueMessage> getCmd = new RESTCommand<CloudQueueMessage>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
+
+            options.ApplyToStorageCommand(getCmd);
+            getCmd.RetrieveResponseStream = true;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.PeekMessages(uri, serverTimeout, 1, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
+            {
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectPeekMessageResponse(m, options))
+                    .FirstOrDefault();
+            };
+
+            return getCmd;
         }
 
         /// <summary>
@@ -2656,8 +2632,7 @@ namespace Microsoft.Azure.Storage.Queue
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, messageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.DeleteMessage(uri, serverTimeout, popReceipt, useVersionHeader, ctx);
-            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.DeleteMessage(uri, serverTimeout, popReceipt, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
 
             return putCmd;
@@ -2678,16 +2653,15 @@ namespace Microsoft.Azure.Storage.Queue
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.GetMessages(uri, serverTimeout, messageCount, visibilityTimeout, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.GetMessages(uri, serverTimeout, messageCount, visibilityTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
-
-                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectGetMessageResponse(item, options)).ToList();
-
-                return messagesList;
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectGetMessageResponse(m, options))
+                    .ToList()
+                    ;
             };
 
             return getCmd;
@@ -2701,23 +2675,20 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>A <see cref="RESTCommand{T}"/> that gets the permissions.</returns>
         private RESTCommand<IEnumerable<CloudQueueMessage>> PeekMessagesImpl(int messageCount, QueueRequestOptions options)
         {
-            options.AssertPolicyIfRequired();
-
             RESTCommand<IEnumerable<CloudQueueMessage>> getCmd = new RESTCommand<IEnumerable<CloudQueueMessage>>(this.ServiceClient.Credentials, this.GetMessageRequestAddress());
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
-            getCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => QueueHttpWebRequestFactory.PeekMessages(uri, serverTimeout, messageCount, useVersionHeader, ctx);
-            getCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
-            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.PeekMessages(uri, serverTimeout, messageCount, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                GetMessagesResponse getMessagesResponse = new GetMessagesResponse(cmd.ResponseStream);
-
-                List<CloudQueueMessage> messagesList = getMessagesResponse.Messages.Select(item => SelectPeekMessageResponse(item, options)).ToList();
-
-                return messagesList;
+                return
+                    (await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false))
+                    .Select(m => SelectPeekMessageResponse(m, options))
+                    .ToList()
+                    ;
             };
 
             return getCmd;
@@ -2727,7 +2698,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// Gets the ApproximateMessageCount and metadata from response.
         /// </summary>
         /// <param name="webResponse">The web response.</param>
-        private void GetMessageCountAndMetadataFromResponse(HttpWebResponse webResponse)
+        private void GetMessageCountAndMetadataFromResponse(HttpResponseMessage webResponse)
         {
             this.Metadata = QueueHttpResponseParsers.GetMetadata(webResponse);
 
@@ -2740,13 +2711,13 @@ namespace Microsoft.Azure.Storage.Queue
         /// </summary>
         /// <param name="message">The Cloud Queue Message.</param>
         /// <param name="webResponse">The web response.</param>
-        private static void GetPopReceiptAndNextVisibleTimeFromResponse(CloudQueueMessage message, HttpWebResponse webResponse)
+        private static void GetPopReceiptAndNextVisibleTimeFromResponse(CloudQueueMessage message, HttpResponseMessage webResponse)
         {
-            message.PopReceipt = webResponse.Headers[Constants.HeaderConstants.PopReceipt];
+            message.PopReceipt = webResponse.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.PopReceipt);
             message.NextVisibleTime = DateTime.Parse(
-                webResponse.Headers[Constants.HeaderConstants.NextVisibleTime],
-                DateTimeFormatInfo.InvariantInfo,
-                DateTimeStyles.AdjustToUniversal);
+                webResponse.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.NextVisibleTime),
+                System.Globalization.DateTimeFormatInfo.InvariantInfo,
+                System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
     }
 }

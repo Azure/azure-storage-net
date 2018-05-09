@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -352,7 +353,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobContainerCreateTaskWithCancellation()
+        public async Task CloudBlobContainerCreateTaskWithCancellation()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -363,14 +364,14 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 Thread.Sleep(0);
                 cts.Cancel();
-                createTask.Wait();
+                await createTask;
 
                 // Should throw aggregate exception
                 Assert.Fail();
             }
             catch (Exception ex)
             {
-                Assert.IsInstanceOfType(ex, typeof(AggregateException));
+                Assert.IsInstanceOfType(ex, typeof(StorageException));
                 Assert.IsNotNull(ex.InnerException);
                 Assert.IsInstanceOfType(ex.InnerException, typeof(OperationCanceledException));
             }
@@ -1118,7 +1119,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 
@@ -1904,7 +1905,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync();
+                container.DeleteIfExistsAsync().Wait();
             }
         }
 #endif
@@ -2135,14 +2136,14 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric)]
         public async Task CloudBlobContainerListManyBlobs()
         {
+            int countPerType = 50;
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                List<string> pageBlobNames = await CreateBlobs(container, 2000, BlobType.PageBlob);
-                List<string> blockBlobNames = await CreateBlobs(container, 2000, BlobType.BlockBlob);
-                List<string> appendBlobNames = await CreateBlobs(container, 2000, BlobType.AppendBlob);
-
+                List<string> pageBlobNames = await CreateBlobs(container, countPerType, BlobType.PageBlob);
+                List<string> blockBlobNames = await CreateBlobs(container, countPerType, BlobType.BlockBlob);
+                List<string> appendBlobNames = await CreateBlobs(container, countPerType, BlobType.AppendBlob);
                 int count = 0;
                 IEnumerable<IListBlobItem> results = container.ListBlobs();
                 foreach (IListBlobItem blobItem in results)
@@ -2168,7 +2169,7 @@ namespace Microsoft.Azure.Storage.Blob
                     }
                 }
 
-                Assert.AreEqual(6000, count);
+                Assert.AreEqual(3 * countPerType, count);
             }
             finally
             {
@@ -2493,7 +2494,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobContinuationTokenVerifySerializer()
+        public async Task BlobContinuationTokenVerifySerializer()
         {
             XmlSerializer serializer = new XmlSerializer(typeof(BlobContinuationToken));
 
@@ -2524,10 +2525,10 @@ namespace Microsoft.Azure.Storage.Blob
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
             // Read with token.ReadXml()
-            using (XmlReader xmlReader = XmlReader.Create(new StringReader(tokenxml)))
+            using (XmlReader xmlReader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(tokenxml))))
             {
                 readToken = new BlobContinuationToken();
-                readToken.ReadXml(xmlReader);
+                await readToken.ReadXmlAsync(xmlReader);
             }
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
@@ -2544,10 +2545,10 @@ namespace Microsoft.Azure.Storage.Blob
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
 
             // Read with token.ReadXml()
-            using (XmlReader xmlReader = XmlReader.Create(new StringReader(sb.ToString())))
+            using (XmlReader xmlReader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
             {
                 readToken = new BlobContinuationToken();
-                readToken.ReadXml(xmlReader);
+                await readToken.ReadXmlAsync(xmlReader);
             }
             Assert.AreEqual(writeToken.NextMarker, readToken.NextMarker);
         }
@@ -2558,7 +2559,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobContinuationTokenVerifyEmptyTargetDeserializer()
+        public async Task BlobContinuationTokenVerifyEmptyTargetDeserializer()
         {
             BlobContinuationToken blobContinuationToken = new BlobContinuationToken { TargetLocation = null };
             StringBuilder stringBuilder = new StringBuilder();
@@ -2569,7 +2570,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             string stringToken = stringBuilder.ToString();
             BlobContinuationToken parsedToken = new BlobContinuationToken();
-            parsedToken.ReadXml(XmlReader.Create(new System.IO.StringReader(stringToken)));
+            await parsedToken.ReadXmlAsync(XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(stringToken))));
             Assert.AreEqual(parsedToken.TargetLocation, null);
         }
 
@@ -2613,10 +2614,10 @@ namespace Microsoft.Azure.Storage.Blob
                             token.WriteXml(writer);
                         }
 
-                        using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                        using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                         {
                             token = new BlobContinuationToken();
-                            token.ReadXml(reader);
+                            await token.ReadXmlAsync(reader);
                         }
                     }
                 }
@@ -2673,14 +2674,14 @@ namespace Microsoft.Azure.Storage.Blob
                             writer.WriteEndElement();
                         }
 
-                        using (XmlReader reader = XmlReader.Create(new StringReader(sb.ToString())))
+                        using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(new MemoryStream(Encoding.Unicode.GetBytes(sb.ToString()))))
                         {
                             token = new BlobContinuationToken();
-                            reader.ReadStartElement();
-                            reader.ReadStartElement();
-                            token.ReadXml(reader);
-                            reader.ReadEndElement();
-                            reader.ReadEndElement();
+                            await reader.ReadStartElementAsync();
+                            await reader.ReadStartElementAsync();
+                            await token.ReadXmlAsync(reader);
+                            await reader.ReadEndElementAsync();
+                            await reader.ReadEndElementAsync();
                         }
                     }
                 }

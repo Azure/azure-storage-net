@@ -20,6 +20,8 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
 #if WINDOWS_RT
     internal
@@ -33,9 +35,9 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service properties.</param>
         /// <returns>The service properties stored in the stream.</returns>
-        public static ServiceProperties ReadServiceProperties(Stream inputStream)
+        public static Task<ServiceProperties> ReadServicePropertiesAsync(Stream inputStream, CancellationToken token)
         {
-            return HttpResponseParsers.ReadServiceProperties(inputStream);
+            return HttpResponseParsers.ReadServicePropertiesAsync(inputStream, token);
         }
 
         /// <summary>
@@ -43,9 +45,9 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="inputStream">The stream from which to read the service stats.</param>
         /// <returns>The service stats stored in the stream.</returns>
-        public static ServiceStats ReadServiceStats(Stream inputStream)
+        public static Task<ServiceStats> ReadServiceStatsAsync(Stream inputStream, CancellationToken token)
         {
-            return HttpResponseParsers.ReadServiceStats(inputStream);
+            return HttpResponseParsers.ReadServiceStatsAsync(inputStream, token);
         }
 
         /// <summary>
@@ -53,11 +55,11 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="inputStream">The stream of XML policies.</param>
         /// <param name="permissions">The permissions object to which the policies are to be written.</param>
-        public static void ReadSharedAccessIdentifiers(Stream inputStream, QueuePermissions permissions)
+        public static Task ReadSharedAccessIdentifiersAsync(Stream inputStream, QueuePermissions permissions, CancellationToken token)
         {
             CommonUtility.AssertNotNull("permissions", permissions);
 
-            Response.ReadSharedAccessIdentifiers(permissions.SharedAccessPolicies, new QueueAccessPolicyResponse(inputStream));
+            return Response.ReadSharedAccessIdentifiersAsync(permissions.SharedAccessPolicies, new QueueAccessPolicyResponse(inputStream), token);
         }
     }
 }

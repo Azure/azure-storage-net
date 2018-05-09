@@ -114,6 +114,7 @@ namespace Microsoft.Azure.Storage.Core
             TestPrimaryOnlyCommand((opt, ctx) => queue.DeleteIfExists(opt, ctx), options);
             TestPrimaryOnlyCommand((opt, ctx) => queue.EndDeleteIfExists(queue.BeginDeleteIfExists(opt, ctx, null, null)), options);
         }
+
         private void TestPrimaryOnlyCommand<T>(Action<T, OperationContext> command, T options)
             where T : IRequestOptions
         {
@@ -275,6 +276,7 @@ namespace Microsoft.Azure.Storage.Core
                     () => container.FetchAttributes(null, options, helper.OperationContext),
                     "FetchAttributes on a non-existing container should fail",
                     HttpStatusCode.NotFound);
+                Task.Delay(30000).GetAwaiter().GetResult();
             }
         }
 

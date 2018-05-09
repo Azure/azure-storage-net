@@ -762,7 +762,13 @@ namespace Microsoft.Azure.Storage.Table
             List<DynamicTableEntity> results = (await table.ExecuteQuerySegmentedAsync<DynamicTableEntity>(q, (prk, rk, ts, prop, etag) => new DynamicTableEntity(prk, rk, etag, prop), null)).ToList();
             Assert.AreEqual(1, results.Count);
 
-            List<BaseEntity> pocoresults = (await table.ExecuteQuerySegmentedAsync<BaseEntity>(q, (prk2, rk, ts, prop, etag) => new BaseEntity(prk2, rk), null)).ToList();
+            List<BaseEntity> pocoresults = (await table.ExecuteQuerySegmentedAsync<BaseEntity>(q, 
+            (prk2, rk, ts, prop, etag) => 
+            {
+                var entity = new BaseEntity(prk2, rk);
+                entity.Populate();
+            }
+            , null)).ToList();
             Assert.AreEqual(1, pocoresults.Count);
 #endif
         }
@@ -841,7 +847,13 @@ namespace Microsoft.Azure.Storage.Table
 #if !FACADE_NETCORE
                 await currentTable.ExecuteQuerySegmentedAsync(query, null, null, opContext);
 #else
-                await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query, (pk, rk, tse, prop, etag) => new BaseEntity(pk, rk), null, null,opContext);
+                await currentTable.ExecuteQuerySegmentedAsync<BaseEntity>(query, 
+                (pk, rk, tse, prop, etag) => 
+                {
+                    var entity = new BaseEntity(prk, rk);
+                    entity.Populate();
+                }
+                , null, null,opContext);
 #endif
                 Assert.Fail();
             }

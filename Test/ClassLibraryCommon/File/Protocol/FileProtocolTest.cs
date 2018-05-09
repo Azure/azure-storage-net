@@ -19,7 +19,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.File.Protocol
 {
@@ -38,13 +40,20 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [ClassInitialize]
         public static void InitialInitialize(TestContext testContext)
         {
-            cloudSetup.Initialize();
+            try
+            {
+                cloudSetup.Initialize().Wait();
+            }
+            catch
+            {
+                FinalCleanup();
+            }
         }
 
         [ClassCleanup]
         public static void FinalCleanup()
         {
-            cloudSetup.Cleanup();
+            cloudSetup.Cleanup().Wait();
 
             // sleep for 40s so that if the test is re-run, we can recreate the share
             Thread.Sleep(35000);
@@ -57,10 +66,10 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolPutFileCloudOwnerSync()
+        public async Task FileProtocolPutFileCloudOwnerSync()
         {
             FileProperties properties = new FileProperties();
-            cloudOwnerSync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(), properties, new byte[0], HttpStatusCode.Created);
+            await cloudOwnerSync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(), properties, new byte[0], HttpStatusCode.Created);
         }
 
         [TestMethod]
@@ -69,10 +78,10 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolPutFileCloudAnonSync()
+        public async Task FileProtocolPutFileCloudAnonSync()
         {
             FileProperties properties = new FileProperties();
-            cloudAnonSync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(),
+            await cloudAnonSync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(),
                 properties, new byte[0], HttpStatusCode.NotFound);
         }
 
@@ -82,10 +91,10 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolPutFileCloudOwnerAsync()
+        public async Task FileProtocolPutFileCloudOwnerAsync()
         {
             FileProperties properties = new FileProperties();
-            cloudOwnerAsync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(), properties, new byte[0], HttpStatusCode.Created);
+            await cloudOwnerAsync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(), properties, new byte[0], HttpStatusCode.Created);
         }
 
         [TestMethod]
@@ -94,10 +103,10 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolPutFileCloudAnonAsync()
+        public async Task FileProtocolPutFileCloudAnonAsync()
         {
             FileProperties properties = new FileProperties();
-            cloudAnonAsync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(),
+            await cloudAnonAsync.PutFileScenarioTest(cloudSetup.ShareName, Guid.NewGuid().ToString(),
                 properties, new byte[0], HttpStatusCode.NotFound);
         }
         #endregion
@@ -109,9 +118,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetFileCloudOwnerSync()
+        public async Task FileProtocolGetFileCloudOwnerSync()
         {
-            cloudOwnerSync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties, null);
+            await cloudOwnerSync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties, null);
         }
 
         [TestMethod]
@@ -120,9 +129,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetFileCloudOwnerAsync()
+        public async Task FileProtocolGetFileCloudOwnerAsync()
         {
-            cloudOwnerAsync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties,
+            await cloudOwnerAsync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties,
                  null);
         }
 
@@ -132,9 +141,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetFileCloudAnonSync()
+        public async Task FileProtocolGetFileCloudAnonSync()
         {
-            cloudAnonSync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties,
+            await cloudAnonSync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties,
                  HttpStatusCode.NotFound);
         }
 
@@ -144,9 +153,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetFileCloudAnonAsync()
+        public async Task FileProtocolGetFileCloudAnonAsync()
         {
-            cloudAnonAsync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties,
+            await cloudAnonAsync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties,
                  HttpStatusCode.NotFound);
         }
 
@@ -156,9 +165,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetPublicFileCloudOwnerSync()
+        public async Task FileProtocolGetPublicFileCloudOwnerSync()
         {
-            cloudOwnerSync.GetFileScenarioTest(cloudSetup.PublicShareName, cloudSetup.PublicFileName, cloudSetup.Properties,
+            await cloudOwnerSync.GetFileScenarioTest(cloudSetup.PublicShareName, cloudSetup.PublicFileName, cloudSetup.Properties,
                  null);
         }
 
@@ -168,9 +177,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetPublicFileCloudOwnerAsync()
+        public async Task FileProtocolGetPublicFileCloudOwnerAsync()
         {
-            cloudOwnerAsync.GetFileScenarioTest(cloudSetup.PublicShareName, cloudSetup.PublicFileName, cloudSetup.Properties,
+            await cloudOwnerAsync.GetFileScenarioTest(cloudSetup.PublicShareName, cloudSetup.PublicFileName, cloudSetup.Properties,
                  null);
         }
 
@@ -180,24 +189,24 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetFileRangeCloudOwnerSync()
+        public async Task FileProtocolGetFileRangeCloudOwnerSync()
         {
             int all = cloudSetup.Content.Length;
             int quarter = cloudSetup.Content.Length / 4;
             int half = cloudSetup.Content.Length / 2;
 
-            cloudOwnerSync.WriteRange(cloudSetup.FileName, cloudSetup.ShareName, cloudSetup.Content, HttpStatusCode.Created);
+            await cloudOwnerSync.WriteRange(cloudSetup.FileName, cloudSetup.ShareName, cloudSetup.Content, HttpStatusCode.Created);
             // Full content, as complete range. (0-end)
-            cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, all, null);
+            await cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, all, null);
 
             // Partial content, as complete range. (quarter-quarterPlusHalf)
-            cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, quarter, half, null);
+            await cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, quarter, half, null);
 
             // Full content, as open range. (0-)
-            cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, null, null);
+            await cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, null, null);
 
             // Partial content, as open range. (half-)
-            cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, half, null, null);
+            await cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, half, null, null);
         }
 
         [TestMethod]
@@ -206,13 +215,13 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetFileRangeCloudOwnerSyncInvalidRange()
+        public async Task FileProtocolGetFileRangeCloudOwnerSyncInvalidRange()
         {
             int all = cloudSetup.Content.Length;
 
-            cloudOwnerSync.WriteRange(cloudSetup.FileName, cloudSetup.ShareName, cloudSetup.Content, HttpStatusCode.Created);
+            await cloudOwnerSync.WriteRange(cloudSetup.FileName, cloudSetup.ShareName, cloudSetup.Content, HttpStatusCode.Created);
             // Invalid range starting after the end of the file (endPlusOne-)
-            cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, all, null, HttpStatusCode.RequestedRangeNotSatisfiable);
+            await cloudOwnerSync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, all, null, HttpStatusCode.RequestedRangeNotSatisfiable);
         }
 
         [TestMethod]
@@ -221,25 +230,25 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetFileRangeCloudOwnerAsync()
+        public async Task FileProtocolGetFileRangeCloudOwnerAsync()
         {
             int all = cloudSetup.Content.Length;
             int quarter = cloudSetup.Content.Length / 4;
             int half = cloudSetup.Content.Length / 2;
 
-            cloudOwnerAsync.WriteRange(cloudSetup.FileName, cloudSetup.ShareName, cloudSetup.Content, HttpStatusCode.Created);
+            await cloudOwnerAsync.WriteRange(cloudSetup.FileName, cloudSetup.ShareName, cloudSetup.Content, HttpStatusCode.Created);
 
             // Full content, as complete range. (0-end)
-            cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, all, null);
+            await cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, all, null);
 
             // Partial content, as complete range. (quarter-quarterPlusHalf)
-            cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, quarter, half, null);
+            await cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, quarter, half, null);
 
             // Full content, as open range. (0-)
-            cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, null, null);
+            await cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, 0, null, null);
 
             // Partial content, as open range. (half-)
-            cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, half, null, null);
+            await cloudOwnerAsync.GetFileRangeScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Content, half, null, null);
         }
         #endregion
 
@@ -250,60 +259,57 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolListSharesCloud()
+        public async Task FileProtocolListSharesCloud()
         {
             ListingContext listingContext = new ListingContext("default", null);
-            cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, cloudSetup.ShareName);
+            await cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, cloudSetup.ShareName);
 
             string prefix = Guid.NewGuid().ToString();
-            cloudSetup.CreateShare(prefix + "newshare1");
-            cloudSetup.CreateShare(prefix + "newshare2");
+            await cloudSetup.CreateShare(prefix + "newshare1");
+            await cloudSetup.CreateShare(prefix + "newshare2");
 
             try
             {
-                cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, cloudSetup.ShareName);
+                await cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, cloudSetup.ShareName);
                 listingContext = new ListingContext(prefix, 10);
-                cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, prefix + "newshare1", prefix + "newshare2");
+                await cloudOwnerAsync.ListSharesScenarioTest(listingContext, null, prefix + "newshare1", prefix + "newshare2");
             }
             finally
             {
-                cloudSetup.DeleteShare(prefix + "newshare1");
-                cloudSetup.DeleteShare(prefix + "newshare2");
+                await cloudSetup.DeleteShare(prefix + "newshare1");
+                await cloudSetup.DeleteShare(prefix + "newshare2");
             }
         }
 
-        [Ignore]
         [TestMethod]
         [Description("Get a share with empty header excluded/included from signature and verify request succeeded")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void FileProtocolGetShareWithEmptyHeader()
+        public async Task FileProtocolGetShareWithEmptyHeader()
         {
             ListingContext listingContext = new ListingContext("default", null);
-            cloudOwnerAsync.CreateShare("emptyheadershare1");
+            await cloudOwnerAsync.CreateShare("emptyheadershare1");
 
-            HttpWebRequest request = FileTests.ListSharesRequest(cloudOwnerAsync.FileContext, listingContext);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
+            HttpRequestMessage request = FileTests.ListSharesRequest(cloudOwnerAsync.FileContext, listingContext);
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
             if (cloudOwnerAsync.FileContext.Credentials != null)
             {
-                FileTests.SignRequest(request, cloudOwnerAsync.FileContext);
                 request.Headers.Add("x-ms-file-application-metadata", "");
             }
-            using (HttpWebResponse response = FileTestUtils.GetResponse(request, cloudOwnerAsync.FileContext))
+            using (HttpResponseMessage response = await FileTestUtils.GetResponse(request, cloudOwnerAsync.FileContext))
             {
                 FileTests.ListSharesResponse(response, cloudOwnerAsync.FileContext, null);
             }
 
             request = FileTests.ListSharesRequest(cloudOwnerAsync.FileContext, listingContext);
-            Assert.IsTrue(request != null, "Failed to create HttpWebRequest");
+            Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
             if (cloudOwnerAsync.FileContext.Credentials != null)
             {
                 request.Headers.Add("x-ms-file-application-metadata", "");
-                FileTests.SignRequest(request, cloudOwnerAsync.FileContext);
             }
-            using (HttpWebResponse response = FileTestUtils.GetResponse(request, cloudOwnerAsync.FileContext))
+            using (HttpResponseMessage response = await FileTestUtils.GetResponse(request, cloudOwnerAsync.FileContext))
             {
                 FileTests.ListSharesResponse(response, cloudOwnerAsync.FileContext, HttpStatusCode.OK);
             }

@@ -22,19 +22,50 @@ namespace Microsoft.Azure.Storage.Blob
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Net;
     using System.Threading;
+    using System.Threading.Tasks;
 
 #if WINDOWS_PHONE
     using System.Threading.Tasks;
 #endif
 
+    /// <summary>
+    /// This class uses an algorithm designed to aid users in writing simple code that is also performant.
+    /// The idea is that the caller can write the following pseudocode:
+    /// 
+    /// using (BlobWriteStream bws = Cloud*Blob.OpenWrite())
+    /// {
+    ///     while (moreData)
+    ///     {
+    ///         byte[] bytes = await GetDataAsync();
+    ///         await bws.WriteAsync(bytes);
+    ///     }
+    /// }
+    /// 
+    /// The goal here is to have this code exhibit a sort of double-buffering functionality, where "GetDataAsync()"
+    /// (whatever that is) is able to run in parallel with the data upload to Azure Storage.  This is accomplished
+    /// via buffering data during the write, and then later uploading it to Storage.
+    /// However, we also need to limit how much data is buffered, to avoid using too much memory. To do this,
+    /// continuation after "await bws.WriteAsync(bytes)" will only continue if the stream hasn't buffered too much.
+    /// 
+    /// The limit on what is "too much" depends on the size of the input bytes[] data, the block size, 
+    /// and the max parallelism factor. Roughly, it's the maximum of 1-2x the input byte array size, 
+    /// and block size * parallelism factor. It's also fuzzy depending on whether or not you include any data that's currently
+    /// being processed in WriteAsync(), any data that's currently being uploaded, or just data that's stored in the
+    /// stream's buffer, waiting to be uploaded.
+    /// 
+    /// The biggest complication and/or likely location for bugs is around error handling, because errors might occur
+    /// after "await WriteAsync()" has already continued.
+    /// 
+    /// If some day we consider a library re-design / re-architect, this code would likely be opt-in.
+    /// 
+    /// </summary>
     internal sealed class BlobWriteStream : BlobWriteStreamBase
     {
-        private volatile bool flushPending = false;
-
         /// <summary>
         /// This value is used mainly to provide async commit functionality(BeginCommit) to BlobEncryptedWriteStream. CryptoStream does not provide begin/end 
         /// flush. It only provides a blocking sync FlushFinalBlock call which calls the underlying stream's flush method (BlobWriteStream in this case). 
@@ -122,7 +153,91 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="count">The number of bytes to be written to the current stream.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
-            this.EndWrite(this.BeginWrite(buffer, offset, count, null /* callback */, null /* state */));
+            this.WriteAsync(buffer, offset, count, CancellationToken.None).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Asynchronously Writes a sequence of bytes to the current stream and advances the current
+        /// position within this stream by the number of bytes written.
+        /// </summary>
+        /// <param name="buffer">An array of bytes. This method copies count bytes from
+        /// buffer to the current stream. </param>
+        /// <param name="offset">The zero-based byte offset in buffer at which to begin
+        /// copying bytes to the current stream.</param>
+        /// <param name="count">The number of bytes to be written to the current stream.</param>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Task</returns>
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
+        {
+            CommonUtility.AssertNotNull("buffer", buffer);
+            CommonUtility.AssertInBounds("offset", offset, 0, buffer.Length);
+            CommonUtility.AssertInBounds("count", count, 0, buffer.Length - offset);
+
+            if (this.committed)
+            {
+                throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
+            }
+
+            this.currentOffset += count;
+            int initialOffset = offset;
+            int initialCount = count;
+
+            TaskCompletionSource<bool> continueTCS = new TaskCompletionSource<bool>();
+            Task<bool> continueTask = continueTCS.Task;
+
+            if (this.lastException == null)
+            {
+                while (count > 0)
+                {
+                    int maxBytesToWrite = this.streamWriteSizeInBytes - (int)this.internalBuffer.Length;
+                    int bytesToWrite = Math.Min(count, maxBytesToWrite);
+
+                    await this.internalBuffer.WriteAsync(buffer, offset, bytesToWrite, token).ConfigureAwait(false);
+                    if (this.blockMD5 != null)
+                    {
+                        this.blockMD5.UpdateHash(buffer, offset, bytesToWrite);
+                    }
+
+                    count -= bytesToWrite;
+                    offset += bytesToWrite;
+
+                    if (bytesToWrite == maxBytesToWrite)
+                    {
+                        // Note that we do not await on temptask, nor do we store it.
+                        // We do not await temptask so as to enable parallel reads and writes.
+                        // We could store it and await on it later, but that ends up being more complicated
+                        // than what we actually do, which is have each write operation manage its own exceptions.
+                        Task temptask = this.DispatchWriteAsync(continueTCS, token);
+
+                        // We need to account for the fact that we're not awaiting on DispatchWriteAsync.
+                        // DispatchWriteAsync is written in such a manner that any exceptions thrown after
+                        // the first await point are handled internally.  This here is to account for
+                        // exceptions that could happen inline, before an await point is encountered.
+                        if (temptask.IsFaulted)
+                        {
+                            //We should make sure any exception thrown before the awaiting point in DispatchWriteAsync are stored in this.LastException
+                            //We don't want to throw the tempTask.Exception directly since that would result in an aggregate exception
+                            ThrowLastExceptionIfExists();
+                        }
+
+                        token.ThrowIfCancellationRequested();
+                        continueTCS = null;
+                    }
+                }
+            }
+
+            // Update transactional, then update full blob, in that order.
+            // This way, if there's any bit corruption that happens in between the two, we detect it at PutBlock on the service, 
+            // rather than GetBlob + validate on the client
+            if (this.blobMD5 != null)
+            {
+                this.blobMD5.UpdateHash(buffer, initialOffset, initialCount);
+            }
+
+            if (continueTCS == null)
+            {
+                await continueTask;
+            }
         }
 
         /// <summary>
@@ -138,65 +253,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <c>IAsyncResult</c> that represents the asynchronous write, which could still be pending.</returns>
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
-            CommonUtility.AssertNotNull("buffer", buffer);
-            CommonUtility.AssertInBounds("offset", offset, 0, buffer.Length);
-            CommonUtility.AssertInBounds("count", count, 0, buffer.Length - offset);
-
-            if (this.committed)
-            {
-                throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
-            }
-
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
-            StorageAsyncResult<NullType> currentAsyncResult = storageAsyncResult;
-
-            this.currentOffset += count;
-            int initialOffset = offset;
-            int initialCount = count;
-            bool dispatched = false;
-            if (this.lastException == null)
-            {
-                while (count > 0)
-                {
-                    int maxBytesToWrite = this.streamWriteSizeInBytes - (int)this.internalBuffer.Length;
-                    int bytesToWrite = Math.Min(count, maxBytesToWrite);
-
-                    this.internalBuffer.Write(buffer, offset, bytesToWrite);
-                    if (this.blockMD5 != null)
-                    {
-                        this.blockMD5.UpdateHash(buffer, offset, bytesToWrite);
-                    }
-
-                    count -= bytesToWrite;
-                    offset += bytesToWrite;
-
-                    if (bytesToWrite == maxBytesToWrite)
-                    {
-                        this.DispatchWrite(currentAsyncResult);
-                        dispatched = true;
-
-                        // Do not use the IAsyncResult we are going to return more
-                        // than once, as otherwise its callback will be called more
-                        // than once.
-                        currentAsyncResult = null;
-                    }
-                }
-            }
-
-            // Update transactional, then update full blob, in that order.
-            // This way, if there's any bit corruption that happens in between the two, we detect it at PutBlock on the service, 
-            // rather than GetBlob + validate on the client
-            if (this.blobMD5 != null)
-            {
-                this.blobMD5.UpdateHash(buffer, initialOffset, initialCount);
-            }
-
-            if (!dispatched)
-            {
-                storageAsyncResult.OnComplete(this.lastException);
-            }
-
-            return storageAsyncResult;
+            return new CancellableAsyncResultTaskWrapper(token => WriteAsync(buffer, offset, count, token), callback, state);
         }
 
         /// <summary>
@@ -205,13 +262,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
         public override void EndWrite(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
-            storageAsyncResult.End();
-
-            if (this.lastException != null)
-            {
-                throw this.lastException;
-            }
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -219,26 +270,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         public override void Flush()
         {
-            if (!this.IgnoreFlush)
-            {
-                if (this.lastException != null)
-                {
-                    throw this.lastException;
-                }
-
-                if (this.committed)
-                {
-                    throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
-                }
-
-                this.DispatchWrite(null /* asyncResult */);
-                this.noPendingWritesEvent.Wait();
-
-                if (this.lastException != null)
-                {
-                    throw this.lastException;
-                }
-            }
+            this.FlushAsync(CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -247,63 +279,10 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="callback">An optional asynchronous callback, to be called when the flush is complete.</param>
         /// <param name="state">A user-provided object that distinguishes this particular asynchronous flush request from other requests.</param>
         /// <returns>An <c>ICancellableAsyncResult</c> that represents the asynchronous flush, which could still be pending.</returns>
+        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Reviewed.")]
         public override ICancellableAsyncResult BeginFlush(AsyncCallback callback, object state)
         {
-            if (this.committed)
-            {
-                throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
-            }
-
-            if (this.flushPending)
-            {
-                // We cannot allow more than one BeginFlush at a time, because
-                // RegisterWaitForSingleObject would need duplicated handles
-                // of noPendingWritesEvent for each call.
-                throw new InvalidOperationException(SR.BlobStreamFlushPending);
-            }
-
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
-
-            try
-            {
-                if (this.IgnoreFlush)
-                {
-                    storageAsyncResult.OnComplete();
-                }
-                else
-                {
-                    this.flushPending = true;
-                    this.DispatchWrite(null /* asyncResult */);
-
-                    if ((this.lastException != null) || this.noPendingWritesEvent.Wait(0))
-                    {
-                        storageAsyncResult.OnComplete(this.lastException);
-                    }
-                    else
-                    {
-                        RegisteredWaitHandle waitHandle = ThreadPool.RegisterWaitForSingleObject(
-                            this.noPendingWritesEvent.WaitHandle,
-                            this.WaitForPendingWritesCallback,
-                            storageAsyncResult,
-                            -1,
-                            true);
-
-                        storageAsyncResult.OperationState = waitHandle;
-                        storageAsyncResult.CancelDelegate = () =>
-                        {
-                            waitHandle.Unregister(null /* waitObject */);
-                            storageAsyncResult.OnComplete(this.lastException);
-                        };
-                    }
-                }
-
-                return storageAsyncResult;
-            }
-            catch (Exception)
-            {
-                this.flushPending = false;
-                throw;
-            }
+            return new CancellableAsyncResultTaskWrapper(token => this.FlushAsync(CancellationToken.None), callback, state);
         }
 
         /// <summary>
@@ -312,38 +291,23 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
         public override void EndFlush(IAsyncResult asyncResult)
         {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
-            this.flushPending = false;
-            storageAsyncResult.End();
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
         }
 
-#if WINDOWS_PHONE
-        /// <summary>
-        /// Initiates an asynchronous operation that performs an asynchronous flush operation.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public override Task FlushAsync(CancellationToken cancellationToken)
-        {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginFlush, this.EndFlush, cancellationToken);
-        }
-#endif
 
-        /// <summary>
-        /// Called when noPendingWritesEvent is signalled indicating that there are no outstanding write requests.
-        /// </summary>
-        /// <param name="state">An object containing information to be used by the callback method each time it executes. </param>
-        /// <param name="timedOut">true if the WaitHandle timed out; false if it was signaled.</param>
-        private void WaitForPendingWritesCallback(object state, bool timedOut)
+        public override async Task FlushAsync(CancellationToken token)
         {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)state;
-            storageAsyncResult.UpdateCompletedSynchronously(false);
-            storageAsyncResult.OnComplete(this.lastException);
-
-            RegisteredWaitHandle waitHandle = (RegisteredWaitHandle)storageAsyncResult.OperationState;
-            if (waitHandle != null)
+            if (this.committed)
             {
-                waitHandle.Unregister(null /* waitObject */);
+                throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
+            }
+
+            if (!this.IgnoreFlush)
+            {  
+                this.ThrowLastExceptionIfExists();
+                await this.DispatchWriteAsync(null, token).ConfigureAwait(false);
+                await Task.Run(() => this.noPendingWritesEvent.Wait(), token);
+                this.ThrowLastExceptionIfExists();
             }
         }
 
@@ -361,11 +325,7 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     if (!this.committed)
                     {
-#if SYNC
-                        this.Commit();
-#else
-                        this.EndCommit(this.BeginCommit(null, null));
-#endif
+                        this.CommitAsync().ConfigureAwait(false).GetAwaiter().GetResult();
                     }
                 }
             }
@@ -379,7 +339,40 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         public override void Commit()
         {
-            this.Flush();
+            this.CommitAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous commit operation.
+        /// </summary>
+        /// <param name="callback">An optional asynchronous callback, to be called when the commit is complete.</param>
+        /// <param name="state">A user-provided object that distinguishes this particular asynchronous commit request from other requests.</param>
+        /// <returns>An <c>ICancellableAsyncResult</c> that represents the asynchronous commit, which could still be pending.</returns>
+        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "storageAsyncResult must be returned.")]
+        public override ICancellableAsyncResult BeginCommit(AsyncCallback callback, object state)
+        {
+            return new CancellableAsyncResultTaskWrapper(token => this.CommitAsync(), callback, state);
+        }
+
+        /// <summary>
+        /// Waits for the pending asynchronous commit to complete.
+        /// </summary>
+        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
+        public override void EndCommit(IAsyncResult asyncResult)
+        {
+            ((CancellableAsyncResultTaskWrapper)asyncResult).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Asynchronously clears all buffers for this stream, causes any buffered 
+        /// data to be written to the underlying blob, and commits the blob.
+        /// </summary>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Task</returns>
+        public override async Task CommitAsync()
+        {
+            await this.FlushAsync(CancellationToken.None).ConfigureAwait(false);
             this.committed = true;
 
             try
@@ -393,11 +386,11 @@ namespace Microsoft.Azure.Storage.Blob
                         this.blockBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
                     }
 
-                    this.blockBlob.PutBlockList(
+                    await this.blockBlob.PutBlockListAsync(
                         this.blockList,
                         this.accessCondition,
                         this.options,
-                        this.operationContext);
+                        this.operationContext).ConfigureAwait(false);
                 }
                 else
                 {
@@ -407,10 +400,10 @@ namespace Microsoft.Azure.Storage.Blob
                     {
                         this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
 
-                        this.Blob.SetProperties(
+                        await this.Blob.SetPropertiesAsync(
                             this.accessCondition,
                             this.options,
-                            this.operationContext);
+                            this.operationContext).ConfigureAwait(false);
                     }
                 }
             }
@@ -420,159 +413,15 @@ namespace Microsoft.Azure.Storage.Blob
                 throw;
             }
         }
-#endif
-
-        /// <summary>
-        /// Begins an asynchronous commit operation.
-        /// </summary>
-        /// <param name="callback">An optional asynchronous callback, to be called when the commit is complete.</param>
-        /// <param name="state">A user-provided object that distinguishes this particular asynchronous commit request from other requests.</param>
-        /// <returns>An <c>ICancellableAsyncResult</c> that represents the asynchronous commit, which could still be pending.</returns>
-        [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "storageAsyncResult must be returned.")]
-        public override ICancellableAsyncResult BeginCommit(AsyncCallback callback, object state)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
-            ICancellableAsyncResult result = this.BeginFlush(this.CommitFlushCallback, storageAsyncResult);
-            storageAsyncResult.CancelDelegate = result.Cancel;
-            return storageAsyncResult;
-        }
-
-        /// <summary>
-        /// Waits for the pending asynchronous commit to complete.
-        /// </summary>
-        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
-        public override void EndCommit(IAsyncResult asyncResult)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)asyncResult;
-            storageAsyncResult.End();
-        }
-
-        /// <summary>
-        /// Called when the pending flush operation completes so that we can continue with the commit.
-        /// </summary>
-        /// <param name="ar">The result of the asynchronous operation.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void CommitFlushCallback(IAsyncResult ar)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)ar.AsyncState;
-            storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-            this.committed = true;
-
-            lock (storageAsyncResult.CancellationLockerObject)
-            {
-                storageAsyncResult.CancelDelegate = null;
-                try
-                {
-                    this.EndFlush(ar);
-
-                    if (this.blockBlob != null)
-                    {
-                        if (this.blobMD5 != null)
-                        {
-                            this.blockBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
-                        }
-
-                        ICancellableAsyncResult result = this.blockBlob.BeginPutBlockList(
-                            this.blockList,
-                            this.accessCondition,
-                            this.options,
-                            this.operationContext,
-                            this.PutBlockListCallback,
-                            storageAsyncResult);
-
-                        storageAsyncResult.CancelDelegate = result.Cancel;
-                    }
-                    else
-                    {
-                        if (this.blobMD5 != null)
-                        {
-                            this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
-
-                            ICancellableAsyncResult result = this.Blob.BeginSetProperties(
-                                this.accessCondition,
-                                this.options,
-                                this.operationContext,
-                                this.SetPropertiesCallback,
-                                storageAsyncResult);
-
-                            storageAsyncResult.CancelDelegate = result.Cancel;
-                        }
-                        else
-                        {
-                            storageAsyncResult.OnComplete();
-                        }
-                    }
-
-                    if (storageAsyncResult.CancelRequested)
-                    {
-                        storageAsyncResult.Cancel();
-                    }
-                }
-                catch (Exception e)
-                {
-                    this.lastException = e;
-                    storageAsyncResult.OnComplete(e);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Called when the block blob commit operation completes.
-        /// </summary>
-        /// <param name="ar">The result of the asynchronous operation.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void PutBlockListCallback(IAsyncResult ar)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)ar.AsyncState;
-            storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-
-            try
-            {
-                this.blockBlob.EndPutBlockList(ar);
-                storageAsyncResult.OnComplete();
-            }
-            catch (Exception e)
-            {
-                this.lastException = e;
-                storageAsyncResult.OnComplete(e);
-            }
-        }
-
-        /// <summary>
-        /// Called when the page or append blob commit operation completes.
-        /// </summary>
-        /// <param name="ar">The result of the asynchronous operation.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void SetPropertiesCallback(IAsyncResult ar)
-        {
-            StorageAsyncResult<NullType> storageAsyncResult = (StorageAsyncResult<NullType>)ar.AsyncState;
-            storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
-
-            try
-            {
-                this.Blob.EndSetProperties(ar);
-                storageAsyncResult.OnComplete();
-            }
-            catch (Exception e)
-            {
-                this.lastException = e;
-                storageAsyncResult.OnComplete(e);
-            }
-        }
-
-        /// <summary>
-        /// Dispatches a write operation.
-        /// </summary>
-        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
-        private void DispatchWrite(StorageAsyncResult<NullType> asyncResult)
+        
+        private async Task DispatchWriteAsync(TaskCompletionSource<bool> continuetcs, CancellationToken token)
         {
             if (this.internalBuffer.Length == 0)
             {
-                if (asyncResult != null)
+                if (continuetcs != null)
                 {
-                    asyncResult.OnComplete(this.lastException);
+                    Task.Run(() => continuetcs.TrySetResult(true));
                 }
-
                 return;
             }
 
@@ -592,7 +441,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 string blockId = this.GetCurrentBlockId();
                 this.blockList.Add(blockId);
-                this.WriteBlock(bufferToUpload, blockId, bufferMD5, asyncResult);
+                await this.WriteBlockAsync(continuetcs, bufferToUpload, blockId, bufferMD5, token).ConfigureAwait(false);
             }
             else if (this.pageBlob != null)
             {
@@ -604,7 +453,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 long offset = this.currentBlobOffset;
                 this.currentBlobOffset += bufferToUpload.Length;
-                this.WritePages(bufferToUpload, offset, bufferMD5, asyncResult);
+                await this.WritePagesAsync(continuetcs, bufferToUpload, offset, bufferMD5, token).ConfigureAwait(false);
             }
             else
             {
@@ -619,256 +468,104 @@ namespace Microsoft.Azure.Storage.Blob
                     throw this.lastException;
                 }
 
-                this.WriteAppendBlock(bufferToUpload, offset, bufferMD5, asyncResult);
+                await this.WriteAppendBlockAsync(continuetcs, bufferToUpload, offset, bufferMD5, token).ConfigureAwait(false);
             }
         }
 
-        /// <summary>
-        /// Starts an asynchronous PutBlock operation as soon as the parallel
-        /// operation semaphore becomes available.
-        /// </summary>
-        /// <param name="blockData">Data to be uploaded</param>
-        /// <param name="blockId">Block ID</param>
-        /// <param name="blockMD5">MD5 hash of the data to be uploaded</param>
-        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void WriteBlock(Stream blockData, string blockId, string blockMD5, StorageAsyncResult<NullType> asyncResult)
+        private async Task WriteBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, string blockId, string blockMD5, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
-            this.parallelOperationSemaphore.WaitAsync(calledSynchronously =>
+
+            await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
             {
                 try
                 {
-                    ICancellableAsyncResult result = this.blockBlob.BeginPutBlock(
-                        blockId,
-                        blockData,
-                        blockMD5,
-                        this.accessCondition,
-                        this.options,
-                        this.operationContext,
-                        this.PutBlockCallback,
-                        null /* state */);
-
-                    if (asyncResult != null)
+                    if (continuetcs != null)
                     {
-                        // We do not need to do this inside a lock, as asyncResult is
-                        // not returned to the user yet.
-                        asyncResult.CancelDelegate = result.Cancel;
+                        Task.Run(() => continuetcs.TrySetResult(true));
                     }
+                    await this.blockBlob.PutBlockAsync(blockId, blockData, blockMD5, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
                     this.lastException = e;
-                    this.noPendingWritesEvent.Decrement();
-                    this.parallelOperationSemaphore.Release();
                 }
                 finally
                 {
-                    if (asyncResult != null)
-                    {
-                        asyncResult.UpdateCompletedSynchronously(calledSynchronously);
-                        asyncResult.OnComplete(this.lastException);
-                    }
+                    this.noPendingWritesEvent.Decrement();
+                    await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
-            });
+            }, token).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Called when the asynchronous PutBlock operation completes.
-        /// </summary>
-        /// <param name="ar">The result of the asynchronous operation.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void PutBlockCallback(IAsyncResult ar)
-        {
-            try
-            {
-                this.blockBlob.EndPutBlock(ar);
-            }
-            catch (Exception e)
-            {
-                this.lastException = e;
-            }
-
-            // This must be called in a separate thread than the user's
-            // callback to prevent a deadlock in case the callback is blocking.
-            // If they are called in the same thread, this call must take
-            // place before the user's callback.
-            this.noPendingWritesEvent.Decrement();
-            this.parallelOperationSemaphore.Release();
-        }
-
-        /// <summary>
-        /// Starts an asynchronous WritePages operation as soon as the parallel
-        /// operation semaphore becomes available.
-        /// </summary>
-        /// <param name="pageData">Data to be uploaded</param>
-        /// <param name="offset">Offset within the page blob</param>
-        /// <param name="contentMD5">MD5 hash of the data to be uploaded</param>
-        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "If user's callback throws any exception, we want to ignore and continue.")]
-        private void WritePages(Stream pageData, long offset, string contentMD5, StorageAsyncResult<NullType> asyncResult)
+        private async Task WritePagesAsync(TaskCompletionSource<bool> continuetcs, Stream pageData, long offset, string contentMD5, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
-            this.parallelOperationSemaphore.WaitAsync(calledSynchronously =>
+            await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
             {
                 try
                 {
-                    ICancellableAsyncResult result = this.pageBlob.BeginWritePages(
-                        pageData,
-                        offset,
-                        contentMD5,
-                        this.accessCondition,
-                        this.options,
-                        this.operationContext,
-                        this.WritePagesCallback,
-                        null /* state */);
-
-                    if (asyncResult != null)
+                    if (continuetcs != null)
                     {
-                        // We do not need to do this inside a lock, as asyncResult is
-                        // not returned to the user yet.
-                        asyncResult.CancelDelegate = result.Cancel;
+                        Task.Run(() => continuetcs.TrySetResult(true));
                     }
+                    await this.pageBlob.WritePagesAsync(pageData, offset, contentMD5, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
                     this.lastException = e;
-                    this.noPendingWritesEvent.Decrement();
-                    this.parallelOperationSemaphore.Release();
                 }
                 finally
                 {
-                    if (asyncResult != null)
-                    {
-                        asyncResult.UpdateCompletedSynchronously(calledSynchronously);
-                        asyncResult.OnComplete(this.lastException);
-                    }
+                    this.noPendingWritesEvent.Decrement();
+                    await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
-            });
+            }, token).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Called when the asynchronous WritePages operation completes.
-        /// </summary>
-        /// <param name="ar">The result of the asynchronous operation.</param>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
-        private void WritePagesCallback(IAsyncResult ar)
-        {
-            try
-            {
-                this.pageBlob.EndWritePages(ar);
-            }
-            catch (Exception e)
-            {
-                this.lastException = e;
-            }
-
-            // This must be called in a separate thread than the user's
-            // callback to prevent a deadlock in case the callback is blocking.
-            // If they are called in the same thread, this call must take
-            // place before the user's callback.
-            this.noPendingWritesEvent.Decrement();
-            this.parallelOperationSemaphore.Release();
-        }
-
-        /// <summary>
-        /// Starts an asynchronous AppendBlock operation as soon as the parallel
-        /// operation semaphore becomes available. Since parallelism is always set
-        /// to 1 for append blobs, appendblock operations are called serially.
-        /// </summary>
-        /// <param name="blockData">Data to be uploaded.</param>
-        /// <param name="offset">Offset within the append blob to be used to set the append offset conditional header.</param>
-        /// <param name="blockMD5">MD5 hash of the data to be uploaded.</param>
-        /// <param name="asyncResult">The reference to the pending asynchronous request to finish.</param>
-        private void WriteAppendBlock(Stream blockData, long offset, string blockMD5, StorageAsyncResult<NullType> asyncResult)
+        private async Task WriteAppendBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, long offset, string blockMD5, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
-            this.parallelOperationSemaphore.WaitAsync(calledSynchronously =>
+            await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
             {
+                int previousResultsCount = this.operationContext.RequestResults.Count;
                 try
                 {
+                    if (continuetcs != null)
+                    {
+                        Task.Run(() => continuetcs.TrySetResult(true));
+                    }
                     this.accessCondition.IfAppendPositionEqual = offset;
-
-                    int previousResultsCount = this.operationContext.RequestResults.Count;
-                    ICancellableAsyncResult result = this.appendBlob.BeginAppendBlock(
-                        blockData, 
-                        blockMD5,
-                        this.accessCondition,
-                        this.options,
-                        this.operationContext,
-                        this.AppendBlockCallback,
-                        previousResultsCount /* state */);
-
-                    if (asyncResult != null)
+                    await this.appendBlob.AppendBlockAsync(blockData, blockMD5, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
+                }
+                catch (StorageException e)
+                {
+                    if (this.options.AbsorbConditionalErrorsOnRetry.Value
+                        && e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
                     {
-                        // We do not need to do this inside a lock, as asyncResult is
-                        // not returned to the user yet.
-                        asyncResult.CancelDelegate = result.Cancel;
+                        StorageExtendedErrorInformation extendedInfo = e.RequestInformation.ExtendedErrorInformation;
+                        if (extendedInfo != null
+                            && (extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition || extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidMaxBlobSizeCondition)
+                            && (this.operationContext.RequestResults.Count - previousResultsCount > 1))
+                        {
+                            // Pre-condition failure on a retry should be ignored in a single writer scenario since the request
+                            // succeeded in the first attempt.
+                            Logger.LogWarning(this.operationContext, SR.PreconditionFailureIgnored);
+                            return;
+                        }
                     }
+                    this.lastException = e;
                 }
                 catch (Exception e)
                 {
                     this.lastException = e;
-                    this.noPendingWritesEvent.Decrement();
-                    this.parallelOperationSemaphore.Release();
                 }
                 finally
                 {
-                    if (asyncResult != null)
-                    {
-                        asyncResult.UpdateCompletedSynchronously(calledSynchronously);
-                        asyncResult.OnComplete(this.lastException);
-                    }
+                    this.noPendingWritesEvent.Decrement();
+                    await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
-            });
-        }
-
-        /// <summary>
-        /// Called when the asynchronous AppendBlock operation completes.
-        /// </summary>
-        /// <param name="ar">The result of the asynchronous operation.</param>
-        private void AppendBlockCallback(IAsyncResult ar)
-        {
-            try
-            {
-                this.appendBlob.EndAppendBlock(ar);
-            }
-            catch (StorageException e)
-            {
-                if (this.options.AbsorbConditionalErrorsOnRetry.Value
-                    && e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
-                {
-                    int previousResultsCount = (int)ar.AsyncState;
-                    StorageExtendedErrorInformation extendedInfo = e.RequestInformation.ExtendedErrorInformation;
-                    if (extendedInfo != null
-                        && (extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition || extendedInfo.ErrorCode == BlobErrorCodeStrings.InvalidMaxBlobSizeCondition) 
-                        && (this.operationContext.RequestResults.Count - previousResultsCount > 1))
-                    {
-                        // Pre-condition failure on a retry should be ignored in a single writer scenario since the request
-                        // succeeded in the first attempt.
-                        Logger.LogWarning(this.operationContext, SR.PreconditionFailureIgnored);
-                    }
-                    else
-                    {
-                        this.lastException = e;
-                    }
-                }
-                else
-                {
-                    this.lastException = e;
-                }
-            }
-            catch (Exception e)
-            {
-                this.lastException = e;
-            }
-
-            // This must be called in a separate thread than the user's
-            // callback to prevent a deadlock in case the callback is blocking.
-            // If they are called in the same thread, this call must take
-            // place before the user's callback.
-            this.noPendingWritesEvent.Decrement();
-            this.parallelOperationSemaphore.Release();
+            }, token).ConfigureAwait(false);
         }
     }
 }

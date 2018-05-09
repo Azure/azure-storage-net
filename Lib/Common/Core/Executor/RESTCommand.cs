@@ -18,18 +18,15 @@
 namespace Microsoft.Azure.Storage.Core.Executor
 {
     using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.RetryPolicies;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
-
-#if WINDOWS_RT || NETCORE
     using System.Net.Http;
     using System.Threading.Tasks;
-#else
-    using System.Net;
-#endif
+    using System.Threading;
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
     internal class RESTCommand<T> : StorageCommandBase<T>
@@ -95,8 +92,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
         public bool CalculateMd5ForResponseStream = false;
 
         public Stream StreamToDispose { get; set; }
-        
-#if WINDOWS_RT || NETCORE
+
         public Func<RESTCommand<T>, OperationContext, HttpContent> BuildContent;
 
         public Func<RESTCommand<T>, Uri, UriQueryBuilder, HttpContent, int?, OperationContext, StorageRequestMessage> BuildRequest;
@@ -105,11 +101,11 @@ namespace Microsoft.Azure.Storage.Core.Executor
         public Func<RESTCommand<T>, HttpResponseMessage, Exception, OperationContext, T> PreProcessResponse;
 
         // Post-Stream Retrieval Func ( if retreiveStream is true after ProcessResponse, the stream is retrieved and then PostProcess is called
-        public Func<RESTCommand<T>, HttpResponseMessage, OperationContext, Task<T>> PostProcessResponse;
+        public Func<RESTCommand<T>, HttpResponseMessage, OperationContext, CancellationToken, Task<T>> PostProcessResponseAsync = null;
 
         // Delegate that will be executed if there is anything to be disposed.
         public Action<RESTCommand<T>> DisposeAction = null;
-#else
+
         // Stream to send to server
         private Stream sendStream = null;
 
@@ -130,23 +126,13 @@ namespace Microsoft.Azure.Storage.Core.Executor
         public long? SendStreamLength = null;
 
         // Func to construct the request
-        public Func<Uri, UriQueryBuilder, int?, bool, OperationContext, HttpWebRequest> BuildRequestDelegate = null;
+        public Func<Uri, UriQueryBuilder, int?, bool, OperationContext, HttpRequestMessage> BuildRequestDelegate = null;
 
         // Delegate to Set custom headers
-        public Action<HttpWebRequest, OperationContext> SetHeaders = null;
+        public Action<HttpRequestMessage, OperationContext> SetHeaders = null;
 
         // Delegate to Sign headers - note this is important that it doesnt have a type dependency on StorageCredentials here
         // due to build issues and WinRT restrictions.  
-        public Action<HttpWebRequest, OperationContext> SignRequest = null;
-
-        // Pre-Stream Retrival func (i.e. if 409 no stream is retrieved), in some cases this method will return directly
-        public Func<RESTCommand<T>, HttpWebResponse, Exception, OperationContext, T> PreProcessResponse = null;
-
-        // Post-Stream Retrieval Func ( if retreiveStream is true after ProcessResponse, the stream is retrieved and then PostProcess is called
-        public Func<RESTCommand<T>, HttpWebResponse, OperationContext, T> PostProcessResponse = null;
-
-        // Delegate that will be executed if there is anything to be disposed.
-        public Action<RESTCommand<T>> DisposeAction = null;
-#endif
+        public Action<HttpRequestMessage, OperationContext> SignRequest = null;
     }
 }

@@ -94,7 +94,7 @@ namespace Microsoft.Azure.Storage.Core
                 StreamDescriptor copyState = new StreamDescriptor();
 
                 MultiBufferMemoryStream stream2 = new MultiBufferMemoryStream(null /* bufferManager */);
-                stream1.WriteToAsync(stream2, null, null, false, state, copyState, _ => waitHandle.Set());
+                stream1.WriteToAsync(stream2, default(IBufferManager), null, null, false, state, copyState, CancellationToken.None, _ => waitHandle.Set());
                 waitHandle.WaitOne();
                 if (state.ExceptionRef != null)
                 {
@@ -132,7 +132,8 @@ namespace Microsoft.Azure.Storage.Core
                 copyState = new StreamDescriptor();
 
                 MemoryStream stream5 = new MemoryStream();
-                stream4.WriteToAsync(stream5, null, null, false, state, copyState, _ => waitHandle.Set());
+
+                stream4.WriteToAsync(stream5, default(IBufferManager), null, null, false, state, copyState, CancellationToken.None, _ => waitHandle.Set());
                 waitHandle.WaitOne();
                 if (state.ExceptionRef != null)
                 {

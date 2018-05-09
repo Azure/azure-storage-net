@@ -27,7 +27,6 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -1088,10 +1087,10 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.DownloadToStream(stream, null, options, null);
             };
 
-            CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMaxOverload, downloadCall, success);
+            CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMaxOverload, downloadCall, success).GetAwaiter().GetResult();
             if (success)
             {
-                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMinOverload, downloadCall, success);
+                CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMinOverload, downloadCall, success).GetAwaiter().GetResult();
             }
         }
 
@@ -1164,10 +1163,10 @@ namespace Microsoft.Azure.Storage.Blob
                 }
             };
 
-            CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMax, downloadCall, success);
+            CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMax, downloadCall, success).GetAwaiter().GetResult();
             if (success)
             {
-                CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin, downloadCall, success);
+                CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMin, downloadCall, success).GetAwaiter().GetResult();
             }
         }
 
@@ -1181,7 +1180,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlobEncryptionRotateAsyncSuccess()
         {
-            RunCloudBlobEncryptionRotateAsync(true);
+            RunCloudBlobEncryptionRotateAsync(true).GetAwaiter().GetResult();
         }
 
         [TestMethod]
@@ -1194,10 +1193,10 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlobEncryptionRotateAsyncFailure()
         {
-            RunCloudBlobEncryptionRotateAsync(false);
+            RunCloudBlobEncryptionRotateAsync(false).GetAwaiter().GetResult();
         }
 
-        public void RunCloudBlobEncryptionRotateAsync(bool success)
+        public async Task RunCloudBlobEncryptionRotateAsync(bool success)
         {
             Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall = (blob, stream, size, options) =>
             {
@@ -1226,17 +1225,17 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.DownloadToStreamAsync(stream, null, options, null).Wait();
             };
             List<Task> tasks = new List<Task>();
-            tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMax, downloadCall, success); }));
+            tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMax, downloadCall, success); }));
             if (success)
             {
-                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin1, downloadCall, success); }));
-                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin2, downloadCall, success); }));
-                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelper(uploadCall, rotateCallMin3, downloadCall, success); }));
+                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMin1, downloadCall, success); }));
+                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMin2, downloadCall, success); }));
+                tasks.Add(Task.Run(() => { CloudBlobEncryptionRotateHelperAsync(uploadCall, rotateCallMin3, downloadCall, success); }));
             }
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
         }
 
-        private void CloudBlobEncryptionRotateHelper(Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall, bool successCase)
+        private async Task CloudBlobEncryptionRotateHelperAsync(Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall, bool successCase)
         {
             List<Task> tasks = new List<Task>();
             if (successCase)
@@ -1257,7 +1256,7 @@ namespace Microsoft.Azure.Storage.Blob
                 tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.PageBlob, true, uploadCall, rotateCall, downloadCall); }));
                 tasks.Add(Task.Run(() => { this.DoCloudBlobEncryptionRotateFailureCases(BlobType.AppendBlob, true, uploadCall, rotateCall, downloadCall); }));
             }
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
         }
 
         private void DoCloudBlobEncryptionRotateSuccessCase(BlobType type, bool partial, Action<CloudBlob, MemoryStream, int, BlobRequestOptions> uploadCall, Action<CloudBlob, AccessCondition, BlobRequestOptions> rotateCall, Action<CloudBlob, MemoryStream, BlobRequestOptions> downloadCall)

@@ -3,7 +3,7 @@
   "version": "9.0.0-preview",
 
   "dependencies": {
-    "Microsoft.Azure.Storage.Common": "9.0.0.0-preview",
+    "Microsoft.Azure.Storage.Common": "9.0.0-preview",
     "NETStandard.Library": "1.6.1"
   },
 

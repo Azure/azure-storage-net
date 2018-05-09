@@ -18,20 +18,18 @@
 namespace Microsoft.Azure.Storage.Core.Util
 {
     using Microsoft.Azure.Storage.Auth;
-#if ALL_SERVICES
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.File;
-#endif
     using Microsoft.Azure.Storage.Core.Executor;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
     using System.Xml;
 
-#if WINDOWS_DESKTOP
-    using System.Net;
+
+#if WINDOWS_DESKTOP 
+    using System.Net.Http;
     using Microsoft.Azure.Storage.Shared.Protocol;
 #endif
 
@@ -312,6 +310,37 @@ namespace Microsoft.Azure.Storage.Core.Util
         }
 
         /// <summary>
+        /// Read the value of an element in the XML.
+        /// </summary>
+        /// <param name="elementName">The name of the element whose value is retrieved.</param>
+        /// <param name="reader">A reader that provides access to XML data.</param>
+        /// <returns>A string representation of the element's value.</returns>
+        internal static async Task<string> ReadElementAsStringAsync(string elementName, XmlReader reader)
+        {
+            string res = null;
+
+            if (await reader.IsStartElementAsync(elementName).ConfigureAwait(false))
+            {
+                if (reader.IsEmptyElement)
+                {
+                    await reader.SkipAsync().ConfigureAwait(false);
+                }
+                else
+                {
+                    res = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                throw new XmlException(elementName);
+            }
+
+            await reader.MoveToContentAsync().ConfigureAwait(false);
+
+            return res;
+        }
+
+        /// <summary>
         /// Returns an enumerable collection of results that is retrieved lazily.
         /// </summary>
         /// <typeparam name="T">The type of ResultSegment like Blob, Container, Queue and Table.</typeparam>
@@ -350,32 +379,6 @@ namespace Microsoft.Azure.Storage.Core.Util
                 }
             }
         }
-
-#if WINDOWS_DESKTOP
-        /// <summary>
-        /// Applies the request optimizations such as disabling buffering and 100 continue.
-        /// </summary>
-        /// <param name="request">The request to be modified.</param>
-        /// <param name="length">The length of the content, -1 if the content length is not settable.</param>
-        internal static void ApplyRequestOptimizations(HttpWebRequest request, long length)
-        {
-            if (length >= Constants.DefaultBufferSize)
-            {
-                request.AllowWriteStreamBuffering = false;
-            }
-
-            // Set the length of the stream if the value is known
-            if (length >= 0)
-            {
-                request.ContentLength = length;
-            }
-
-#if !(WINDOWS_PHONE && WINDOWS_DESKTOP)
-            // Disable the Expect 100-Continue
-            request.ServicePoint.Expect100Continue = false;
-#endif
-        }
-#endif
 
         // TODO: When we move to .NET 4.5, we may be able to get rid of this method, or at least reduce our reliance upon it.
         // The ideal solution is to use async either everywhere or nowhere throughout a call to the Storage library, but this may

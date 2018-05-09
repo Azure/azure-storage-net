@@ -246,9 +246,10 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ContainerHttpRequestMessageFactory.List(uri, serverTimeout, listingContext, detailsIncluded, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            getCmd.PostProcessResponse = (cmd, resp, ctx) =>
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                ListContainersResponse listContainersResponse = new ListContainersResponse(cmd.ResponseStream);
+                ListContainersResponse listContainersResponse = await ListContainersResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
+
                 List<CloudBlobContainer> containersList = listContainersResponse.Containers.Select(item => new CloudBlobContainer(item.Properties, item.Metadata, item.Name, this)).ToList();
                 BlobContinuationToken continuationToken = null;
                 if (listContainersResponse.NextMarker != null)
@@ -260,10 +261,10 @@ namespace Microsoft.Azure.Storage.Blob
                     };
                 }
 
-                return Task.FromResult(new ResultSegment<CloudBlobContainer>(containersList)
+                return new ResultSegment<CloudBlobContainer>(containersList)
                 {
                     ContinuationToken = continuationToken,
-                });
+                };
             };
 
             return getCmd;
@@ -426,10 +427,7 @@ namespace Microsoft.Azure.Storage.Blob
                 (cmd, resp, ex, ctx) =>
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
 
-            retCmd.PostProcessResponse = (cmd, resp, ctx) =>
-            {
-                return Task.FromResult(BlobHttpResponseParsers.ReadServiceProperties(cmd.ResponseStream));
-            };
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => BlobHttpResponseParsers.ReadServicePropertiesAsync(cmd.ResponseStream, ct);
 
             requestOptions.ApplyToStorageCommand(retCmd);
             return retCmd;
@@ -559,7 +557,7 @@ namespace Microsoft.Azure.Storage.Blob
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetServiceStats(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
-            retCmd.PostProcessResponse = (cmd, resp, ctx) => Task.FromResult(BlobHttpResponseParsers.ReadServiceStats(cmd.ResponseStream));
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => BlobHttpResponseParsers.ReadServiceStatsAsync(cmd.ResponseStream, ct);
             return retCmd;
         }
 #endregion

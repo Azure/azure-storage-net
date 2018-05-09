@@ -17,9 +17,13 @@
 
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
+    using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from an operation to return a block list.
@@ -29,26 +33,75 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 #else
     public
 #endif
-        class GetBlockListResponse : ResponseParsingBase<ListBlockItem>
+    static class GetBlockListResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GetBlockListResponse"/> class.
+        /// Asynchronously parses the XML response returned by an operation to retrieve a list of blocks.
         /// </summary>
-        /// <param name="stream">The stream to be parsed.</param>
-        public GetBlockListResponse(Stream stream)
-            : base(stream)
+        /// <param name="stream">The stream containing the XML response.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>The list of <see cref="ListBlockItem"/> objects.</returns>
+        internal static async Task<IEnumerable<ListBlockItem>> ParseAsync(Stream stream, CancellationToken token)
         {
-        }
+            token.ThrowIfCancellationRequested();
+            List<ListBlockItem> blocks = new List<ListBlockItem>();
 
-        /// <summary>
-        /// Gets an enumerable collection of <see cref="ListBlockItem"/> objects from the response.
-        /// </summary>
-        /// <value>An enumerable collection of <see cref="ListBlockItem"/> objects.</value>
-        public IEnumerable<ListBlockItem> Blocks
-        {
-            get
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                return this.ObjectsToParse;
+                token.ThrowIfCancellationRequested();
+                if (await reader.ReadToFollowingAsync(Constants.BlockListElement).ConfigureAwait(false))
+                {
+                    if (reader.IsEmptyElement)
+                    {
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
+                        {
+                            token.ThrowIfCancellationRequested();
+                            if (reader.IsEmptyElement)
+                            {
+                                await reader.SkipAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                switch (reader.Name)
+                                {
+                                    case Constants.CommittedBlocksElement:
+                                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                                        while (await reader.IsStartElementAsync(Constants.BlockElement).ConfigureAwait(false))
+                                        {
+                                            token.ThrowIfCancellationRequested();
+                                            blocks.Add(await ParseBlockItemAsync(true, reader, token).ConfigureAwait(false));
+                                        }
+
+                                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                                        break;
+
+                                    case Constants.UncommittedBlocksElement:
+                                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                                        while (await reader.IsStartElementAsync(Constants.BlockElement).ConfigureAwait(false))
+                                        {
+                                            token.ThrowIfCancellationRequested();
+                                            blocks.Add(await ParseBlockItemAsync(false, reader, token).ConfigureAwait(false));
+                                        }
+
+                                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                                        break;
+
+                                    default:
+                                        await reader.SkipAsync().ConfigureAwait(false);
+                                        break;
+                                }
+                            }
+                        }
+
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
+                }
+                return blocks;
             }
         }
 
@@ -56,101 +109,46 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// Reads a block item for block listing.
         /// </summary>
         /// <param name="committed">Whether we are currently listing committed blocks or not</param>
+        /// <param name="reader"></param>
+        /// <param name="token"></param>
         /// <returns>Block listing entry</returns>
-        private ListBlockItem ParseBlockItem(bool committed)
+        private static async Task<ListBlockItem> ParseBlockItemAsync(bool committed, XmlReader reader, CancellationToken token)
         {
             ListBlockItem block = new ListBlockItem()
             {
                 Committed = committed,
             };
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.SizeElement:
-                            block.Length = reader.ReadElementContentAsLong();
+                            block.Length = await reader.ReadElementContentAsInt64Async().ConfigureAwait(false);
                             break;
 
                         case Constants.NameElement:
-                            block.Name = reader.ReadElementContentAsString();
+                            block.Name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         default:
-                            reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             return block;
-        }
-
-        /// <summary>
-        /// Parses the XML response returned by an operation to retrieve a list of blocks.
-        /// </summary>
-        /// <returns>An enumerable collection of <see cref="ListBlockItem"/> objects.</returns>
-        protected override IEnumerable<ListBlockItem> ParseXml()
-        {
-            if (this.reader.ReadToFollowing(Constants.BlockListElement))
-            {
-                if (this.reader.IsEmptyElement)
-                {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement())
-                    {
-                        if (this.reader.IsEmptyElement)
-                        {
-                            this.reader.Skip();
-                        }
-                        else
-                        {
-                            switch (this.reader.Name)
-                            {
-                                case Constants.CommittedBlocksElement:
-                                    this.reader.ReadStartElement();
-                                    while (this.reader.IsStartElement(Constants.BlockElement))
-                                    {
-                                        yield return this.ParseBlockItem(true);
-                                    }
-
-                                    this.reader.ReadEndElement();
-                                    break;
-
-                                case Constants.UncommittedBlocksElement:
-                                    this.reader.ReadStartElement();
-                                    while (this.reader.IsStartElement(Constants.BlockElement))
-                                    {
-                                        yield return this.ParseBlockItem(false);
-                                    }
-
-                                    this.reader.ReadEndElement();
-                                    break;
-
-                                default:
-                                    reader.Skip();
-                                    break;
-                            }
-                        }
-                    }
-
-                    this.allObjectsParsed = true;
-                    this.reader.ReadEndElement();
-                }
-            }
         }
     }
 }

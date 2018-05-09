@@ -27,8 +27,10 @@ namespace Microsoft.Azure.Storage.Core
 
 #if WINDOWS_DESKTOP
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Test.Network.Behaviors;
-    using Microsoft.Azure.Test.Network;
+#elif NETCOREAPP2_0
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+//    using Microsoft.Azure.Test.Network.Behaviors;
+//    using Microsoft.Azure.Test.Network;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif

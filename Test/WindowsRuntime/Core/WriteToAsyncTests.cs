@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Storage.Core
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             // Test basic write
-            await stream1.WriteToAsync(stream2, null, null, false, tempExecutionState, null, CancellationToken.None);
+            await stream1.WriteToAsync(stream2, default(IBufferManager), null, null, false, tempExecutionState, null, CancellationToken.None);
             stream1.Position = 0;
 
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Storage.Core
             stream2 = new MemoryStream();
 
             await TestHelper.ExpectedExceptionAsync<ArgumentException>(
-                async () => await stream1.WriteToAsync(stream2, 1024, 1024, false, tempExecutionState, null, CancellationToken.None),
+                async () => await stream1.WriteToAsync(stream2, default(IBufferManager), 1024, 1024, false, tempExecutionState, null, CancellationToken.None),
                 "Parameters copyLength and maxLength cannot be passed simultaneously.");
 
             stream1.Dispose();
@@ -79,7 +79,7 @@ namespace Microsoft.Azure.Storage.Core
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
             
             // Test write with exact number of bytes
-            await stream1.WriteToAsync(stream2, stream1.Length, null, false, tempExecutionState, null, CancellationToken.None);
+            await stream1.WriteToAsync(stream2, default(IBufferManager), stream1.Length, null, false, tempExecutionState, null, CancellationToken.None);
             stream1.Position = 0;
 
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Storage.Core
             stream2 = new MemoryStream();
 
             // Test write with one less byte
-            await stream1.WriteToAsync(stream2, stream1.Length - 1, null, false, tempExecutionState, null, CancellationToken.None);
+            await stream1.WriteToAsync(stream2, default(IBufferManager), stream1.Length - 1, null, false, tempExecutionState, null, CancellationToken.None);
             stream1.Position = 0;
 
             Assert.AreEqual(stream1.Length - 1, stream2.Length);
@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Storage.Core
 
             // Test with copyLength greater than length
             await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                async () => await stream1.WriteToAsync(stream2, stream1.Length + 1, null, false, tempExecutionState, null, CancellationToken.None),
+                async () => await stream1.WriteToAsync(stream2, default(IBufferManager), stream1.Length + 1, null, false, tempExecutionState, null, CancellationToken.None),
                 "The given stream does not contain the requested number of bytes from its given position.");
             stream1.Position = 0;
 
@@ -124,7 +124,7 @@ namespace Microsoft.Azure.Storage.Core
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             // Test write with exact number of bytes
-            await stream1.WriteToAsync(stream2, null, stream1.Length, false, tempExecutionState, null, CancellationToken.None);
+            await stream1.WriteToAsync(stream2, default(IBufferManager), null, stream1.Length, false, tempExecutionState, null, CancellationToken.None);
             stream1.Position = 0;
 
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -134,7 +134,7 @@ namespace Microsoft.Azure.Storage.Core
 
             // Test write with one less byte
             await TestHelper.ExpectedExceptionAsync<InvalidOperationException>(
-                async () => await stream1.WriteToAsync(stream2, null, stream1.Length - 1, false, tempExecutionState, null, CancellationToken.None),
+                async () => await stream1.WriteToAsync(stream2, default(IBufferManager), null, stream1.Length - 1, false, tempExecutionState, null, CancellationToken.None),
                 "Stream is longer than the allowed length.");
             stream1.Position = 0;
 
@@ -142,7 +142,7 @@ namespace Microsoft.Azure.Storage.Core
             stream2 = new MemoryStream();
 
             // Test with count greater than length
-            await stream1.WriteToAsync(stream2, null, stream1.Length + 1, false, tempExecutionState, null, CancellationToken.None);
+            await stream1.WriteToAsync(stream2, default(IBufferManager), null, stream1.Length + 1, false, tempExecutionState, null, CancellationToken.None);
             stream1.Position = 0;
 
             // Entire stream should have been copied

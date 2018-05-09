@@ -23,10 +23,10 @@ using Microsoft.Azure.Storage.Queue;
 using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Linq;
-
-#if WINDOWS_DESKTOP
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.ServiceModel.Channels;
+
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif

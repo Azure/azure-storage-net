@@ -18,8 +18,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-#if WINDOWS_DESKTOP
+using Microsoft.Azure.Storage.Shared.Protocol;
+#if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;

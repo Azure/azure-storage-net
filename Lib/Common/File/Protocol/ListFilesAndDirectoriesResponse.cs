@@ -23,6 +23,9 @@ namespace Microsoft.Azure.Storage.File.Protocol
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Xml;
 
     /// <summary>
     /// Provides methods for parsing the response from a file listing operation.
@@ -32,173 +35,88 @@ namespace Microsoft.Azure.Storage.File.Protocol
 #else
     public
 #endif
-        sealed class ListFilesAndDirectoriesResponse : ResponseParsingBase<IListFileEntry>
+        sealed class ListFilesAndDirectoriesResponse
     {
-        /// <summary>
-        /// Stores the marker.
-        /// </summary>
-        private string marker;
-
-        /// <summary>
-        /// Signals when the marker can be consumed.
-        /// </summary>
-        private bool markerConsumable;
-
-        /// <summary>
-        /// Stores the max results.
-        /// </summary>
-        private int maxResults;
-
-        /// <summary>
-        /// Signals when the max results can be consumed.
-        /// </summary>
-        private bool maxResultsConsumable;
-
-        /// <summary>
-        /// Stores the next marker.
-        /// </summary>
-        private string nextMarker;
-
-        /// <summary>
-        /// Signals when the next marker can be consumed.
-        /// </summary>
-        private bool nextMarkerConsumable;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ListFilesAndDirectoriesResponse"/> class.
-        /// </summary>
-        /// <param name="stream">The stream to be parsed.</param>
-        public ListFilesAndDirectoriesResponse(Stream stream)
-            : base(stream)
-        {
-        }
-
-        /// <summary>
-        /// Gets the listing context from the XML response.
-        /// </summary>
-        /// <value>A set of parameters for the listing operation.</value>
-        public FileListingContext ListingContext
-        {
-            get
-            {
-                FileListingContext listingContext = new FileListingContext(this.MaxResults);
-                listingContext.Marker = this.NextMarker;
-                return listingContext;
-            }
-        }
-
         /// <summary>
         /// Gets an enumerable collection of objects that implement <see cref="IListFileEntry"/> from the response.
         /// </summary>
         /// <value>An enumerable collection of objects that implement <see cref="IListFileEntry"/>.</value>
-        public IEnumerable<IListFileEntry> Files
-        {
-            get
-            {
-                return this.ObjectsToParse;
-            }
-        }
-
-        /// <summary>
-        /// Gets the Marker value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The Marker value.</value>
-        public string Marker
-        {
-            get
-            {
-                this.Variable(ref this.markerConsumable);
-
-                return this.marker;
-            }
-        }
-
-        /// <summary>
-        /// Gets the MaxResults value provided for the listing operation from the XML response.
-        /// </summary>
-        /// <value>The MaxResults value.</value>
-        public int MaxResults
-        {
-            get
-            {
-                this.Variable(ref this.maxResultsConsumable);
-
-                return this.maxResults;
-            }
-        }
+        public IEnumerable<IListFileEntry> Files { get; private set; }
 
         /// <summary>
         /// Gets the NextMarker value from the XML response, if the listing was not complete.
         /// </summary>
         /// <value>The NextMarker value.</value>
-        public string NextMarker
+        public string NextMarker { get; private set; }
+        
+        private ListFilesAndDirectoriesResponse()
         {
-            get
-            {
-                this.Variable(ref this.nextMarkerConsumable);
-
-                return this.nextMarker;
-            }
         }
 
         /// <summary>
         /// Parses a file entry in a file listing response.
         /// </summary>
         /// <returns>File listing entry</returns>
-        private IListFileEntry ParseFileEntry(Uri baseUri)
+        private static async Task<IListFileEntry> ParseFileEntryAsync(XmlReader reader, Uri baseUri, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             CloudFileAttributes file = new CloudFileAttributes();
             string name = null;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.NameElement:
-                            name = reader.ReadElementContentAsString();
+                            name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.PropertiesElement:
-                            this.reader.ReadStartElement();
-                            while (this.reader.IsStartElement())
+                            await reader.ReadStartElementAsync().ConfigureAwait(false);
+                            while (await reader.IsStartElementAsync().ConfigureAwait(false))
                             {
-                                if (this.reader.IsEmptyElement)
+                                token.ThrowIfCancellationRequested();
+
+                                if (reader.IsEmptyElement)
                                 {
-                                    this.reader.Skip();
+                                    await reader.SkipAsync().ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    switch (this.reader.Name)
+                                    switch (reader.Name)
                                     {
                                         case Constants.ContentLengthElement:
-                                            file.Properties.Length = reader.ReadElementContentAsLong();
+                                            file.Properties.Length = await reader.ReadElementContentAsInt64Async().ConfigureAwait(false);
                                             break;
 
                                         default:
-                                            this.reader.Skip();
+                                            await reader.SkipAsync().ConfigureAwait(false);
                                             break;
                                     }
                                 }
                             }
 
-                            this.reader.ReadEndElement();
+                            await reader.ReadEndElementAsync().ConfigureAwait(false);
                             break;
 
                         default:
-                            this.reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             Uri uri = NavigationHelper.AppendPathToSingleUri(baseUri, name);
             file.StorageUri = new StorageUri(uri);
@@ -210,64 +128,70 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// Parses a file directory entry in a file listing response.
         /// </summary>
         /// <returns>File listing entry</returns>
-        private IListFileEntry ParseFileDirectoryEntry(Uri baseUri)
+        private static async Task<IListFileEntry> ParseFileDirectoryEntryAsync(XmlReader reader, Uri baseUri, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             FileDirectoryProperties properties = new FileDirectoryProperties();
             string name = null;
 
-            this.reader.ReadStartElement();
-            while (this.reader.IsStartElement())
+            await reader.ReadStartElementAsync().ConfigureAwait(false);
+            while (await reader.IsStartElementAsync().ConfigureAwait(false))
             {
-                if (this.reader.IsEmptyElement)
+                token.ThrowIfCancellationRequested();
+
+                if (reader.IsEmptyElement)
                 {
-                    this.reader.Skip();
+                    await reader.SkipAsync().ConfigureAwait(false);
                 }
                 else
                 {
-                    switch (this.reader.Name)
+                    switch (reader.Name)
                     {
                         case Constants.NameElement:
-                            name = reader.ReadElementContentAsString();
+                            name = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                             break;
 
                         case Constants.PropertiesElement:
-                            this.reader.ReadStartElement();
-                            while (this.reader.IsStartElement())
+                            await reader.ReadStartElementAsync().ConfigureAwait(false);
+                            while (await reader.IsStartElementAsync().ConfigureAwait(false))
                             {
-                                if (this.reader.IsEmptyElement)
+                                token.ThrowIfCancellationRequested();
+
+                                if (reader.IsEmptyElement)
                                 {
-                                    this.reader.Skip();
+                                    await reader.SkipAsync().ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    switch (this.reader.Name)
+                                    switch (reader.Name)
                                     {
                                         case Constants.LastModifiedElement:
-                                            properties.LastModified = reader.ReadElementContentAsString().ToUTCTime();
+                                            properties.LastModified = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                                             break;
 
                                         case Constants.EtagElement:
-                                            properties.ETag = string.Format(CultureInfo.InvariantCulture, "\"{0}\"", reader.ReadElementContentAsString());
+                                            properties.ETag = string.Format(CultureInfo.InvariantCulture, "\"{0}\"", await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         default:
-                                            this.reader.Skip();
+                                            await reader.SkipAsync().ConfigureAwait(false);
                                             break;
                                     }
                                 }
                             }
 
-                            this.reader.ReadEndElement();
+                            await reader.ReadEndElementAsync().ConfigureAwait(false);
                             break;
 
                         default:
-                            this.reader.Skip();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
             }
 
-            this.reader.ReadEndElement();
+            await reader.ReadEndElementAsync().ConfigureAwait(false);
 
             Uri uri = NavigationHelper.AppendPathToSingleUri(baseUri, name);
 
@@ -278,78 +202,83 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// Parses the response XML for a file listing operation.
         /// </summary>
         /// <returns>An enumerable collection of objects that implement <see cref="IListFileEntry"/>.</returns>
-        protected override IEnumerable<IListFileEntry> ParseXml()
+        internal static async Task<ListFilesAndDirectoriesResponse> ParseAsync(Stream stream, CancellationToken token)
         {
-            if (this.reader.ReadToFollowing(Constants.EnumerationResultsElement))
+            using (XmlReader reader = XMLReaderExtensions.CreateAsAsync(stream))
             {
-                if (this.reader.IsEmptyElement)
-                {
-                    this.reader.Skip();
-                }
-                else
-                {
-                    Uri baseUri = new Uri(this.reader.GetAttribute(Constants.ServiceEndpointElement));
-                    baseUri = NavigationHelper.AppendPathToSingleUri(baseUri, this.reader.GetAttribute(Constants.ShareNameElement));
-                    baseUri = NavigationHelper.AppendPathToSingleUri(baseUri, this.reader.GetAttribute(Constants.DirectoryPathElement));
+                token.ThrowIfCancellationRequested();
 
-                    this.reader.ReadStartElement();
-                    while (this.reader.IsStartElement())
+                List<IListFileEntry> entries = new List<IListFileEntry>();
+                string nextMarker = default(string);
+
+                if (await reader.ReadToFollowingAsync(Constants.EnumerationResultsElement).ConfigureAwait(false))
+                {
+                    if (reader.IsEmptyElement)
                     {
-                        if (this.reader.IsEmptyElement)
+                        await reader.SkipAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        Uri baseUri = new Uri(reader.GetAttribute(Constants.ServiceEndpointElement));
+                        baseUri = NavigationHelper.AppendPathToSingleUri(baseUri, reader.GetAttribute(Constants.ShareNameElement));
+                        baseUri = NavigationHelper.AppendPathToSingleUri(baseUri, reader.GetAttribute(Constants.DirectoryPathElement));
+
+                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                         {
-                            this.reader.Skip();
-                        }
-                        else
-                        {
-                            switch (this.reader.Name)
+                            token.ThrowIfCancellationRequested();
+
+                            if (reader.IsEmptyElement)
                             {
-                                case Constants.MarkerElement:
-                                    this.marker = reader.ReadElementContentAsString();
-                                    this.markerConsumable = true;
-                                    yield return null;
-                                    break;
+                                await reader.SkipAsync().ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                switch (reader.Name)
+                                {
+                                    case Constants.MarkerElement:
+                                        await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.NextMarkerElement:
-                                    this.nextMarker = reader.ReadElementContentAsString();
-                                    this.nextMarkerConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.NextMarkerElement:
+                                        nextMarker = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.MaxResultsElement:
-                                    this.maxResults = reader.ReadElementContentAsInt();
-                                    this.maxResultsConsumable = true;
-                                    yield return null;
-                                    break;
+                                    case Constants.MaxResultsElement:
+                                        await reader.ReadElementContentAsInt32Async().ConfigureAwait(false);
+                                        break;
 
-                                case Constants.EntriesElement:
-                                    this.reader.ReadStartElement();
-                                    while (this.reader.IsStartElement())
-                                    {
-                                        switch (this.reader.Name)
+                                    case Constants.EntriesElement:
+                                        await reader.ReadStartElementAsync().ConfigureAwait(false);
+                                        while (await reader.IsStartElementAsync().ConfigureAwait(false))
                                         {
-                                            case Constants.FileElement:
-                                                yield return this.ParseFileEntry(baseUri);
-                                                break;
+                                            switch (reader.Name)
+                                            {
+                                                case Constants.FileElement:
+                                                    entries.Add(await ParseFileEntryAsync(reader, baseUri, token).ConfigureAwait(false));
+                                                    break;
 
-                                            case Constants.FileDirectoryElement:
-                                                yield return this.ParseFileDirectoryEntry(baseUri);
-                                                break;
+                                                case Constants.FileDirectoryElement:
+                                                    entries.Add(await ParseFileDirectoryEntryAsync(reader, baseUri, token).ConfigureAwait(false));
+                                                    break;
+                                            }
                                         }
-                                    }
 
-                                    this.reader.ReadEndElement();
-                                    this.allObjectsParsed = true;
-                                    break;
+                                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                                        break;
 
-                                default:
-                                    this.reader.Skip();
-                                    break;
+                                    default:
+                                        await reader.SkipAsync().ConfigureAwait(false);
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    this.reader.ReadEndElement();
+                        await reader.ReadEndElementAsync().ConfigureAwait(false);
+                    }
                 }
+
+                return new ListFilesAndDirectoriesResponse { Files = entries, NextMarker = nextMarker };
             }
         }
     }

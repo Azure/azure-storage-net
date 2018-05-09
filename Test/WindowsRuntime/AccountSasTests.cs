@@ -25,6 +25,7 @@ namespace Microsoft.Azure.Storage
     using Microsoft.Azure.Storage.Queue;
     using Microsoft.Azure.Storage.Queue.Protocol;
     using Microsoft.Azure.Storage.Shared.Protocol;
+
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Shared;
     using System;
@@ -38,6 +39,7 @@ namespace Microsoft.Azure.Storage
     using System.Xml;
     using System.Xml.Linq;
     using Windows.Networking;
+    using System.Net.Http;
     using Windows.Storage.Streams;
     using Windows.Networking.Connectivity;
 
@@ -60,9 +62,9 @@ namespace Microsoft.Azure.Storage
                 SharedAccessAccountPermissions permissions = (SharedAccessAccountPermissions)i;
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.Permissions = permissions;
-                tasks[0] = this.RunPermissionsTestBlobs(policy);
-                tasks[1] = this.RunPermissionsTestQueues(policy);
-                tasks[2] = this.RunPermissionsTestFiles(policy);
+                tasks[0] = this.RunPermissionsTestBlobs(policy); 
+                tasks[2] = this.RunPermissionsTestQueues(policy);
+                tasks[3] = this.RunPermissionsTestFiles(policy);
                 Task.WaitAll(tasks);
             }
             
@@ -83,8 +85,8 @@ namespace Microsoft.Azure.Storage
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.ResourceTypes = resourceTypes;
                 tasks[i] = this.RunPermissionsTestBlobs(policy);
-                tasks[8 + i] = this.RunPermissionsTestQueues(policy);
-                tasks[16 + i] = this.RunPermissionsTestFiles(policy);
+                tasks[16 + i] = this.RunPermissionsTestQueues(policy);
+                tasks[24 + i] = this.RunPermissionsTestFiles(policy);
             }
             Task.WaitAll(tasks);
         }
@@ -718,8 +720,7 @@ namespace Microsoft.Azure.Storage
                 blobClient.GetContainerReference(containerName).DeleteIfExistsAsync().Wait();
             }
         }
-
-
+        
         public async Task RunQueueTest(SharedAccessAccountPolicy policy, int? httpsPort, OperationContext opContext = null)
         {
             CloudQueueClient queueClient = GenerateCloudQueueClient();
