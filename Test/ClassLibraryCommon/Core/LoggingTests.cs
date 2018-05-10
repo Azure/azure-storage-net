@@ -40,6 +40,10 @@ namespace Microsoft.Azure.Storage.Core
             TestLogListener.Stop();
         }
 
+#if NETCOREAPP2_0
+//Ignoring until NetCore2.0 tracesource app.config support is added
+        [Ignore]
+#endif
         [TestMethod]
         [Description("Do a set of operations and verify if everything is logged correctly")]
         [TestCategory(ComponentCategory.Core)]
@@ -93,6 +97,10 @@ namespace Microsoft.Azure.Storage.Core
             }
         }
 
+#if NETCOREAPP2_0
+        //Ignoring until NetCore2.0 tracesource app.config support is added
+        [Ignore]
+#endif
         [TestMethod]
         [Description("Do a set of operations and verify if everything is logged correctly")]
         [TestCategory(ComponentCategory.Core)]
@@ -166,6 +174,10 @@ namespace Microsoft.Azure.Storage.Core
         }
 
 #if TASK
+#if NETCOREAPP2_0
+        //Ignoring until NetCore2.0 tracesource app.config support is added
+        [Ignore]
+#endif
         [TestMethod]
         [Description("Do a set of operations and verify if everything is logged correctly")]
         [TestCategory(ComponentCategory.Core)]

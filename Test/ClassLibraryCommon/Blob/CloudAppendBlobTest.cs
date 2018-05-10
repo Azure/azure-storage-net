@@ -806,7 +806,13 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.SetMetadata(operationContext: context);
                 blob2.FetchAttributes();
                 Assert.AreEqual(1, blob2.Metadata.Count);
+#if !NETCOREAPP2_0
                 Assert.AreEqual(string.Empty, blob2.Metadata["key1"]);
+#else
+                //Headers in NetCore do not get overwritten. But headers are a list of values
+                Assert.AreEqual("value1,", blob2.Metadata["key1"]);
+#endif
+
             }
             finally
             {
@@ -3107,7 +3113,7 @@ namespace Microsoft.Azure.Storage.Blob
                 byte[] inputData = new byte[10*1024*1024];
                 new Random().NextBytes(inputData);
 
-                #region sample_BlobRequestOptions_AbsorbConditionalErrorsOnRetry
+#region sample_BlobRequestOptions_AbsorbConditionalErrorsOnRetry
                 using (MemoryStream inputDataStream = new MemoryStream(inputData))
                 {
                     BlobRequestOptions conditionalErrorRequestOptions = new BlobRequestOptions() { AbsorbConditionalErrorsOnRetry = true };
@@ -3115,7 +3121,7 @@ namespace Microsoft.Azure.Storage.Blob
                     CloudAppendBlob appendBlob = container.GetAppendBlobReference("appendBlob");
                     appendBlob.UploadFromStream(inputDataStream, accessCondition: null, options: conditionalErrorRequestOptions);
                 }
-                #endregion
+#endregion
 
                 using (MemoryStream dataStream = new MemoryStream())
                 using (MemoryStream expectedDataStream = new MemoryStream(inputData))

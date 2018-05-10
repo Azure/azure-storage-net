@@ -1499,7 +1499,12 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.SetMetadata(operationContext: context);
                 blob2.FetchAttributes();
                 Assert.AreEqual(1, blob2.Metadata.Count);
+#if !NETCOREAPP2_0
                 Assert.AreEqual(string.Empty, blob2.Metadata["key1"]);
+#else
+                //Headers in NetCore do not get overwritten. But headers are a list of values
+                Assert.AreEqual("value1,", blob2.Metadata["key1"]);
+#endif
             }
             finally
             {

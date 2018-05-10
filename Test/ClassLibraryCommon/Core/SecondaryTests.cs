@@ -276,7 +276,6 @@ namespace Microsoft.Azure.Storage.Core
                     () => container.FetchAttributes(null, options, helper.OperationContext),
                     "FetchAttributes on a non-existing container should fail",
                     HttpStatusCode.NotFound);
-                Task.Delay(30000).GetAwaiter().GetResult();
             }
         }
 

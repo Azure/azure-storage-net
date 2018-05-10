@@ -2422,7 +2422,6 @@ namespace Microsoft.Azure.Storage.Queue
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.SetAcl(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
-            putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
@@ -2510,7 +2509,6 @@ namespace Microsoft.Azure.Storage.Queue
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
             putCmd.StreamToDispose = memoryStream;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
-            putCmd.RecoveryAction = RecoveryActions.RewindStream;
             putCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
                 var messages = await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
@@ -2555,7 +2553,6 @@ namespace Microsoft.Azure.Storage.Queue
 
                 putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null, cmd, ctx);
                 putCmd.StreamToDispose = memoryStream;
-                putCmd.RecoveryAction = RecoveryActions.RewindStream;
             }
 
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>

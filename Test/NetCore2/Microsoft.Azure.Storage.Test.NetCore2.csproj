@@ -89,7 +89,6 @@
     <None Include="MSSharedLibKey.snk" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lib\Common.Split\NetStandard2\Microsoft.Azure.Storage.Common.NetStandard2.csproj" />
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\Blob\Microsoft.Azure.Storage.Blob.NetStandard2.csproj" />
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\File\Microsoft.Azure.Storage.File.NetStandard2.csproj" />
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\Queue\Microsoft.Azure.Storage.Queue.NetStandard2.csproj" />

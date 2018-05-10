@@ -2136,7 +2136,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric)]
         public async Task CloudBlobContainerListManyBlobs()
         {
-            int countPerType = 50;
+            int countPerType = 500;
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {

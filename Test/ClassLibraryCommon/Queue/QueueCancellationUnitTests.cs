@@ -49,6 +49,9 @@ namespace Microsoft.Azure.Storage.Queue
             }
         }
 
+#if NETCOREAPP2_0
+        [Ignore]
+#endif
         [TestMethod]
         [Description("Test Set Queue ACL Cancellation")]
         [TestCategory(ComponentCategory.Queue)]
@@ -74,6 +77,9 @@ namespace Microsoft.Azure.Storage.Queue
                 queue.EndSetPermissions);
         }
 
+#if NETCOREAPP2_0
+        [Ignore]
+#endif
         [TestMethod]
         [Description("Test Get Queue ACL Cancellation")]
         [TestCategory(ComponentCategory.Queue)]
