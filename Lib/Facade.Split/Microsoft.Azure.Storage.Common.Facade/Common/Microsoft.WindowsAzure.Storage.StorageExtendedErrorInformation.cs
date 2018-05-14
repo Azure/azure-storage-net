@@ -2,6 +2,7 @@ using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 namespace Microsoft.Azure.Storage
@@ -24,14 +25,15 @@ public sealed class StorageExtendedErrorInformation
     }
 
 
-    public static StorageExtendedErrorInformation ReadFromStream(Stream inputStream)
+    public static Task<StorageExtendedErrorInformation> ReadFromStreamAsync(Stream inputStream)
     {
         throw new System.NotImplementedException();
     }
-    internal void ReadXml(XmlReader reader)
+    public static Task<StorageExtendedErrorInformation> ReadFromStreamAsync(Stream inputStream, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }
+
     internal void WriteXml(XmlWriter writer)
     {
         throw new System.NotImplementedException();

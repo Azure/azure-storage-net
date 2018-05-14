@@ -1,20 +1,24 @@
-using System.Collections.Generic;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 namespace Microsoft.Azure.Storage.Core.Util
 {
-internal class AsyncSemaphore
+public class AsyncManualResetEvent
 {
 
-    public AsyncSemaphore(int initialCount)
+    public AsyncManualResetEvent(bool initialStateSignaled)
     {
         throw new System.NotImplementedException();
     }
-    public Task<bool> WaitAsync()
+    public Task WaitAsync()
     {
         throw new System.NotImplementedException();
     }
-    public void Release()
+    public Task Set()
+    {
+        throw new System.NotImplementedException();
+    }
+    public void Reset()
     {
         throw new System.NotImplementedException();
     }

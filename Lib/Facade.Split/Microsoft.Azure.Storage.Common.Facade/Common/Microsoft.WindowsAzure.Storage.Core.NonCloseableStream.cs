@@ -103,7 +103,15 @@ internal class NonCloseableStream : Stream
     {
         throw new System.NotImplementedException();
     }
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public override void Write(byte[] buffer, int offset, int count)
+    {
+        throw new System.NotImplementedException();
+    }
+    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
         throw new System.NotImplementedException();
     }

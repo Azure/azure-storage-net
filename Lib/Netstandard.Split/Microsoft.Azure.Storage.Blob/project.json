@@ -1,9 +1,9 @@
 {
   "title": "Microsoft.Azure.Storage.Blob",
-  "version": "9.0.0-preview",
+  "version": "9.4.0-preview",
 
   "dependencies": {
-    "Microsoft.Azure.Storage.Common": "9.0.0-preview",
+    "Microsoft.Azure.Storage.Common": "9.4.0-preview",
     "NETStandard.Library": "1.6.1"
   },
 
@@ -22,14 +22,14 @@
     "keyFile": "MSSharedLibKey.snk",
     "compile": [
       "**/*.cs",
-      "../../Common/Blob/*.cs",
-      "../../Common/Blob/Auth/*.cs",
-      "../../Common/Blob/Protocol/*.cs",
-      "../../Common/Blob/Util/*.cs",
-      "../../Common/Blob/Account/*.cs",
+      "../../../Common/Blob/*.cs",
+      "../../../Common/Blob/Auth/*.cs",
+      "../../../Common/Blob/Protocol/*.cs",
+      "../../../Common/Blob/Util/*.cs",
+      "../../../Common/Blob/Account/*.cs",
 
-      "../../WindowsRuntime/Blob/*.cs",
-      "../../WindowsRuntime/Blob/Protocol/*.cs"
+      "../../../WindowsRuntime/Blob/*.cs",
+      "../../../WindowsRuntime/Blob/Protocol/*.cs"
     ]
   }
 }

@@ -6,7 +6,7 @@ public static class HeaderConstants
 {
     public static readonly string UserAgent = "Azure-Storage/9.0.0-preview ";
     public const string UserAgentProductName = "Azure-Storage";
-    public const string UserAgentProductVersion = "9.0.0-preview";
+    public const string UserAgentProductVersion = "9.4.0.-preview";
     public const string PrefixForStorageHeader = "x-ms-";
     public const string TrueHeader = "true";
     public const string FalseHeader = "false";
@@ -41,6 +41,7 @@ public static class HeaderConstants
     public const string AccessTierHeader = "x-ms-access-tier";
     public const string ArchiveStatusHeader = "x-ms-archive-status";
     public const string AccessTierInferredHeader = "x-ms-access-tier-inferred";
+    public const string AccessTierChangeTimeHeader = "x-ms-access-tier-change-time";
     public const string BlobCacheControlHeader = "x-ms-blob-cache-control";
     public const string BlobContentDispositionRequestHeader = "x-ms-blob-content-disposition";
     public const string BlobContentEncodingHeader = "x-ms-blob-content-encoding";
@@ -67,7 +68,7 @@ public static class HeaderConstants
     public const string ClientRequestIdHeader = "x-ms-client-request-id";
     public const string BlobPublicAccess = "x-ms-blob-public-access";
     public const string RangeHeaderFormat = "bytes={0}-{1}";
-    public const string TargetStorageVersion = "2017-04-17";
+    public const string TargetStorageVersion = "2017-07-29";
     public const string File = "File";
     public const string PageBlob = "PageBlob";
     public const string BlockBlob = "BlockBlob";

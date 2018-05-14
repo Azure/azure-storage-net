@@ -1,5 +1,5 @@
 {
-  "projects": [ "lib", "Lib/Netstandard.Split", "Test/Netstandard.Split", "Lib/Common.Split/NetStandard" ],
+  "projects": [ "lib", "Lib/Netstandard.Split", "Test/Netstandard.Split", "Lib/Common.Split/NetStandard", "../Common.Split/NetStandard" ],
   "sdk": {
       "version": "1.0.0-preview2-003131"
   }

@@ -142,6 +142,10 @@
     <Content Include="Assets\WideLogo.scale-240.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Lib\Common.Split\PhoneRuntime\Microsoft.Azure.Storage.Common.PhoneRuntime.csproj">
+      <Project>{008d78b8-5c78-4bd7-9779-d2a6b2d35091}</Project>
+      <Name>Microsoft.Azure.Storage.Common.PhoneRuntime</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Lib\WindowsPhoneRT.Split\Blob\Microsoft.Azure.Storage.Blob.PhoneRuntime.csproj">
       <Project>{1854e0c4-e776-4efb-88ad-43751be15412}</Project>
       <Name>Microsoft.Azure.Storage.Blob.PhoneRuntime</Name>
@@ -159,10 +163,6 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Azure.Storage.Common, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Azure.Storage.Common.9.0.0-preview\lib\wpa\Microsoft.Azure.Storage.Common.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Newtonsoft.Json.10.0.2\lib\portable-net45+win8+wpa81+wp8\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>

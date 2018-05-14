@@ -8,6 +8,11 @@ internal sealed class EncryptionAgent
         get; set;
     }
 
+    public EncryptionAlgorithm EncryptionAlgorithm
+    {
+        get; set;
+    }
+
     public EncryptionAgent(string protocol, EncryptionAlgorithm algorithm)
     {
         throw new System.NotImplementedException();

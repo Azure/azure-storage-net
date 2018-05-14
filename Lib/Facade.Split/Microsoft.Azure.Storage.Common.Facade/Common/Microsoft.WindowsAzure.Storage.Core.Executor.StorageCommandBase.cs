@@ -8,13 +8,8 @@ namespace Microsoft.Azure.Storage.Core.Executor
 internal abstract class StorageCommandBase<T>
 {
     public int? ServerTimeoutInSeconds = new int?();
-    internal DateTime? OperationExpiryTime = new DateTime?();
-    private IList<RequestResult> requestResults = (IList<RequestResult>) new List<RequestResult>();
-    internal object OperationState;
-    private volatile StreamDescriptor streamCopyState;
-    private volatile RequestResult currentResult;
-    public Action<StorageCommandBase<T>, Exception, OperationContext> RecoveryAction;
-    public Func<Stream, IDictionary<string, string>, string, StorageExtendedErrorInformation> ParseDataServiceError;
+    public Action<StorageCommandBase<T>, Exception, OperationContext> RecoveryAction = (Action<StorageCommandBase<T>, Exception, OperationContext>) null;
+    public Func<Stream, IDictionary<string, string>, string, StorageExtendedErrorInformation> ParseDataServiceError = (Func<Stream, IDictionary<string, string>, string, StorageExtendedErrorInformation>) null;
 
     internal StreamDescriptor StreamCopyState
     {

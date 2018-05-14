@@ -11,26 +11,6 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 {
 public sealed class ServiceProperties
 {
-    internal const string StorageServicePropertiesName = "StorageServiceProperties";
-    internal const string LoggingName = "Logging";
-    internal const string HourMetricsName = "HourMetrics";
-    internal const string CorsName = "Cors";
-    internal const string MinuteMetricsName = "MinuteMetrics";
-    internal const string VersionName = "Version";
-    internal const string DeleteName = "Delete";
-    internal const string ReadName = "Read";
-    internal const string WriteName = "Write";
-    internal const string RetentionPolicyName = "RetentionPolicy";
-    internal const string EnabledName = "Enabled";
-    internal const string DaysName = "Days";
-    internal const string IncludeApisName = "IncludeAPIs";
-    internal const string DefaultServiceVersionName = "DefaultServiceVersion";
-    internal const string CorsRuleName = "CorsRule";
-    internal const string AllowedOriginsName = "AllowedOrigins";
-    internal const string AllowedMethodsName = "AllowedMethods";
-    internal const string MaxAgeInSecondsName = "MaxAgeInSeconds";
-    internal const string ExposedHeadersName = "ExposedHeaders";
-    internal const string AllowedHeadersName = "AllowedHeaders";
 
     public LoggingProperties Logging
     {
@@ -57,11 +37,16 @@ public sealed class ServiceProperties
         get; set;
     }
 
+    public DeleteRetentionPolicy DeleteRetentionPolicy
+    {
+        get; set;
+    }
+
     public ServiceProperties()
     {
         throw new System.NotImplementedException();
     }
-    public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null)
+    public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null, DeleteRetentionPolicy deleteRetentionPolicy = null)
     {
         throw new System.NotImplementedException();
     }
@@ -89,6 +74,10 @@ public sealed class ServiceProperties
     {
         throw new System.NotImplementedException();
     }
+    private static XElement GenerateDeleteRetentionPolicyXml(DeleteRetentionPolicy deleteRetentionPolicy)
+    {
+        throw new System.NotImplementedException();
+    }
     private static LoggingProperties ReadLoggingPropertiesFromXml(XElement element)
     {
         throw new System.NotImplementedException();
@@ -98,6 +87,10 @@ public sealed class ServiceProperties
         throw new System.NotImplementedException();
     }
     internal static CorsProperties ReadCorsPropertiesFromXml(XElement element)
+    {
+        throw new System.NotImplementedException();
+    }
+    internal static DeleteRetentionPolicy ReadDeleteRetentionPolicyFromXml(XElement element)
     {
         throw new System.NotImplementedException();
     }

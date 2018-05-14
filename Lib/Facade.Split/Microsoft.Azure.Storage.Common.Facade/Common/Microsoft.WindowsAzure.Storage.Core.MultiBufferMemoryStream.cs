@@ -61,6 +61,10 @@ public class MultiBufferMemoryStream : Stream
     {
         throw new System.NotImplementedException();
     }
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public override long Seek(long offset, SeekOrigin origin)
     {
         throw new System.NotImplementedException();
@@ -73,7 +77,23 @@ public class MultiBufferMemoryStream : Stream
     {
         throw new System.NotImplementedException();
     }
+    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
     public override void Flush()
+    {
+        throw new System.NotImplementedException();
+    }
+    public override Task FlushAsync(CancellationToken cancellationToken)
+    {
+        throw new System.NotImplementedException();
+    }
+    public Task FastCopyToAsync(Stream destination, DateTime? expiryTime)
+    {
+        throw new System.NotImplementedException();
+    }
+    public string ComputeMD5Hash()
     {
         throw new System.NotImplementedException();
     }

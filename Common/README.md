@@ -1,4 +1,4 @@
-﻿# Microsoft Azure Storage Common SDK for .NET (9.0.0-preview)
+﻿# Microsoft Azure Storage Common SDK for .NET (9.1.1-preview)
 
 The Microsoft Azure Storage Common SDK for .NET is referenced by Azure Storage Blob/Queue/File SDKs and Azure CosmosDB Table SDK
 and should not be referenced directly by your application.
@@ -11,11 +11,12 @@ For the best development experience, developers should use the official Microsof
 - Windows 8.1 for Windows Store app development: Storage Client Libraries are available for Windows Store applications.
 - Windows Phone 8.1 app development: Storage Client Libraries are available for Windows Phone applications including Universal applications.
 - Netstandard1.3: Storage Client Libraries for .NET are available to support Netstandard application development including Xamarin/UWP applications. 
+- Netstandard2.0: Storage Client Libraries for .NET are available to support Netstandard application development including Xamarin/UWP applications. 
 - Netstandard1.0: Storage Client Libraries support PCL through a Netstandard Façade targeting netstandard1.0.
 
 ### Netstandard1.0 (Façade)
 
-As the lowest TFM supported by all our implementations, 1.0 is selected to provide support for maximum platforms. The support is provided through a façade reference assembly targeting netstandard1.0. This assembly consists of a common set of APIs between Win8 and Wpa with no API implementations.
+As the lowest TFM supported by all our implementations, 1.0 is selected to provide support for maximum platforms. The support is provided through a façade reference assembly targeting netstandard1.0. This assembly consists of a common set of APIs between all the targets with no API implementations.
 Through the bait and switch technique, the reference assembly enables other portable class libraries to reference Storage Client Library, while the correct implementation assembly will be picked when the package is referenced by the project.json file.
 
 
@@ -27,7 +28,7 @@ Through the bait and switch technique, the reference assembly enables other port
 ## Use with the Azure Storage Emulator
 
 - The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
-- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.3. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.4. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 

@@ -915,7 +915,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "9.2.0-preview";
+            public const string UserAgentProductVersion = "9.4.0.-preview";
 
 
             /// <summary>
@@ -1575,11 +1575,6 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// </summary>
             public const string CopyId = "copyid";
             
-            /// <summary>
-            /// Query component for the permanent delete type.
-            /// </summary>
-            public const string DeleteType = "deletetype";
-
         }
 
         /// <summary>

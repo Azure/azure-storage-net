@@ -1,7 +1,7 @@
  
 namespace Microsoft.Azure.Storage.Core.Auth
 {
-internal interface ICanonicalizer
+public interface ICanonicalizer
 {
     string AuthorizationScheme
     {

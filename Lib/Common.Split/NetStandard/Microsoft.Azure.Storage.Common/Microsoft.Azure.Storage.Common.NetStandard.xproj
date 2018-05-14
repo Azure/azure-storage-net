@@ -26,6 +26,17 @@
     <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\..\WindowsRuntime\*.cs" />
+    <Compile Include="..\..\..\WindowsRuntime\Auth\**\*.cs" />
+    <Compile Include="..\..\..\WindowsRuntime\Core\**\*.cs" />
+    <Compile Include="..\..\..\WindowsRuntime\Shared\**\*.cs" />
+    <Compile Include="..\..\..\Common\*.cs" />
+    <Compile Include="..\..\..\Common\Shared\**\*.cs" />
+    <Compile Include="..\..\..\Common\Auth\**\*.cs" />
+    <Compile Include="..\..\..\Common\Core\**\*.cs" />
+    <Compile Include="..\..\..\Common\RetryPolicies\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <CodeAnalysisDictionary Include="..\..\..\CustomDictionary.xml" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\DotNet\Microsoft.DotNet.Targets" Condition="'$(VSToolsPath)' != ''" />

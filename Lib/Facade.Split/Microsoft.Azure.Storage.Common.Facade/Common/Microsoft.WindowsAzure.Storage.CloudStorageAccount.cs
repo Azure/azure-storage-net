@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 namespace Microsoft.Azure.Storage
 {
-public sealed class CloudStorageAccount
+public class CloudStorageAccount
 {
     private static readonly KeyValuePair<string, Func<string, bool>> UseDevelopmentStorageSetting = CloudStorageAccount.Setting("UseDevelopmentStorage", new string[1]
     {

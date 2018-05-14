@@ -5,8 +5,6 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 {
 public sealed class GeoReplicationStats
 {
-    private const string StatusName = "Status";
-    private const string LastSyncTimeName = "LastSyncTime";
 
     public GeoReplicationStatus Status
     {

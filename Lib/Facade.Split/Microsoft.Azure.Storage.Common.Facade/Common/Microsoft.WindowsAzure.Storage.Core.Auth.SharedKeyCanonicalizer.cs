@@ -1,11 +1,12 @@
 using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
- 
- 
+using System.Net;
+
+
 namespace Microsoft.Azure.Storage.Core.Auth
 {
-internal sealed class SharedKeyCanonicalizer : ICanonicalizer
+public sealed class SharedKeyCanonicalizer : ICanonicalizer
 {
     private static SharedKeyCanonicalizer instance = new SharedKeyCanonicalizer();
     private const string SharedKeyAuthorizationScheme = "SharedKey";
@@ -30,6 +31,7 @@ internal sealed class SharedKeyCanonicalizer : ICanonicalizer
     {
         throw new System.NotImplementedException();
     }
+
 }
 
 }

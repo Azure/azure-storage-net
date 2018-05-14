@@ -3,6 +3,8 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
+
 namespace Microsoft.Azure.Storage
 {
 public class StorageException : Exception
@@ -37,18 +39,7 @@ public class StorageException : Exception
     {
         throw new System.NotImplementedException();
     }
-    public static StorageException TranslateException(Exception ex, RequestResult reqResult)
-    {
-        throw new System.NotImplementedException();
-    }
-    public static StorageException TranslateException(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError)
-    {
-        throw new System.NotImplementedException();
-    }
-    internal static StorageException TranslateExceptionWithPreBufferedStream(Exception ex, RequestResult reqResult, Func<Stream, StorageExtendedErrorInformation> parseError, Stream responseStream)
-    {
-        throw new System.NotImplementedException();
-    }
+
     private static StorageException CoreTranslate(Exception ex, RequestResult reqResult, ref Func<Stream, StorageExtendedErrorInformation> parseError)
     {
         throw new System.NotImplementedException();
