@@ -9,27 +9,6 @@ namespace Microsoft.Azure.Storage.Blob
 {
 internal abstract class BlobWriteStreamBase : CloudBlobStream
 {
-    protected CloudBlockBlob blockBlob;
-    protected CloudPageBlob pageBlob;
-    protected CloudAppendBlob appendBlob;
-    protected long pageBlobSize;
-    protected bool newPageBlob;
-    protected long currentOffset;
-    protected long currentBlobOffset;
-    protected int streamWriteSizeInBytes;
-    protected MultiBufferMemoryStream internalBuffer;
-    protected List<string> blockList;
-    protected string blockIdPrefix;
-    protected AccessCondition accessCondition;
-    protected BlobRequestOptions options;
-    protected OperationContext operationContext;
-    protected CounterEvent noPendingWritesEvent;
-    protected MD5Wrapper blobMD5;
-    protected MD5Wrapper blockMD5;
-    protected AsyncSemaphore parallelOperationSemaphore;
-    protected volatile Exception lastException;
-    protected volatile bool committed;
-    protected bool disposed;
 
     protected CloudBlob Blob
     {

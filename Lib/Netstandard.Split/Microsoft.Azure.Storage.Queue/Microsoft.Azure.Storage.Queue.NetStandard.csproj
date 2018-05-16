@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Microsoft.Azure.Storage.Queue</AssemblyTitle>
+    <VersionPrefix>9.4.0-preview</VersionPrefix>
+    <TargetFramework>netstandard1.3</TargetFramework>
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DelaySign>true</DelaySign>
+    <AssemblyName>Microsoft.Azure.Storage.Queue</AssemblyName>
+    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <PackageId>Microsoft.Azure.Storage.Queue</PackageId>
+    <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <!--<ItemGroup>
+    <Compile Include="..\..\Common\Queue\*.cs;..\..\Common\Queue\Auth\*.cs;..\..\Common\Queue\Protocol\*.cs;..\..\Common\Queue\Account\*.cs;..\..\WindowsRuntime\Queue\*.cs;..\..\WindowsRuntime\Queue\Protocol\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+  </ItemGroup>-->
+  <ItemGroup>
+    <Compile Include="..\..\WindowsRuntime\Queue\*.cs" />
+    <Compile Include="..\..\WindowsRuntime\Queue\Protocol\*.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Common\Queue\*.cs">
+      <Link>Queue\Queue</Link>
+    </Compile>
+    <Compile Include="..\..\Common\Queue\Protocol\*.cs">
+      <Link>Queue\Protocol\Protocol</Link>
+    </Compile>
+    <Compile Include="..\..\Common\Queue\Auth\*.cs">
+      <Link>Queue\Auth\Auth</Link>
+    </Compile>
+    <Compile Include="..\..\Common\Queue\Account\*.cs">
+      <Link>Queue\Account\Account</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
+  </ItemGroup>
+
+</Project>

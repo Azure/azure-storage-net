@@ -661,8 +661,8 @@ namespace Microsoft.Azure.Storage.File
             await share.CreateAsync();
             try
             {
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, null, null, null, 0);
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, null, null, null, 1024);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, null, null, null, 0);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, null, null, null, 1024);
             }
             finally
             {
@@ -683,16 +683,16 @@ namespace Microsoft.Azure.Storage.File
             try
             {
                 // Upload half
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, 3 * 512, null, null, 0);
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, 3 * 512, null, null, 1024);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, 3 * 512, null, null, 0);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, 3 * 512, null, null, 1024);
 
                 // Upload full stream
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, 6 * 512, null, null, 0);
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, 4 * 512, null, null, 1024);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, 6 * 512, null, null, 0);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, 4 * 512, null, null, 1024);
 
                 // Exclude last range
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, 5 * 512, null, null, 0);
-                await this.CloudFileUploadFromStreamAsync(share, 6 * 512, 3 * 512, null, null, 1024);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, 5 * 512, null, null, 0);
+                await this.CloudFileUploadFromStreamAsyncInternal(share, 6 * 512, 3 * 512, null, null, 1024);
             }
             finally
             {
@@ -713,11 +713,11 @@ namespace Microsoft.Azure.Storage.File
             try
             {
                 await TestHelper.ExpectedExceptionAsync<ArgumentException>(
-                        async () => await this.CloudFileUploadFromStreamAsync(share, 3 * 512, 4 * 512, null, null, 0),
+                        async () => await this.CloudFileUploadFromStreamAsyncInternal(share, 3 * 512, 4 * 512, null, null, 0),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentException>(
-                        async () => await this.CloudFileUploadFromStreamAsync(share, 3 * 512, 2 * 512, null, null, 1024),
+                        async () => await this.CloudFileUploadFromStreamAsyncInternal(share, 3 * 512, 2 * 512, null, null, 1024),
                         "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
@@ -726,7 +726,7 @@ namespace Microsoft.Azure.Storage.File
             }
         }
 
-        private async Task CloudFileUploadFromStreamAsync(CloudFileShare share, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
+        private async Task CloudFileUploadFromStreamAsyncInternal(CloudFileShare share, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
         {
             byte[] buffer = GetRandomBuffer(size);
 #if NETCORE

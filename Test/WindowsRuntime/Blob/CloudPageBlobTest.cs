@@ -760,29 +760,29 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("\"*\"");
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, null, accessCondition, operationContext, 0, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, accessCondition, operationContext, 0, true);
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 await blob.CreateAsync(1024);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 await TestHelper.ExpectedExceptionAsync(
-                    async () => await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, null, accessCondition, operationContext, 0, true),
+                    async () => await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, accessCondition, operationContext, 0, true),
                     operationContext,
                     "Uploading a blob on top of an existing blob should fail if the ETag matches",
                     HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, null, accessCondition, operationContext, 0, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, accessCondition, operationContext, 0, true);
 
                 blob = container.GetPageBlobReference("blob3");
                 await blob.CreateAsync(1024);
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
                 await TestHelper.ExpectedExceptionAsync(
-                    async () => await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, null, accessCondition, operationContext, 0, true),
+                    async () => await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, accessCondition, operationContext, 0, true),
                     operationContext,
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
                     HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, null, accessCondition, operationContext, 0, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, accessCondition, operationContext, 0, true);
             }
             finally
             {
@@ -802,8 +802,8 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, null, null, null, 0, true);
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, null, null, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, null, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, null, null, 1024, true);
             }
             finally
             {
@@ -824,16 +824,16 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 // Upload half
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, 3 * 512, null, null, 0, true);
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, 3 * 512, null, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, 3 * 512, null, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, 3 * 512, null, null, 1024, true);
 
                 // Upload full stream
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, 6 * 512, null, null, 0, true);
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, 4 * 512, null, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, 6 * 512, null, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, 4 * 512, null, null, 1024, true);
 
                 // Exclude last page
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, 5 * 512, null, null, 0, true);
-                await this.CloudPageBlobUploadFromStreamAsync(container, 6 * 512, 3 * 512, null, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, 5 * 512, null, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 6 * 512, 3 * 512, null, null, 1024, true);
             }
             finally
             {
@@ -854,11 +854,11 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudPageBlobUploadFromStreamAsync(container, 3 * 512, 4 * 512, null, null, 0, false),
+                        async () => await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 3 * 512, 4 * 512, null, null, 0, false),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudPageBlobUploadFromStreamAsync(container, 3 * 512, 2 * 512, null, null, 1024, false),
+                        async () => await this.CloudPageBlobUploadFromStreamAsyncInternal(container, 3 * 512, 2 * 512, null, null, 1024, false),
                         "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
@@ -867,7 +867,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        private async Task CloudPageBlobUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset, bool testMd5)
+        private async Task CloudPageBlobUploadFromStreamAsyncInternal(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, int startOffset, bool testMd5)
         {
             byte[] buffer = GetRandomBuffer(size);
 

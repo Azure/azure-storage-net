@@ -485,14 +485,14 @@ namespace Microsoft.Azure.Storage.Blob
 #if ALL_SERVICES
             string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
 #else
-            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
+            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
 #endif
 
             // Future resource type changes from "c" => "container"
 #if ALL_SERVICES
             UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 #else
-            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 #endif
 
             return builder.ToString();

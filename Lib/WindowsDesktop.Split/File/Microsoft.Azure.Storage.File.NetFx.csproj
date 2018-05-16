@@ -82,12 +82,6 @@
   <ItemGroup>
     <CodeAnalysisDictionary Include="..\..\CustomDictionary.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Common.Split\NetFx\Microsoft.Azure.Storage.Common.NetFx.csproj">
-      <Project>{aa73796a-c515-4fe1-9da0-db95821d353c}</Project>
-      <Name>Microsoft.Azure.Storage.Common.NetFx</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="..\..\Common.Split\Shared\File.Shared\Microsoft.Azure.Storage.Common.File.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

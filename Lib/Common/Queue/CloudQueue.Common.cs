@@ -336,7 +336,7 @@ namespace Microsoft.Azure.Storage.Queue
             policy,
                 accessPolicyIdentifier,
                 resourceName,
-                OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion,
+                Constants.HeaderConstants.TargetStorageVersion,
                 protocols,
                 ipAddressOrRange,
                 accountKey.KeyValue);
@@ -351,7 +351,7 @@ namespace Microsoft.Azure.Storage.Queue
                 accessPolicyIdentifier,
                 signature,
                 accountKeyName,
-                OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion,
+                Constants.HeaderConstants.TargetStorageVersion,
                 protocols,
                 ipAddressOrRange);
 

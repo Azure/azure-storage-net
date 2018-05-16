@@ -7,16 +7,6 @@ namespace Microsoft.Azure.Storage.Blob
 {
 internal abstract class BlobReadStreamBase : Stream
 {
-    protected CloudBlob blob;
-    protected BlobProperties blobProperties;
-    protected long currentOffset;
-    protected MultiBufferMemoryStream internalBuffer;
-    protected int streamMinimumReadSizeInBytes;
-    protected AccessCondition accessCondition;
-    protected BlobRequestOptions options;
-    protected OperationContext operationContext;
-    protected MD5Wrapper blobMD5;
-    protected volatile Exception lastException;
 
     public override bool CanRead
     {

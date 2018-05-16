@@ -395,8 +395,8 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 6 * 512, null, null, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 6 * 512, null, null, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, null, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 6 * 512, null, null, 1024);
             }
             finally
             {
@@ -404,7 +404,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        private async Task CloudAppendBlobUploadFromStreamAsync(CloudBlobContainer container, int size, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
+        private async Task CloudAppendBlobUploadFromStreamAsyncInternal(CloudBlobContainer container, int size, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
         {
             byte[] buffer = GetRandomBuffer(size);
 
@@ -1148,10 +1148,10 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, true, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, true, 1024);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, false, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, false, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, true, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, true, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, false, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, false, 1024);
             }
             finally
             {
@@ -1172,22 +1172,22 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 // Upload 2MB of 5MB stream
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, 1024);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, false, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, false, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, true, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, false, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, false, 1024);
 
                 // Exclude last byte
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, true, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, true, 1024);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, false, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, false, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, true, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, true, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, false, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, false, 1024);
 
                 // Upload exact amount
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, true, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, true, 1024);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, false, 0);
-                await this.CloudAppendBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, false, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, true, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, true, 1024);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, false, 0);
+                await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, false, 1024);
             }
             finally
             {
@@ -1208,19 +1208,19 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudAppendBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, true, 0),
+                        async () => await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, true, 0),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudAppendBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, true, 1024),
+                        async () => await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, true, 1024),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudAppendBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, false, 0),
+                        async () => await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, false, 0),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudAppendBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, false, 1024),
+                        async () => await this.CloudAppendBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, false, 1024),
                         "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
@@ -1229,7 +1229,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        private async Task CloudAppendBlobUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, bool seekableSourceStream, int startOffset)
+        private async Task CloudAppendBlobUploadFromStreamAsyncInternal(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, bool seekableSourceStream, int startOffset)
         {
             byte[] buffer = GetRandomBuffer(size);
 

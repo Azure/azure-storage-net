@@ -158,10 +158,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Lib\Common.Split\NetFx\Microsoft.Azure.Storage.Common.NetFx.csproj">
-      <Project>{aa73796a-c515-4fe1-9da0-db95821d353c}</Project>
-      <Name>Microsoft.Azure.Storage.Common.NetFx</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Lib\WindowsDesktop.Split\Blob\Microsoft.Azure.Storage.Blob.NetFx.csproj">
       <Project>{04928920-d800-41d5-808d-4ed254c9e4c1}</Project>
       <Name>Microsoft.Azure.Storage.Blob.NetFx</Name>

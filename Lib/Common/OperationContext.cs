@@ -82,21 +82,6 @@ namespace Microsoft.Azure.Storage
 
         #endregion
 
-#if !ALL_SERVICES
-        #region Service Specific Fields 
-        /// <summary>
-        /// The target storage version if the service-specific package
-        /// </summary>
-        internal static string StorageVersion;
-        
-        /// <summary>
-        /// The version of the service-specific package
-        /// </summary>
-        internal static string PackageVersion;
-
-        #endregion
-#endif
-
         #region Events
 
         /// <summary>

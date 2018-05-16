@@ -401,8 +401,8 @@ namespace Microsoft.Azure.Storage.File
             string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
                         UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "f", signature, accountKey.KeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 #else
-            string signature = FileSharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
-            UriQueryBuilder builder = FileSharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "f", signature, accountKey.KeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+            string signature = FileSharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
+            UriQueryBuilder builder = FileSharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "f", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
 #endif
             return builder.ToString();
         }

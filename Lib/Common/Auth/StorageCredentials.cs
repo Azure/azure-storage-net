@@ -385,7 +385,7 @@ namespace Microsoft.Azure.Storage.Auth
                 throw new ArgumentException(errorMessage);
             }
             
-            newQueryBuilder.Add(Constants.QueryConstants.ApiVersion, OperationContext.StorageVersion ?? OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion);
+            newQueryBuilder.Add(Constants.QueryConstants.ApiVersion, Constants.HeaderConstants.TargetStorageVersion);
             this.queryBuilder = newQueryBuilder;
         }
     }

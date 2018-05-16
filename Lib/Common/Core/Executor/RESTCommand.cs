@@ -93,12 +93,12 @@ namespace Microsoft.Azure.Storage.Core.Executor
 
         public Stream StreamToDispose { get; set; }
 
-        public Func<RESTCommand<T>, OperationContext, HttpContent> BuildContent;
+        public Func<RESTCommand<T>, OperationContext, HttpContent> BuildContent = null;
 
-        public Func<RESTCommand<T>, Uri, UriQueryBuilder, HttpContent, int?, OperationContext, StorageRequestMessage> BuildRequest;
+        public Func<RESTCommand<T>, Uri, UriQueryBuilder, HttpContent, int?, OperationContext, StorageRequestMessage> BuildRequest = null;
 
         // Pre-Stream Retrival func (i.e. if 409 no stream is retrieved), in some cases this method will return directly
-        public Func<RESTCommand<T>, HttpResponseMessage, Exception, OperationContext, T> PreProcessResponse;
+        public Func<RESTCommand<T>, HttpResponseMessage, Exception, OperationContext, T> PreProcessResponse = null;
 
         // Post-Stream Retrieval Func ( if retreiveStream is true after ProcessResponse, the stream is retrieved and then PostProcess is called
         public Func<RESTCommand<T>, HttpResponseMessage, OperationContext, CancellationToken, Task<T>> PostProcessResponseAsync = null;

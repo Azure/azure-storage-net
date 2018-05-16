@@ -265,7 +265,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task FileReadStreamSeekTestAsync()
+        public async Task FileReadStreamSeekTestAsyncInternal()
         {
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
             CloudFileShare share = GetRandomShareReference();

@@ -31,6 +31,16 @@ namespace Microsoft.Azure.Storage.Core.Util
     /// </summary>
     internal static class StreamExtensions
     {
+        /// <summary>
+        /// Return input stream itself.
+        /// </summary>
+        /// <param name="stream">input stream</param>
+        /// <returns>the input stream</returns>
+        internal static Stream AsInputStream(this Stream stream)
+        {
+            return stream;
+        }
+
         [DebuggerNonUserCode]
         internal static int GetBufferSize(Stream inStream)
         {

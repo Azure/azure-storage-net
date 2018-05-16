@@ -110,10 +110,10 @@ namespace Microsoft.Azure.Storage.Core.Util
             Assert.IsFalse(cred.IsSharedKey);
 
             Uri testUri = new Uri("http://test/abc");
-            Assert.AreEqual(testUri.AbsoluteUri + token + "&" + Constants.QueryConstants.ApiVersion + "=" + OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, cred.TransformUri(testUri).AbsoluteUri, true);
+            Assert.AreEqual(testUri.AbsoluteUri + token + "&" + Constants.QueryConstants.ApiVersion + "=" +  Constants.HeaderConstants.TargetStorageVersion, cred.TransformUri(testUri).AbsoluteUri, true);
 
             testUri = new Uri("http://test/abc?query=a&query2=b");
-            string expectedUri = testUri.AbsoluteUri + "&" + token.Substring(1) + "&" + Constants.QueryConstants.ApiVersion + "=" + OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion;
+            string expectedUri = testUri.AbsoluteUri + "&" + token.Substring(1) + "&" + Constants.QueryConstants.ApiVersion + "=" + Constants.HeaderConstants.TargetStorageVersion;
             Assert.AreEqual(expectedUri, cred.TransformUri(testUri).AbsoluteUri, true);
 
             byte[] dummyKey = { 0, 1, 2 };

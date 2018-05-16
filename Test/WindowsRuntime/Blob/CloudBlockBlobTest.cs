@@ -680,38 +680,38 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("\"*\"");
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, false, 0, true);
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 await CreateForTestAsync(blob, 1, 1024);
                 await blob.FetchAttributesAsync();
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 await TestHelper.ExpectedExceptionAsync(
-                    async () => await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true),
+                    async () => await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true),
                     operationContext,
                     "Uploading a blob on top of an existing blob should fail if the ETag matches",
                     HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true);
 
                 blob = container.GetBlockBlobReference("blob3");
                 await CreateForTestAsync(blob, 1, 1024);
                 await blob.FetchAttributesAsync();
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
                 await TestHelper.ExpectedExceptionAsync(
-                    async () => await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true),
+                    async () => await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true),
                     operationContext,
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
                     HttpStatusCode.PreconditionFailed);
                 await TestHelper.ExpectedExceptionAsync(
-                    async () => await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, false, 0, true),
+                    async () => await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, false, 0, true),
                     operationContext,
                     "Uploading a blob on top of an non-existing blob should fail when the ETag doesn't match",
                     HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, null, accessCondition, operationContext, true, false, 0, true);
             }
             finally
             {
@@ -731,10 +731,10 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, false, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, false, true, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, false, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, false, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, false, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, false, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, false, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, false, false, 1024, true);
             }
             finally
             {
@@ -754,10 +754,10 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 0, true, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 1024, true, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 0, true, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, true, 0, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, true, 1024, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, false, 0, true, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, false, 1024, true);
             }
             finally
             {
@@ -777,10 +777,10 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, true, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, null, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, null, null, null, true, false, 1024, true);
             }
             finally
             {
@@ -801,22 +801,22 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 // Upload 2MB of 5MB stream
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, true, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, true, 1024, true);
 
                 // Exclude last byte
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, true, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, true, true, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, false, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, false, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, true, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, true, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, false, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, false, true, 1024, true);
 
                 // Upload exact amount
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, true, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, true, true, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, false, true, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, false, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, true, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, true, true, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, false, true, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, false, true, 1024, true);
             }
             finally
             {
@@ -837,22 +837,22 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 // Upload 2MB of 5MB stream
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, false, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 2 * 1024 * 1024, null, null, false, false, 1024, true);
 
                 // Exclude last byte
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, true, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, true, false, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, false, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, false, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024 - 1, null, null, false, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024 - 1, null, null, false, false, 1024, true);
 
                 // Upload exact amount
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, true, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, true, false, 1024, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, false, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, false, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 5 * 1024 * 1024, null, null, false, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 5 * 1024 * 1024, 4 * 1024 * 1024, null, null, false, false, 1024, true);
             }
             finally
             {
@@ -873,19 +873,19 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, null, true, true, 0, false),
+                        async () => await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, null, true, true, 0, false),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, null, true, true, 1024, false),
+                        async () => await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, null, true, true, 1024, false),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, null, false, true, 0, false),
+                        async () => await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1, null, null, false, true, 0, false),
                         "The given stream does not contain the requested number of bytes from its given position.");
 
                 await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
-                        async () => await this.CloudBlockBlobUploadFromStreamAsync(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, null, false, true, 1024, false),
+                        async () => await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 2 * 1024 * 1024, 2 * 1024 * 1024 - 1023, null, null, false, true, 1024, false),
                         "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
@@ -907,8 +907,8 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * 1024 * 1024, null, null, null, true, false, 0, true);
-                await this.CloudBlockBlobUploadFromStreamAsync(container, 16 * 1024 * 1024, null, null, null, true, false, 1024, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 16 * 1024 * 1024, null, null, null, true, false, 0, true);
+                await this.CloudBlockBlobUploadFromStreamAsyncInternal(container, 16 * 1024 * 1024, null, null, null, true, false, 1024, true);
                 await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 25 * 1024 * 1024, null, null, null, 0, 5 * 1024 * 1024);
                 await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 25 * 1024 * 1024, null, null, null, 1024, 5 * 1024 * 1024);
                 await this.CloudBlockBlobLargeBlockUploadFromStreamAsync(container, 32 * 1024 * 1024, null, null, null, 0, 10 * 1024 * 1024);
@@ -1026,7 +1026,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        private async Task CloudBlockBlobUploadFromStreamAsync(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool testMd5, bool trackProgress = false)
+        private async Task CloudBlockBlobUploadFromStreamAsyncInternal(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, OperationContext operationContext, bool seekableSourceStream, bool allowSinglePut, int startOffset, bool testMd5, bool trackProgress = false)
         {
             byte[] buffer = GetRandomBuffer(size);
 
