@@ -48,7 +48,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
+    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0-preview" />
   </ItemGroup>
 
 </Project>

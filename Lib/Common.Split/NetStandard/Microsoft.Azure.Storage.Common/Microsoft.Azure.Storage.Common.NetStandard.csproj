@@ -3,16 +3,13 @@
   <PropertyGroup>
     <Description>Azure Storage Common SDK for NetCore</Description>
     <AssemblyTitle>Microsoft.Azure.Storage.Common</AssemblyTitle>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <VersionPrefix>9.4.0-preview</VersionPrefix>
     <Authors>Microsoft Corporation</Authors>
     <TargetFramework>netstandard1.3</TargetFramework>
-    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DelaySign>true</DelaySign>
     <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
-    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Microsoft.Azure.Storage.Common</PackageId>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
@@ -27,7 +24,25 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
-
+   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+      <DebugSymbols>true</DebugSymbols>
+      <DebugType>full</DebugType>
+      <Optimize>false</Optimize>
+      <DefineConstants>TRACE;DEBUG;NETCORE;</DefineConstants>
+      <ErrorReport>prompt</ErrorReport>
+      <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+      <SignAssembly>true</SignAssembly>
+      <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+      <DelaySign>true</DelaySign>
+      <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <DebugType>pdbonly</DebugType>
+      <Optimize>true</Optimize>
+      <DefineConstants>RELEASE;NETSTANDARD1_3;NETCORE;SIGN</DefineConstants>
+      <ErrorReport>prompt</ErrorReport>
+      <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
   <!--<ItemGroup>
     <Compile Include="..\..\Common\*.cs;..\..\Common\Shared\**\*.cs;..\..\Common\Auth\**\*.cs;..\..\Common\Core\**\*.cs;..\..\Common\RetryPolicies\**\*.cs;..\..\WindowsRuntime\*.cs;..\..\WindowsRuntime\Auth\**\*.cs;..\..\WindowsRuntime\Core\**\*.cs;..\..\WindowsRuntime\Shared\**\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
   </ItemGroup>-->

@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
+    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0-preview" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
   </ItemGroup>
   <ItemGroup>
@@ -39,8 +40,5 @@
   <Import Project="..\..\Common.Split\Shared\File.Shared\Microsoft.Azure.Storage.Common.File.projitems" Label="Shared" />
   <ItemGroup>
     <CodeAnalysisDictionary Include="..\..\CustomDictionary.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Common.Split\NetStandard2\Microsoft.Azure.Storage.Common.NetStandard2.csproj" />
   </ItemGroup>
 </Project>

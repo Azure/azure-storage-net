@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0-preview" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.0.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.console" Version="2.3.1" />
@@ -34,7 +35,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Lib\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Blob\Microsoft.Azure.Storage.Blob.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.File\Microsoft.Azure.Storage.File.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Queue\Microsoft.Azure.Storage.Queue.NetStandard.csproj" />
@@ -43,6 +43,10 @@
 
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>

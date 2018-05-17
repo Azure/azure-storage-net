@@ -35,6 +35,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("9.4.0.0")]
 [assembly: AssemblyInformationalVersion("9.4.0.0-preview")]
 
+#if SIGN
 [assembly: InternalsVisibleTo(
     "Microsoft.Azure.Storage.Blob, PublicKey=" +
     "0024000004800000940000000602000000240000525341310004000001000100b5fc90e7027f67" +
@@ -78,13 +79,13 @@ using System.Runtime.InteropServices;
     "d333c5ee6021672d9718ea31a8aebd0da0072f25d87dba6fc90ffd598ed4da35e44c398c454307" +
     "e8e33b8426143daec9f596836f97c8f74750e5975c64e2189f45def46b2a2b1247adc3652bf5c3" +
     "08055da9")]
-[assembly: InternalsVisibleTo(
-    "Microsoft.Azure.Storage.Facade.PhoneSilverlight81.Test, PublicKey=" +
-    "0024000004800000940000000602000000240000525341310004000001000100b5fc90e7027f67" +
-    "871e773a8fde8938c81dd402ba65b9201d60593e96c492651e889cc13f1415ebb53fac1131ae0b" +
-    "d333c5ee6021672d9718ea31a8aebd0da0072f25d87dba6fc90ffd598ed4da35e44c398c454307" +
-    "e8e33b8426143daec9f596836f97c8f74750e5975c64e2189f45def46b2a2b1247adc3652bf5c3" +
-    "08055da9")]
+#else
+[assembly: InternalsVisibleTo("Microsoft.Azure.Storage.Blob")]
+[assembly: InternalsVisibleTo("Microsoft.Azure.Storage.Table")]
+[assembly: InternalsVisibleTo("Microsoft.Azure.Storage.Queue")]
+[assembly: InternalsVisibleTo("Microsoft.Azure.Storage.File")]
 
-
+[assembly: InternalsVisibleTo("Microsoft.Azure.Storage.Facade.Portable")]
+[assembly: InternalsVisibleTo("Microsoft.Azure.Storage.Facade.NetCore.Test")]
+#endif
 [assembly: NeutralResourcesLanguage("en-US")]

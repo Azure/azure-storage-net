@@ -5,7 +5,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisWindowsDesktop.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\$(Configuration)\Microsoft.Azure.Storage.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\Microsoft.Azure.Storage.xml</DocumentationFile>
     <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>

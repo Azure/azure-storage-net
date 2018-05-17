@@ -1,17 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
+  <PropertyGroup> 
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <AssemblyTitle>Microsoft.Azure.Storage.Blob</AssemblyTitle>
-    <VersionPrefix>9.4.0-preview</VersionPrefix>
+    <OutputType>Library</OutputType>
     <TargetFramework>netstandard1.3</TargetFramework>
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DelaySign>true</DelaySign>
     <AssemblyName>Microsoft.Azure.Storage.Blob</AssemblyName>
-    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
-    <PackageId>Microsoft.Azure.Storage.Blob</PackageId>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -25,7 +21,25 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <RootNamespace>Microsoft.Azure.Storage.Blob</RootNamespace>
-  </PropertyGroup>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+      <DebugSymbols>true</DebugSymbols>
+      <DebugType>full</DebugType>
+      <Optimize>false</Optimize>
+      <DefineConstants>NETCORE</DefineConstants>
+      <ErrorReport>prompt</ErrorReport>
+      <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+      <SignAssembly>true</SignAssembly>
+      <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+      <DelaySign>true</DelaySign>
+      <DebugType>pdbonly</DebugType>
+      <Optimize>true</Optimize>
+      <DefineConstants>NETCORE;SIGN</DefineConstants>
+      <ErrorReport>prompt</ErrorReport>
+      <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\WindowsRuntime\Blob\*.cs" />
     <Compile Include="..\..\WindowsRuntime\Blob\Protocol\*.cs" />
@@ -49,6 +63,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
+    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0-preview" />
   </ItemGroup>
 </Project>

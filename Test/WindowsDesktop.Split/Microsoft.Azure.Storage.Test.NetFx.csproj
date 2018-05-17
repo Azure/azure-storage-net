@@ -6,7 +6,7 @@
     <ProjectGuid>{1E1FF9EF-05E0-4305-AFD1-AD0A20069B8B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.WindowsAzure.Storage</RootNamespace>
+    <RootNamespace>Microsoft.Azure.Storage</RootNamespace>
     <AssemblyName>Microsoft.Azure.Storage.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -38,6 +38,12 @@
     <NoWarn>1685</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="FiddlerCore">
       <HintPath>..\FaultInjection\Dependencies\DotNet2\FiddlerCore.dll</HintPath>
@@ -61,6 +67,9 @@
     <Reference Include="Microsoft.Azure.KeyVault.Extensions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Microsoft.Azure.KeyVault.Extensions.1.0.4\lib\net45\Microsoft.Azure.KeyVault.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=9.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.Azure.Storage.Common.9.4.0-preview\lib\net45\Microsoft.Azure.Storage.Common.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">

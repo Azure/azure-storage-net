@@ -2262,7 +2262,6 @@ namespace Microsoft.Azure.Storage.Queue
                 cancellationToken);
         }
 #endif
-        //TODO: HTTPClient: Add Clear messages to the MessageFactory or use Delete Instead??
         /// <summary>
         /// Implementation for the ClearMessages method.
         /// </summary>

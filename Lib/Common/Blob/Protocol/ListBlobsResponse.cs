@@ -242,7 +242,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                                             break;
 
                                         case Constants.RemainingRetentionDaysElement:
-                                            blob.Properties.RemainingDaysBeforePermanentDelete = int.Parse(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)); // TODO should this read as int instead?
+                                            blob.Properties.RemainingDaysBeforePermanentDelete = int.Parse(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
                                         default:
