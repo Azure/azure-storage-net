@@ -7,14 +7,14 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-//[assembly: AssemblyTitle("Microsoft.Azure.Storage.Common.dll")]
-//[assembly: AssemblyDescription("Azure Storage Common SDK for Windows")]
-//[assembly: AssemblyConfiguration("")]
-//[assembly: AssemblyCompany("Microsoft")]
-//[assembly: AssemblyProduct("Windows Azure Storage Common")]
-//[assembly: AssemblyCopyright("Copyright © 2018 Microsoft Corp.")]
-//[assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
-//[assembly: AssemblyCulture("")]
+[assembly: AssemblyTitle("Microsoft.Azure.Storage.Common.dll")]
+[assembly: AssemblyDescription("Azure Storage Common SDK for Windows")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyProduct("Windows Azure Storage Common")]
+[assembly: AssemblyCopyright("Copyright © 2018 Microsoft Corp.")]
+[assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
+[assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

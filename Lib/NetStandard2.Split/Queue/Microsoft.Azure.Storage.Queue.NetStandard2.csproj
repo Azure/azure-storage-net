@@ -26,8 +26,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
     <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0-preview" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
-    <PackageReference Include="System.Spatial" Version="5.8.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\ClassLibraryCommon\Queue\*.cs">
