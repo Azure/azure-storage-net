@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <Description>Azure Storage Common SDK for NetCore</Description>
     <AssemblyTitle>Microsoft.Azure.Storage.Common</AssemblyTitle>
@@ -96,5 +95,4 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
   </ItemGroup>
-
 </Project>

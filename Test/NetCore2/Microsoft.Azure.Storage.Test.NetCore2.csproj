@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Azure.KeyVault" Version="2.3.2" />
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
     <PackageReference Include="Microsoft.Azure.KeyVault.Extensions" Version="2.0.5" />
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0-preview" />
+    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0.1-preview" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
