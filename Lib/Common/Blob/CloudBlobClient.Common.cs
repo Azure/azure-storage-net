@@ -78,7 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     ParallelOperationThreadCount = BlobRequestOptions.BaseDefaultRequestOptions.ParallelOperationThreadCount
                 };
             this.DefaultDelimiter = NavigationHelper.Slash;
-            this.AuthenticationScheme = AuthenticationScheme.SharedKey;
+            this.AuthenticationScheme = this.Credentials.IsToken ? AuthenticationScheme.Token : AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
         }
 

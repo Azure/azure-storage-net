@@ -112,7 +112,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 table.Create();
 
-                table.Execute(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.Execute(TableOperation.Insert(entity));
 
                 // Prepare SAS authentication with full permissions
                 string sasToken = table.GetSharedAccessSignature(
@@ -183,8 +185,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             try
             {
                 table.Create();
-
-                table.Execute(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.Execute(TableOperation.Insert(entity));
 
                 TablePermissions expectedPermissions = new TablePermissions();
                 TablePermissions testPermissions = table.GetPermissions();
@@ -227,8 +230,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             try
             {
                 table.Create();
-
-                table.Execute(TableOperation.Insert(new BaseEntity("PK", "RK")));
+                var entity = new BaseEntity("PK", "RK");
+                entity.Populate();
+                table.Execute(TableOperation.Insert(entity));
 
                 TablePermissions expectedPermissions = new TablePermissions();
 
@@ -861,6 +865,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             // if we expect a success for creation - avoid inserting duplicate entities
             BaseEntity tableEntity = new BaseEntity(partitionKey, rowKey);
+            tableEntity.Populate();
             if (expectedStatusCode == HttpStatusCode.Created)
             {
                 try
@@ -1046,6 +1051,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 table.Create();
 
                 BaseEntity entity = new BaseEntity("PK", "RK");
+                entity.Populate();
                 table.Execute(TableOperation.Insert(entity));
 
                 SharedAccessTablePolicy policy = new SharedAccessTablePolicy()
@@ -1058,8 +1064,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 string sasToken = table.GetSharedAccessSignature(policy);
                 StorageCredentials creds = new StorageCredentials(sasToken);
                 CloudTable sasTable = new CloudTable(table.Uri, creds);
+                BaseEntity entity2 = new BaseEntity("PK", "RK2");
+                entity2.Populate();
                 TestHelper.ExpectedException(
-                    () => sasTable.Execute(TableOperation.Insert(new BaseEntity("PK", "RK2"))),
+                    () => sasTable.Execute(TableOperation.Insert(entity2)),
                     "Try to insert an entity when SAS doesn't allow inserts",
                     HttpStatusCode.Forbidden);
 
@@ -1076,8 +1084,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 creds.UpdateSASToken(sasToken2);
 
                 sasTable = new CloudTable(table.Uri, creds);
-
-                sasTable.Execute(TableOperation.Insert(new BaseEntity("PK", "RK2")));
+                BaseEntity entity3 = new BaseEntity("PK", "RK2");
+                entity3.Populate();
+                sasTable.Execute(TableOperation.Insert(entity3));
 
             }
             finally
@@ -1104,7 +1113,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 table.Create();
 
                 BaseEntity entity = new BaseEntity("PK", "RK");
+                entity.Populate();
                 BaseEntity entity1 = new BaseEntity("PK", "RK1");
+                entity1.Populate();
                 table.Execute(TableOperation.Insert(entity));
                 table.Execute(TableOperation.Insert(entity1));
 
@@ -1165,17 +1176,21 @@ namespace Microsoft.WindowsAzure.Storage.Table
                 CloudTable sasTableDirect = new CloudTable(new Uri(table.Uri.ToString() + sasTokenPkRk));
 
                 BaseEntity pkrkEnt = new BaseEntity("tables_batch_0", "00");
+                pkrkEnt.Populate();
                 sasTableTransformed.Execute(TableOperation.Insert(pkrkEnt));
 
                 pkrkEnt = new BaseEntity("tables_batch_0", "01");
+                pkrkEnt.Populate();
                 sasTableDirect.Execute(TableOperation.Insert(pkrkEnt));
 
                 Action<BaseEntity, CloudTable, OperationContext> insertDelegate = (tableEntity, sasTable1, ctx) =>
                 {
+                    tableEntity.Populate();
                     sasTable1.Execute(TableOperation.Insert(tableEntity), null, ctx);
                 };
 
                 pkrkEnt = new BaseEntity("tables_batch_2", "00");
+                pkrkEnt.Populate();
                 TestHelper.ExpectedException(
                     (ctx) => insertDelegate(pkrkEnt, sasTableTransformed, ctx),
                     string.Format("Inserted entity without appropriate SAS permissions."),

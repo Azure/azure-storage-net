@@ -211,6 +211,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                             containerProperties.ETag = reader.ReadElementContentAsString();
                                             break;
 
+                                        case Constants.HasImmutabilityPolicyElement:
+                                            containerProperties.HasImmutabilityPolicy = reader.ReadElementContentAsBoolean();
+                                            break;
+
+                                        case Constants.HasLegalHoldElement:
+                                            containerProperties.HasLegalHold = reader.ReadElementContentAsBoolean();
+                                            break;
+
                                         case Constants.LeaseStatusElement:
                                             containerProperties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(reader.ReadElementContentAsString());
                                             break;

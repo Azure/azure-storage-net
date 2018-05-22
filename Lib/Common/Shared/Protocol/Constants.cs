@@ -348,6 +348,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         public const string EtagElement = "Etag";
 
         /// <summary>
+        /// XML element for the creation date.
+        /// </summary>
+        public const string CreationTimeElement = "Creation-Time";
+
+        /// <summary>
         /// XML element for the last modified date.
         /// </summary>
         public const string LastModifiedElement = "Last-Modified";
@@ -571,6 +576,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for blob types.
         /// </summary>
         public const string BlobTypeElement = "BlobType";
+
+        /// <summary>
+        /// XML element for immutability policy.
+        /// </summary>
+        public const string HasImmutabilityPolicyElement = "HasImmutabilityPolicy";
+
+        /// <summary>
+        /// XML element for legal hold.
+        /// </summary>
+        public const string HasLegalHoldElement = "HasLegalHold";
 
         /// <summary>
         /// XML element for the lease status.
@@ -844,10 +859,14 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
         internal const string OdataTypeString = "@odata.type";
 
-        internal const string EdmDateTime = @"Edm.DateTime";
         internal const string EdmBinary = @"Edm.Binary";
-        internal const string EdmInt64 = @"Edm.Int64";
+        internal const string EdmBoolean = @"Emd.Boolean";
+        internal const string EdmDateTime = @"Edm.DateTime";
+        internal const string EdmDouble = @"Edm.Double";
         internal const string EdmGuid = @"Edm.Guid";
+        internal const string EdmInt32 = @"Edm.Int32";
+        internal const string EdmInt64 = @"Edm.Int64";
+        internal const string EdmString = @"Edm.String";
 
         internal const string BatchBoundaryMarker = @"multipart/mixed; boundary=batch_";
         internal const string ChangesetBoundaryMarker = @"Content-Type: multipart/mixed; boundary=changeset_";
@@ -904,7 +923,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "9.1.0";
+            public const string UserAgentProductVersion = "9.2.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -947,9 +966,24 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string ContentLanguageHeader = "Content-Language";
 
             /// <summary>
+            /// Header that specifies the creation time value for the resource.
+            /// </summary>
+            public const string CreationTimeHeader = PrefixForStorageHeader + "creation-time";
+
+            /// <summary>
             /// Header that specifies the ETag value for the resource.
             /// </summary>
             public const string EtagHeader = "ETag";
+
+            /// <summary>
+            /// Header that specifies the immutability policy value for the resource.
+            /// </summary>
+            public const string HasImmutabilityPolicyHeader = PrefixForStorageHeader + "has-immutability-policy";
+
+            /// <summary>
+            /// Header that specifies the legal hold value for the resource.
+            /// </summary>
+            public const string HasLegalHoldHeader = PrefixForStorageHeader + "has-legal-hold";
 
             /// <summary>
             /// Header that specifies if a resourse is fully encrypted server-side.
@@ -1215,7 +1249,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2017-07-29";
+            public const string TargetStorageVersion = "2017-11-09";
 
             /// <summary>
             /// Specifies the file type.

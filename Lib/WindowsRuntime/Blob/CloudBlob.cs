@@ -1842,6 +1842,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             BlobProperties parsedProperties = BlobHttpResponseParsers.GetProperties(response);
             attributes.Properties.ETag = parsedProperties.ETag ?? attributes.Properties.ETag;
+            attributes.Properties.Created = parsedProperties.Created ?? attributes.Properties.Created;
             attributes.Properties.LastModified = parsedProperties.LastModified ?? attributes.Properties.LastModified;
             attributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? attributes.Properties.PageBlobSequenceNumber;
             attributes.Properties.AppendBlobCommittedBlockCount = parsedProperties.AppendBlobCommittedBlockCount ?? attributes.Properties.AppendBlobCommittedBlockCount;

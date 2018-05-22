@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Net;
 
     /// <summary>
@@ -60,8 +61,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             containerProperties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(response);
             containerProperties.LeaseState = BlobHttpResponseParsers.GetLeaseState(response);
             containerProperties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(response);
+            
             // Reading public access
             containerProperties.PublicAccess = GetAcl(response);
+
+            // WORM policies
+            string hasImmutability = response.Headers[Constants.HeaderConstants.HasImmutabilityPolicyHeader];
+            containerProperties.HasImmutabilityPolicy = string.IsNullOrEmpty(hasImmutability) ? (bool?)null : bool.Parse(hasImmutability);
+
+            string hasLegalHold = response.Headers[Constants.HeaderConstants.HasLegalHoldHeader];
+            containerProperties.HasLegalHold = string.IsNullOrEmpty(hasLegalHold) ? (bool?)null : bool.Parse(hasLegalHold);
+
             return containerProperties;
         }
 

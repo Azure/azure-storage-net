@@ -187,6 +187,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 CreateForTest(blob, 0, 0, false);
                 Assert.IsTrue(blob.Exists());
+                
+                Assert.IsTrue(blob.Properties.Created.HasValue);
+                Assert.IsTrue(blob.Properties.Created.Value > DateTime.Now.AddMinutes(-1));
+
                 blob.Delete();
             }
             finally
