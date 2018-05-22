@@ -23,9 +23,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
 
     /// <summary>

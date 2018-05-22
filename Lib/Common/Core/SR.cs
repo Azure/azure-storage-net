@@ -168,6 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string NoPropertyResolverAvailable = "No property resolver available. Deserializing the entity properties as strings.";
         public const string OffsetNotInRange = "The offset provided is out of range. The range must be between 0 and the length of the byte array.";
         public const string ODataReaderNotInCompletedState = "OData Reader state expected to be Completed state. Actual state: {0}.";
+        public const string OnlyHttpsIsSupportedForTokenCredential = "Only HTTPS is allowed for token credential.";
         public const string OperationCanceled = "Operation was canceled by user.";
         public const string ParseError = "Error parsing value";
         public const string PartitionKey = "All entities in a given batch must have the same partition key.";
@@ -210,6 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TableQueryTypeMustHaveDefaultParameterlessCtor = "TableQuery Generic Type must provide a default parameterless constructor.";
         public const string TakeCountNotPositive = "Take count must be positive and greater than 0.";
         public const string TimeoutExceptionMessage = "The client could not finish the operation within specified timeout.";
+        public const string TokenIsNotSupportedForThisService = "Token credential is not supported for this service.";
         public const string TooManyPolicyIdentifiers = "Too many '{0}' shared access policy identifiers provided. Server does not support setting more than '{1}' on a single container, queue, table, or share.";
         public const string TooManyPathSegments = "The count of URL path segments (strings between '/' characters) as part of the blob name cannot exceed 254.";
         public const string TraceAbort = "Aborting pending request due to timeout.";

@@ -47,6 +47,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
 #if WINDOWS_PHONE
         /// <summary>
+        /// Gets the Creation-Time date and time from a response.
+        /// </summary>
+        /// <param name="response">The web response.</param>
+        /// <returns>A <see cref="System.DateTimeOffset"/> that indicates the creation date and time.</returns>
+        internal static DateTimeOffset? GetCreated(HttpWebResponse response)
+        {
+            string created = response.Headers[Constants.HeaderConstants.CreationTimeHeader];
+            return string.IsNullOrEmpty(created) ? (DateTimeOffset?)null : DateTimeOffset.Parse(created, CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
         /// Gets the Last-Modified date and time from a response.
         /// </summary>
         /// <param name="response">The web response.</param>

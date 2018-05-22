@@ -34,6 +34,9 @@ namespace Microsoft.WindowsAzure.Storage
         public string FileServiceSecondaryEndpoint { get; internal set; }
         public string QueueServiceSecondaryEndpoint { get; internal set; }
         public string TableServiceSecondaryEndpoint { get; internal set; }
+        public string ActiveDirectoryApplicationId { get; internal set; }
+        public string ActiveDirectoryApplicationSecret { get; internal set; }
+        public string ActiveDirectoryTenantId { get; internal set; }
         public TenantType TenantType { get; internal set; }
     }
 }

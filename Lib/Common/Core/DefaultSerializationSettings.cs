@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------------------------
-// <copyright file="AuthenticationScheme.cs" company="Microsoft">
-//    Copyright 2013 Microsoft Corporation
+// <copyright file="DefaultSerializationSettings.cs" company="Microsoft">
+//    Copyright 2018 Microsoft Corporation
 // 
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -15,26 +15,30 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+
+namespace Microsoft.WindowsAzure.Storage.Core
 {
-    /// <summary>
-    /// Specifies the authentication scheme used to sign HTTP requests.
-    /// </summary>
-    public enum AuthenticationScheme
+    static class DefaultSerializer
     {
-        /// <summary>
-        /// Signs HTTP requests using the Shared Key Lite authentication scheme.
-        /// </summary>
-        SharedKeyLite,
+        public static JsonSerializer Create()
+        {
+            return new JsonSerializer
+            {
+                ContractResolver = new DefaultContractResolver()
+            };
+        }
+    }
 
-        /// <summary>
-        /// Signs HTTP requests using the Shared Key authentication scheme.
-        /// </summary>
-        SharedKey,
-
-        /// <summary>
-        /// Signs HTTPS requests using the Bearer Token authentication scheme.
-        /// </summary>
-        Token
+    static class DefaultSerializerSettings
+    {
+        public static JsonSerializerSettings Create()
+        {
+            return new JsonSerializerSettings
+            {
+                ContractResolver = new DefaultContractResolver()
+            };
+        }
     }
 }

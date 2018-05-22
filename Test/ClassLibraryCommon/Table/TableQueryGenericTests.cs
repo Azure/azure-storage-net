@@ -18,6 +18,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using Microsoft.WindowsAzure.Storage.Table.Protocol;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -90,6 +92,14 @@ namespace Microsoft.WindowsAzure.Storage.Table
             currentTable.DeleteIfExists();
         }
 
+        class DummyContractResolver : IContractResolver
+        {
+            public JsonContract ResolveContract(Type type)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         [TestInitialize()]
         public void MyTestInitialize()
         {
@@ -97,7 +107,15 @@ namespace Microsoft.WindowsAzure.Storage.Table
             {
                 TestBase.TableBufferManager.OutstandingBufferCount = 0;
             }
+
+            JsonConvert.DefaultSettings =
+                () =>
+                new JsonSerializerSettings
+                {
+                    Formatting = Formatting.Indented
+                };
         }
+
         //
         // Use TestCleanup to run code after each test has run
         [TestCleanup()]
@@ -352,6 +370,54 @@ namespace Microsoft.WindowsAzure.Storage.Table
         }
         #endregion
 
+        static EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
+        {
+            BaseEntity entity = new BaseEntity(partitionKey, rowKey);
+            entity.ETag = etag;
+            entity.foo = properties["foo"].StringValue;
+            entity.A = properties["A"].StringValue;
+            entity.B = properties["B"].StringValue;
+            entity.C = properties["C"].StringValue;
+            entity.D = properties["D"].StringValue;
+            entity.E = properties["E"].Int32Value.Value;
+
+            entity.Binary = properties["Binary"].BinaryValue;
+
+            entity.Double = properties["Double"].DoubleValue.Value;
+            entity.DoubleEpsilon = properties["DoubleEpsilon"].DoubleValue.Value;
+            entity.DoubleNan = properties["DoubleNan"].DoubleValue.Value;
+            entity.DoublePositiveInfinity = properties["DoublePositiveInfinity"].DoubleValue.Value;
+            entity.DoubleNegativeInfinity = properties["DoubleNegativeInfinity"].DoubleValue.Value;
+            entity.DoubleNullWithValue = properties["DoubleNullWithValue"].DoubleValue.Value;
+            entity.DoubleNullWithNan = properties["DoubleNullWithNan"].DoubleValue.Value;
+            entity.DoubleNullWithPositiveInfinity = properties["DoubleNullWithPositiveInfinity"].DoubleValue.Value;
+            entity.DoubleNullWithNegativeInfinity = properties["DoubleNullWithNegativeInfinity"].DoubleValue.Value;
+
+            entity.String = properties["String"].StringValue;
+
+            entity.Int32 = properties["Int32"].Int32Value.Value;
+            entity.Int32NullWithValue = properties["Int32NullWithValue"].Int32Value.Value;
+
+            entity.Int64 = properties["Int64"].Int64Value.Value;
+            entity.Int64NullWithValue = properties["Int64NullWithValue"].Int64Value.Value;
+
+            entity.DateTime = properties["DateTime"].DateTime.Value;
+            entity.DateTimeNullWithValue = properties["DateTimeNullWithValue"].DateTime.Value;
+            entity.DateTimeOffset = properties["DateTimeOffset"].DateTime.Value;
+
+            entity.DateTimeOffsetNullWithValue = properties["DateTimeOffsetNullWithValue"].DateTimeOffsetValue.Value;
+
+            entity.Guid = properties["Guid"].GuidValue.Value;
+            entity.GuidNullWithValue = properties["GuidNullWithValue"].GuidValue.Value;
+
+            entity.BooleanTrue = properties["BooleanTrue"].BooleanValue.Value;
+            entity.BooleanFalse = properties["BooleanFalse"].BooleanValue.Value;
+            entity.BooleanNullWithTrue = properties["BooleanNullWithTrue"].BooleanValue.Value;
+            entity.BooleanNullWithFalse = properties["BooleanNullWithFalse"].BooleanValue.Value;
+
+            return entity;
+        };
+
         #region Task
 
 #if TASK
@@ -515,18 +581,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
 
             int count = 0;
@@ -588,18 +643,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenCancellationTokenTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
             CancellationToken cancellationToken = CancellationToken.None;
 
@@ -663,18 +707,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenRequestOptionsOperationContextTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
             TableRequestOptions requestOptions = new TableRequestOptions();
             OperationContext operationContext = new OperationContext();
@@ -707,18 +740,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         public void TableExecuteQuerySegmentedQueryResolverTokenRequestOptionsOperationContextCancellationTokenTask()
         {
             TableQuery<BaseEntity> query = new TableQuery<BaseEntity>();
-            EntityResolver<BaseEntity> resolver = (partitionKey, rowKey, timestamp, properties, etag) =>
-            {
-                BaseEntity entity = new BaseEntity(partitionKey, rowKey);
-                entity.ETag = etag;
-                entity.foo = properties["foo"].StringValue;
-                entity.A = properties["A"].StringValue;
-                entity.B = properties["B"].StringValue;
-                entity.C = properties["C"].StringValue;
-                entity.D = properties["D"].StringValue;
-                entity.E = properties["E"].Int32Value.Value;
-                return entity;
-            };
+
             TableContinuationToken token = null;
             TableRequestOptions requestOptions = new TableRequestOptions();
             OperationContext operationContext = new OperationContext();

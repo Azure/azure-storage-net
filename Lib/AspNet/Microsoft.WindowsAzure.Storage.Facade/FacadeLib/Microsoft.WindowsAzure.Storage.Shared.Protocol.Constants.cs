@@ -256,7 +256,8 @@ internal static class Constants
         public const string TableEncryptionKeyDetails = "_ClientEncryptionMetadata1";
         public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
         public const string AgentMetadataKey = "EncryptionLibrary";
-        public const string AgentMetadataValue = ".NET 9.1.0";
+        public const string AgentMetadataValue = ".NET 9.2.0";
+
     }
 }
 

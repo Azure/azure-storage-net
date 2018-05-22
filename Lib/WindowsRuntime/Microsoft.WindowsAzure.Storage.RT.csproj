@@ -13,6 +13,7 @@
     <AssemblyName>Microsoft.WindowsAzure.Storage</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>
+    <LangVersion>5</LangVersion>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -47,6 +48,7 @@
   <ItemGroup>
     <Compile Include="Auth\Protocol\StorageAuthenticationHttpHandler.cs" />
     <Compile Include="Auth\Protocol\StorageAuthenticationHttpHandler.SharedKey.cs" />
+    <Compile Include="Auth\Protocol\StorageAuthenticationHttpHandler.Token.cs" />
     <Compile Include="Blob\BlobReadStream.cs" />
     <Compile Include="Blob\BlobReadStreamHelper.cs" />
     <Compile Include="Blob\BlobWriteStream.cs" />

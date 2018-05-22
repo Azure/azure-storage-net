@@ -81,6 +81,10 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                             this.Credentials,
                             this.Credentials.AccountName);
                     }
+                    else if (this.Credentials.IsToken)
+                    {
+                        result = new TokenAuthenticationHandler(this.Credentials);
+                    }
                     else
                     {
                         result = new NoOpAuthenticationHandler();
