@@ -69,7 +69,7 @@
       <HintPath>..\..\packages\Microsoft.Azure.KeyVault.Extensions.1.0.4\lib\net45\Microsoft.Azure.KeyVault.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Azure.Storage.Common, Version=9.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.Azure.Storage.Common.9.4.0-preview\lib\net45\Microsoft.Azure.Storage.Common.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.Azure.Storage.Common.9.4.0.1-preview\lib\net45\Microsoft.Azure.Storage.Common.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">

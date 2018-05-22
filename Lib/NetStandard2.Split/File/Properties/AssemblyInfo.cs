@@ -7,8 +7,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Microsoft.WindowsAzure.Storage.dll")]
-[assembly: AssemblyDescription("Azure Storage SDK for Windows")]
+[assembly: AssemblyTitle("Microsoft.Azure.Storage.File.dll")]
+[assembly: AssemblyDescription("Azure Storage File SDK for Windows")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Windows Azure Storage")]
@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyVersion("9.4.0.0")]
 [assembly: AssemblyFileVersion("9.4.0.0")]
-[assembly: AssemblyInformationalVersion("9.4.0-preview")]
+[assembly: AssemblyInformationalVersion("9.4.0.0-preview")]
 
 #if SIGN
 [assembly: InternalsVisibleTo(
