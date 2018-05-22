@@ -250,6 +250,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                                 {
                                     switch (this.reader.Name)
                                     {
+                                        case Constants.CreationTimeElement:
+                                            blob.Properties.Created = reader.ReadElementContentAsString().ToUTCTime();
+                                            break;
+
                                         case Constants.LastModifiedElement:
                                             blob.Properties.LastModified = reader.ReadElementContentAsString().ToUTCTime();
                                             break;

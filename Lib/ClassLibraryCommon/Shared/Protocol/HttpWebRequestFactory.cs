@@ -63,11 +63,15 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uriRequest);
             request.Method = method;
 
-             // Set the Content-Length of requests to 0 by default for all put requests. 
-             if (method.Equals(WebRequestMethods.Http.Put, StringComparison.OrdinalIgnoreCase))
-             {
-                 request.ContentLength = 0;
-             }
+#if !WINDOWS_PHONE
+            request.Proxy = operationContext.Proxy ?? request.Proxy;
+#endif
+                        
+            // Set the Content-Length of requests to 0 by default for all put requests. 
+            if (method.Equals(WebRequestMethods.Http.Put, StringComparison.OrdinalIgnoreCase))
+            {
+                request.ContentLength = 0;
+            }
 
             request.UserAgent = Constants.HeaderConstants.UserAgent;
 

@@ -27,6 +27,7 @@ using System.Text;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
@@ -81,6 +82,23 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         public void CloudQueueClientConstructorInvalidParam()
         {
             TestHelper.ExpectedException<ArgumentNullException>(() => new CloudQueueClient((Uri)null, TestBase.StorageCredentials), "Pass null into CloudQueueClient");
+        }
+
+        [TestMethod]
+        [Description("Create a service client with token")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientWithToken()
+        {
+            TokenCredential token = new TokenCredential(TestBase.GenerateOAuthToken());
+            StorageCredentials credentials = new StorageCredentials(token);
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint);
+
+            CloudQueueClient client = new CloudQueueClient(baseAddressUri, credentials);
+            CloudQueue queue = client.GetQueueReference("queue");
+            queue.Exists();
         }
 
         [TestMethod]

@@ -60,6 +60,9 @@ namespace Microsoft.WindowsAzure.Storage
                 config.FileSecurePortOverride = (string)tenantConfigurationElement.Element("FileSecurePortOverride");
                 config.QueueSecurePortOverride = (string)tenantConfigurationElement.Element("QueueSecurePortOverride");
                 config.TableSecurePortOverride = (string)tenantConfigurationElement.Element("TableSecurePortOverride");
+                config.ActiveDirectoryApplicationId = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationId");
+                config.ActiveDirectoryApplicationSecret = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationSecret");
+                config.ActiveDirectoryTenantId = (string)tenantConfigurationElement.Element("ActiveDirectoryTenantId");
                 tenantConfigurationList.Add(config);
             }
 
