@@ -325,7 +325,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="useHttps"><c>true</c> to use HTTPS to connect to storage service endpoints; otherwise, <c>false</c>.</param>
         /// <remarks>Using HTTPS to connect to the storage services is recommended.</remarks>
         public CloudStorageAccount(StorageCredentials storageCredentials, string endpointSuffix, bool useHttps)
-            : this(storageCredentials, storageCredentials == null ? null : storageCredentials.AccountName, endpointSuffix, useHttps)
+            : this(storageCredentials, storageCredentials?.AccountName, endpointSuffix, useHttps)
         {
         }
 
