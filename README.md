@@ -4,7 +4,7 @@ The Microsoft Azure Storage SDK for .NET allows you to build Azure applications
 that take advantage of scalable cloud computing resources.
 
 This repository contains the open source subset of the .NET SDK. For documentation of the 
-complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/).
+complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](https://docs.microsoft.com/en-us/dotnet/azure/).
 
 ## Features
 
@@ -45,7 +45,7 @@ Through the bait and switch technique, the reference assembly enables other port
 
 ## Requirements
 
-- Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://account.windowsazure.com/Home/Index). Sign up for a free trial or use your MSDN subscriber benefits.
+- Microsoft Azure Subscription: To call Microsoft Azure services, you need to first [create an account](https://azure.microsoft.com). Sign up for a free trial or use your MSDN subscriber benefits.
 - Hosting: To host your .NET code in Microsoft Azure, you additionally need to download the full Microsoft Azure SDK for .NET - which includes packaging,
     emulation, and deployment tools, or use Microsoft Azure Web Sites to deploy ASP.NET web applications.
 
@@ -101,7 +101,7 @@ The specific ODataLib packages are:
 
 > If using project.json/xproj: you can use the imports statement within the framework node of your project.json as shown below:
 
-```
+```json
   "imports": [
     "dnxcore50",
     "portable-net451+win8"
@@ -110,7 +110,8 @@ The specific ODataLib packages are:
 
 > If using csproj : you can modify your csproj file to specify the target fallback as shown below:
 
-```  <PropertyGroup>
+```xml
+  <PropertyGroup>
     <TargetFramework>netcoreapp1.x</TargetFramework>
   </PropertyGroup>
   <PropertyGroup>
@@ -122,19 +123,19 @@ The specific ODataLib packages are:
 
 The desktop and phone libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [Newtonsoft.Json] (http://www.nuget.org/packages/Newtonsoft.Json)
+- [Newtonsoft.Json](http://www.nuget.org/packages/Newtonsoft.Json)
 
 ### WCF Data Services Client
 
 The desktop library depends on WCF Data Services Client, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [Microsoft.Data.Services.Client] (http://www.nuget.org/packages/Microsoft.Data.Services.Client/)
+- [Microsoft.Data.Services.Client](http://www.nuget.org/packages/Microsoft.Data.Services.Client/)
 
 ### Key Vault
 
 The client-side encryption support depends on the KeyVault.Core package, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [KeyVault.Core] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
+- [KeyVault.Core](http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
 
 ### Test Dependencies
 
@@ -153,12 +154,12 @@ Once installed:
 
 Tests for the client-side encryption support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
+- [KeyVault.Extensions](http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
 ## Code Samples
 
 > Note:
-> How-Tos focused around accomplishing specific tasks are available on the [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/).
+> How-Tos focused around accomplishing specific tasks are available on the [Microsoft Azure .NET Developer Center](https://docs.microsoft.com/en-us/dotnet/azure/).
 
 ### Creating a Table
 
@@ -204,5 +205,5 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 # Learn More
 
 - [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/)
-- [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/en-us/library/wa_storage_30_reference_home.aspx)
+- [Storage Client Library Reference for .NET](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/storage/client?view=azure-dotnet)
 - [Azure Storage Team Blog](http://blogs.msdn.com/b/windowsazurestorage/)
