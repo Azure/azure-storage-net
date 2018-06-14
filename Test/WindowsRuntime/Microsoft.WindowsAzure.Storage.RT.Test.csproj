@@ -51,26 +51,11 @@
     <SDKReference Include="TestPlatform, Version=11.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Common\*.cs">
+    <Compile Include="..\Common\**\*.cs" Exclude="..\Common\Properties\**;..\Common\Table\Queryable\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\Common\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\Common\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\Common\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\TestConfigProcess\*.cs">
-      <Link>TestConfigProcess\TestConfigProcess</Link>
-    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="AccountSasTests.cs" />
     <Compile Include="Blob\BlobAnalyticsUnitTests.cs" />
     <Compile Include="Blob\BlobCancellationUnitTests.cs" />

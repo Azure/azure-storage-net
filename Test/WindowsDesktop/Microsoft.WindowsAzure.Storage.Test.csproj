@@ -139,64 +139,11 @@
     <Compile Include="WCFBufferManagerAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Common\*.cs">
+    <Compile Include="..\ClassLibraryCommon\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\Common\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\Common\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\Common\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\TestConfigProcess\*.cs">
-      <Link>TestConfigProcess\TestConfigProcess</Link>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\ClassLibraryCommon\*.cs" />
-    <Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
-      <Link>Analytics\Analytics</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Properties\*.cs">
-      <Link>Properties\Properties</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\Protocol\*.cs">
-      <Link>Blob\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\File\Protocol\*.cs">
-      <Link>File\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\Entities\*.cs">
-      <Link>Table\Entities\Entities</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\SAS\*.cs">
-      <Link>Table\SAS\SAS</Link>
+    <Compile Include="..\Common\**\*.cs" Exclude="..\Common\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
