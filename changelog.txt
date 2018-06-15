@@ -2,7 +2,7 @@ Change in 9.2:
 - All: Support for 2017-11-09 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.5.
 - Blobs: Added support for blob creation time property.
 - Blobs: Added support for blob container immutability and legal hold policies.
-- Blob/Queue: Added OAuth token support for authentication(Please note that this feature is available in preview).
+- Blob/Queue: Added OAuth token support for authentication. Please note that this feature is available in preview.
 - All (Desktop): Added support for specifying Proxy on OperationContext, for per-request proxy scenarios.
 
 Changes in 9.1.1:
