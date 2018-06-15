@@ -17,12 +17,17 @@
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System;
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
     static class DefaultSerializer
     {
-        public static JsonSerializer Create()
+        public static JsonSerializer Instance {  get { return _instance.Value; } }
+
+        private static Lazy<JsonSerializer> _instance = new Lazy<JsonSerializer>(() => Create());
+        
+        private static JsonSerializer Create()
         {
             return new JsonSerializer
             {
@@ -33,7 +38,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
     static class DefaultSerializerSettings
     {
-        public static JsonSerializerSettings Create()
+        public static JsonSerializerSettings Instance { get { return _instance.Value; } }
+
+        private static Lazy<JsonSerializerSettings> _instance = new Lazy<JsonSerializerSettings>(() => Create());
+
+        private static JsonSerializerSettings Create()
         {
             return new JsonSerializerSettings
             {

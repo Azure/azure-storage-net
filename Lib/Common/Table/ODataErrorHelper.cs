@@ -108,14 +108,14 @@ namespace Microsoft.WindowsAzure.Storage
                     reader.DateParseHandling = DateParseHandling.None;
                     JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
 
-                    Dictionary<string, object> properties = dataSet.ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                    Dictionary<string, object> properties = dataSet.ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
 
                     StorageExtendedErrorInformation errorInformation = new StorageExtendedErrorInformation();
 
                     errorInformation.AdditionalDetails = new Dictionary<string, string>();
                     if (properties.ContainsKey(@"odata.error"))
                     {
-                        Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                        Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
                         if (errorProperties.ContainsKey(@"code"))
                         {
 #pragma warning disable 618
@@ -124,7 +124,7 @@ namespace Microsoft.WindowsAzure.Storage
                         }
                         if (errorProperties.ContainsKey(@"message"))
                         {
-                            Dictionary<string, object> errorMessageProperties = ((JObject)errorProperties[@"message"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                            Dictionary<string, object> errorMessageProperties = ((JObject)errorProperties[@"message"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
                             if (errorMessageProperties.ContainsKey(@"value"))
                             {
                                 errorInformation.ErrorMessage = (string)errorMessageProperties[@"value"];
@@ -132,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage
                         }
                         if (errorProperties.ContainsKey(@"innererror"))
                         {
-                            Dictionary<string, object> innerErrorDictionary = ((JObject)errorProperties[@"innererror"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                            Dictionary<string, object> innerErrorDictionary = ((JObject)errorProperties[@"innererror"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
                             if (innerErrorDictionary.ContainsKey(@"message"))
                             {
                                 errorInformation.AdditionalDetails[Constants.ErrorExceptionMessage] = (string)innerErrorDictionary[@"message"];
