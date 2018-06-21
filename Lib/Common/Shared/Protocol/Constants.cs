@@ -1249,7 +1249,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2017-11-09";
+            public const string TargetStorageVersion = "2018-03-28";
 
             /// <summary>
             /// Specifies the file type.
@@ -1391,6 +1391,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies the share quota, in gigabytes.
             /// </summary>
             public const string ShareQuota = PrefixForStorageHeader + "share-quota";
+
+            /// <summary>
+            /// The name of the SKU name header element.
+            /// </summary>
+            internal const string SkuNameName = PrefixForStorageHeader + "sku-name";
+
+            /// <summary>
+            /// The name of the account kind header element.
+            /// </summary>
+            internal const string AccountKindName = PrefixForStorageHeader + "account-kind";
 
             /// <summary>
             /// Header that specifies the Accept type for the response payload.
