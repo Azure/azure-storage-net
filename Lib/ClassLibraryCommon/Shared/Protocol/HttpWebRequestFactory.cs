@@ -82,7 +82,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
             request.KeepAlive = true;
-
+            request.Pipelined = false;
             // Disable the Expect 100-Continue
             request.ServicePoint.Expect100Continue = false;
 #endif
