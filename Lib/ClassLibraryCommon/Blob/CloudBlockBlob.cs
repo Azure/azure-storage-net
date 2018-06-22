@@ -2547,7 +2547,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual string StartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        private /*public virtual*/ string StartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             return this.StartCopy(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
@@ -2627,7 +2627,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginStartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        private /*public virtual*/ ICancellableAsyncResult BeginStartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
@@ -2754,7 +2754,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private /*public virtual*/ Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, contentMD5, syncCopy, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }

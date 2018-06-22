@@ -3211,7 +3211,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(Uri source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private /*public virtual*/ Task<string> StartCopyAsync(Uri source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, contentMD5, syncCopy, default(PremiumPageBlobTier?) /* premiumPageBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }

@@ -1244,7 +1244,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private /*public virtual*/ Task<string> StartCopyAsync(CloudBlockBlob source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), default(string) /* contentMD5 */, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
@@ -1265,7 +1265,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private /*public virtual*/ Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
@@ -1324,7 +1324,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudFile source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private /*public virtual*/ Task<string> StartCopyAsync(CloudFile source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(string) /* contentMD5 */, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }

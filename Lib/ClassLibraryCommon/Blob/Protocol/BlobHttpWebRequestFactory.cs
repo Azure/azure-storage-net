@@ -1184,7 +1184,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, string contentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
+        internal /*public*/ static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, string contentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("source", source);
 
