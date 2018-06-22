@@ -767,5 +767,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+        [TestMethod]
+        [Description("GetAccountProperties via Blob container")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobContainerGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                await blobContainerWithSAS.CreateAsync();
+
+                var result = await blobContainerWithSAS.GetAccountPropertiesAsync();
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExistsAsync().Wait();
+            }
+        }
     }
 }

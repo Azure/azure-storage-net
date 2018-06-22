@@ -25,14 +25,41 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using System;
     using System.Globalization;
     using System.IO;
+#if WINDOWS_RT || NETCORE
+    using System.Net.Http;
+#else
+    using System.Net;
+#endif
 
 #if WINDOWS_RT
     internal
 #else
     public
 #endif
-        static partial class BlobHttpResponseParsers
+    static partial class BlobHttpResponseParsers
     {
+#if WINDOWS_RT || NETCORE
+        /// <summary>
+        /// Reads account properties from an HttpResponseMessage object.
+        /// </summary>
+        /// <param name="response">The HttpResponseMessage from which to read the account properties.</param>
+        /// <returns>The account properties stored in the header.</returns>
+        public static AccountProperties ReadAccountProperties(HttpResponseMessage response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+#else
+        /// <summary>
+        /// Reads account properties from a HttpWebResponse.
+        /// </summary>
+        /// <param name="response">The HttpWebResponse from which to read the account properties.</param>
+        /// <returns>The account properties stored in the headers.</returns>
+        public static AccountProperties ReadAccountProperties(HttpWebResponse response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+#endif
+
         /// <summary>
         /// Reads service properties from a stream.
         /// </summary>

@@ -2044,5 +2044,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
             }
         }
+
+        [TestMethod]
+        [Description("GetAccountProperties via Blob client")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientGetAccountProperties()
+        {
+            var client = GenerateCloudBlobClient();
+            
+            var result = client.GetAccountPropertiesAsync().Result;
+
+            Assert.IsNotNull(result);
+
+            Assert.IsNotNull(result.SkuName);
+
+            Assert.IsNotNull(result.AccountKind);
+        }
     }
 }

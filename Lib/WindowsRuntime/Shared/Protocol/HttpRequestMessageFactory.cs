@@ -242,6 +242,23 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Creates a web request to get the properties of the account.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the service.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <returns>A web request to get the service properties.</returns>
+        internal static StorageRequestMessage GetAccountProperties(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+
+            builder.Add(Constants.QueryConstants.ResourceType, "account");
+            builder.Add(Constants.QueryConstants.Component, "properties");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Head, uri, timeout, builder, null /* content */, operationContext, canonicalizer, credentials);
+            return request;
+        }
+        
+        /// <summary>
         /// Creates a web request to get the properties of the service.
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>

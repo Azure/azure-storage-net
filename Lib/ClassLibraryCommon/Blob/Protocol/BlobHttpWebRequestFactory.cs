@@ -32,6 +32,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     public static class BlobHttpWebRequestFactory
     {
         /// <summary>
+        /// Creates a web request to get the properties of the Blob service account.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetAccountProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        {
+            return BlobHttpWebRequestFactory.GetAccountProperties(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to get the properties of the Blob service account.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest GetAccountProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.GetAccountProperties(uri, builder, timeout, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
         /// Creates a web request to get the properties of the Blob service.
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>

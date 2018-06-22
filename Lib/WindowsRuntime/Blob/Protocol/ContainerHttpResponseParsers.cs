@@ -27,8 +27,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 #else
     internal
 #endif
-        static partial class ContainerHttpResponseParsers
+    static partial class ContainerHttpResponseParsers
     {
+        /// <summary>
+        /// Reads account properties from an HttpResponseHeaders object.
+        /// </summary>
+        /// <param name="response">The HttpResponseHeaders from which to read the account properties.</param>
+        /// <returns>The account properties stored in the header.</returns>
+        public static AccountProperties ReadAccountProperties(HttpResponseMessage response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+
         /// <summary>
         /// Gets the container's properties from the response.
         /// </summary>

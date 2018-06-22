@@ -3755,6 +3755,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 #endif
 
+        [TestMethod]
+        [Description("GetAccountProperties via Blob container")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                blobContainerWithSAS.Create();
+
+                var result = blobContainerWithSAS.GetAccountPropertiesAsync().Result;
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
+
         private CloudBlobContainer GenerateRandomWriteOnlyBlobContainer()
         {
             string blobContainerName = "n" + Guid.NewGuid().ToString("N");

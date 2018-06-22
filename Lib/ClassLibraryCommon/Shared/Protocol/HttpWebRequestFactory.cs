@@ -288,6 +288,30 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Creates a web request to get the properties of the account.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the service.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>
+        /// A web request to get the service properties.
+        /// </returns>
+        internal static HttpWebRequest GetAccountProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            if (builder == null)
+            {
+                builder = new UriQueryBuilder();
+            }
+
+            builder.Add(Constants.QueryConstants.Component, "properties");
+            builder.Add(Constants.QueryConstants.ResourceType, "account");
+
+            return CreateWebRequest(WebRequestMethods.Http.Head, uri, timeout, builder, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
         /// Creates a web request to get the properties of the service.
         /// </summary>
         /// <param name="uri">The absolute URI to the service.</param>

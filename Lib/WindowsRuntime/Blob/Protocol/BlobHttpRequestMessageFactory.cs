@@ -25,6 +25,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Net;
     using System.Net.Http;
     using System.Net.Http.Headers;
 
@@ -841,6 +842,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             }
 
             return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to get the properties of the account.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the service.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns>A StorageRequestMessage to get the account properties.</returns>
+        internal static StorageRequestMessage GetAccountProperties(Uri uri, int? timeout, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            return HttpRequestMessageFactory.GetAccountProperties(uri, timeout, operationContext, canonicalizer, credentials);
         }
 
         /// <summary>

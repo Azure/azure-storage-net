@@ -356,7 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsSync()
         {
-            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer container = GenerateRandomWriteOnlyBlobContainer();
             try
             {
                 container.Create();
@@ -381,7 +381,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsAPM()
         {
-            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer container = GenerateRandomWriteOnlyBlobContainer();
             try
             {
                 container.Create();
@@ -422,7 +422,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsTask()
         {
-            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer container = GenerateRandomWriteOnlyBlobContainer();
             try
             {
                 container.CreateAsync().Wait();
@@ -4211,7 +4211,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobUploadTestUploadWithWriteOnlyAccountSAS()
         {
             string blobName = "n" + Guid.NewGuid().ToString("N");
-            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyBlobContainer();
             containerWithSAS.CreateIfNotExists();
             CloudBlockBlob blockBlobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
             int bufferSize = (int)(24 * Constants.MB);
@@ -4259,7 +4259,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobUploadTestOpenWriteWithWriteOnlyAccountSAS()
         {
-            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyBlobContainer();
             containerWithSAS.CreateIfNotExists();
 
              try 
@@ -4731,30 +4731,35 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private CloudBlobContainer GenerateRandomWriteOnlyContainer() 
+        [TestMethod]
+        [Description("GetAccountProperties via Block Blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobGetAccountProperties()
         {
-            string containerName = "c" + Guid.NewGuid().ToString("N");
-
-            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
             {
-                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
-                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
-                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
-                Services = SharedAccessAccountServices.Blob,
-                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+                blobContainerWithSAS.Create();
 
-            };
+                var blob = blobContainerWithSAS.GetBlockBlobReference("test");
 
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
-            CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
-            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
-            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-            StorageUri storageUri = blobClient.StorageUri;
-            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
-            CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
-            CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
+                var result = blob.GetAccountPropertiesAsync().Result;
 
-            return containerWithSAS;
+                blob.DeleteIfExists();
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
         }
     }
 }
