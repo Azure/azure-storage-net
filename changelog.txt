@@ -1,7 +1,6 @@
 Changes in 9.x:
 - All: Support for 2018-03-28 REST version.
 - Blob: Added support for put block using a source URI and range.
-- Blob: Added support for x-ms-requires-sync in blob copy operations.
 - Table: Address GitHub Issue #671, regarding serialization performance.
 - Blob: Added support for static website properties.
 - Blob: Added support for GetAccountProperties on blobs, blob containers, and blob clients.
