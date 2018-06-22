@@ -351,6 +351,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         /// <summary>
         /// Helper method to generate a 409 Conflict exception.
+        /// </summary>
         /// <returns>Return a 409 error wrapped in StorageException </returns>
         private static StorageException GenerateExceptionForConflictFailure()
         {

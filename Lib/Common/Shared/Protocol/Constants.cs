@@ -1016,6 +1016,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             public const string CopySourceHeader = PrefixForStorageHeader + "copy-source";
 
             /// <summary>
+            /// Header for copy sync.
+            /// </summary>
+            public const string RequiresSyncHeader = PrefixForStorageHeader + "requires-sync";
+
+            /// <summary>
+            /// Header for source ranges.
+            /// </summary>
+            public const string SourceRangeHeader = PrefixForStorageHeader + "source-range";
+
+            /// <summary>
             /// Header for the If-Match condition.
             /// </summary>
             public const string SourceIfMatchHeader = PrefixForStorageHeader + "source-if-match";
@@ -1064,6 +1074,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Header that specifies file content MD5.
             /// </summary>
             public const string FileContentMD5Header = PrefixForStorageHeader + "content-md5";
+
+            /// <summary>
+            /// Header that specifies source content MD5.
+            /// </summary>
+            public const string SourceContentMD5Header = PrefixForStorageHeader + "source-content-md5";
 
             /// <summary>
             /// Header that specifies file content type.

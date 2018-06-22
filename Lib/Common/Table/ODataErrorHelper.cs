@@ -34,8 +34,6 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
 #elif WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
