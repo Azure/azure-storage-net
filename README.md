@@ -1,4 +1,4 @@
-﻿# Microsoft Azure Storage SDK for .NET (9.2.0)
+﻿# Microsoft Azure Storage SDK for .NET (9.3.0)
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -56,13 +56,13 @@ Through the bait and switch technique, the reference assembly enables other port
 ## Use with the Azure Storage Emulator
 
 - The Client Library uses a particular Storage Service version. In order to use the Storage Client Library with the Storage Emulator, a corresponding minimum version of the Azure Storage Emulator must be used. Older versions of the Storage Emulator do not have the necessary code to successfully respond to new requests.
-- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.5. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
+- Currently, the minimum version of the Azure Storage Emulator needed for this library is 5.6. If you encounter a `VersionNotSupportedByEmulator` (400 Bad Request) error, please [update the Storage Emulator.](https://azure.microsoft.com/en-us/downloads/)
 
 ## Download & Install
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
-This version of the Storage Client Library ships with the storage version 2017-07-29.
+This version of the Storage Client Library ships with the storage version 2018-03-28.
 
 ### Via Git
 
@@ -83,40 +83,6 @@ Please note that the minimum nuget client version requirement has been updated t
 `Install-Package WindowsAzure.Storage`
 
 ## Dependencies
-
-### OData
-
-This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.8.2) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
-
-The ODataLib libraries can be downloaded directly or referenced by your code project through NuGet.  
-
-The specific ODataLib packages are:
-
-- [Microsoft.Data.OData](http://nuget.org/packages/Microsoft.Data.OData/)
-- [Microsoft.Data.Edm](http://nuget.org/packages/Microsoft.Data.Edm/)
-- [System.Spatial](http://nuget.org/packages/System.Spatial)
-
-> Note:
-> You may have encountered incompatibility issues while trying to restore Storage Client ODataLib dependencies on a Netstandard/Netcore project since the earlier ODataLib packages did not support NetStandard/NetCore. This issue has been resolved since ODataLib version v5.8.2 and Storage Client v8.1.0, however if you are still using older versions of Storage Client library, you may want to use one of the following options as a workaround:
-
-> If using project.json/xproj: you can use the imports statement within the framework node of your project.json as shown below:
-
-```
-  "imports": [
-    "dnxcore50",
-    "portable-net451+win8"
-  ]
-```
-
-> If using csproj : you can modify your csproj file to specify the target fallback as shown below:
-
-```  <PropertyGroup>
-    <TargetFramework>netcoreapp1.x</TargetFramework>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.x' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
-  </PropertyGroup>
-```
 
 ### Newtonsoft Json
 

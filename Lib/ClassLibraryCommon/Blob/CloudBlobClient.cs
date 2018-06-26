@@ -821,6 +821,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         #region Analytics
 
         /// <summary>
+        /// Begins an asynchronous operation to get account properties for the Blob service.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetAccountProperties(AsyncCallback callback, object state)
+        {
+            return this.BeginGetAccountProperties(null /* requestOptions */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to get account properties for the Blob service.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetAccountProperties(BlobRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            requestOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.BeginExecuteAsync(
+                this.GetAccountPropertiesImpl(requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
         /// Begins an asynchronous operation to get service properties for the Blob service.
         /// </summary>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
@@ -854,6 +887,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Ends an asynchronous operation to get account properties for the Blob service.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="AccountProperties"/> object.</returns>
+        public virtual AccountProperties EndGetAccountProperties(IAsyncResult asyncResult)
+        {
+            return Executor.EndExecuteAsync<AccountProperties>(asyncResult);
+        }
+
+        /// <summary>
         /// Ends an asynchronous operation to get service properties for the Blob service.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
@@ -864,6 +907,72 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
 #if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to get account properties for the Blob service.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync()
+        {
+            return this.GetAccountPropertiesAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get account properties for the Blob service.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetAccountProperties, this.EndGetAccountProperties, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get account properties for the Blob service.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext)
+        {
+            return this.GetAccountPropertiesAsync(requestOptions, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get account properties for the Blob service.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetAccountProperties, this.EndGetAccountProperties, requestOptions, operationContext, cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Gets account properties for the Blob service.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="AccountProperties"/> object.</returns>
+        [DoesServiceRequest]
+        public virtual AccountProperties GetAccountProperties(BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
+        {
+            requestOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteSync(
+                this.GetAccountPropertiesImpl(requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
         /// <summary>
         /// Initiates an asynchronous operation to get service properties for the Blob service.
         /// </summary>
@@ -909,7 +1018,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             return AsyncExtensions.TaskFromApm(this.BeginGetServiceProperties, this.EndGetServiceProperties, requestOptions, operationContext, cancellationToken);
         }
-#endif
 
 #if SYNC
         /// <summary>
@@ -1154,6 +1262,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 operationContext);
         }
 #endif
+
+        private RESTCommand<AccountProperties> GetAccountPropertiesImpl(BlobRequestOptions requestOptions)
+        {
+            RESTCommand<AccountProperties> retCmd = new RESTCommand<AccountProperties>(this.Credentials, this.StorageUri);
+            retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            retCmd.BuildRequestDelegate = HttpWebRequestFactory.GetAccountProperties;
+            retCmd.SignRequest = this.AuthenticationHandler.SignRequest;
+            retCmd.RetrieveResponseStream = true;
+            retCmd.PreProcessResponse =
+                (cmd, resp, ex, ctx) =>
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+
+            retCmd.PostProcessResponse =
+                (cmd, resp, ctx) => HttpResponseParsers.ReadAccountProperties(resp);
+            requestOptions.ApplyToStorageCommand(retCmd);
+            return retCmd;
+        }
 
         private RESTCommand<ServiceProperties> GetServicePropertiesImpl(BlobRequestOptions requestOptions)
         {

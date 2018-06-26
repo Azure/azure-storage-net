@@ -29,6 +29,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     public static partial class ContainerHttpResponseParsers
     {
         /// <summary>
+        /// Reads account properties from a HttpWebResponse.
+        /// </summary>
+        /// <param name="response">The HttpWebResponse from which to read the account properties.</param>
+        /// <returns>The account properties stored in the headers.</returns>
+        public static AccountProperties ReadAccountProperties(HttpWebResponse response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+
+        /// <summary>
         /// Gets the request ID from the response.
         /// </summary>
         /// <param name="response">The web response.</param>

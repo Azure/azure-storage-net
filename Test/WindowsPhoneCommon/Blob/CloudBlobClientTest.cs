@@ -469,5 +469,24 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+
+        [TestMethod]
+        [Description("GetAccountProperties via Blob client")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientGetAccountProperties()
+        {
+            var client = GenerateCloudBlobClient();
+
+            var result = await client.GetAccountPropertiesAsync();
+
+            Assert.IsNotNull(result);
+
+            Assert.IsNotNull(result.SkuName);
+
+            Assert.IsNotNull(result.AccountKind);
+        }
     }
 }

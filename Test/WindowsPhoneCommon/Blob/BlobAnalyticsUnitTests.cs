@@ -18,6 +18,7 @@
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
@@ -115,6 +116,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             props.HourMetrics.RetentionDays = 6;
             props.HourMetrics.Version = "1.0";
 
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = "myindex.html";
+            props.StaticWebsite.ErrorDocument404Path = "errors/error/404error.html";
+
             await client.SetServicePropertiesAsync(props);
 
             // Wait for analytics server to update
@@ -123,6 +128,158 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
+        [TestMethod]
+        [Description("Test Analytics StaticWebsite")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobTestAnalyticsStaticWebsiteAsync()
+        {
+            // Disabled
+            props.StaticWebsite.Enabled = false;
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = null;
+            await client.SetServicePropertiesAsync(props);
+
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            // Enabled
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = "somepath.html";
+            props.StaticWebsite.ErrorDocument404Path = "some/path.html";
+            await client.SetServicePropertiesAsync(props);
+
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+        }
+
+        [TestMethod]
+        [Description("Test Analytics StaticWebsite - missing parameters")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobTestAnalyticsStaticWebsiteMissingParameters()
+        {
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = null;
+            await client.SetServicePropertiesAsync(props);
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = "index";
+            props.StaticWebsite.ErrorDocument404Path = null;
+            await client.SetServicePropertiesAsync(props);
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = "404";
+            await client.SetServicePropertiesAsync(props);
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            props.StaticWebsite.Enabled = false;
+            props.StaticWebsite.IndexDocument = "somepath";
+            props.StaticWebsite.ErrorDocument404Path = "404/path";
+
+            // If enabled is false, the client doesn't append the paths.
+            await client.SetServicePropertiesAsync(props);
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = null;
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+        }
+
+        [TestMethod]
+        [Description("Test Analytics Just Static Update Sync")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobTestAnalyticsStaticOnlySync()
+        {
+            props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
+            props.Logging.RetentionDays = 5;
+            props.Logging.Version = Constants.AnalyticsConstants.LoggingVersionV1;
+
+            props.HourMetrics.MetricsLevel = MetricsLevel.Service;
+            props.HourMetrics.RetentionDays = 6;
+            props.HourMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+
+            props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
+            props.MinuteMetrics.RetentionDays = 6;
+            props.MinuteMetrics.Version = Constants.AnalyticsConstants.MetricsVersionV1;
+
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = "index";
+            props.StaticWebsite.ErrorDocument404Path = "errordoc";
+
+            props.Cors.CorsRules.Add(
+                new CorsRule()
+                {
+                    AllowedOrigins = new List<string>() { "www.ab.com", "www.bc.com" },
+                    AllowedMethods = CorsHttpMethods.Get | CorsHttpMethods.Put,
+                    MaxAgeInSeconds = 500,
+                    ExposedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-source*",
+                                         "x-ms-meta-abc",
+                                         "x-ms-meta-bcd"
+                                     },
+                    AllowedHeaders = new List<string>()
+                                     {
+                                         "x-ms-meta-data*",
+                                         "x-ms-meta-target*",
+                                         "x-ms-meta-xyz",
+                                         "x-ms-meta-foo"
+                                     }
+                });
+            props.StaticWebsite.Enabled = false;
+
+            await client.SetServicePropertiesAsync(props);
+
+            ServiceProperties newProps = new ServiceProperties();
+            newProps.StaticWebsite = new StaticWebsiteProperties();
+            newProps.StaticWebsite.Enabled = true;
+            newProps.StaticWebsite.IndexDocument = "index";
+            newProps.StaticWebsite.ErrorDocument404Path = "error";
+
+            await client.SetServicePropertiesAsync(newProps);
+
+            // Test that the other properties did not change.
+            props.StaticWebsite = newProps.StaticWebsite;
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            newProps.StaticWebsite = new StaticWebsiteProperties();
+            newProps.StaticWebsite.Enabled = false;
+
+            await client.SetServicePropertiesAsync(newProps);
+
+            // Test that the other properties did not change.
+            props.StaticWebsite = newProps.StaticWebsite;
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            // Reset to enabled for following test
+            newProps.StaticWebsite = new StaticWebsiteProperties();
+            newProps.StaticWebsite.Enabled = true;
+            newProps.StaticWebsite.IndexDocument = "index";
+            newProps.StaticWebsite.ErrorDocument404Path = "error";
+
+            await client.SetServicePropertiesAsync(newProps);
+            props.StaticWebsite = newProps.StaticWebsite;
+
+            newProps.Logging = props.Logging;
+            newProps.HourMetrics = props.HourMetrics;
+            newProps.MinuteMetrics = props.MinuteMetrics;
+            newProps.StaticWebsite = props.StaticWebsite;
+            newProps.Cors = props.Cors;
+            newProps.StaticWebsite = null;
+            await client.SetServicePropertiesAsync(newProps);
+
+            // Test that the CORS rules did not change.
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+        }
         #endregion
 
         #region Analytics Permutations
@@ -351,6 +508,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             props.DeleteRetentionPolicy.RetentionDays = 5;
 
             props.DefaultServiceVersion = "2013-08-15";
+
+            props.StaticWebsite.Enabled = false;
 
             return props;
         }

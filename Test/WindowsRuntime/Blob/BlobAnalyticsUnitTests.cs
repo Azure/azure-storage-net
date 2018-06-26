@@ -162,11 +162,78 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                                 }
                 });
 
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = "myindex.html";
+            props.StaticWebsite.ErrorDocument404Path = "errors/error/404error.html";
+
             await client.SetServicePropertiesAsync(props);
 
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
+        [TestMethod]
+        [Description("Test Analytics StaticWebsite")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobTestAnalyticsStaticWebsite()
+        {
+            // Disabled
+            props.StaticWebsite.Enabled = false;
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = null;
+            await client.SetServicePropertiesAsync(props);
+
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            // Enabled
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = "somepath.html";
+            props.StaticWebsite.ErrorDocument404Path = "some/path.html";
+            await client.SetServicePropertiesAsync(props);
+
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+        }
+
+        [TestMethod]
+        [Description("Test Analytics StaticWebsite - missing parameters")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobTestAnalyticsStaticWebsiteMissingParameters()
+        {
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = null;
+            await client.SetServicePropertiesAsync(props);
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = "index";
+            props.StaticWebsite.ErrorDocument404Path = null;
+            await client.SetServicePropertiesAsync(props);
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+
+            props.StaticWebsite.Enabled = true;
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = "404";
+            await client.SetServicePropertiesAsync(props);
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+
+            props.StaticWebsite.Enabled = false;
+            props.StaticWebsite.IndexDocument = "somepath";
+            props.StaticWebsite.ErrorDocument404Path = "404/path";
+
+            // If enabled is false, the client doesn't append the paths.
+            await client.SetServicePropertiesAsync(props);
+            props.StaticWebsite.IndexDocument = null;
+            props.StaticWebsite.ErrorDocument404Path = null;
+            TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
+        }
         #endregion
 
         #region Analytics Permutations
@@ -669,7 +736,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private static ServiceProperties DefaultServiceProperties()
         {
-            var props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties(), new DeleteRetentionPolicy());
+            var props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties(), new DeleteRetentionPolicy(), new StaticWebsiteProperties());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
@@ -686,6 +753,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             props.Cors.CorsRules = new List<CorsRule>();
 #endif
             props.DefaultServiceVersion = "2013-08-15";
+
+            props.StaticWebsite.Enabled = false;
 
             props.DeleteRetentionPolicy.Enabled = false;
             props.DeleteRetentionPolicy.RetentionDays = null;

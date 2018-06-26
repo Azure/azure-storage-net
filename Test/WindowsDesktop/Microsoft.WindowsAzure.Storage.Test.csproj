@@ -80,12 +80,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Microsoft.Data.Services.Client.5.8.2\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=3.17.2.31801, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.17.2\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=3.19.2.6005, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.19.2\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.Platform, Version=3.17.2.31801, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.17.2\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.Platform, Version=3.19.2.6005, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.19.2\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -139,64 +139,11 @@
     <Compile Include="WCFBufferManagerAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Common\*.cs">
+    <Compile Include="..\ClassLibraryCommon\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\Common\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\Common\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\Common\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\TestConfigProcess\*.cs">
-      <Link>TestConfigProcess\TestConfigProcess</Link>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\ClassLibraryCommon\*.cs" />
-    <Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
-      <Link>Analytics\Analytics</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Properties\*.cs">
-      <Link>Properties\Properties</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\Protocol\*.cs">
-      <Link>Blob\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\File\Protocol\*.cs">
-      <Link>File\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\Entities\*.cs">
-      <Link>Table\Entities\Entities</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Table\SAS\*.cs">
-      <Link>Table\SAS\SAS</Link>
+    <Compile Include="..\Common\**\*.cs" Exclude="..\Common\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

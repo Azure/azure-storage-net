@@ -28,6 +28,10 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
     using System.Xml;
     using System.Xml.Linq;
 
+#if WINDOWS_RT || NETCORE
+    using System.Net.Http;
+#endif
+
     internal static partial class HttpResponseParsers
     {
         /// <summary>
@@ -109,6 +113,28 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                     };
             }
         }
+
+#if WINDOWS_RT || NETCORE
+        /// <summary>
+        /// Reads account properties from an HttpResponseMessage object.
+        /// </summary>
+        /// <param name="response">The response from which to read the account properties.</param>
+        /// <returns>The account properties stored in the headers.</returns>
+        internal static AccountProperties ReadAccountProperties(HttpResponseMessage response)
+        {
+            return AccountProperties.FromHttpResponseHeaders(response.Headers);
+        }
+#else
+        /// <summary>
+        /// Reads account properties from a HttpWebResponse.
+        /// </summary>
+        /// <param name="response">The response from which to read the account properties.</param>
+        /// <returns>The account properties stored in the headers.</returns>
+        internal static AccountProperties ReadAccountProperties(HttpWebResponse response)
+        {
+            return AccountProperties.FromWebHeaderCollection(response.Headers);
+        }
+#endif
 
         /// <summary>
         /// Reads service properties from a stream.

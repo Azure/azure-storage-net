@@ -32,6 +32,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     public static class BlobHttpWebRequestFactory
     {
         /// <summary>
+        /// Creates a web request to get the properties of the Blob service account.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest GetAccountProperties(Uri uri, UriQueryBuilder builder, int? timeout, OperationContext operationContext)
+        {
+            return BlobHttpWebRequestFactory.GetAccountProperties(uri, builder, timeout, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Creates a web request to get the properties of the Blob service account.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal static HttpWebRequest GetAccountProperties(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            return HttpWebRequestFactory.GetAccountProperties(uri, builder, timeout, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
         /// Creates a web request to get the properties of the Blob service.
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
@@ -347,12 +374,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         }
 
         /// <summary>
+        /// Adds the Copy Source Header for Blob Service Operations.
+        /// </summary>
+        /// <param name="request">The <see cref="HttpWebRequest"/> to add the copy source header to.</param>
+        /// <param name="sourceUri">URI of the source</param>
+        private static void AddCopySource(HttpWebRequest request, Uri sourceUri)
+        {
+            request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, sourceUri.AbsoluteUri);
+        }
+
+        /// <summary>
         /// Adds the Range Header for Blob Service Operations.
         /// </summary>
         /// <param name="request">Request</param>
         /// <param name="offset">Starting byte of the range</param>
         /// <param name="count">Number of bytes in the range</param>
         private static void AddRange(HttpWebRequest request, long? offset, long? count)
+        {
+            AddRangeImpl(Constants.HeaderConstants.RangeHeader, request, offset, count);
+        }
+
+        /// <summary>
+        /// Adds the Source Range Header for Blob Service Operations.
+        /// </summary>
+        /// <param name="request">Request</param>
+        /// <param name="offset">Starting byte of the range</param>
+        /// <param name="count">Number of bytes in the range</param>
+        private static void AddSourceRange(HttpWebRequest request, long? offset, long? count)
+        {
+            AddRangeImpl(Constants.HeaderConstants.SourceRangeHeader, request, offset, count);
+        }
+
+        /// <summary>
+        /// Adds the Range Header for Blob Service Operations.
+        /// </summary>
+        /// <param name="header">Name of the header</param>
+        /// <param name="request">Request</param>
+        /// <param name="offset">Starting byte of the range</param>
+        /// <param name="count">Number of bytes in the range</param>
+        private static void AddRangeImpl(string header, HttpWebRequest request, long? offset, long? count)
         {
             if (count.HasValue)
             {
@@ -370,7 +430,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 }
 
                 string rangeHeaderValue = string.Format(CultureInfo.InvariantCulture, Constants.HeaderConstants.RangeHeaderFormat, rangeStart, rangeEnd);
-                request.Headers.Add(Constants.HeaderConstants.RangeHeader, rangeHeaderValue);
+                request.Headers.Add(header, rangeHeaderValue);
             }
         }
 
@@ -860,6 +920,60 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         }
 
         /// <summary>
+        /// Constructs a web request to write a block to a block blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="blockId">A string specifying the block ID for this block.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest PutBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, string blockId, AccessCondition accessCondition, OperationContext operationContext)
+        {
+            return BlobHttpWebRequestFactory.PutBlock(uri, sourceUri, offset, count, contentMD5, timeout, blockId, accessCondition, true /* useVersionHeader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to write a block to a block blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="blockId">A string specifying the block ID for this block.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest PutBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, string blockId, AccessCondition accessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
+            if (offset.HasValue && offset.Value < 0)
+            {
+                CommonUtility.ArgumentOutOfRange("offset", offset);
+            }
+
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "block");
+            builder.Add("blockid", blockId);
+            
+            HttpWebRequest request = HttpWebRequestFactory.CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
+            request.ApplyLeaseId(accessCondition);
+
+            AddCopySource(request, sourceUri);
+            AddSourceRange(request, offset, count);
+            
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+
+            return request;
+        }
+
+        /// <summary>
         /// Constructs a web request to create or update a blob by committing a block list.
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
@@ -1052,7 +1166,32 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
         {
+            return CopyFrom(uri, timeout, source, default(string) /* contentMD5 */, incrementalCopy, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Generates a web request to copy a blob or file to another blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the destination blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="source">A <see cref="System.Uri"/> specifying the absolute URI to the source object, including any necessary authentication parameters.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the source object in order for the request to proceed.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the destination blob in order for the request to proceed.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        internal /*public*/ static HttpWebRequest CopyFrom(Uri uri, int? timeout, Uri source, string contentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, bool useVersionHeader, OperationContext operationContext)
+        {
             CommonUtility.AssertNotNull("source", source);
+
+            if (!syncCopy && !string.IsNullOrEmpty(contentMD5))
+            {
+                throw new InvalidOperationException();
+            }
 
             UriQueryBuilder builder = null;
             if (incrementalCopy)
@@ -1065,13 +1204,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, source.AbsoluteUri);
 
+            request.ApplyAccessCondition(destAccessCondition);
+            request.ApplyAccessConditionToSource(sourceAccessCondition);
+
             if (premiumPageBlobTier.HasValue)
             {
                 request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier.Value.ToString());
             }
 
-            request.ApplyAccessCondition(destAccessCondition);
-            request.ApplyAccessConditionToSource(sourceAccessCondition);
+            if (syncCopy)
+            {
+                request.Headers.Add(Constants.HeaderConstants.RequiresSyncHeader, Constants.HeaderConstants.TrueHeader);
+            }
+
+            if (!string.IsNullOrEmpty(contentMD5))
+            {
+                request.Headers.Add(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+            }
 
             return request;
         }
