@@ -1,12 +1,12 @@
-Changes in 9.3:
-- All: Support for 2018-03-28 REST version.
+Changes in 9.3.0:
+- All: Support for 2018-03-28 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.6.
 - Blob: Added support for put block using a source URI and range.
 - Table: Address GitHub Issue #671, regarding serialization performance.
 - Blob: Added support for static website properties.
 - Blob: Added support for GetAccountProperties on blobs, blob containers, and blob clients.
 - Desktop: Disabled Pipelining on HttpWebRequests.
 
-Changes in 9.2:
+Changes in 9.2.0:
 - All: Support for 2017-11-09 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.5.
 - Blobs: Added support for blob creation time property.
 - Blobs: Added support for blob container immutability and legal hold policies.
