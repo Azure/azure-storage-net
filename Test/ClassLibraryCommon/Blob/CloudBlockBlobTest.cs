@@ -356,7 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsSync()
         {
-            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer container = GenerateRandomWriteOnlyBlobContainer();
             try
             {
                 container.Create();
@@ -381,7 +381,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsAPM()
         {
-            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer container = GenerateRandomWriteOnlyBlobContainer();
             try
             {
                 container.Create();
@@ -422,7 +422,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobDeleteIfExistsWithWriteOnlyPermissionsTask()
         {
-            CloudBlobContainer container = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer container = GenerateRandomWriteOnlyBlobContainer();
             try
             {
                 container.CreateAsync().Wait();
@@ -3719,6 +3719,76 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+
+        [TestMethod]
+        [Description("Upload blocks and then verify the contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobPutBlockViaCopyAsync()
+        {
+            byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                BlobContainerPermissions permissions = await container.GetPermissionsAsync();
+
+                permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+
+                await container.SetPermissionsAsync(permissions);
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+
+                List<string> blockList = GetBlockIdList(2);
+
+                using (MemoryStream resultingData = new MemoryStream())
+                {
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        await blob.PutBlockAsync(blockList[0], memoryStream, null);
+                        resultingData.Write(buffer, 0, buffer.Length);
+
+                        int offset = buffer.Length - 1024;
+                        memoryStream.Seek(offset, SeekOrigin.Begin);
+                        await blob.PutBlockAsync(blockList[1], memoryStream, null);
+                        resultingData.Write(buffer, offset, buffer.Length - offset);
+                    }
+
+                    await blob.PutBlockListAsync(blockList);
+
+                    CloudBlockBlob destBlob = container.GetBlockBlobReference("blob2");
+                    List<string> destBlockList = GetBlockIdList(2);
+                    await destBlob.PutBlockAsync(destBlockList[0], blob.Uri, 50, 100, null);
+                    await destBlob.PutBlockAsync(destBlockList[1], blob.Uri, 500, 100, null);
+
+                    await destBlob.PutBlockListAsync(destBlockList);
+
+                    using (MemoryStream blobData = new MemoryStream())
+                    {
+                        await destBlob.DownloadToStreamAsync(blobData);
+                        Assert.AreEqual(200, blobData.Length);
+
+                        var expectedData = resultingData.ToArray();
+                        expectedData =
+                            expectedData
+                            .Skip(50).Take(100)
+                            .Concat(expectedData.Skip(500).Take(100))
+                            .ToArray();
+
+                        Assert.IsTrue(blobData.ToArray().SequenceEqual(expectedData), "downloaded data doesn't match expected data");
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
 #endif
 
         [TestMethod]
@@ -4211,7 +4281,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlockBlobUploadTestUploadWithWriteOnlyAccountSAS()
         {
             string blobName = "n" + Guid.NewGuid().ToString("N");
-            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyBlobContainer();
             containerWithSAS.CreateIfNotExists();
             CloudBlockBlob blockBlobWithSAS = containerWithSAS.GetBlockBlobReference(blobName);
             int bufferSize = (int)(24 * Constants.MB);
@@ -4259,7 +4329,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobUploadTestOpenWriteWithWriteOnlyAccountSAS()
         {
-            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyContainer();
+            CloudBlobContainer containerWithSAS = GenerateRandomWriteOnlyBlobContainer();
             containerWithSAS.CreateIfNotExists();
 
              try 
@@ -4731,30 +4801,35 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
-        private CloudBlobContainer GenerateRandomWriteOnlyContainer() 
+        [TestMethod]
+        [Description("GetAccountProperties via Block Blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobGetAccountProperties()
         {
-            string containerName = "c" + Guid.NewGuid().ToString("N");
-
-            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
             {
-                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
-                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
-                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
-                Services = SharedAccessAccountServices.Blob,
-                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+                blobContainerWithSAS.Create();
 
-            };
+                var blob = blobContainerWithSAS.GetBlockBlobReference("test");
 
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
-            CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
-            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
-            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
-            StorageUri storageUri = blobClient.StorageUri;
-            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
-            CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
-            CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(containerName);
+                var result = blob.GetAccountPropertiesAsync().Result;
 
-            return containerWithSAS;
+                blob.DeleteIfExists();
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
         }
     }
 }

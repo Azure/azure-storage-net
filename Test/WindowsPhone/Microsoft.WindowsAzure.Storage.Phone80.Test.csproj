@@ -81,57 +81,20 @@
     <DefineConstants>WINDOWS_PHONE</DefineConstants>
     <OutputPath>Bin\Debug\</OutputPath>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\Common\*.cs">
-    </Compile>
-    <Compile Include="..\Common\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\Common\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\Common\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\TestConfigProcess\*.cs">
-      <Link>TestConfigProcess\TestConfigProcess</Link>
-    </Compile>
-  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\ClassLibraryCommon\Analytics\*.cs">
-      <Link>Analytics\Analytics</Link>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
     <Compile Include="..\ClassLibraryCommon\Table\Entities\*.cs">
-      <Link>Table\Entities\Entities</Link>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\WindowsPhoneCommon\Blob\*.cs">
-      <Link>Blob\Blob</Link>
+    <Compile Include="..\WindowsPhoneCommon\**\*.cs" Exclude="..\WindowsPhoneCommon\LocalizedStrings.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\WindowsPhoneCommon\File\*.cs">
-      <Link>File\File</Link>
+    <Compile Include="..\Common\**\*.cs" Exclude="..\Common\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\WindowsPhoneCommon\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\WindowsPhoneCommon\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\WindowsPhoneCommon\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\WindowsPhoneCommon\TestBase.cs" />
-    <Compile Include="..\WindowsPhoneCommon\TestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\Common\Readme.txt">
@@ -152,8 +115,6 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="..\WindowsPhoneCommon\DescriptionAttribute.cs" />
-    <Compile Include="..\WindowsPhoneCommon\SampleTest.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

@@ -17,6 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -1804,5 +1805,82 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>  
         Task AbortCopyAsync(string copyId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken);
 #endif
+
+        #region GetAccountProperties
+
+        /// <summary>
+        /// Begins an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        ICancellableAsyncResult BeginGetAccountProperties(AsyncCallback callback, object state);
+
+        /// <summary>
+        /// Begins an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        ICancellableAsyncResult BeginGetAccountProperties(BlobRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state);
+
+        /// <summary>
+        /// Ends an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="AccountProperties"/> object.</returns>
+        AccountProperties EndGetAccountProperties(IAsyncResult asyncResult);
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        Task<AccountProperties> GetAccountPropertiesAsync();
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        Task<AccountProperties> GetAccountPropertiesAsync(CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext);
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken);
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Gets properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="AccountProperties"/> object.</returns>
+        [DoesServiceRequest]
+        AccountProperties GetAccountProperties(BlobRequestOptions requestOptions = null, OperationContext operationContext = null);
+#endif
+        #endregion
     }
 }

@@ -17,7 +17,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.File;
 using System;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -336,13 +338,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
 #if TASK
-        [TestMethod]
-        [Description("Copy a blob and then verify its contents, properties, and metadata")]
-        [TestCategory(ComponentCategory.Blob)]
-        [TestCategory(TestTypeCategory.UnitTest)]
-        [TestCategory(SmokeTestCategory.NonSmoke)]
-        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlockBlobCopyTestTask()
+        private static void CloudBlockBlobCopyImpl(Func<CloudBlockBlob, string, CloudBlockBlob, string> copyFunc)
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -356,9 +352,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 source.Metadata["Test"] = "value";
                 source.SetMetadataAsync().Wait();
+                source.FetchAttributesAsync().Wait();
 
                 CloudBlockBlob copy = container.GetBlockBlobReference("copy");
-                string copyId = copy.StartCopyAsync(TestHelper.Defiddler(source)).Result;
+                string copyId = copyFunc(source, source.Properties.ContentMD5, copy);
                 Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
                 WaitForCopyTask(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
@@ -401,6 +398,138 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.DeleteIfExistsAsync().Wait();
             }
+        }
+        
+        [TestMethod]
+        [Description("Copy a blob and then verify its contents, properties, and metadata")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobCopyTestTask()
+        {
+            CloudBlockBlobCopyImpl((source, sourceContentMD5, copy) => copy.StartCopyAsync(TestHelper.Defiddler(source)).Result);
+        }
+
+        [TestMethod]
+        [Description("Copy a blob using x-ms-requires-sync, and then verify its contents, properties, and metadata")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Ignore]
+        public void CloudBlockBlobCopyWithRequiresSyncTestAsync()
+        {
+            //CloudBlockBlobCopyImpl((source, sourceContentMD5, copy) => copy.StartCopyAsync(TestHelper.Defiddler(source), sourceContentMD5, true /* syncCopy */, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), default(CancellationToken)).Result);
+        }
+
+        private static void CloudBlockBlobCopyFromCloudFileImpl(Func<CloudFile, CloudBlockBlob, string> copyFunc)
+        {
+            CloudFileClient fileClient = GenerateCloudFileClient();
+
+            string name = GetRandomContainerName();
+            CloudFileShare share = fileClient.GetShareReference(name);  
+            
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                try
+                {
+                    container.CreateAsync().Wait();
+
+                    share.Create();
+
+                    CloudFile source = share.GetRootDirectoryReference().GetFileReference("source");
+                    byte[] data = GetRandomBuffer(1024);
+
+                    source.UploadFromByteArray(data, 0, data.Length);
+
+                    source.Metadata["Test"] = "value";
+                    source.SetMetadataAsync().Wait();
+
+                    var sasToken = source.GetSharedAccessSignature(new SharedAccessFilePolicy
+                    {
+                        Permissions = SharedAccessFilePermissions.Read,
+                        SharedAccessExpiryTime = DateTime.UtcNow.AddHours(24)
+                    });
+
+                    Uri fileSasUri = new Uri(source.StorageUri.PrimaryUri.ToString() + sasToken);
+
+                    source = new CloudFile(fileSasUri);
+                    
+                    CloudBlockBlob copy = container.GetBlockBlobReference("copy");
+                    string copyId = copyFunc(source, copy);
+                    Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
+
+                    try
+                    {
+                        WaitForCopyTask(copy);
+
+                        Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
+                        Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
+                        Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
+                        Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
+                        Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                        Assert.IsFalse(copy.Properties.IsIncrementalCopy);
+                        Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+                    }
+                    catch (NullReferenceException)
+                    {
+                        // potential null ref in the WaitForCopyTask and CopyState check implementation
+                    }
+
+                    TestHelper.ExpectedExceptionTask(
+                        copy.AbortCopyAsync(copyId),
+                        "Aborting a copy operation after completion should fail",
+                        HttpStatusCode.Conflict,
+                        "NoPendingCopyOperation");
+
+                    source.FetchAttributesAsync().Wait();
+                    Assert.IsNotNull(copy.Properties.ETag);
+                    Assert.AreNotEqual(source.Properties.ETag, copy.Properties.ETag);
+                    Assert.IsTrue(copy.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                    byte[] copyData = new byte[source.Properties.Length];
+
+                    copy.DownloadToByteArray(copyData, 0);
+
+                    Assert.IsTrue(data.SequenceEqual(copyData), "Data inside copy of blob not similar");
+
+                    copy.FetchAttributesAsync().Wait();
+                    BlobProperties prop1 = copy.Properties;
+                    FileProperties prop2 = source.Properties;
+
+                    Assert.AreEqual(prop1.CacheControl, prop2.CacheControl);
+                    Assert.AreEqual(prop1.ContentEncoding, prop2.ContentEncoding);
+                    Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
+                    Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
+                    Assert.AreEqual(prop1.ContentType, prop2.ContentType);
+
+                    Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
+
+                    copy.DeleteIfExistsAsync().Wait();
+                }
+                finally
+                {
+                    share.DeleteIfExistsAsync().Wait();
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Copy a blob and then verify its contents, properties, and metadata")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlockBlobCopyFromCloudFileTestTask()
+        {
+            CloudBlockBlobCopyFromCloudFileImpl((source, copy) => copy.StartCopyAsync(TestHelper.Defiddler(source)).Result);
         }
 #endif
 

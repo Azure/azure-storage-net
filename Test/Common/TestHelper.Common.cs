@@ -581,9 +581,43 @@ namespace Microsoft.WindowsAzure.Storage
                 Assert.IsNull(propsA.DeleteRetentionPolicy);
                 Assert.IsNull(propsB.DeleteRetentionPolicy);
             }
+
+            if (propsA.StaticWebsite != null && propsB.StaticWebsite != null)
+            {
+                Assert.AreEqual(propsA.StaticWebsite.IndexDocument, propsB.StaticWebsite.IndexDocument);
+                Assert.AreEqual(propsA.StaticWebsite.ErrorDocument404Path, propsB.StaticWebsite.ErrorDocument404Path);
+            }
+            else
+            {
+                Assert.IsNull(propsA.StaticWebsite);
+                Assert.IsNull(propsB.StaticWebsite);
+            }
         }
 
-        internal static void SpinUpTo30SecondsIgnoringFailures(Action test)
+        internal static async Task SpinUpToNSecondsIgnoringFailuresAsync(Func<Task> test, int secondCound)
+        {
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+
+            while (true)
+            {
+                try
+                {
+                    await test();
+                    return;
+                }
+                catch (Exception)
+                {
+                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(secondCound))
+                    {
+                        throw;
+                    }
+                }
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
+        internal static void SpinUpToNSecondsIgnoringFailures(Action test, int secondCount)
         {
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
@@ -597,7 +631,7 @@ namespace Microsoft.WindowsAzure.Storage
                 }
                 catch (Exception)
                 {
-                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(secondCount))
                     {
                         throw;
                     }
@@ -607,6 +641,16 @@ namespace Microsoft.WindowsAzure.Storage
                     }
                 }
             }
+        }
+
+        internal static Task SpinUpTo30SecondsIgnoringFailuresAsync(Func<Task> test)
+        {
+            return SpinUpToNSecondsIgnoringFailuresAsync(test, 30);
+        }
+
+        internal static void SpinUpTo30SecondsIgnoringFailures(Action test)
+        {
+            SpinUpToNSecondsIgnoringFailures(test, 30);
         }
     }
 }

@@ -126,6 +126,10 @@ namespace Microsoft.WindowsAzure.Storage.Table
             return this;
         }
 
+        /// <summary>
+        /// Creates a new copy of the <see cref="TableQuery"/> instance.
+        /// </summary>
+        /// <returns>A <see cref="TableQuery"/> instance.</returns>
         public TableQuery<TElement> Copy()
         {
             TableQuery<TElement> copy = new TableQuery<TElement>();
