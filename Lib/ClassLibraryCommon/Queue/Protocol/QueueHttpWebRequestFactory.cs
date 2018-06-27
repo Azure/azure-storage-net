@@ -403,10 +403,39 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="timeToLiveInSeconds">The message time-to-live, in seconds.</param>
         /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest addMessage(Uri uri, int? timeout, long? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, OperationContext operationContext)
+        {
+            return QueueHttpWebRequestFactory.AddMessage(uri, timeout, timeToLiveInSeconds, visibilityTimeoutInSeconds, true /* useVersionheader */, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to add a message for a queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="timeToLiveInSeconds">The message time-to-live, in seconds.</param>
+        /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest AddMessage(Uri uri, int? timeout, int? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, bool useVersionHeader, OperationContext operationContext)
+        {
+            return AddMessage(uri, timeout, (long)timeToLiveInSeconds, visibilityTimeoutInSeconds, useVersionHeader, operationContext);
+        }
+
+        /// <summary>
+        /// Constructs a web request to add a message for a queue.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="timeToLiveInSeconds">The message time-to-live, in seconds.</param>
+        /// <param name="visibilityTimeoutInSeconds">The length of time during which the message will be invisible, in seconds.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static HttpWebRequest AddMessage(Uri uri, int? timeout, long? timeToLiveInSeconds, int? visibilityTimeoutInSeconds, bool useVersionHeader, OperationContext operationContext)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
 
@@ -495,7 +524,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="numberOfMessages">An integer specifying the number of messages to get.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to get. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> value specifying the visibility timeout.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
@@ -509,7 +538,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="numberOfMessages">An integer specifying the number of messages to get.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to get. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> value specifying the visibility timeout.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -534,7 +563,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="numberOfMessages">An integer specifying the number of messages to peek.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static HttpWebRequest PeekMessages(Uri uri, int? timeout, int numberOfMessages, OperationContext operationContext)
@@ -547,7 +576,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
         /// </summary>
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="numberOfMessages">An integer specifying the number of messages to peek.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>

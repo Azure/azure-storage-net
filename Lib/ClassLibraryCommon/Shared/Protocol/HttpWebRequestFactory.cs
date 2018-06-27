@@ -63,11 +63,15 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uriRequest);
             request.Method = method;
 
-             // Set the Content-Length of requests to 0 by default for all put requests. 
-             if (method.Equals(WebRequestMethods.Http.Put, StringComparison.OrdinalIgnoreCase))
-             {
-                 request.ContentLength = 0;
-             }
+#if !WINDOWS_PHONE
+            request.Proxy = operationContext.Proxy ?? request.Proxy;
+#endif
+                        
+            // Set the Content-Length of requests to 0 by default for all put requests. 
+            if (method.Equals(WebRequestMethods.Http.Put, StringComparison.OrdinalIgnoreCase))
+            {
+                request.ContentLength = 0;
+            }
 
             request.UserAgent = Constants.HeaderConstants.UserAgent;
 
@@ -259,6 +263,27 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         internal static HttpWebRequest Delete(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
         {
             HttpWebRequest request = CreateWebRequest("DELETE", uri, timeout, builder, useVersionHeader, operationContext);
+            return request;
+        }
+
+        /// <summary>
+        /// Undeletes the specified URI.
+        /// </summary>
+        /// <param name="uri">The URI of the resource to delete.</param>
+        /// <param name="timeout">The timeout.</param>
+        /// <param name="builder">The builder.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        internal static HttpWebRequest Undelete(Uri uri, UriQueryBuilder builder, int? timeout, bool useVersionHeader, OperationContext operationContext)
+        {
+            if (builder == null)
+            {
+                builder = new UriQueryBuilder();
+            }
+
+            builder.Add(Constants.QueryConstants.Component, "undelete");
+            HttpWebRequest request = CreateWebRequest(WebRequestMethods.Http.Put, uri, timeout, builder, useVersionHeader, operationContext);
             return request;
         }
 

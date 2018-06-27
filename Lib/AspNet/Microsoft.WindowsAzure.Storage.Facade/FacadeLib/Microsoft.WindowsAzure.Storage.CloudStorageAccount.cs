@@ -11,7 +11,7 @@ using System.Globalization;
 using System.Linq;
 namespace Microsoft.WindowsAzure.Storage
 {
-public sealed class CloudStorageAccount
+public class CloudStorageAccount
 {
     private static readonly KeyValuePair<string, Func<string, bool>> UseDevelopmentStorageSetting = CloudStorageAccount.Setting("UseDevelopmentStorage", new string[1] { "true" });
     private static readonly KeyValuePair<string, Func<string, bool>> DevelopmentStorageProxyUriSetting = CloudStorageAccount.Setting("DevelopmentStorageProxyUri", new Func<string, bool>(CloudStorageAccount.IsValidUri));
@@ -165,19 +165,19 @@ public sealed class CloudStorageAccount
     {
         throw new System.NotImplementedException();
     }
-    public CloudTableClient CreateCloudTableClient()
+    public virtual CloudTableClient CreateCloudTableClient()
     {
         throw new System.NotImplementedException();
     }
-    public CloudQueueClient CreateCloudQueueClient()
+    public virtual CloudQueueClient CreateCloudQueueClient()
     {
         throw new System.NotImplementedException();
     }
-    public CloudBlobClient CreateCloudBlobClient()
+    public virtual CloudBlobClient CreateCloudBlobClient()
     {
         throw new System.NotImplementedException();
     }
-    public CloudFileClient CreateCloudFileClient()
+    public virtual CloudFileClient CreateCloudFileClient()
     {
         throw new System.NotImplementedException();
     }

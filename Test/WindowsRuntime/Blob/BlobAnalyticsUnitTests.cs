@@ -135,6 +135,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             props.MinuteMetrics.RetentionDays = 6;
             props.MinuteMetrics.Version = "1.0";
 
+            props.DeleteRetentionPolicy.Enabled = true;
+            props.DeleteRetentionPolicy.RetentionDays = 8;
+
             props.Cors.CorsRules.Add(
                 new CorsRule()
                 {
@@ -175,8 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlobTestAnalyticsDisableAsync()
-        {
-            // These are set to defaults in the test initialization
+        {            // These are set to defaults in the test initialization
             await client.SetServicePropertiesAsync(props);
 
             // Check that the default service properties set in the Test Initialization were uploaded correctly
@@ -667,7 +669,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private static ServiceProperties DefaultServiceProperties()
         {
-            ServiceProperties props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties());
+            var props = new ServiceProperties(new LoggingProperties(), new MetricsProperties(), new MetricsProperties(), new CorsProperties(), new DeleteRetentionPolicy());
 
             props.Logging.LoggingOperations = LoggingOperations.None;
             props.Logging.RetentionDays = null;
@@ -684,6 +686,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             props.Cors.CorsRules = new List<CorsRule>();
 #endif
             props.DefaultServiceVersion = "2013-08-15";
+
+            props.DeleteRetentionPolicy.Enabled = false;
+            props.DeleteRetentionPolicy.RetentionDays = null;
 
             return props;
         }

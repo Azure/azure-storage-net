@@ -42,6 +42,10 @@ internal static class BlobHttpResponseParsers
     {
         throw new System.NotImplementedException();
     }
+    public static bool GetDeletionStatus(string deletedHeader)
+    {
+        throw new System.NotImplementedException();
+    }
     private static bool CheckIfTrue(string header)
     {
         throw new System.NotImplementedException();

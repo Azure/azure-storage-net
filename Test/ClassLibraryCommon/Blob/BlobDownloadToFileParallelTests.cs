@@ -249,7 +249,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.Fail("Expected a failure");
                 }
                 catch (ArgumentException) {}
-
                 blob.Delete();
             }
             finally

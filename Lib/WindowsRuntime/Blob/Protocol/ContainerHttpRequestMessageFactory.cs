@@ -343,6 +343,20 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                         sb.Append("copy");
                     }
 
+                    if ((listingContext.Details & BlobListingDetails.Deleted) == BlobListingDetails.Deleted)
+                    {
+                        if (!started)
+                        {
+                            started = true;
+                        }
+                        else
+                        {
+                            sb.Append(",");
+                        }
+
+                        sb.Append("deleted");
+                    }
+
                     builder.Add("include", sb.ToString());
                 }
             }

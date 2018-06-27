@@ -241,22 +241,5 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
             }
         }
 #endif
-
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-        internal static StorageException TranslateDataServiceExceptionBasedOnParseError(Exception ex, RequestResult currentResult, Func<Stream, IDictionary<string, string>, string, StorageExtendedErrorInformation> parseDataServiceError)
-        {
-            if (parseDataServiceError != null)
-            {
-                return StorageException.TranslateDataServiceException(
-                    ex,
-                    currentResult,
-                    (stream, headers) => parseDataServiceError(stream, headers, null));
-            }
-            else
-            {
-                return StorageException.TranslateDataServiceException(ex, currentResult, null);
-            }
-        }
-#endif
     }
 }

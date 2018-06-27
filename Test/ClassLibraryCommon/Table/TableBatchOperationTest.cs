@@ -1581,6 +1581,100 @@ namespace Microsoft.WindowsAzure.Storage.Table
             enumerator.MoveNext();
             Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.NoContent);
         }
+
+        [TestMethod]
+        [Description("A test to check batch with all supported operations, with all edm types")]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void TableBatchAllEdmtypesSync()
+        {
+            foreach (TablePayloadFormat payloadFormat in Enum.GetValues(typeof(TablePayloadFormat)))
+            {
+                DoTableBatchAllEdmTypesSync(payloadFormat);
+            }
+        }
+
+        private void DoTableBatchAllEdmTypesSync(TablePayloadFormat format)
+        {
+            tableClient.DefaultRequestOptions.PayloadFormat = format;
+
+            TableBatchOperation batch = new TableBatchOperation();
+            string pk = Guid.NewGuid().ToString();
+
+            List<DynamicTableEntity> entities = new List<DynamicTableEntity>();
+
+            // insert
+            DynamicTableEntity entity = GenerateRandomEntityWithAllEdmtypes(pk);
+            entities.Add(entity);
+            batch.Insert(entity, true);
+
+            // delete
+            entity = GenerateRandomEntityWithAllEdmtypes(pk);
+            entities.Add(entity);
+            currentTable.Execute(TableOperation.Insert(entity));
+            batch.Delete(entity);
+
+            // replace
+            entity = GenerateRandomEntityWithAllEdmtypes(pk);
+            entities.Add(entity);
+            currentTable.Execute(TableOperation.Insert(entity));
+            batch.Replace(entity);
+
+            // insert or replace
+            entity = GenerateRandomEntityWithAllEdmtypes(pk);
+            entities.Add(entity);
+            currentTable.Execute(TableOperation.Insert(entity));
+            batch.InsertOrReplace(entity);
+
+            // merge
+            entity = GenerateRandomEntityWithAllEdmtypes(pk);
+            entities.Add(entity);
+            currentTable.Execute(TableOperation.Insert(entity));
+            batch.Merge(entity);
+
+            // insert or merge
+            entity = GenerateRandomEntityWithAllEdmtypes(pk);
+            entities.Add(entity);
+            currentTable.Execute(TableOperation.Insert(entity));
+            batch.InsertOrMerge(entity);
+
+            IList<TableResult> results = currentTable.ExecuteBatch(batch);
+
+            Assert.AreEqual(results.Count, 6);
+
+            IEnumerator<TableResult> enumerator = results.GetEnumerator();
+            enumerator.MoveNext();
+            Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.Created);
+            AssertDTEEquals(entities[0], (DynamicTableEntity)enumerator.Current.Result, false, true);
+            enumerator.MoveNext();
+            Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.NoContent);
+            enumerator.MoveNext();
+            Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.NoContent);
+            enumerator.MoveNext();
+            Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.NoContent);
+            enumerator.MoveNext();
+            Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.NoContent);
+            enumerator.MoveNext();
+            Assert.AreEqual(enumerator.Current.HttpStatusCode, (int)HttpStatusCode.NoContent);
+
+            TableQuery query = new TableQuery();
+            query.FilterString = TableQuery.GenerateFilterCondition("PartitionKey", "eq", pk);
+
+            TableRequestOptions options = new TableRequestOptions()
+            {
+                PropertyResolver = (partitionKey, rowKey, propName, propValue) => ComplexEntity.ComplexEntityPropertyResolver(partitionKey, rowKey, propName, propValue)
+            };
+
+            List<DynamicTableEntity> queriedEntities = currentTable.ExecuteQuery(query, options).ToList();
+            Assert.AreEqual(5, queriedEntities.Count);
+            foreach (DynamicTableEntity dte in queriedEntities)
+            {
+                AssertDTEEquals(dte, entities.First(ent => ent.RowKey == dte.RowKey), false, true);
+            }
+        }
+
         #endregion
 
         #region APM
@@ -2273,7 +2367,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             string pk = Guid.NewGuid().ToString();
             for (int m = 0; m < n; m++)
             {
-                batch.Insert(new BaseEntity(pk, Guid.NewGuid().ToString()), true);
+                var entity = new BaseEntity(pk, Guid.NewGuid().ToString());
+                entity.Populate();
+                batch.Insert(entity, true);
             }
 
             IList<TableResult> results = currentTable.ExecuteBatch(batch);
@@ -2944,6 +3040,50 @@ namespace Microsoft.WindowsAzure.Storage.Table
             ent.RowKey = Guid.NewGuid().ToString();
             return ent;
         }
+
+        private static DynamicTableEntity GenerateRandomEntityWithAllEdmtypes(string pk)
+        {
+            DynamicTableEntity ent = new DynamicTableEntity();
+            ent.PartitionKey = pk;
+            ent.RowKey = Guid.NewGuid().ToString();
+            ent.Properties = new ComplexEntity().WriteEntity(null);
+            ent.Properties.Add("foo", new EntityProperty("bar"));
+            return ent;
+        }
+
+        private static void AssertDTEEquals(DynamicTableEntity left, DynamicTableEntity right, bool includeTimestamp, bool ignoreNullColumns)
+        {
+            Assert.AreEqual(left.PartitionKey, right.PartitionKey);
+            Assert.AreEqual(left.RowKey, right.RowKey);
+            if (includeTimestamp)
+            {
+                Assert.AreEqual(left.Timestamp, right.Timestamp);
+            }
+            IDictionary<string, EntityProperty> leftProperties = left.Properties;
+            IDictionary<string, EntityProperty> rightProperties = right.Properties;
+
+            if (ignoreNullColumns)
+            {
+                leftProperties = leftProperties.Where(kvp => !kvp.Key.Contains("Null")).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                rightProperties = rightProperties.Where(kvp => !kvp.Key.Contains("Null")).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            }
+
+            Assert.AreEqual(leftProperties.Count, rightProperties.Count);
+            
+            foreach (string key in leftProperties.Keys)
+            {
+                try
+                {
+                    Assert.IsTrue(rightProperties.ContainsKey(key));
+                    Assert.AreEqual(left[key], right[key]);
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+        }
+
         #endregion
     }
 }

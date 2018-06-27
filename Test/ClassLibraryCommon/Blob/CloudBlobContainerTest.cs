@@ -2135,47 +2135,44 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric)]
         public async Task CloudBlobContainerListManyBlobs()
         {
-            for (int i = 0; i < 20; i++)
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
             {
-                CloudBlobContainer container = GetRandomContainerReference();
-                try
-                {
-                    container.Create();
-                    List<string> pageBlobNames = await CreateBlobs(container, 2000, BlobType.PageBlob);
-                    List<string> blockBlobNames = await CreateBlobs(container, 2000, BlobType.BlockBlob);
-                    List<string> appendBlobNames = await CreateBlobs(container, 2000, BlobType.AppendBlob);
+                container.Create();
+                List<string> pageBlobNames = await CreateBlobs(container, 2000, BlobType.PageBlob);
+                List<string> blockBlobNames = await CreateBlobs(container, 2000, BlobType.BlockBlob);
+                List<string> appendBlobNames = await CreateBlobs(container, 2000, BlobType.AppendBlob);
 
-                    int count = 0;
-                    IEnumerable<IListBlobItem> results = container.ListBlobs();
-                    foreach (IListBlobItem blobItem in results)
+                int count = 0;
+                IEnumerable<IListBlobItem> results = container.ListBlobs();
+                foreach (IListBlobItem blobItem in results)
+                {
+                    count++;
+                    Assert.IsInstanceOfType(blobItem, typeof(CloudBlob));
+                    CloudBlob blob = (CloudBlob)blobItem;
+                    if (pageBlobNames.Remove(blob.Name))
                     {
-                        count++;
-                        Assert.IsInstanceOfType(blobItem, typeof(CloudBlob));
-                        CloudBlob blob = (CloudBlob)blobItem;
-                        if (pageBlobNames.Remove(blob.Name))
-                        {
-                            Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
-                        }
-                        else if (blockBlobNames.Remove(blob.Name))
-                        {
-                            Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
-                        }
-                        else if (appendBlobNames.Remove(blob.Name))
-                        {
-                            Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
-                        }
-                        else
-                        {
-                            Assert.Fail("Unexpected blob: " + blob.Uri.AbsoluteUri);
-                        }
+                        Assert.IsInstanceOfType(blob, typeof(CloudPageBlob));
                     }
+                    else if (blockBlobNames.Remove(blob.Name))
+                    {
+                        Assert.IsInstanceOfType(blob, typeof(CloudBlockBlob));
+                    }
+                    else if (appendBlobNames.Remove(blob.Name))
+                    {
+                        Assert.IsInstanceOfType(blob, typeof(CloudAppendBlob));
+                    }
+                    else
+                    {
+                        Assert.Fail("Unexpected blob: " + blob.Uri.AbsoluteUri);
+                    }
+                }
 
-                    Assert.AreEqual(6000, count);
-                }
-                finally
-                {
-                    container.DeleteIfExists();
-                }
+                Assert.AreEqual(6000, count);
+            }
+            finally
+            {
+                container.DeleteIfExists();
             }
         }
 
@@ -3383,6 +3380,185 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.IsInstanceOfType(actual, typeof(CloudBlockBlob));
                 Assert.AreEqual(BlobType.BlockBlob, ((CloudBlockBlob)actual).BlobType);
                 Assert.AreEqual(blobName, ((CloudBlockBlob)actual).Name);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        class MockProxy: IWebProxy
+        {
+            private WebProxy webProxy;
+
+            public MockProxy(Uri address, NetworkCredential credentials)
+            {
+                this.webProxy = new WebProxy { Address = address, Credentials = credentials };
+            }
+
+            public class MemberAccessEventArgs: EventArgs
+            {
+                public MemberAccessEventArgs(string memberName, object value)
+                {
+                    this.MemberName = memberName;
+                    this.Value = value;
+                }
+
+                public string MemberName { get; private set; }
+                public object Value { get; private set; }
+            }
+
+            public event EventHandler<MemberAccessEventArgs> MemberAccess
+            {
+                add
+                {
+                    memberAccess += value;
+                }
+
+                remove
+                {
+                    memberAccess -= value;
+                }
+            }
+
+            EventHandler<MemberAccessEventArgs> memberAccess;
+
+            private void OnMemberAccess(string memberName, object value)
+            {
+                var h = this.memberAccess;
+
+                if (h != null)
+                {
+                    h(this, new MemberAccessEventArgs(memberName, value));
+                }
+            }
+
+            public ICredentials Credentials
+            {
+                get
+                {
+                    var value = this.webProxy.Credentials;
+                    this.OnMemberAccess("Credentials", value);
+                    return value;
+                }
+
+                set
+                {
+                    this.webProxy.Credentials = value;
+                }
+            }
+
+            public Uri GetProxy(Uri destination)
+            {
+                this.OnMemberAccess("GetProxy", destination);
+                return this.webProxy.GetProxy(destination);
+            }
+
+            public bool IsBypassed(Uri host)
+            {
+                this.OnMemberAccess("IsBypassed", host);
+                return this.webProxy.IsBypassed(host);
+            }
+        }
+        
+        [TestMethod]
+        [Description("Verify that a proxy gets used")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobContainerVerifyProxyHit()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                const string proxyAddress = "http://127.0.0.1";
+                const string proxyUser = "user";
+                const string proxyPassword = "password";
+
+                var cts = new CancellationTokenSource();
+
+                var proxyHit = false;
+
+                var mockProxy = 
+                    new MockProxy(
+                        new Uri(proxyAddress), 
+                        new NetworkCredential(proxyUser, proxyPassword)
+                        );
+
+                mockProxy.MemberAccess += (s, e) =>
+                {
+                    cts.Cancel();
+                    proxyHit = true;
+                };
+
+                OperationContext operationContext = new OperationContext()
+                {
+                    Proxy = mockProxy
+                };
+
+                try
+                {
+                    await container.CreateAsync(BlobContainerPublicAccessType.Off, default(BlobRequestOptions), operationContext, cts.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    // expected, but not required
+                }
+
+                Assert.IsTrue(proxyHit, "Proxy not hit");
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Verify that a proxy doesn't interfere")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobContainerCreateWithProxy()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                const string proxyAddress = "http://localhost:8877"; // HttpMangler's proxy address
+                const string proxyUser = "user";
+                const string proxyPassword = "password";
+
+                var cts = new CancellationTokenSource();
+
+                var proxyHit = false;
+
+                var mockProxy =
+                    new MockProxy(
+                        new Uri(proxyAddress),
+                        new NetworkCredential(proxyUser, proxyPassword)
+                        );
+
+                mockProxy.MemberAccess += (s, e) =>
+                {
+                    proxyHit = true;
+                };
+
+                OperationContext operationContext = new OperationContext()
+                {
+                    Proxy = mockProxy
+                };
+
+                using (new Test.Network.HttpMangler())
+                {
+                    await container.CreateAsync(BlobContainerPublicAccessType.Off, default(BlobRequestOptions), operationContext, cts.Token);
+                }
+                
+                // if we get here without an exception, assume the call was 
+                // successful and verify that the proxy was used
+                Assert.IsTrue(proxyHit, "Proxy not hit");
             }
             finally
             {

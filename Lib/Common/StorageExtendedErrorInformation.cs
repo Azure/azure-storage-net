@@ -32,9 +32,7 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
     using System.Xml;
 
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Microsoft.WindowsAzure.Storage.Table.DataServices;
-#elif WINDOWS_RT
+#if WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
 
@@ -77,9 +75,9 @@ namespace Microsoft.WindowsAzure.Storage
             return ReadFromStream(inputStream.AsStreamForRead());
         }
 
-        public static async Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
+        public static Task<StorageExtendedErrorInformation> ReadFromStreamAsync(IInputStream inputStream)
         {
-            return await ReadFromStreamAsync(inputStream.AsStreamForRead());
+            return ReadFromStreamAsync(inputStream.AsStreamForRead());
         }
 #endif
 
@@ -139,7 +137,7 @@ namespace Microsoft.WindowsAzure.Storage
 
                 using (XmlReader reader = XmlReader.Create(inputStream, settings))
                 {
-                    await reader.ReadAsync();
+                    await reader.ReadAsync().ConfigureAwait(false);
                     extendedErrorInfo.ReadXml(reader);
                 }
 
@@ -153,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
-        #region IXmlSerializable
+#region IXmlSerializable
 
         /// <summary>
         /// Generates a serializable <see cref="StorageExtendedErrorInformation"/> object from its XML representation.
@@ -181,7 +179,9 @@ namespace Microsoft.WindowsAzure.Storage
                 {
                     if ((string.Compare(reader.LocalName, Constants.ErrorCode, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorCodePreview, StringComparison.Ordinal) == 0))
                     {
+#pragma warning disable 618
                         this.ErrorCode = reader.ReadElementContentAsString();
+#pragma warning restore 618
                     }
                     else if ((string.Compare(reader.LocalName, Constants.ErrorMessage, StringComparison.OrdinalIgnoreCase) == 0) || (string.Compare(reader.LocalName, Constants.ErrorMessagePreview, StringComparison.Ordinal) == 0))
                     {
@@ -240,7 +240,9 @@ namespace Microsoft.WindowsAzure.Storage
             CommonUtility.AssertNotNull("writer", writer);
 
             writer.WriteStartElement(Constants.ErrorRootElement);
+#pragma warning disable 618
             writer.WriteElementString(Constants.ErrorCode, this.ErrorCode);
+#pragma warning restore 618
             writer.WriteElementString(Constants.ErrorMessage, this.ErrorMessage);
 
             foreach (string key in this.AdditionalDetails.Keys)
@@ -252,6 +254,6 @@ namespace Microsoft.WindowsAzure.Storage
             writer.WriteEndElement();
         }
 
-        #endregion
+#endregion
     }
 }

@@ -633,7 +633,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         long startPosition = sourceStream.Position;
                         StreamDescriptor streamCopyState = new StreamDescriptor();
                         sourceStream.WriteToAsync(
-                            Stream.Null,
+                            Stream.Null, 
+                            this.ServiceClient.BufferManager,
                             length,
                             null /* maxLength */,
                             true,
@@ -684,7 +685,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             CryptoStream cryptoStream = new CryptoStream(syncMemoryStream, transform, CryptoStreamMode.Write);
                             StreamDescriptor streamCopyState = new StreamDescriptor();
 
-                            source.WriteToAsync(cryptoStream, length, null, false, tempExecutionState, streamCopyState, completedState =>
+                            source.WriteToAsync(cryptoStream, this.ServiceClient.BufferManager, length, null, false, tempExecutionState, streamCopyState, completedState =>
                                 {
                                     ContinueAsyncOperation(storageAsyncResult, completedState, () =>
                                         {
@@ -740,6 +741,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                                     source.WriteToAsync(
                                         progressIncrementer.CreateProgressIncrementingStream(blobStream),
+                                        this.ServiceClient.BufferManager,
                                         length,
                                         null /* maxLength */,
                                         false,
@@ -994,6 +996,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <remarks>
+        /// ## Examples
+        /// [!code-csharp[Upload_From_File_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/BlobUploadDownloadTest.cs#sample_UploadBlob_EndToEnd "Upload From File Sample")] 
+        /// </remarks>
         [DoesServiceRequest]
         public virtual void UploadFromFile(string path, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -1927,6 +1933,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 StreamDescriptor streamCopyState = new StreamDescriptor();
                 blockData.WriteToAsync(
                     writeToStream,
+                    this.ServiceClient.BufferManager,
                     null /* copyLength */,
                     Constants.MaxBlockSize,
                     requiresContentMD5,

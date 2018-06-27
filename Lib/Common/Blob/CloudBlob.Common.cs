@@ -41,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         public CloudBlob(Uri blobAbsoluteUri)
-            : this(blobAbsoluteUri, null /* credentials */)
+            : this(blobAbsoluteUri, default(StorageCredentials) /* credentials */)
         {
         }
 
@@ -51,7 +51,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlob(Uri blobAbsoluteUri, StorageCredentials credentials)
-            : this(blobAbsoluteUri, null /* snapshotTime */, credentials)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlob(Uri blobAbsoluteUri, CloudBlobClient client)
+            : this(blobAbsoluteUri, default(DateTimeOffset?) /* snapshotTime */, client)
         {
         }
 
@@ -63,6 +73,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudBlob(Uri blobAbsoluteUri, DateTimeOffset? snapshotTime, StorageCredentials credentials)
             : this(new StorageUri(blobAbsoluteUri), snapshotTime, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        public CloudBlob(Uri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+            : this(new StorageUri(blobAbsoluteUri), snapshotTime, client)
         {
         }
 
@@ -84,7 +105,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.Properties.BlobType = BlobType.Unspecified;
         }
 
-         /// <summary>
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudBlob"/> class using an absolute URI to the blob.
+        /// </summary>
+        /// <param name="blobAbsoluteUri">A <see cref="StorageUri"/> containing the absolute URI to the blob at both the primary and secondary locations.</param>
+        /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the blob is a snapshot.</param>
+        /// <param name="client">A <see cref="CloudBlobClient"/> object.</param>
+        /// <returns>A <see cref="CloudBlob"/> object.</returns>
+        public CloudBlob(StorageUri blobAbsoluteUri, DateTimeOffset? snapshotTime, CloudBlobClient client)
+        {
+            CommonUtility.AssertNotNull("blobAbsoluteUri", blobAbsoluteUri);
+            CommonUtility.AssertNotNull("blobAbsoluteUri", blobAbsoluteUri.PrimaryUri);
+
+            this.attributes = new BlobAttributes();
+            this.SnapshotTime = snapshotTime;
+            this.ServiceClient = client;
+            this.ParseQueryAndVerify(blobAbsoluteUri, client.Credentials);
+            this.Properties.BlobType = BlobType.Unspecified;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="CloudBlob"/> class using the specified blob name and
         /// the parent container reference.
         /// If snapshotTime is not null, the blob instance represents a Snapshot.
@@ -240,6 +280,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         /// <summary>
+        /// Gets a value indicating whether or not this blob has been deleted.
+        /// </summary>
+        /// <value>A bool representing if the blob has been deleted.</value>
+        public bool IsDeleted
+        {
+            get
+            {
+                return this.attributes.IsDeleted;
+            }
+
+            private set
+            {
+                this.attributes.IsDeleted = value;  
+            }
+        }
+
+        /// <summary>
         /// Gets the absolute URI to the blob, including query string information if the blob is a snapshot.
         /// </summary>
         /// <value>A <see cref="System.Uri"/> specifying the absolute URI to the blob, including snapshot query information if the blob is a snapshot.</value>
@@ -298,7 +355,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Gets the name of the blob.
         /// </summary>
         /// <value>A string containing the name of the blob.</value>
-        public string Name { get; private set; }
+        public virtual string Name { get; private set; }
 
         /// <summary>
         /// Gets a <see cref="CloudBlobContainer"/> object representing the blob's container.
