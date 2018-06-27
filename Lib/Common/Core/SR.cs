@@ -206,6 +206,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string TableQueryDynamicPropertyAccess = "Accessing property dictionary of DynamicTableEntity requires a string constant for property name.";
         public const string TableQueryEntityPropertyInQueryNotSupported = "Referencing {0} on EntityProperty only supported with properties dictionary exposed via DynamicTableEntity.";
         public const string TableQueryFluentMethodNotAllowed = "Fluent methods may not be invoked on a Query created via CloudTable.CreateQuery<T>()";
+        public const string TableQueryPropertyNotAllowed = "The specified property may not be used on a Query created via CloudTable.CreateQuery<T>()";
         public const string TableQueryMustHaveQueryProvider = "Unknown Table. The TableQuery does not have an associated CloudTable Reference. Please execute the query via the CloudTable ExecuteQuery APIs.";
         public const string TableQueryTypeMustImplementITableEnitty = "TableQuery Generic Type must implement the ITableEntity Interface";
         public const string TableQueryTypeMustHaveDefaultParameterlessCtor = "TableQuery Generic Type must provide a default parameterless constructor.";

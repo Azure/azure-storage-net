@@ -1,12 +1,12 @@
 ﻿// -----------------------------------------------------------------------------------------
 // <copyright file="TableQueryTests.cs" company="Microsoft">
 //    Copyright 2013 Microsoft Corporation
-// 
+//
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
 //      http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage.Core;
 using Microsoft.WindowsAzure.Storage.Table.Entities;
 using Microsoft.WindowsAzure.Storage.Table.Protocol;
 using System;
@@ -893,7 +894,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         TableQuery.GenerateFilterConditionForBool("BoolPrimitive", QueryComparisons.Equal, middleRef["BoolPrimitive"].BooleanValue.Value),
                         50);
 
-                // 8. Filter on Binary 
+                // 8. Filter on Binary
                 ExecuteQueryAndAssertResults(table,
                         TableQuery.GenerateFilterConditionForBinary("Binary", QueryComparisons.Equal, middleRef["Binary"].BinaryValue), 1);
 
@@ -1034,7 +1035,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
                         TableQuery.GenerateFilterConditionForBool("BoolPrimitive", QueryComparisons.Equal, middleRef["BoolPrimitive"].BooleanValue.Value),
                         50);
 
-                // 8. Filter on Binary 
+                // 8. Filter on Binary
                 ExecuteQueryAndAssertResults(table,
                         TableQuery.GenerateFilterConditionForBinary("Binary", QueryComparisons.Equal, middleRef["Binary"].BinaryValue), 1);
 
@@ -1255,6 +1256,71 @@ namespace Microsoft.WindowsAzure.Storage.Table
             catch (StorageException)
             {
                 TestHelper.ValidateResponse(opContext, 1, (int)HttpStatusCode.BadRequest, new string[] { "InvalidInput" }, "A binary operator with incompatible types was detected. Found operand types 'Edm.String' and 'Edm.Boolean' for operator kind 'And'.");
+            }
+        }
+
+        [TestMethod]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        public void TableQueryPropertiesCannotBeUsedIfCreatedByExtensionOnCloudTable()
+        {
+            Action<TableQuery<DynamicTableEntity>>[] propertyAccesses =
+            {
+                // writes
+                q => q.FilterString = null,
+                q => q.TakeCount = null,
+                q => q.SelectColumns = null,
+
+                // reads
+                q => q.FilterString.ToString(),
+                q => q.TakeCount.ToString(),
+                q => q.SelectColumns.ToString(),
+            };
+
+            var query = currentTable.CreateQuery<DynamicTableEntity>();
+
+            foreach (var propertyAccess in propertyAccesses)
+            {
+                try
+                {
+                    propertyAccess(query);
+                    Assert.Fail();
+                }
+                catch (NotSupportedException ex)
+                {
+                    Assert.AreEqual(SR.TableQueryPropertyNotAllowed, ex.Message);
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory(ComponentCategory.Table)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        public void TableQueryMethodsCannotBeUsedIfCreatedByExtensionOnCloudTable()
+        {
+            Action<TableQuery<DynamicTableEntity>>[] methodUsages =
+            {
+                q => q.Where(null),
+                q => q.Take(null),
+                q => q.Select(null),
+                q => q.Copy(),
+            };
+
+            var query = currentTable.CreateQuery<DynamicTableEntity>();
+
+            foreach (var methodUsage in methodUsages)
+            {
+                try
+                {
+                    methodUsage(query);
+                    Assert.Fail();
+                }
+                catch (NotSupportedException ex)
+                {
+                    Assert.AreEqual(SR.TableQueryFluentMethodNotAllowed, ex.Message);
+                }
             }
         }
 

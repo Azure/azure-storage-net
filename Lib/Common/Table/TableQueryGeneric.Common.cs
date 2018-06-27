@@ -30,6 +30,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
     /// </summary>
     public partial class TableQuery<TElement>
     {
+        private void EnsureNoExpression(bool property)
+        {
+#if WINDOWS_DESKTOP 
+            if (this.Expression != null)
+            {
+                throw new NotSupportedException(property ? SR.TableQueryPropertyNotAllowed : SR.TableQueryFluentMethodNotAllowed);
+            }
+#endif
+        }
+
         #region Properties
 
         private int? takeCount = null;
@@ -42,6 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         {
             get
             {
+                EnsureNoExpression(property: true);
                 return this.takeCount;
             }
 
@@ -52,21 +63,52 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     throw new ArgumentException(SR.TakeCountNotPositive);
                 }
 
+                EnsureNoExpression(property: true);
                 this.takeCount = value;
             }
         }
+
+        private string filterString;
 
         /// <summary>
         /// Gets or sets the filter expression to use in the table query.
         /// </summary>
         /// <value>A string containing the filter expression to use in the query.</value>
-        public string FilterString { get; set; }
+        public string FilterString
+        {
+            get
+            {
+                EnsureNoExpression(property: true);
+                return filterString;
+            }
+            
+            set
+            {
+                EnsureNoExpression(property: true);
+                filterString = value;
+            }
+        }
+
+        private IList<string> selectColumns;
 
         /// <summary>
         /// Gets or sets the property names of the table entity properties to return when the table query is executed.
         /// </summary>
         /// <value>A list of strings containing the property names of the table entity properties to return when the query is executed.</value>
-        public IList<string> SelectColumns { get; set; }
+        public IList<string> SelectColumns
+        {
+            get
+            {
+                EnsureNoExpression(property: true);
+                return selectColumns;
+            }
+
+            set
+            {
+                EnsureNoExpression(property: true);
+                selectColumns = value;
+            }
+        }
 
         /// <summary>
         /// Defines the property names of the table entity properties to return when the table query is executed. 
@@ -77,14 +119,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// By default, a query will return all properties from the table entity.</remarks>
         public TableQuery<TElement> Select(IList<string> columns)
         {
-#if WINDOWS_DESKTOP 
-            if (this.Expression != null)
-            {
-                throw new NotSupportedException(SR.TableQueryFluentMethodNotAllowed);
-            }
-#endif
-
-            this.SelectColumns = columns;
+            EnsureNoExpression(property: false);
+            this.selectColumns = columns;
             return this;
         }
 
@@ -96,14 +132,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         [SuppressMessage("Microsoft.Naming", "CA1719:ParameterNamesShouldNotMatchMemberNames", MessageId = "0#", Justification = "Reviewed.")]
         public TableQuery<TElement> Take(int? take)
         {
-#if WINDOWS_DESKTOP 
-            if (this.Expression != null)
-            {
-                throw new NotSupportedException(SR.TableQueryFluentMethodNotAllowed);
-            }
-#endif
-
-            this.TakeCount = take;
+            EnsureNoExpression(property: false);
+            this.takeCount = take;
             return this;
         }
 
@@ -115,14 +145,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A <see cref="TableQuery"/> instance set with the filter on entities to return.</returns>
         public TableQuery<TElement> Where(string filter)
         {
-#if WINDOWS_DESKTOP 
-            if (this.Expression != null)
-            {
-                throw new NotSupportedException(SR.TableQueryFluentMethodNotAllowed);
-            }
-#endif
-
-            this.FilterString = filter;
+            EnsureNoExpression(property: false);
+            this.filterString = filter;
             return this;
         }
 
@@ -132,6 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
         /// <returns>A <see cref="TableQuery"/> instance.</returns>
         public TableQuery<TElement> Copy()
         {
+            EnsureNoExpression(property: false);
             TableQuery<TElement> copy = new TableQuery<TElement>();
             copy.TakeCount = this.TakeCount;
             copy.FilterString = this.FilterString;
