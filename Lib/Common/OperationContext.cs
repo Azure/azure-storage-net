@@ -20,7 +20,9 @@ namespace Microsoft.WindowsAzure.Storage
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+#if !WINDOWS_PHONE && WINDOWS_DESKTOP
     using System.Net;
+#endif
 
     /// <summary>
     /// Represents the context for a request operation against the storage service, and provides additional runtime information about its execution.
@@ -41,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage
             this.LogLevel = OperationContext.DefaultLogLevel;
         }
 
-#if !WINDOWS_PHONE && !NETCORE
+#if !WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <summary>
         /// Gets or sets proxy information for the request.
         /// </summary>
@@ -63,12 +65,17 @@ namespace Microsoft.WindowsAzure.Storage
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "ID", Justification = "Back compatibility.")]
         public string ClientRequestID { get; set; }
 
+#if WINDOWS_DESKTOP
         /// <summary>
         /// Gets or sets a custom UserAgent value to be prepended to the existing library UserAgent.
         /// </summary>
         /// <value>A string containing the specified UserAgent value.</value>
-#if WINDOWS_DESKTOP
         /// <remarks>This value will be overridden if the UserAgent value is modified via SendingRequestEvent (per instance or global).</remarks>
+#else
+        /// <summary>
+        /// Gets or sets a custom UserAgent value to be prepended to the existing library UserAgent.
+        /// </summary>
+        /// <value>A string containing the specified UserAgent value.</value>
 #endif
         public string CustomUserAgent { get; set; }
 

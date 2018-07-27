@@ -1255,7 +1255,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CommonUtility.AssertNotNull("sourceSnapshot", sourceSnapshot);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshot, true /*incrementalCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshot, default(string) /* contentMD5 */, true /*incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);

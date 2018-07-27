@@ -1806,6 +1806,34 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
             }
         }
+
+        /// <summary>
+        /// Uploads a single block, copying from a source URI.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual void PutBlock(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            CommonUtility.AssertNotNull("sourceUri", sourceUri);
+
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+
+            Executor.ExecuteSync(
+                this.PutBlockImpl(sourceUri, offset, count, contentMD5, blockId, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
 #endif
 
         /// <summary>
@@ -1827,6 +1855,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual ICancellableAsyncResult BeginPutBlock(string blockId, Stream blockData, string contentMD5, AsyncCallback callback, object state)
         {
             return this.BeginPutBlock(blockId, blockData, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginPutBlock(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AsyncCallback callback, object state)
+        {
+            return this.BeginPutBlock(blockId, sourceUri, offset, count, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
 #if SYNC
@@ -1971,6 +2020,52 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return storageAsyncResult;
         }
 
+
+        /// <summary>
+        /// Begins an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
+        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// </remarks>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginPutBlock(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            CommonUtility.AssertNotNull("sourceUri", sourceUri);
+
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
+
+            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
+            storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
+
+            try
+            {
+                this.PutBlockHandler(blockId, sourceUri, offset, count, contentMD5, accessCondition, modifiedOptions, operationContext, storageAsyncResult);
+            }
+            catch (Exception e)
+            {
+                storageAsyncResult.OnComplete(e);
+            }
+
+            return storageAsyncResult;
+        }
+
         /// <summary>
         /// Ends an asynchronous operation to upload a single block.
         /// </summary>
@@ -2026,6 +2121,40 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Reviewed.")]
+        private void PutBlockHandler(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, StorageAsyncResult<NullType> storageAsyncResult)
+        {
+            lock (storageAsyncResult.CancellationLockerObject)
+            {
+                ICancellableAsyncResult result = Executor.BeginExecuteAsync(
+                    this.PutBlockImpl(sourceUri, offset, count, contentMD5, blockId, accessCondition, options),
+                    options.RetryPolicy,
+                    operationContext,
+                    ar =>
+                    {
+                        storageAsyncResult.UpdateCompletedSynchronously(ar.CompletedSynchronously);
+
+                        try
+                        {
+                            Executor.EndExecuteAsync<NullType>(ar);
+                            storageAsyncResult.OnComplete();
+                        }
+                        catch (Exception e)
+                        {
+                            storageAsyncResult.OnComplete(e);
+                        }
+                    },
+                    null /* asyncState */);
+
+                storageAsyncResult.CancelDelegate = result.Cancel;
+                if (storageAsyncResult.CancelRequested)
+                {
+                    storageAsyncResult.Cancel();
+                }
+            }
+        }
+
 #if TASK
         /// <summary>
         /// Initiates an asynchronous operation to upload a single block.
@@ -2050,6 +2179,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initiates an asynchronous operation to upload a single block.
         /// </summary>
         /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5)
+        {
+            return this.PutBlockAsync(blockId, sourceUri, offset, count, contentMD5, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
         /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
         /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
@@ -2064,6 +2212,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, sourceUri, offset, count, contentMD5, cancellationToken);
         }
 
         /// <summary>
@@ -2092,6 +2260,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initiates an asynchronous operation to upload a single block.
         /// </summary>
         /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.PutBlockAsync(blockId, sourceUri, offset, count, contentMD5, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
         /// <param name="blockData">A <see cref="System.IO.Stream"/> object that provides the data for the block.</param>
         /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
@@ -2109,6 +2299,29 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public virtual Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, blockData, contentMD5, accessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to upload a single block.
+        /// </summary>
+        /// <param name="blockId">A Base64-encoded string that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// Clients may send the Content-MD5 header for a given Put Block operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromVoidApm(this.BeginPutBlock, this.EndPutBlock, blockId, sourceUri, offset, count, contentMD5, accessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -2315,7 +2528,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual string StartCopy(CloudBlockBlob source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            return this.StartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
+            return this.StartCopy(source, default(string) /* contentMD5 */, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        private /*public virtual*/ string StartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            return this.StartCopy(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
 #endif
 
@@ -2376,7 +2610,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+            return this.BeginStartCopy(source, default(string) /* contentMD5 */, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
+        [DoesServiceRequest]
+        private /*public virtual*/ ICancellableAsyncResult BeginStartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
 
 #if TASK
@@ -2485,7 +2738,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, default(string) /* contentMD5 */, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private /*public virtual*/ Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, contentMD5, syncCopy, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -2895,6 +3166,36 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     r.Headers[HttpRequestHeader.ContentMd5] = contentMD5;
                 }
             };
+            putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Uploads the block from a source Uri.
+        /// </summary>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="blockId">The block ID.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that uploads the block.</returns>
+        internal RESTCommand<NullType> PutBlockImpl(Uri sourceUri, long? offset, long? count, string contentMD5, string blockId, AccessCondition accessCondition, BlobRequestOptions options)
+        {
+            options.AssertNoEncryptionPolicyOrStrictMode();
+
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.PutBlock(uri, sourceUri, offset, count, contentMD5, serverTimeout, blockId, accessCondition, useVersionHeader, ctx);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {

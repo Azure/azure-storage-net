@@ -73,6 +73,10 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
             {
                 authenticationHandler = this.GetSharedKeyAuthenticationTask;
             }
+            else if (request.Credentials.IsToken)
+            {
+                authenticationHandler = this.GetTokenAuthenticationTask;
+            }
             else
             {
                 authenticationHandler = this.GetNoOpAuthenticationTask;

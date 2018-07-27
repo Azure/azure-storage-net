@@ -767,6 +767,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 Assert.IsTrue(container2.Exists());
                 Assert.IsNotNull(container2.Properties.ETag);
+                Assert.IsTrue(container2.Properties.HasImmutabilityPolicy.HasValue);
+                Assert.IsTrue(container2.Properties.HasLegalHold.HasValue);
+                Assert.IsFalse(container2.Properties.HasImmutabilityPolicy.Value);
+                Assert.IsFalse(container2.Properties.HasLegalHold.Value);
             }
             finally
             {
@@ -2117,6 +2121,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 foreach (IListBlobItem blobItem in results)
                 {
                     Assert.IsInstanceOfType(blobItem, typeof(CloudPageBlob));
+                    Assert.IsTrue(((CloudPageBlob)blobItem).Properties.Created.HasValue);
+                    Assert.IsTrue(((CloudPageBlob)blobItem).Properties.Created.Value > DateTime.Now.AddMinutes(-1));
                     Assert.IsTrue(blobNames.Remove(((CloudPageBlob)blobItem).Name));
                     Assert.AreEqual(RetryPolicies.LocationMode.PrimaryThenSecondary, ((CloudPageBlob)blobItem).ServiceClient.DefaultRequestOptions.LocationMode);
                 }
@@ -3748,6 +3754,98 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
+
+        private void ValidateWebContainer(CloudBlobContainer webContainer)
+        {
+            CloudBlockBlob blob0 = webContainer.GetBlockBlobReference("blob");
+            blob0.Properties.ContentType = @"multipart/form-data; boundary=thingz";  // Content-type is important for the $web container
+            CloudBlockBlob blob1 = webContainer.GetBlockBlobReference("blob/abcd");
+            blob1.Properties.ContentType = @"image/gif";
+            CloudBlockBlob blob2 = webContainer.GetBlockBlobReference("blob/other.html");
+            blob2.Properties.ContentType = @"text/html; charset=utf-8";
+
+            List<CloudBlockBlob> expectedBlobs = new List<CloudBlockBlob> { blob0, blob1, blob2 };
+            List<string> texts = new List<string> { "blob0text", "blbo1text", "blob2text" };
+            for (int i = 0; i < 3; i++)
+            {
+                expectedBlobs[i].UploadText(texts[i]);
+            }
+
+            List<CloudBlob> blobs = webContainer.ListBlobs(useFlatBlobListing: true, blobListingDetails: BlobListingDetails.All).Select(blob => (CloudBlob)blob).ToList();
+            Assert.AreEqual(expectedBlobs.Count, blobs.Count);
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.AreEqual(expectedBlobs[i].Name, blobs[i].Name);
+                Assert.AreEqual(expectedBlobs[i].Properties.ContentType, blobs[i].Properties.ContentType);
+                Assert.AreEqual(texts[i], ((CloudBlockBlob)blobs[i]).DownloadText());
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure container operations work on the $web container.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerWebContainerOperations()
+        {
+            // Test operations with shard key
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer webContainer = blobClient.GetContainerReference("$web");
+            try
+            {
+                webContainer.DeleteIfExists();
+                Assert.IsFalse(webContainer.Exists());
+                TestHelper.SpinUpToNSecondsIgnoringFailures(() => webContainer.Create(), 120);
+                Assert.IsTrue(webContainer.Exists());
+                Assert.IsTrue(blobClient.ListContainers("$").Any(container => container.Name == webContainer.Name));
+
+                ValidateWebContainer(webContainer);
+
+                // Clear out the old data, faster than deleting / re-creating the container.
+                foreach (CloudBlob blob in webContainer.ListBlobs(useFlatBlobListing: true))
+                {
+                    blob.Delete();
+                }
+
+                // Test relevant operations with a service SAS.
+                string webContainerSAS = webContainer.GetSharedAccessSignature(new SharedAccessBlobPolicy() { SharedAccessExpiryTime = DateTime.Now + TimeSpan.FromDays(30), Permissions = SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Delete | SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Write });
+                ValidateWebContainer(new CloudBlobContainer(new Uri(webContainer.Uri + webContainerSAS)));
+                webContainer.Delete();
+                Assert.IsFalse(blobClient.ListContainers("$").Any(container => container.Name == webContainer.Name));
+            }
+            finally
+            {
+                webContainer.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("GetAccountProperties via Blob container")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                blobContainerWithSAS.Create();
+
+                var result = blobContainerWithSAS.GetAccountPropertiesAsync().Result;
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
 
         private CloudBlobContainer GenerateRandomWriteOnlyBlobContainer()
         {

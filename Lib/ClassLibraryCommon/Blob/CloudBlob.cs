@@ -3016,11 +3016,33 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         internal virtual string StartCopy(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
+            return this.StartCopy(source, default(string) /* contentMD5 */, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying another blob's contents, properties, and metadata to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        internal virtual string StartCopy(Uri source, string contentMD5, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
             CommonUtility.AssertNotNull("source", source);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, contentMD5, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -3071,11 +3093,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         internal virtual ICancellableAsyncResult BeginStartCopy(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
+            return this.BeginStartCopy(source, default(string) /* contentMD5 */, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another blob's contents, properties, and metadata to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        internal virtual ICancellableAsyncResult BeginStartCopy(Uri source, string contentMD5, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
             CommonUtility.AssertNotNull("source", source);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.BeginExecuteAsync(
-                this.StartCopyImpl(this.attributes, source, false /* incrementalCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, contentMD5, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 callback,
@@ -3152,7 +3194,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, default(string) /* contentMD5 */, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
+        /// to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private /*public virtual*/ Task<string> StartCopyAsync(Uri source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginStartCopy, this.EndStartCopy, source, contentMD5, syncCopy, default(PremiumPageBlobTier?) /* premiumPageBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
 #endif
@@ -3922,7 +3983,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="blobAttributes">The attributes.</param>
         /// <param name="source">The URI of the source blob.</param>
+        /// <param name="sourceContentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
@@ -3931,7 +3994,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// A <see cref="RESTCommand{T}"/> that starts to copy.
         /// </returns>
         /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-        internal RESTCommand<string> StartCopyImpl(BlobAttributes blobAttributes, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes blobAttributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -3941,7 +4004,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, blobAttributes.StorageUri);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, incrementalCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
+            putCmd.BuildRequestDelegate = (uri, builder, serverTimeout, useVersionHeader, ctx) => BlobHttpWebRequestFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, useVersionHeader, ctx);
             putCmd.SetHeaders = (r, ctx) => BlobHttpWebRequestFactory.AddMetadata(r, blobAttributes.Metadata);
             putCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -4184,6 +4247,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             BlobProperties parsedProperties = BlobHttpResponseParsers.GetProperties(response);
             blobAttributes.Properties.ETag = parsedProperties.ETag ?? blobAttributes.Properties.ETag;
+            blobAttributes.Properties.Created = parsedProperties.Created ?? blobAttributes.Properties.Created;
             blobAttributes.Properties.LastModified = parsedProperties.LastModified ?? blobAttributes.Properties.LastModified;
             blobAttributes.Properties.PageBlobSequenceNumber = parsedProperties.PageBlobSequenceNumber ?? blobAttributes.Properties.PageBlobSequenceNumber;
             blobAttributes.Properties.AppendBlobCommittedBlockCount = parsedProperties.AppendBlobCommittedBlockCount ?? blobAttributes.Properties.AppendBlobCommittedBlockCount;
@@ -4211,5 +4275,135 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CommonUtility.AssertNotNull("source", source);
             return source.ServiceClient.Credentials.TransformUri(source.SnapshotQualifiedUri);
         }
+
+        #region GetAccountProperties
+
+        /// <summary>
+        /// Begins an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetAccountProperties(AsyncCallback callback, object state)
+        {
+            return this.BeginGetAccountProperties(null /* requestOptions */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetAccountProperties(BlobRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            requestOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.BeginExecuteAsync(
+                this.GetAccountPropertiesImpl(requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext,
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="AccountProperties"/> object.</returns>
+        public virtual AccountProperties EndGetAccountProperties(IAsyncResult asyncResult)
+        {
+            return Executor.EndExecuteAsync<AccountProperties>(asyncResult);
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync()
+        {
+            return this.GetAccountPropertiesAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetAccountProperties, this.EndGetAccountProperties, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext)
+        {
+            return this.GetAccountPropertiesAsync(requestOptions, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return AsyncExtensions.TaskFromApm(this.BeginGetAccountProperties, this.EndGetAccountProperties, requestOptions, operationContext, cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Get properties for the account this blob resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="AccountProperties"/> object.</returns>
+        [DoesServiceRequest]
+        public virtual AccountProperties GetAccountProperties(BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
+        {
+            requestOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteSync(
+                this.GetAccountPropertiesImpl(requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        private RESTCommand<AccountProperties> GetAccountPropertiesImpl(BlobRequestOptions requestOptions)
+        {
+            RESTCommand<AccountProperties> retCmd = new RESTCommand<AccountProperties>(this.ServiceClient.Credentials, this.StorageUri);
+            retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            retCmd.BuildRequestDelegate = BlobHttpWebRequestFactory.GetAccountProperties;
+            retCmd.SignRequest = this.ServiceClient.AuthenticationHandler.SignRequest;
+            retCmd.RetrieveResponseStream = true;
+            retCmd.PreProcessResponse =
+                (cmd, resp, ex, ctx) =>
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+
+            retCmd.PostProcessResponse =
+                (cmd, resp, ctx) => BlobHttpResponseParsers.ReadAccountProperties(resp);
+            requestOptions.ApplyToStorageCommand(retCmd);
+            return retCmd;
+        }
+        #endregion
     }
 }

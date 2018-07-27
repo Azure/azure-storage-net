@@ -24,6 +24,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     /// </summary>
     public class ContainerResultSegment
     {
+        /// <summary>
+        /// Creates a new instance of ContainerResultSegment.
+        /// </summary>
+        /// <param name="containers">An enumerable collection of <see cref="CloudBlobContainer"/> objects.</param>
+        /// <param name="continuationToken">The <see cref="BlobContinuationToken"/> used to retrieve the next segment of <see cref="CloudBlobContainer"/> results.</param>
         public ContainerResultSegment(IEnumerable<CloudBlobContainer> containers, BlobContinuationToken continuationToken)
         {
             this.Results = containers;

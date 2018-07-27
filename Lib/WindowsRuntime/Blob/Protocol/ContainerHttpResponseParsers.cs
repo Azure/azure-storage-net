@@ -27,8 +27,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 #else
     internal
 #endif
-        static partial class ContainerHttpResponseParsers
+    static partial class ContainerHttpResponseParsers
     {
+        /// <summary>
+        /// Reads account properties from an HttpResponseHeaders object.
+        /// </summary>
+        /// <param name="response">The HttpResponseHeaders from which to read the account properties.</param>
+        /// <returns>The account properties stored in the header.</returns>
+        public static AccountProperties ReadAccountProperties(HttpResponseMessage response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+
         /// <summary>
         /// Gets the container's properties from the response.
         /// </summary>
@@ -57,6 +67,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             // Reading public access
             containerProperties.PublicAccess = GetAcl(response);
+
+            // WORM policy
+            string hasImmutability = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.HasImmutabilityPolicyHeader);
+            containerProperties.HasImmutabilityPolicy = string.IsNullOrEmpty(hasImmutability) ? (bool?)null : bool.Parse(hasImmutability);
+
+            string hasLegalHold = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.HasLegalHoldHeader);
+            containerProperties.HasLegalHold = string.IsNullOrEmpty(hasLegalHold) ? (bool?)null : bool.Parse(hasLegalHold);
+
             return containerProperties;
         }
 

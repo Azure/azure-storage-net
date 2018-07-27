@@ -83,6 +83,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Create a service client with token")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientWithToken()
+        {
+            TokenCredential token = new TokenCredential(TestBase.GenerateOAuthToken());
+            StorageCredentials credentials = new StorageCredentials(token);
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
+            CloudBlobClient blobClient = new CloudBlobClient(baseAddressUri, credentials);
+            CloudBlobContainer container = blobClient.GetContainerReference("container");
+            container.Exists();
+        }
+
+        [TestMethod]
         [Description("Compare service client properties of blob objects")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -2027,6 +2043,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 Assert.IsInstanceOfType(ex, typeof(ArgumentOutOfRangeException));
             }
+        }
+
+        [TestMethod]
+        [Description("GetAccountProperties via Blob client")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientGetAccountProperties()
+        {
+            var client = GenerateCloudBlobClient();
+            
+            var result = client.GetAccountPropertiesAsync().Result;
+
+            Assert.IsNotNull(result);
+
+            Assert.IsNotNull(result.SkuName);
+
+            Assert.IsNotNull(result.AccountKind);
         }
     }
 }

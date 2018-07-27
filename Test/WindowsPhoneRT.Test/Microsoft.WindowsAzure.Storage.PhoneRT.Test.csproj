@@ -78,45 +78,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="..\Common\*.cs">
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\WindowsRuntime\**\*.cs" Exclude="..\WindowsRuntime\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\Common\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\Common\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\Common\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\Common\Table\Entities\*.cs">
-      <Link>Table\Entities\Table</Link>
-    </Compile>
-    <Compile Include="..\Common\TestConfigProcess\*.cs">
-      <Link>TestConfigProcess\TestConfigProcess</Link>
-    </Compile>
-    <!-- RT unit test files -->
-    <Compile Include="..\WindowsRuntime\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\*.cs" />
-    <Compile Include="..\WindowsRuntime\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\Table\*.cs">
-      <Link>Table\Table</Link>
-    </Compile>
-    <Compile Include="..\WindowsRuntime\Table\SAS\*.cs">
-      <Link>Table\SAS\SAS</Link>
+    <Compile Include="..\Common\**\*.cs" Exclude="..\Common\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

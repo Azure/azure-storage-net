@@ -55,9 +55,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             properties.ETag = HttpResponseParsers.GetETag(response);
 
 #if WINDOWS_PHONE 
+            properties.Created = HttpResponseParsers.GetCreated(response);
             properties.LastModified = HttpResponseParsers.GetLastModified(response);
             properties.ContentLanguage = response.Headers[Constants.HeaderConstants.ContentLanguageHeader];
 #else
+            string created = response.Headers[Constants.HeaderConstants.CreationTimeHeader];
+            properties.Created = string.IsNullOrEmpty(created) ? (DateTimeOffset?)null : DateTimeOffset.Parse(created).ToUniversalTime();
+            
             properties.LastModified = response.LastModified.ToUniversalTime();
             properties.ContentLanguage = response.Headers[HttpResponseHeader.ContentLanguage];
 #endif

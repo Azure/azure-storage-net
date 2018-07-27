@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Net;
 
     /// <summary>
@@ -27,6 +28,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
     /// </summary>
     public static partial class ContainerHttpResponseParsers
     {
+        /// <summary>
+        /// Reads account properties from a HttpWebResponse.
+        /// </summary>
+        /// <param name="response">The HttpWebResponse from which to read the account properties.</param>
+        /// <returns>The account properties stored in the headers.</returns>
+        public static AccountProperties ReadAccountProperties(HttpWebResponse response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+
         /// <summary>
         /// Gets the request ID from the response.
         /// </summary>
@@ -60,8 +71,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             containerProperties.LeaseStatus = BlobHttpResponseParsers.GetLeaseStatus(response);
             containerProperties.LeaseState = BlobHttpResponseParsers.GetLeaseState(response);
             containerProperties.LeaseDuration = BlobHttpResponseParsers.GetLeaseDuration(response);
+            
             // Reading public access
             containerProperties.PublicAccess = GetAcl(response);
+
+            // WORM policies
+            string hasImmutability = response.Headers[Constants.HeaderConstants.HasImmutabilityPolicyHeader];
+            containerProperties.HasImmutabilityPolicy = string.IsNullOrEmpty(hasImmutability) ? (bool?)null : bool.Parse(hasImmutability);
+
+            string hasLegalHold = response.Headers[Constants.HeaderConstants.HasLegalHoldHeader];
+            containerProperties.HasLegalHold = string.IsNullOrEmpty(hasLegalHold) ? (bool?)null : bool.Parse(hasLegalHold);
+
             return containerProperties;
         }
 

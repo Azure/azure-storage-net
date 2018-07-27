@@ -4158,6 +4158,37 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
+
+        [TestMethod]
+        [Description("GetAccountProperties via Page Blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                blobContainerWithSAS.Create();
+
+                var blob = blobContainerWithSAS.GetPageBlobReference("test");
+
+                var result = blob.GetAccountPropertiesAsync().Result;
+
+                blob.DeleteIfExists();
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
     }
 }
 

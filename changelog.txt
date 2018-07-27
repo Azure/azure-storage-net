@@ -1,5 +1,17 @@
-Changes in #####:
-- All (Desktop): Added support for specifying Proxy on OperationContext, for per-request proxy scenarios. 
+Changes in 9.3.0:
+- All: Support for 2018-03-28 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.6.
+- Blob: Added support for put block using a source URI and range.
+- Table: Address GitHub Issue #671, regarding serialization performance.
+- Blob: Added support for static website properties.
+- Blob: Added support for GetAccountProperties on blobs, blob containers, and blob clients.
+- Desktop: Disabled Pipelining on HttpWebRequests.
+
+Changes in 9.2.0:
+- All: Support for 2017-11-09 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.5.
+- Blobs: Added support for blob creation time property.
+- Blobs: Added support for blob container immutability and legal hold policies.
+- Blob/Queue: Added OAuth token support for authentication. Please note that this feature is available in preview.
+- All (Desktop): Added support for specifying Proxy on OperationContext, for per-request proxy scenarios.
 
 Changes in 9.1.1:
 - Table: Updated Table related APIs to use the default Json Serializer settings.
@@ -120,7 +132,6 @@ Changes in 7.2.1 :
 
 - All: Changes error handling in the case where Streams that are passed into the library have a specific bug.  This case will no longer crash the AppDomain.
 
-
 Changes in 7.2.0 :
 
 - All (CoreCLR): NetStandard target framework changed to netstandard1.3
@@ -142,7 +153,6 @@ Changes in 7.1.2 :
 - All (CoreCLR): Updated the default AutomaticDecompression Method on StorageAuthenticationHttpHandler from Gzip | Deflate to None.
 - Table (CoreCLR) : Fixed a bug where reading table entity properties returned only the declared properties.
  
-
 Changes in 7.0.2-preview :
 
 - Blobs (WinRT): Fixed a bug that caused DownloadToFile() to infinite loop for one overload.
@@ -557,4 +567,3 @@ Issues fixed in 2.0.1 :
   - All: CloudStorageAccount.*Parse methods throw an exception for "UseDevelopmentStorage=true" string.
   - All: StorageErrorCodeStrings class is missing.
   - Blobs: ICloudBlob interface does not have GetSharedAccessSignature method.
-
