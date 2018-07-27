@@ -1,3 +1,6 @@
+Changes in xx.xx.xx:
+- Blob: Fixed a bug introduced with the blob creation time property, where cultures other than en-US would fail to parse blob headers.
+
 Changes in 9.3.0:
 - All: Support for 2018-03-28 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.6.
 - Blob: Added support for put block using a source URI and range.

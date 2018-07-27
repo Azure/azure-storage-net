@@ -18,6 +18,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -455,6 +456,39 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 #endif
+
+        [TestMethod]
+        [Description("Ensure different regions can parse blob headers.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobLocaleParsing()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            var currCulture = Thread.CurrentThread.CurrentCulture;
+            try
+            {
+                const string blobname = "tempfile";
+                container.Create();
+                var blockBlob = container.GetBlockBlobReference(blobname);
+                OperationContext context = new OperationContext();
+
+                blockBlob.UploadText("placeholder", null, null, null, context);
+
+                foreach (var culture in CultureInfo.GetCultures(CultureTypes.AllCultures))
+                {
+                    Thread.CurrentThread.CurrentCulture = culture;
+                    Assert.IsTrue(blockBlob.Exists()); // parses the header to ensure can be parsed across cultures
+                }                                      // failed assertion means we never tested the parser
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = currCulture;
+                container.DeleteIfExists();
+            }
+        }
+
         #region Soft-Delete
 
         #region SYNC
