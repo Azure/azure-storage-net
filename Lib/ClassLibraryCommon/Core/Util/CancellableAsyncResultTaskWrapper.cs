@@ -112,7 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         internal void Wait()
         {
-            ((Task)this.internalAsyncResult).Wait();
+            CommonUtility.RunWithoutSynchronizationContext(() => ((Task)this.internalAsyncResult).Wait());
         }
     }
 
@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         {
             get
             {
-                return ((Task<TResult>)this.internalAsyncResult).Result;
+                return CommonUtility.RunWithoutSynchronizationContext(() => ((Task<TResult>)this.internalAsyncResult).Result);
             }
         }
     }

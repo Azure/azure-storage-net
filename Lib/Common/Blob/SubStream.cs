@@ -212,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public override int EndRead(IAsyncResult asyncResult)
         {
             CommonUtility.AssertNotNull("AsyncResult", asyncResult);
-            return ((Task<int>)asyncResult).Result;
+            return CommonUtility.RunWithoutSynchronizationContext(() => ((Task<int>)asyncResult).Result);
         }
 #endif
 
@@ -308,7 +308,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return this.ReadAsync(buffer, offset, count).Result;
+            return CommonUtility.RunWithoutSynchronizationContext(() => this.ReadAsync(buffer, offset, count).Result);
         }
 
         /// <summary>

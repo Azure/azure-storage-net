@@ -87,7 +87,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <returns>The error details.</returns>
         public static StorageExtendedErrorInformation ReadAndParseExtendedError(Stream inputStream)
         {
-            return ReadAndParseExtendedErrorAsync(inputStream, CancellationToken.None).GetAwaiter().GetResult();
+            return CommonUtility.RunWithoutSynchronizationContext(() => ReadAndParseExtendedErrorAsync(inputStream, CancellationToken.None).GetAwaiter().GetResult());
         }
 
         /// <summary>
