@@ -60,7 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             properties.ContentLanguage = response.Headers[Constants.HeaderConstants.ContentLanguageHeader];
 #else
             string created = response.Headers[Constants.HeaderConstants.CreationTimeHeader];
-            properties.Created = string.IsNullOrEmpty(created) ? (DateTimeOffset?)null : DateTimeOffset.Parse(created).ToUniversalTime();
+            properties.Created = string.IsNullOrEmpty(created) ? (DateTimeOffset?)null : DateTimeOffset.Parse(created, CultureInfo.InvariantCulture).ToUniversalTime();
             
             properties.LastModified = response.LastModified.ToUniversalTime();
             properties.ContentLanguage = response.Headers[HttpResponseHeader.ContentLanguage];

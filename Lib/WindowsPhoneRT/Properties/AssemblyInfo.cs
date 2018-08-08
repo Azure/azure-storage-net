@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Azure Storage")]
-[assembly: AssemblyCopyright("Copyright © 2013 Microsoft Corp.")]
+[assembly: AssemblyCopyright("Copyright © 2018 Microsoft Corp.")]
 [assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
 [assembly: AssemblyCulture("")]
 
@@ -24,8 +24,8 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("9.3.0.0")]
-[assembly: AssemblyFileVersion("9.3.0.0")]
+[assembly: AssemblyVersion("9.3.1.0")]
+[assembly: AssemblyFileVersion("9.3.1.0")]
 
 [assembly: NeutralResourcesLanguageAttribute("en-US")]
 [assembly: ComVisible(false)]

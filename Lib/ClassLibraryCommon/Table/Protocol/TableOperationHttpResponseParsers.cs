@@ -114,11 +114,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 if (resp.ContentType.Contains(Constants.JsonNoMetadataAcceptHeaderValue))
                 {
                     result.Etag = resp.Headers[Constants.HeaderConstants.EtagHeader];
-                    ReadEntityUsingJsonParserAsync(result, operation, cmd.ResponseStream, ctx, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult();
+                    CommonUtility.RunWithoutSynchronizationContext(() => ReadEntityUsingJsonParserAsync(result, operation, cmd.ResponseStream, ctx, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
                 }
                 else
                 {
-                    ReadOdataEntityAsync(result, operation, cmd.ResponseStream, ctx, accountName, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult();
+                    CommonUtility.RunWithoutSynchronizationContext(() => ReadOdataEntityAsync(result, operation, cmd.ResponseStream, ctx, accountName, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
                 }
             }
 
@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         internal static IList<TableResult> TableBatchOperationPostProcess(IList<TableResult> result, TableBatchOperation batch, RESTCommand<IList<TableResult>> cmd, HttpWebResponse resp, OperationContext ctx, TableRequestOptions options, string accountName)
         {
-            return TableBatchOperationPostProcessAsync(result, batch, cmd, resp, ctx, options, accountName, System.Threading.CancellationToken.None).GetAwaiter().GetResult();
+            return CommonUtility.RunWithoutSynchronizationContext(() => TableBatchOperationPostProcessAsync(result, batch, cmd, resp, ctx, options, accountName, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
         }
 
 
@@ -326,11 +326,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
             if (resp.ContentType.Contains(Constants.JsonNoMetadataAcceptHeaderValue))
             {
-                ReadQueryResponseUsingJsonParserAsync(retSeg, responseStream, resp.Headers[Constants.HeaderConstants.EtagHeader], resolver, options.PropertyResolver, typeof(TQueryType), null, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult();
+                CommonUtility.RunWithoutSynchronizationContext(() => ReadQueryResponseUsingJsonParserAsync(retSeg, responseStream, resp.Headers[Constants.HeaderConstants.EtagHeader], resolver, options.PropertyResolver, typeof(TQueryType), null, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
             }
             else
             {
-                List<KeyValuePair<string, Dictionary<string, object>>> results = ReadQueryResponseUsingJsonParserMetadataAsync(responseStream, System.Threading.CancellationToken.None).GetAwaiter().GetResult();
+                List<KeyValuePair<string, Dictionary<string, object>>> results = CommonUtility.RunWithoutSynchronizationContext(() => ReadQueryResponseUsingJsonParserMetadataAsync(responseStream, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
 
                 foreach (KeyValuePair<string, Dictionary<string, object>> kvp in results)
                 {
