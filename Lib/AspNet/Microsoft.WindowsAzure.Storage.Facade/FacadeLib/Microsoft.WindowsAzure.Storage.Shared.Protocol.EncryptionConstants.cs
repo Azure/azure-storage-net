@@ -10,7 +10,7 @@ public static class EncryptionConstants
     public const string TableEncryptionKeyDetails = "_ClientEncryptionMetadata1";
     public const string TableEncryptionPropertyDetails = "_ClientEncryptionMetadata2";
     public const string AgentMetadataKey = "EncryptionLibrary";
-    public const string AgentMetadataValue = ".NET 9.3.0";
+    public const string AgentMetadataValue = ".NET 9.3.1";
 }
 
 }
