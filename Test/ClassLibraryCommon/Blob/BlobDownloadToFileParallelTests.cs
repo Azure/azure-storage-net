@@ -20,6 +20,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #if !WINDOWS_PHONE && !WINDOWS_RT && !WINDOWS_PHONE_RT
 #if WINDOWS_DESKTOP
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
 #else
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
@@ -81,6 +82,100 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
                 await blob.DownloadToFileParallelAsync(outputFileName, FileMode.Create, parallelIOCount, rangeSizeInBytes, cancellationTokenSource.Token);
                 #endregion
+
+                await blob.DeleteAsync();
+
+                Assert.IsTrue(FilesAreEqual(inputFileName, outputFileName));
+            }
+            finally
+            {
+                container.DeleteIfExists();
+                File.Delete(inputFileName);
+                File.Delete(outputFileName);
+            }
+        }
+
+        // Private class to assist in testing scenarios where the download is being slow.
+        private class DelayingDownloadRangeCloudBlob : CloudBlob
+        {
+            int delayPerWriteInMs;
+            int writeSize;
+
+            public DelayingDownloadRangeCloudBlob(Uri blobAbsoluteUri, CloudBlobClient serviceClient, int delayPerWriteInMs, int writeSize) : base(blobAbsoluteUri, serviceClient)
+            {
+                this.delayPerWriteInMs = delayPerWriteInMs;
+                this.writeSize = writeSize;
+            }
+
+            public async override Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+            {
+                Console.WriteLine("Called with offset = " + offset + ", length = " + length);
+                MemoryStream str = new MemoryStream();
+                await base.DownloadRangeToStreamAsync(str, offset, length, accessCondition, options, operationContext, cancellationToken);
+                str.Position = 0;
+                byte[] buffer = new byte[writeSize];
+                while (str.Position < str.Length)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    int copied = await str.ReadAsync(buffer, 0, buffer.Length);
+                    await target.WriteAsync(buffer, 0, copied);
+                    if (str.Position < str.Length)
+                    {
+                        await Task.Delay(delayPerWriteInMs);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        [Description("Test parallel download in the case of slow downloads (causing retries)")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task ParallelDownloadSlowTest()
+        {
+            string inputFileName = Path.GetTempFileName();
+            string outputFileName = Path.GetTempFileName();
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("largeblob1");
+
+                long bufferSize = 12 * Constants.KB;
+                long offSet = 0;
+                using (FileStream file = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
+                {
+                    while (offSet < 12 * Constants.MB)
+                    {
+                        byte[] buffer = GetRandomBuffer(bufferSize);
+                        await file.WriteAsync(buffer, 0, buffer.Length);
+                        offSet += bufferSize;
+                    }
+                }
+
+                BlobRequestOptions options = new BlobRequestOptions();
+                options.ParallelOperationThreadCount = 16;
+                await blob.UploadFromFileAsync(inputFileName, null, options, null);
+
+                int parallelIOCount = 2;
+                long rangeSizeInBytes = 4 * Constants.MB;
+                CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+                DelayingDownloadRangeCloudBlob wrapperBlob = new DelayingDownloadRangeCloudBlob(blob.SnapshotQualifiedUri, blob.ServiceClient, 1000, 1000000);
+                await ParallelDownloadToFile.Start(wrapperBlob, outputFileName,
+                FileMode.Create,
+                parallelIOCount,
+                rangeSizeInBytes,
+                0,
+                null,
+                500 /* Amount of time to wait before abort / retry */,
+                null,
+                null,
+                null,
+                CancellationToken.None).Task;
 
                 await blob.DeleteAsync();
 

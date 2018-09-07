@@ -131,6 +131,11 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 this.position += bytesToCopy;
                 offset += bytesToCopy;
                 count -= bytesToCopy;
+                
+                if (this.position < 16)
+                {
+                    return;
+                }
             }
 
             // Wrap user stream with LengthLimitingStream. This stream will be used to discard the extra bytes we downloaded in order to deal with AES block size.
@@ -153,6 +158,8 @@ namespace Microsoft.WindowsAzure.Storage.Core
 #if WINDOWS_DESKTOP
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
+            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
+
             // Keep buffering until we have 16 bytes of IV.
             if (this.bufferIV && this.position < 16)
             {
@@ -162,6 +169,12 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 this.position += bytesToCopy;
                 offset += bytesToCopy;
                 count -= bytesToCopy;
+
+                if (this.position < 16)
+                {
+                    storageAsyncResult.OnComplete();
+                    return storageAsyncResult;
+                }
             }
 
             // Wrap user stream with LengthLimitingStream. This stream will be used to discard the extra bytes we downloaded in order to deal with AES block size.
@@ -173,7 +186,6 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 this.cryptoStream = this.encryptionPolicy.DecryptBlob(lengthLimitingStream, this.metadata, out this.transform, this.requireEncryption, iv: !this.bufferIV ? null : this.iv, noPadding: this.noPadding);
             }
 
-            StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
             if (count <= 0)
             {
                 storageAsyncResult.OnComplete();
