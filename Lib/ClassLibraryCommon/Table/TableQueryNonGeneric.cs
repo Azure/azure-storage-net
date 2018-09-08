@@ -192,7 +192,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 return new TableQuerySegment<DynamicTableEntity>(resSeg);
             };
+            queryCmd.PostProcessResponseAsync = async (cmd, resp, ctx) =>
+            {
+                ResultSegment<DynamicTableEntity> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGenericAsync<DynamicTableEntity, DynamicTableEntity>(cmd.ResponseStream, EntityUtilities.ResolveDynamicEntity, resp, requestOptions, ctx);
+                if (resSeg.ContinuationToken != null)
+                {
+                    resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;
+                }
 
+                return new TableQuerySegment<DynamicTableEntity>(resSeg);
+            };
             return queryCmd;
         }
 
@@ -219,6 +228,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.PostProcessResponse = (cmd, resp, ctx) =>
             {
                 ResultSegment<RESULT_TYPE> resSeg = TableOperationHttpResponseParsers.TableQueryPostProcessGeneric<RESULT_TYPE, DynamicTableEntity>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx);
+                if (resSeg.ContinuationToken != null)
+                {
+                    resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;
+                }
+
+                return new TableQuerySegment<RESULT_TYPE>(resSeg);
+            };
+            queryCmd.PostProcessResponseAsync = async (cmd, resp, ctx) =>
+            {
+                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGenericAsync<RESULT_TYPE, DynamicTableEntity>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx);
                 if (resSeg.ContinuationToken != null)
                 {
                     resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;

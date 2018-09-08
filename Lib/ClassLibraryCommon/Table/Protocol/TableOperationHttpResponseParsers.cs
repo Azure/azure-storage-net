@@ -92,7 +92,17 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
             return result;
         }
 
-        internal static TableResult TableOperationPostProcess(TableResult result, TableOperation operation, RESTCommand<TableResult> cmd, HttpWebResponse resp, OperationContext ctx, TableRequestOptions options, string accountName)
+        internal static TableResult TableOperationPostProcess(TableResult result, TableOperation operation, Stream responseStream, HttpWebResponse resp, OperationContext ctx, TableRequestOptions options, string accountName)
+        {
+            using (MemoryStream responseStreamCopy = new MemoryStream())
+            {
+                responseStream.CopyTo(responseStreamCopy);
+                responseStreamCopy.Seek(0, SeekOrigin.Begin);
+                return CommonUtility.RunWithoutSynchronizationContext(() => TableOperationPostProcessAsync(result, operation, responseStreamCopy, resp, ctx, options, accountName).GetAwaiter().GetResult());
+            }
+        }
+
+        internal static async Task<TableResult> TableOperationPostProcessAsync(TableResult result, TableOperation operation, Stream responseStream, HttpWebResponse resp, OperationContext ctx, TableRequestOptions options, string accountName)
         {
             if (operation.OperationType != TableOperationType.Retrieve && operation.OperationType != TableOperationType.Insert)
             {
@@ -114,11 +124,11 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
                 if (resp.ContentType.Contains(Constants.JsonNoMetadataAcceptHeaderValue))
                 {
                     result.Etag = resp.Headers[Constants.HeaderConstants.EtagHeader];
-                    CommonUtility.RunWithoutSynchronizationContext(() => ReadEntityUsingJsonParserAsync(result, operation, cmd.ResponseStream, ctx, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
+                    await ReadEntityUsingJsonParserAsync(result, operation, responseStream, ctx, options, System.Threading.CancellationToken.None).ConfigureAwait(false);
                 }
                 else
                 {
-                    CommonUtility.RunWithoutSynchronizationContext(() => ReadOdataEntityAsync(result, operation, cmd.ResponseStream, ctx, accountName, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
+                    await ReadOdataEntityAsync(result, operation, responseStream, ctx, accountName, options, System.Threading.CancellationToken.None).ConfigureAwait(false);
                 }
             }
 
@@ -321,16 +331,26 @@ namespace Microsoft.WindowsAzure.Storage.Table.Protocol
 
         internal static ResultSegment<TElement> TableQueryPostProcessGeneric<TElement, TQueryType>(Stream responseStream, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, HttpWebResponse resp, TableRequestOptions options, OperationContext ctx)
         {
+            using (MemoryStream responseStreamCopy = new MemoryStream())
+            {
+                responseStream.CopyTo(responseStreamCopy);
+                responseStreamCopy.Seek(0, SeekOrigin.Begin);
+                return CommonUtility.RunWithoutSynchronizationContext(() => TableQueryPostProcessGenericAsync<TElement, TQueryType>(responseStreamCopy, resolver, resp, options, ctx).GetAwaiter().GetResult());
+            }
+        }
+
+        internal static async Task<ResultSegment<TElement>> TableQueryPostProcessGenericAsync<TElement, TQueryType>(Stream responseStream, Func<string, string, DateTimeOffset, IDictionary<string, EntityProperty>, string, TElement> resolver, HttpWebResponse resp, TableRequestOptions options, OperationContext ctx)
+        {
             ResultSegment<TElement> retSeg = new ResultSegment<TElement>(new List<TElement>());
             retSeg.ContinuationToken = ContinuationFromResponse(resp);
 
             if (resp.ContentType.Contains(Constants.JsonNoMetadataAcceptHeaderValue))
             {
-                CommonUtility.RunWithoutSynchronizationContext(() => ReadQueryResponseUsingJsonParserAsync(retSeg, responseStream, resp.Headers[Constants.HeaderConstants.EtagHeader], resolver, options.PropertyResolver, typeof(TQueryType), null, options, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
+                await ReadQueryResponseUsingJsonParserAsync(retSeg, responseStream, resp.Headers[Constants.HeaderConstants.EtagHeader], resolver, options.PropertyResolver, typeof(TQueryType), null, options, System.Threading.CancellationToken.None).ConfigureAwait(false);
             }
             else
             {
-                List<KeyValuePair<string, Dictionary<string, object>>> results = CommonUtility.RunWithoutSynchronizationContext(() => ReadQueryResponseUsingJsonParserMetadataAsync(responseStream, System.Threading.CancellationToken.None).GetAwaiter().GetResult());
+                List<KeyValuePair<string, Dictionary<string, object>>> results = await ReadQueryResponseUsingJsonParserMetadataAsync(responseStream, System.Threading.CancellationToken.None).ConfigureAwait(false);
 
                 foreach (KeyValuePair<string, Dictionary<string, object>> kvp in results)
                 {

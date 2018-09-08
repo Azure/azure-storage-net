@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             if (!this.disposed)
             {
                 this.disposed = true;
-                if (disposing)
+                if (disposing && this.cryptoStream != null)
                 {
                     this.cryptoStream.Close();
                 }

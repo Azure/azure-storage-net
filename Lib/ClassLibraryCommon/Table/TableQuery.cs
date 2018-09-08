@@ -573,6 +573,16 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
                 return new TableQuerySegment<RESULT_TYPE>(resSeg);
             };
+            queryCmd.PostProcessResponseAsync = async (cmd, resp, ctx) =>
+            {
+                ResultSegment<RESULT_TYPE> resSeg = await TableOperationHttpResponseParsers.TableQueryPostProcessGenericAsync<RESULT_TYPE, T>(cmd.ResponseStream, resolver.Invoke, resp, requestOptions, ctx);
+                if (resSeg.ContinuationToken != null)
+                {
+                    resSeg.ContinuationToken.TargetLocation = cmd.CurrentResult.TargetLocation;
+                }
+
+                return new TableQuerySegment<RESULT_TYPE>(resSeg);
+            };
 
             return queryCmd;
         }

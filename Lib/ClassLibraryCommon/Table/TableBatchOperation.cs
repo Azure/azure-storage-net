@@ -146,6 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             batchCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp != null ? resp.StatusCode : HttpStatusCode.Unused, results, cmd, ex);
             batchCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableBatchOperationPostProcess(results, batch, cmd, resp, ctx, requestOptions, client.AccountName);
+            batchCmd.PostProcessResponseAsync = async (cmd, resp, ctx) => await TableOperationHttpResponseParsers.TableBatchOperationPostProcessAsync(results, batch, cmd, resp, ctx, requestOptions, client.AccountName, System.Threading.CancellationToken.None);
             batchCmd.RecoveryAction = (cmd, ex, ctx) => results.Clear();
 
             return batchCmd;

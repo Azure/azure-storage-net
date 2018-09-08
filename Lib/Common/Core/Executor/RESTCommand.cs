@@ -29,6 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.Threading.Tasks;
 #else
     using System.Net;
+    using System.Threading.Tasks;
 #endif
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
@@ -144,6 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
         // Post-Stream Retrieval Func ( if retreiveStream is true after ProcessResponse, the stream is retrieved and then PostProcess is called
         public Func<RESTCommand<T>, HttpWebResponse, OperationContext, T> PostProcessResponse = null;
+        public Func<RESTCommand<T>, HttpWebResponse, OperationContext, Task<T>> PostProcessResponseAsync = null;
 
         // Delegate that will be executed if there is anything to be disposed.
         public Action<RESTCommand<T>> DisposeAction = null;
