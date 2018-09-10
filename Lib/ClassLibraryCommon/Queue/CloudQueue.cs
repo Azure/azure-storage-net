@@ -1896,7 +1896,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> specifying the visibility timeout interval.</param>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
+        /// <returns>A <see cref="CloudQueueMessage"/> object or <c>null</c> if the <see cref="CloudQueue"/> is empty.</returns>
         [DoesServiceRequest]
         public virtual CloudQueueMessage GetMessage(TimeSpan? visibilityTimeout = null, QueueRequestOptions options = null, OperationContext operationContext = null)
         {
@@ -2121,7 +2121,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="options">A <see cref="QueueRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="CloudQueueMessage"/> object.</returns>
+        /// <returns>A <see cref="CloudQueueMessage"/> object or <c>null</c> if the <see cref="CloudQueue"/> is empty.</returns>
         [DoesServiceRequest]
         public virtual CloudQueueMessage PeekMessage(QueueRequestOptions options = null, OperationContext operationContext = null)
         {
