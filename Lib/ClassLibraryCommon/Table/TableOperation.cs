@@ -144,7 +144,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
             insertCmd.PreProcessResponse = (cmd, resp, ex, ctx) => TableOperationHttpResponseParsers.TableOperationPreProcess(result, operation, resp, ex);
 
-            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
+            insertCmd.PostProcessResponse = (cmd, resp, ctx) => TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd.ResponseStream, resp, ctx, requestOptions, client.AccountName);
+            insertCmd.PostProcessResponseAsync = async (cmd, resp, ctx) => await TableOperationHttpResponseParsers.TableOperationPostProcessAsync(result, operation, cmd.ResponseStream, resp, ctx, requestOptions, client.AccountName);
 
             return insertCmd;
         }
@@ -241,10 +242,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
                     return result;
                 }
 
-                result = TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd, resp, ctx, requestOptions, client.AccountName);
+                result = TableOperationHttpResponseParsers.TableOperationPostProcess(result, operation, cmd.ResponseStream, resp, ctx, requestOptions, client.AccountName);
                 return result;
             };
+            retrieveCmd.PostProcessResponseAsync = async (cmd, resp, ctx) =>
+            {
+                if (resp.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return result;
+                }
 
+                result = await TableOperationHttpResponseParsers.TableOperationPostProcessAsync(result, operation, cmd.ResponseStream, resp, ctx, requestOptions, client.AccountName);
+                return result;
+            };
             return retrieveCmd;
         }
 

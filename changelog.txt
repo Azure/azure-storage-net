@@ -1,3 +1,9 @@
+Changes in 9.3.2:
+- Blob: Fixed a bug where data could become corrupted during download if using client-side encryption over an extremely slow connection.
+- Blob: Fixed a bug where data could become corrupted during download if using parallel download and multiple retries are necessary.
+- Blob: Fixed a bug where a NullReferenceException was being thrown and caught if using client-side encryption and in the presence of other errors.
+- Table: Fixed deadlocks that could occur when issuing table operations at high scale.
+
 Changes in 9.3.1:
 - Blob: Fixed a bug introduced with the blob creation time property, where cultures other than en-US would fail to parse blob headers.
 - Table: Fixed a bug in parsing responses from the Table service that could cause hangs or deadlocks in certain situations.

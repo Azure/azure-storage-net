@@ -1974,6 +1974,141 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Task.WaitAll(tasks.ToArray());
         }
 
+        [TestMethod]
+        [Description("Validate that decryption functions correctly even if bytes are being written in very small chunks.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void BlobDecryptStreamSmallWriteTest()
+        {
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            // Create the resolver to be used for unwrapping.
+            DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+            resolver.Add(aesKey);
+
+            // Create the encryption policy to be used for upload.
+            BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+            byte[] rawData = GetRandomBuffer(1029);
+            MemoryStream encryptedDataStream = new MemoryStream();
+
+            Dictionary<string, string> tempMetadata = new Dictionary<string, string>();
+            ICryptoTransform transform = uploadPolicy.CreateAndSetEncryptionContext(tempMetadata, false /* noPadding */);
+            CryptoStream cryptoStream = new CryptoStream(encryptedDataStream, transform, CryptoStreamMode.Write);
+
+            cryptoStream.Write(rawData, 0, rawData.Length);
+            cryptoStream.FlushFinalBlock();
+
+            encryptedDataStream.Seek(0, SeekOrigin.Begin);
+            byte[] encryptedData = encryptedDataStream.ToArray();
+
+            // Download & decrypt some small subset of the data
+            int startByte = 327;
+            int length = 184;
+            int originalStart = startByte - (startByte % 16) - 16; // Account for filling an entire block on the start side, plus an extra block as an IV.
+            int finalbyte = startByte + length; 
+            finalbyte += (16 - finalbyte % 16); // Extend to fill an entire block on the end side
+
+            // Each operation will try writing only one byte at a time.  Decryption should still succeed
+            // in this scenario, buffering as necessary.
+            List<Action<BlobDecryptStream, byte[], int>> writeOperations = new List<Action<BlobDecryptStream, byte[], int>>()
+            {
+                (str, arr, j) => str.Write(arr, j, 1),
+                (str, arr, j) => str.EndWrite(str.BeginWrite(arr, j, 1, null, null)),
+                (str, arr, j) => str.WriteAsync(arr, j, 1).Wait()
+            };
+
+            foreach (Action<BlobDecryptStream, byte[], int> op in writeOperations)
+            {
+                MemoryStream targetStream = new MemoryStream();
+
+                using (BlobDecryptStream streamToTest = new BlobDecryptStream(targetStream, tempMetadata, length, startByte % 16, true, true, uploadPolicy, false))
+                {
+                    for (int i = originalStart; i < finalbyte; i++)
+                    {
+                        op(streamToTest, encryptedData, i);
+                    }
+                }
+                targetStream.Seek(0, SeekOrigin.Begin);
+                MemoryStream src = new MemoryStream(rawData, startByte, length);
+                TestHelper.AssertStreamsAreEqual(src, targetStream);
+            }
+        }
+
+        // Helper class that simply fails on any attempt to write.
+        // This helps us validate error handling during destination stream copy.
+        private class FailingWriteMemoryStream : MemoryStream
+        {
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException("Writes not allowed");
+            }
+
+            public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+            {
+                throw new NotImplementedException("Writes not allowed");
+            }
+            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                throw new NotImplementedException("Writes not allowed");
+            }
+        }
+
+        [TestMethod]
+        [Description("Validate cryptostream dispose error cases.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobCryptoStreamDisposeDecryptionFailure()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                TestLogListener.Restart();
+                container.Create();
+                int size = 5 * 1024 * 1024;
+                byte[] buffer = GetRandomBuffer(size);
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blockblob");
+
+                // Setup - upload an encrypted blob
+                Microsoft.Azure.KeyVault.SymmetricKey aesKey = new SymmetricKey(kid: "symencryptionkey");
+                BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(key: aesKey, keyResolver: null);
+                BlobRequestOptions uploadOptions = new BlobRequestOptions() { EncryptionPolicy = uploadPolicy };
+                MemoryStream stream = new MemoryStream(buffer);
+                blob.UploadFromStream(stream, length: size, accessCondition: null, options: uploadOptions);
+                Assert.IsTrue(stream.CanSeek);
+                stream.Dispose();
+                DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+                resolver.Add(aesKey);
+
+                // Run - try to download to a failing stream recipient.
+                BlobEncryptionPolicy downloadPolicy = new BlobEncryptionPolicy(null, resolver);
+                BlobRequestOptions downloadOptions = new BlobRequestOptions() { EncryptionPolicy = downloadPolicy, RetryPolicy = new RetryPolicies.NoRetry() };
+                FailingWriteMemoryStream outputStream = new FailingWriteMemoryStream();
+                TestHelper.ExpectedExceptionTask<StorageException>(
+                    blob.DownloadToStreamAsync(outputStream, null, downloadOptions, null), "No exception recieved from failing decryption download.");
+
+                // The specific bug being tested here was the result of a null reference error being thrown during cleanup
+                // in decryption failure cases.  The above code path will trigger that null ref, but the storage client doesn't rethrow
+                // the null ref, instead prioritizing the actual error (which in this case is the one generated by the test.)
+                // The null ref will, however, generate additional log lines, so here we validate that this did not occur.
+                // This is likely to be fragile; future refactorings should make this easier to test or a non-issue.
+                Assert.AreEqual(1, TestLogListener.ErrorCount);
+                Assert.AreEqual(1, TestLogListener.WarningCount);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+                TestLogListener.Stop();
+            }
+        }
+
         private void CountOperationsHelper(int size, int targetUploadOperations, bool streamSeekable, bool isAPM, BlobRequestOptions options)
         {
             CloudBlobContainer container = GetRandomContainerReference();

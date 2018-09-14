@@ -911,6 +911,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 rangeSizeInBytes,
                 offset,
                 length,
+                Constants.MaxIdleTimeMs,
                 accessCondition,
                 options,
                 operationContext,
@@ -3636,7 +3637,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         // This only throws a NotSupportedException if the current stream is not writable (which should never be true in our case).
                         // But the try/catch is for safe exit if something unexpected happens and we get an exception 
                         // when Close is invoked.
-                        cmd.DestinationStream.Close();
+                        if (cmd.DestinationStream != null)
+                        {
+                            cmd.DestinationStream.Close();
+                        }
 
                         // Dispose the ICryptoTransform object created for decryption if required. For the range download case, BlobDecryptStream will
                         // dispose the transform function. For full blob downloads, we will dispose it here.

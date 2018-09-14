@@ -51,23 +51,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        private int maxIdleTimeInMs;
         private readonly CancellationTokenSource cts;
 
-        public ParallelDownloadStream(MemoryMappedViewStream downloadStream)
+        public ParallelDownloadStream(MemoryMappedViewStream downloadStream, int maxIdleTimeInMs)
         {
             this.downloadStream = downloadStream;
-            this.cts = new CancellationTokenSource(Constants.MaxIdleTimeMs);
+            this.maxIdleTimeInMs = maxIdleTimeInMs;
+            this.cts = new CancellationTokenSource(this.maxIdleTimeInMs);
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            this.cts.CancelAfter(Constants.MaxIdleTimeMs);
+            this.cts.CancelAfter(this.maxIdleTimeInMs);
             return this.downloadStream.WriteAsync(buffer, offset, count, cancellationToken);
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            this.cts.CancelAfter(Constants.MaxIdleTimeMs);
+            this.cts.CancelAfter(this.maxIdleTimeInMs);
             this.downloadStream.Write(buffer, offset, count);
         }
 

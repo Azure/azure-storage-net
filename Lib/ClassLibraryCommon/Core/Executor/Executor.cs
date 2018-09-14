@@ -26,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     using System.IO;
     using System.Net;
     using System.Threading;
+    using System.Threading.Tasks;
 
     internal class Executor : ExecutorBase
     {
@@ -347,7 +348,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                     else
                     {
                         // Dont want to copy stream, just want to consume it so end
-                        Executor.EndOperation(executionState);
+                        Executor.EndOperationWithPostProcess(executionState);
                     }
                 }
             }
@@ -402,13 +403,29 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 
             executionState.CurrentOperation = ExecutorOperation.EndDownloadResponse;
 
-            Executor.EndOperation(executionState);
+            Executor.EndOperationWithPostProcess(executionState);
         }
         #endregion
 
         #region Step 9 - Parse Response
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         private static void EndOperation<T>(ExecutionState<T> executionState)
+        {
+            EndOperationAsync<T>(executionState, false).Wait(); // Note that this will run sync if we pass in "false".
+        }
+
+        private static void EndOperationWithPostProcess<T>(ExecutionState<T> executionState)
+        {
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            EndOperationAsync<T>(executionState, true); // Losing the task (fire-and-forget).  Same concept as the 'Begin' methods in this class which return void.
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        }
+
+        // Note for future maintainers:
+        // In EndOperation<T> above, this method is called and sync-Wait()'d on, with runPostProcess set to false.
+        // This means that, if 'runPostProcess' is ever false, this method must never hit an await point.
+        // This restriction is irrelevant in future versions of the library that only have an async executor.
+        private static async Task EndOperationAsync<T>(ExecutionState<T> executionState, bool runPostProcess)
         {
             Executor.FinishRequestAttempt(executionState);
 
@@ -421,8 +438,12 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 // Success
                 if (executionState.ExceptionRef == null)
                 {
-                    // Step 9 - This will not be called if an exception is raised during stream copying
-                    Executor.ProcessEndOfRequest(executionState);
+                    if (runPostProcess)
+                    {
+                        // Step 9 - This will not be called if an exception is raised during stream copying
+                        await Executor.RunPostProcessAsync(executionState);
+                    }
+                    DisposeAndEnd<T>(executionState);
                     executionState.OnComplete();
                     return;
                 }
@@ -454,6 +475,30 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 }
             }
 
+            ConsiderRetry<T>(executionState);
+        }
+
+        private static async Task RunPostProcessAsync<T>(ExecutionState<T> executionState)
+        {
+            // 9. Evaluate Response & Parse Results, (Stream potentially available here) 
+            if (executionState.RestCMD.PostProcessResponse != null)
+            {
+                executionState.CurrentOperation = ExecutorOperation.PostProcess;
+                Logger.LogInformational(executionState.OperationContext, SR.TracePostProcess);
+
+                if (executionState.RestCMD.PostProcessResponseAsync != null)
+                {
+                    executionState.Result = await executionState.RestCMD.PostProcessResponseAsync(executionState.RestCMD, executionState.Resp, executionState.OperationContext);
+                }
+                else
+                {
+                    executionState.Result = executionState.RestCMD.PostProcessResponse(executionState.RestCMD, executionState.Resp, executionState.OperationContext);
+                }
+            }
+        }
+
+        private static void ConsiderRetry<T>(ExecutionState<T> executionState)
+        {
             // Handle Retry
             try
             {
@@ -745,8 +790,15 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                         }
 
                         // Step 9 - This will not be called if an exception is raised during stream copying
-                        Executor.ProcessEndOfRequest(executionState);
+                        // 9. Evaluate Response & Parse Results, (Stream potentially available here) 
+                        if (executionState.RestCMD.PostProcessResponse != null)
+                        {
+                            executionState.CurrentOperation = ExecutorOperation.PostProcess;
+                            Logger.LogInformational(executionState.OperationContext, SR.TracePostProcess);
+                            executionState.Result = executionState.RestCMD.PostProcessResponse(executionState.RestCMD, executionState.Resp, executionState.OperationContext);
+                        }
 
+                        DisposeAndEnd<T>(executionState);
                         Executor.FinishRequestAttempt(executionState);
                         return executionState.Result;
                     }
@@ -890,16 +942,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
 #endif
         }
 
-        private static void ProcessEndOfRequest<T>(ExecutionState<T> executionState)
+        private static void DisposeAndEnd<T>(ExecutionState<T> executionState)
         {
-            // 9. Evaluate Response & Parse Results, (Stream potentially available here) 
-            if (executionState.RestCMD.PostProcessResponse != null)
-            {
-                executionState.CurrentOperation = ExecutorOperation.PostProcess;
-                Logger.LogInformational(executionState.OperationContext, SR.TracePostProcess);
-                executionState.Result = executionState.RestCMD.PostProcessResponse(executionState.RestCMD, executionState.Resp, executionState.OperationContext);
-            }
-
             // 10. If there is a dispose action specified on the command, invoke it.
             if (executionState.RestCMD.DisposeAction != null)
             {
