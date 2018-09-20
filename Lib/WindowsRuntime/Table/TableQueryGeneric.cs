@@ -128,11 +128,11 @@ namespace Microsoft.WindowsAzure.Storage.Table
 
         private static RESTCommand<TableQuerySegment<RESULT_TYPE>> QueryImpl<T, RESULT_TYPE>(TableQuery<T> query, TableContinuationToken token, CloudTableClient client, string tableName, EntityResolver<RESULT_TYPE> resolver, TableRequestOptions requestOptions) where T : ITableEntity, new()
         {
-            UriQueryBuilder builder = query.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
+            UriQueryBuilder queryBuilder = query.GenerateQueryBuilder(requestOptions.ProjectSystemProperties);
 
             if (token != null)
             {
-                token.ApplyToUriQueryBuilder(builder);
+                token.ApplyToUriQueryBuilder(queryBuilder);
             }
 
             StorageUri tempUri = NavigationHelper.AppendPathToUri(client.StorageUri, tableName);
@@ -142,8 +142,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
             queryCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(token);
             queryCmd.RetrieveResponseStream = true;
             queryCmd.ParseError = ODataErrorHelper.ReadFromStreamUsingODataLib;
-            queryCmd.Builder = builder;
-            queryCmd.BuildRequest = (cmd, uri, queryBuilder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
+            queryCmd.Builder = queryBuilder;
+            queryCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => TableOperationHttpRequestMessageFactory.BuildRequestForTableQuery(uri, builder, serverTimeout, cnt, ctx, requestOptions.PayloadFormat.Value, client.GetCanonicalizer(), client.Credentials);
             queryCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp.StatusCode, null /* retVal */, cmd, ex);
             queryCmd.PostProcessResponse = async (cmd, resp, ctx) =>
             {
