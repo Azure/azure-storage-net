@@ -18,6 +18,8 @@ complete Azure SDK, please see the [Microsoft Azure .NET Developer Center](http:
     - Insert/Peek Queue Messages
     - Advanced Queue Operations
 
+As of 9.4.0, Tables are not supported by this library.
+
 ## Getting Started
 
 The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Downloads Page](http://azure.microsoft.com/en-us/downloads/?sdk=net) and ships with support for building deployment packages, integrating with tooling, rich command line tooling, and more.
@@ -28,10 +30,9 @@ For the best development experience, developers should use the official Microsof
 
 ## Target Frameworks
 
-- .NET Framework 4.5: As of December 2016, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4.5.0 release and above.
+- .NET Framework 4.5.2: As of September 2018, Storage Client Libraries for .NET supports primarily the desktop .NET Framework 4.5.2 release and above.
 - Netstandard1.3: Storage Client Libraries for .NET are available to support Netstandard application development including Xamarin/UWP applications. 
 - Netstandard2.0: Storage Client Libraries for .NET are available to support Netstandard2.0 application development including Xamarin/UWP applications. 
-- Netstandard1.0: Storage Client Libraries support PCL through a Netstandard Façade targeting netstandard1.0.
 
 ## Requirements
 
@@ -52,7 +53,7 @@ For the best development experience, developers should use the official Microsof
 
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `Azure.Storage` package. 
 
-This version of the Storage Client Library ships with the storage version 2017-07-29.
+This version of the Storage Client Library ships with the storage version 2018-03-28.
 
 ### Via Git
 
@@ -74,51 +75,11 @@ Please note that the minimum nuget client version requirement has been updated t
 
 ## Dependencies
 
-### OData
-
-This version depends on three libraries (collectively referred to as ODataLib), which are resolved through the ODataLib (version 5.8.2) packages available through NuGet and not the WCF Data Services installer which currently contains 5.0.0 versions.
-
-The ODataLib libraries can be downloaded directly or referenced by your code project through NuGet.  
-
-The specific ODataLib packages are:
-
-- [Microsoft.Data.OData](http://nuget.org/packages/Microsoft.Data.OData/)
-- [Microsoft.Data.Edm](http://nuget.org/packages/Microsoft.Data.Edm/)
-- [System.Spatial](http://nuget.org/packages/System.Spatial)
-
-> Note:
-> You may have encountered incompatibility issues while trying to restore Storage Client ODataLib dependencies on a Netstandard/Netcore project since the earlier ODataLib packages did not support NetStandard/NetCore. This issue has been resolved since ODataLib version v5.8.2 and Storage Client v8.1.0, however if you are still using older versions of Storage Client library, you may want to use one of the following options as a workaround:
-
-> If using project.json/xproj: you can use the imports statement within the framework node of your project.json as shown below:
-
-```
-  "imports": [
-    "dnxcore50",
-    "portable-net451+win8"
-  ]
-```
-
-> If using csproj : you can modify your csproj file to specify the target fallback as shown below:
-
-```  <PropertyGroup>
-    <TargetFramework>netcoreapp1.x</TargetFramework>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.x' ">$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
-  </PropertyGroup>
-```
-
 ### Newtonsoft Json
 
-The desktop and phone libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
+The libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
 
 - [Newtonsoft.Json] (http://www.nuget.org/packages/Newtonsoft.Json)
-
-### WCF Data Services Client
-
-The desktop library depends on WCF Data Services Client, which can be downloaded directly or referenced by your code project through Nuget.
-
-- [Microsoft.Data.Services.Client] (http://www.nuget.org/packages/Microsoft.Data.Services.Client/)
 
 ### Key Vault
 
@@ -145,36 +106,14 @@ Tests for the client-side encryption support also depend on KeyVault.Extensions,
 
 - [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
+OAuth testing requires the ActiveDirectory identity model also available via NuGet:
+
+- [IdentityModel.Clients.ActiveDirectory] (http://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory)
+
 ## Code Samples
 
 > Note:
 > How-Tos focused around accomplishing specific tasks are available on the [Microsoft Azure .NET Developer Center](http://azure.microsoft.com/en-us/develop/net/).
-
-### Creating a Table
-
-First, include the classes you need (in this case we'll include the Storage and Table
-and further demonstrate creating a table):
-
-```csharp
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Table;
-```
-
-To perform an operation on any Microsoft Azure resource you will first instantiate
-a *client* which allows performing actions on it. The resource is known as an 
-*entity*. To do so for Table you also have to authenticate your request:
-
-```csharp
-var storageAccount = CloudStorageAccount.Parse(storageConnectionString);
-var tableClient = storageAccount.CreateCloudTableClient();
-```
-
-Now, to create a table entity using the client:
-
-```csharp
-CloudTable peopleTable = tableClient.GetTableReference("people");
-peopleTable.Create();
-```
 
 ## Need Help?
 Be sure to check out the Microsoft Azure [Developer Forums on MSDN](http://go.microsoft.com/fwlink/?LinkId=234489) if you have trouble with the provided code or use StackOverflow.

@@ -26,14 +26,14 @@ For the best development experience, developers should use the official Microsof
 The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. 
 You'll find the latest version and hotfixes on NuGet via the `Azure.Storage.Common` package.  
 
-This version of the Storage Client Library ships with the storage version 2017-07-29.
+This version of the Storage Client Library ships with the storage version 2018-03-28.
 
 ## Dependencies
 
 
 ### Newtonsoft Json
 
-The desktop and phone libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
+The libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
 
 - [Newtonsoft.Json] (http://www.nuget.org/packages/Newtonsoft.Json)
 
