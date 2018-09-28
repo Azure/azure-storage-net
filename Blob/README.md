@@ -75,10 +75,6 @@ Tests for the client-side encryption support also depend on KeyVault.Extensions,
 
 - [KeyVault.Extensions](http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
-OAuth testing requires the ActiveDirectory identity model also available via NuGet:
-
-- [IdentityModel.Clients.ActiveDirectory](http://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory)
-
 ## Code Samples
 
 > Note:
