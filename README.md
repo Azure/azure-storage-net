@@ -79,13 +79,13 @@ Please note that the minimum nuget client version requirement has been updated t
 
 The libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [Newtonsoft.Json] (http://www.nuget.org/packages/Newtonsoft.Json)
+- [Newtonsoft.Json](http://www.nuget.org/packages/Newtonsoft.Json)
 
 ### Key Vault
 
 The client-side encryption support depends on the KeyVault.Core package, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [KeyVault.Core] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
+- [KeyVault.Core](http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
 
 ### Test Dependencies
 
@@ -104,11 +104,11 @@ Once installed:
 
 Tests for the client-side encryption support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
+- [KeyVault.Extensions](http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
 OAuth testing requires the ActiveDirectory identity model also available via NuGet:
 
-- [IdentityModel.Clients.ActiveDirectory] (http://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory)
+- [IdentityModel.Clients.ActiveDirectory](http://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory)
 
 ## Code Samples
 

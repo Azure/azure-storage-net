@@ -35,17 +35,17 @@ This version of the Storage Client Library ships with the storage version 2018-0
 
 The libraries depend on Newtonsoft Json, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [Newtonsoft.Json] (http://www.nuget.org/packages/Newtonsoft.Json)
+- [Newtonsoft.Json](http://www.nuget.org/packages/Newtonsoft.Json)
 
 ### Key Vault
 
 The client-side encryption support depends on the KeyVault.Core package, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [KeyVault.Core] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
+- [KeyVault.Core](http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Core)
 
 Tests for the client-side encryption support also depend on KeyVault.Extensions, which can be downloaded directly or referenced by your code project through Nuget.
 
-- [KeyVault.Extensions] (http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
+- [KeyVault.Extensions](http://www.nuget.org/packages/Microsoft.Azure.KeyVault.Extensions)
 
 ## Code Samples
 
