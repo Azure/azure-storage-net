@@ -16,14 +16,14 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Net;
 using System.Text;
 using System.Threading;
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class CopyFileTest : FileTestBase

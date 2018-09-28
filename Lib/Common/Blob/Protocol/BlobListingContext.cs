@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     /// <summary>
     /// Provides a set of parameters for a blob listing operation.

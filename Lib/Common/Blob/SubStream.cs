@@ -15,15 +15,15 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;
     using System.IO;
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System.Threading.Tasks;
     using System.Threading;
-    using Microsoft.Azure.Storage.Shared.Protocol;
-    using Microsoft.Azure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
 
     /// <summary>
     /// A wrapper class that creates a logical substream from a region within an existing seekable stream.
@@ -212,7 +212,7 @@ namespace Microsoft.Azure.Storage.Blob
         public override int EndRead(IAsyncResult asyncResult)
         {
             CommonUtility.AssertNotNull("AsyncResult", asyncResult);
-            return ((Task<int>)asyncResult).Result;
+            return CommonUtility.RunWithoutSynchronizationContext(() => ((Task<int>)asyncResult).Result);
         }
 #endif
 
@@ -308,7 +308,7 @@ namespace Microsoft.Azure.Storage.Blob
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return this.ReadAsync(buffer, offset, count).GetAwaiter().GetResult();
+            return CommonUtility.RunWithoutSynchronizationContext(() => this.ReadAsync(buffer, offset, count).Result);
         }
 
         /// <summary>

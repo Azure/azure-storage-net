@@ -21,9 +21,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.Azure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Blob;
 
-namespace Microsoft.Azure.Storage.Core
+namespace Microsoft.WindowsAzure.Storage.Core
 {
     [TestClass]
     public class LoggingTests : TestBase

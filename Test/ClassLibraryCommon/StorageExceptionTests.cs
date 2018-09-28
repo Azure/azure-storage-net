@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;

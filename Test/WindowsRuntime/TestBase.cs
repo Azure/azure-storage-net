@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.Azure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Auth;
 using System;
 using System.IO;
 using System.Xml.Linq;
@@ -24,7 +24,7 @@ using Windows.Data.Xml.Dom;
 using Windows.Storage;
 using Windows.Storage.Streams;
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
     public partial class TestBase
     {

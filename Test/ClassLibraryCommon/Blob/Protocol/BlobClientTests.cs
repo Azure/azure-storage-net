@@ -17,7 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +27,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
     internal class BlobClientTests
     {
@@ -128,7 +128,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             HttpRequestMessage request = BlobTests.PutBlobRequest(BlobContext, containerName, blobName, Properties, BlobType.BlockBlob, Content, 0, null);
             Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
 
-            HttpRequestHandler.SetContentLength(request, Content.Length);
+            //HttpRequestHandler.SetContentLength(request, Content.Length);
 
             CancellationTokenSource timeout = new CancellationTokenSource(30000);
             request.Content = new ByteArrayContent(Content);
@@ -608,7 +608,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             HttpRequestMessage request = BlobTests.PutBlobRequest(BlobContext, containerName, blobName, properties, blobType, content, content.Length, null);
             request.Content = new ByteArrayContent(content);
             Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
-            HttpRequestHandler.SetContentLength(request, content.Length);
+            //HttpRequestHandler.SetContentLength(request, content.Length);
             
             using (HttpResponseMessage response = await BlobTestUtils.GetResponse(request, BlobContext))
             {
@@ -799,7 +799,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         {
             HttpRequestMessage request = BlobTests.PutBlockRequest(BlobContext, containerName, blobName, blockId, AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
-            HttpRequestHandler.SetContentLength(request, content.Length);
+            //HttpRequestHandler.SetContentLength(request, content.Length);
             request.Content = new ByteArrayContent(content);
             using (HttpResponseMessage response = await BlobTestUtils.GetResponse(request, BlobContext))
             {
@@ -819,7 +819,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 content = new byte[stream.Length];
                 stream.Read(content, 0, content.Length);
             }
-            HttpRequestHandler.SetContentLength(request, content.Length);
+            //HttpRequestHandler.SetContentLength(request, content.Length);
             request.Content = new ByteArrayContent(content);
             using (HttpResponseMessage response = await BlobTestUtils.GetResponse(request, BlobContext))
             {

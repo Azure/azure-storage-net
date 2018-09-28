@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Blob.Protocol;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -866,6 +866,21 @@ namespace Microsoft.Azure.Storage.Blob
         /// Uploads a single block.
         /// </summary>
         /// <param name="blockId">A base64-encoded block ID that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5)
+        {
+            return this.PutBlockAsync(blockId, sourceUri, offset, count, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Uploads a single block.
+        /// </summary>
+        /// <param name="blockId">A base64-encoded block ID that identifies the block.</param>
         /// <param name="blockData">A stream that provides the data for the block.</param>
         /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
         /// on the blob. May be <c>null</c> or an empty string.</param>
@@ -877,6 +892,24 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task PutBlockAsync(string blockId, Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.PutBlockAsync(blockId, blockData, contentMD5, accessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Uploads a single block.
+        /// </summary>
+        /// <param name="blockId">A base64-encoded block ID that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.PutBlockAsync(blockId, sourceUri, offset, count, contentMD5, accessCondition, options, operationContext, CancellationToken.None);
         }
 
 #if NETCORE
@@ -1009,6 +1042,32 @@ namespace Microsoft.Azure.Storage.Blob
                     seekableStream.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// Uploads a single block.
+        /// </summary>
+        /// <param name="blockId">A base64-encoded block ID that identifies the block.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the block. May be <c>null</c> or an empty string.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual async Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            await Executor.ExecuteAsyncNullReturn(
+                this.PutBlockImpl(sourceUri, offset, count, contentMD5, blockId, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         /// <summary>
@@ -1172,7 +1231,49 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="source">The source blob.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        private Task<string> StartCopyAsync(CloudBlockBlob source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), default(string) /* contentMD5 */, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="source">The source blob.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        private Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 #if ALL_SERVICES
         /// <summary>
@@ -1210,7 +1311,28 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="source">The source file.</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        private Task<string> StartCopyAsync(CloudFile source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(string) /* contentMD5 */, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 #endif
         /// <summary>
@@ -1352,6 +1474,33 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(source, offset, length, contentMD5, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutBlock(uri, serverTimeout, blockId, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Uploads the block from a source Uri.
+        /// </summary>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="blockId">The block ID.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand"/> that uploads the block.</returns>
+        internal RESTCommand<NullType> PutBlockImpl(Uri sourceUri, long? offset, long? count, string contentMD5, string blockId, AccessCondition accessCondition, BlobRequestOptions options)
+        {
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutBlock(uri, sourceUri, offset, count, contentMD5, serverTimeout, blockId, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);

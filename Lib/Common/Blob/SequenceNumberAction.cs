@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     /// <summary>
     /// Describes actions that can be performed on a page blob sequence number.

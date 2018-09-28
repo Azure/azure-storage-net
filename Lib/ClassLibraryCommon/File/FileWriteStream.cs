@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Storage.File
         /// <returns>An <c>IAsyncResult</c> that represents the asynchronous write, which could still be pending.</returns>
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.WriteAsync(buffer, offset, count, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WriteAsync(buffer, offset, count, token), callback, state);
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace Microsoft.Azure.Storage.File
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Reviewed.")]
         public override ICancellableAsyncResult BeginFlush(AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.FlushAsync(CancellationToken.None), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.FlushAsync(CancellationToken.None), callback, state);
         }
 
         /// <summary>
@@ -280,7 +280,7 @@ namespace Microsoft.Azure.Storage.File
         [SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "storageAsyncResult must be returned.")]
         public override ICancellableAsyncResult BeginCommit(AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.CommitAsync(), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CommitAsync(), callback, state);
         }
 
         /// <summary>

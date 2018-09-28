@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -43,6 +43,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             if (response.Content != null)
             {
+                string created = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CreationTimeHeader);
+                properties.Created = string.IsNullOrEmpty(created) ? (DateTimeOffset?)null : DateTimeOffset.Parse(created, CultureInfo.InvariantCulture);
+
                 properties.LastModified = response.Content.Headers.LastModified;
 #if NETCORE
                 HttpContentHeaders contentHeaders = response.Content.Headers;

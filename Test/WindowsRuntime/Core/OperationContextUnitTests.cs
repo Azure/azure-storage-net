@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core
+namespace Microsoft.WindowsAzure.Storage.Core
 {
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Blob;
     using System;
     using System.Threading.Tasks;
 

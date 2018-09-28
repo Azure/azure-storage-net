@@ -1,13 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup> 
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <AssemblyTitle>Microsoft.Azure.Storage.Blob</AssemblyTitle>
     <OutputType>Library</OutputType>
     <TargetFramework>netstandard1.3</TargetFramework>
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AssemblyName>Microsoft.Azure.Storage.Blob</AssemblyName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -21,48 +20,37 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <RootNamespace>Microsoft.Azure.Storage.Blob</RootNamespace>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-      <DebugSymbols>true</DebugSymbols>
-      <DebugType>full</DebugType>
-      <Optimize>false</Optimize>
-      <DefineConstants>NETCORE</DefineConstants>
-      <ErrorReport>prompt</ErrorReport>
-      <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-      <SignAssembly>true</SignAssembly>
-      <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
-      <DelaySign>true</DelaySign>
-      <DebugType>pdbonly</DebugType>
-      <Optimize>true</Optimize>
-      <DefineConstants>NETCORE;SIGN</DefineConstants>
-      <ErrorReport>prompt</ErrorReport>
-      <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyName>Microsoft.Azure.Storage.Blob</AssemblyName>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>NETCORE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>true</DelaySign>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>NETCORE;SIGN</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\WindowsRuntime\Blob\*.cs" />
-    <Compile Include="..\..\WindowsRuntime\Blob\Protocol\*.cs" />
+    <Compile Include="..\..\WindowsRuntime\Blob\**\*.cs" Exclude="**\obj\**;**\bin\**;**\*.xproj;**\packages\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Common\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Blob\Protocol\*.cs">
-      <Link>Blob\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Blob\Auth\*.cs">
-      <Link>Blob\Auth\Auth</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Blob\Util\*.cs">
-      <Link>Blob\Util\Util</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Blob\Account\*.cs">
-      <Link>Blob\Account\Account</Link>
-    </Compile>
+    <ProjectReference Include="..\..\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0.2-preview" />
-  </ItemGroup>
+  <Import Project="..\..\Common.Split\Shared\Blob.Shared\Microsoft.Azure.Storage.Common.Blob.projitems" Label="Shared" />
 </Project>

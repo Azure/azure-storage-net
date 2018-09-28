@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using Microsoft.Azure.KeyVault;
     using Microsoft.Azure.KeyVault.Core;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
@@ -1972,6 +1972,70 @@ namespace Microsoft.Azure.Storage.Blob
                 }
             }
             Task.WaitAll(tasks.ToArray());
+        }
+
+        [TestMethod]
+        [Description("Validate that decryption functions correctly even if bytes are being written in very small chunks.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void BlobDecryptStreamSmallWriteTest()
+        {
+            // Create the Key to be used for wrapping.
+            SymmetricKey aesKey = new SymmetricKey("symencryptionkey");
+
+            // Create the resolver to be used for unwrapping.
+            DictionaryKeyResolver resolver = new DictionaryKeyResolver();
+            resolver.Add(aesKey);
+
+            // Create the encryption policy to be used for upload.
+            BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(aesKey, null);
+
+            byte[] rawData = GetRandomBuffer(1029);
+            MemoryStream encryptedDataStream = new MemoryStream();
+
+            Dictionary<string, string> tempMetadata = new Dictionary<string, string>();
+            ICryptoTransform transform = uploadPolicy.CreateAndSetEncryptionContext(tempMetadata, false /* noPadding */);
+            CryptoStream cryptoStream = new CryptoStream(encryptedDataStream, transform, CryptoStreamMode.Write);
+
+            cryptoStream.Write(rawData, 0, rawData.Length);
+            cryptoStream.FlushFinalBlock();
+
+            encryptedDataStream.Seek(0, SeekOrigin.Begin);
+            byte[] encryptedData = encryptedDataStream.ToArray();
+
+            // Download & decrypt some small subset of the data
+            int startByte = 327;
+            int length = 184;
+            int originalStart = startByte - (startByte % 16) - 16; // Account for filling an entire block on the start side, plus an extra block as an IV.
+            int finalbyte = startByte + length;
+            finalbyte += (16 - finalbyte % 16); // Extend to fill an entire block on the end side
+
+            // Each operation will try writing only one byte at a time.  Decryption should still succeed
+            // in this scenario, buffering as necessary.
+            List<Action<BlobDecryptStream, byte[], int>> writeOperations = new List<Action<BlobDecryptStream, byte[], int>>()
+            {
+                (str, arr, j) => str.Write(arr, j, 1),
+                (str, arr, j) => str.EndWrite(str.BeginWrite(arr, j, 1, null, null)),
+                (str, arr, j) => str.WriteAsync(arr, j, 1).Wait()
+            };
+
+            foreach (Action<BlobDecryptStream, byte[], int> op in writeOperations)
+            {
+                MemoryStream targetStream = new MemoryStream();
+
+                using (BlobDecryptStream streamToTest = new BlobDecryptStream(targetStream, tempMetadata, length, startByte % 16, true, true, uploadPolicy, false))
+                {
+                    for (int i = originalStart; i < finalbyte; i++)
+                    {
+                        op(streamToTest, encryptedData, i);
+                    }
+                }
+                targetStream.Seek(0, SeekOrigin.Begin);
+                MemoryStream src = new MemoryStream(rawData, startByte, length);
+                TestHelper.AssertStreamsAreEqual(src, targetStream);
+            }
         }
 
         private void CountOperationsHelper(int size, int targetUploadOperations, bool streamSeekable, bool isAPM, BlobRequestOptions options)

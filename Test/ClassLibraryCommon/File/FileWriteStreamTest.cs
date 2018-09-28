@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.IO;
 using System.Net;
@@ -24,7 +24,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class FileWriteStreamTest : FileTestBase

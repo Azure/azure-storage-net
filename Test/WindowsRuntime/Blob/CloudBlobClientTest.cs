@@ -16,9 +16,9 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Core.Util;
-using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,7 +31,7 @@ using System.Threading;
 using System.Runtime.InteropServices.WindowsRuntime;
 #endif
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobClientTest : BlobTestBase
@@ -673,5 +673,24 @@ namespace Microsoft.Azure.Storage.Blob
             Assert.IsNull(timeout);
         }
 #endif
+
+        [TestMethod]
+        [Description("GetAccountProperties via Blob client")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientGetAccountProperties()
+        {
+            var client = GenerateCloudBlobClient();
+
+            var result = await client.GetAccountPropertiesAsync();
+
+            Assert.IsNotNull(result);
+
+            Assert.IsNotNull(result.SkuName);
+
+            Assert.IsNotNull(result.AccountKind);
+        }
     }
 }

@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Table
+namespace Microsoft.WindowsAzure.Storage.Table
 {
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;

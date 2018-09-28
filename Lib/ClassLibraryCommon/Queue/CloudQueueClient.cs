@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Queue.Protocol;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         public virtual ICancellableAsyncResult BeginListQueuesSegmented(string prefix, QueueListingDetails queueListingDetails, int? maxResults, QueueContinuationToken currentToken, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<QueueResultSegment>(token => this.ListQueuesSegmentedAsync(prefix, queueListingDetails, maxResults, currentToken, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ListQueuesSegmentedAsync(prefix, queueListingDetails, maxResults, currentToken, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -352,7 +352,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetServiceProperties(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<ServiceProperties>(token => this.GetServicePropertiesAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetServicePropertiesAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -466,12 +466,8 @@ namespace Microsoft.Azure.Storage.Queue
         {
             requestOptions = QueueRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
-            return Executor.BeginExecuteAsync(
-                this.SetServicePropertiesImpl(properties, requestOptions),
-                requestOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetServicePropertiesAsync(properties, requestOptions, operationContext), callback, state);
         }
 
         /// <summary>
@@ -480,7 +476,8 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="asyncResult">The <see cref="IAsyncResult"/> returned from a prior call to <see cref="BeginSetServiceProperties(ServiceProperties, AsyncCallback, object)"/>.</param>
         public virtual void EndSetServiceProperties(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            ((CancellableAsyncResultTaskWrapper)(asyncResult)).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -504,7 +501,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task SetServicePropertiesAsync(ServiceProperties properties, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetServiceProperties, this.EndSetServiceProperties, properties, cancellationToken);
+            return this.SetServicePropertiesAsync(properties, default(QueueRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -531,7 +528,13 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual Task SetServicePropertiesAsync(ServiceProperties properties, QueueRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetServiceProperties, this.EndSetServiceProperties, properties, options, operationContext, cancellationToken);
+            options = QueueRequestOptions.ApplyDefaults(options, this);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteAsync(
+                this.SetServicePropertiesImpl(properties, options),
+                options.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -574,7 +577,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetServiceStats(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<ServiceStats>(token => this.GetServiceStatsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetServiceStatsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -584,7 +587,8 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>A <see cref="ServiceStats"/> object.</returns>
         public virtual ServiceStats EndGetServiceStats(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<ServiceStats>(asyncResult);
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<ServiceStats>)(asyncResult)).GetAwaiter().GetResult();
         }
 
 #if TASK

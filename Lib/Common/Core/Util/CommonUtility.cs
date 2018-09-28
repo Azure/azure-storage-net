@@ -15,10 +15,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Util
+namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Storage.Core.Util
 
 #if WINDOWS_DESKTOP 
     using System.Net.Http;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #endif
 
     internal static class CommonUtility

@@ -1,9 +1,9 @@
-﻿using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.File;
-using Microsoft.Azure.Storage.Core;
+﻿using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.File;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     public static class FileAccountExtensions
     {

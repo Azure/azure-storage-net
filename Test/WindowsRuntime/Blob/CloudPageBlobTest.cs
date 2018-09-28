@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.Azure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Collections.Generic;
@@ -34,9 +34,9 @@ using Windows.Security.Cryptography.Core;
 using Windows.Storage;
 #endif
 
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudPageBlobTest : BlobTestBase
@@ -1583,6 +1583,37 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("GetAccountProperties via Page Blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudPageBlobGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                await blobContainerWithSAS.CreateAsync();
+
+                var blob = blobContainerWithSAS.GetPageBlobReference("test");
+
+                var result = await blob.GetAccountPropertiesAsync();
+
+                await blob.DeleteIfExistsAsync();
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExistsAsync().Wait();
             }
         }
     }

@@ -1,0 +1,34 @@
+{
+  "title": "Microsoft.Azure.Storage.Queue",
+  "version": "9.0.0-preview",
+
+  "dependencies": {
+    "Microsoft.Azure.Storage.Common": "9.0.0.1-preview",
+    "NETStandard.Library": "1.6.1"
+  },
+
+  "frameworks": {
+    "netstandard1.3": {
+      "imports": "dnxcore50"
+    }
+  },
+
+  "buildOptions": {
+    "define": [ "NETCORE" ],
+    "outputName": "Microsoft.Azure.Storage.Queue",
+    "allowUnsafe": false,
+    "warningsAsErrors": true,
+    "delaySign": true,
+    "keyFile": "MSSharedLibKey.snk",
+    "compile": [
+      "**/*.cs",
+      "../../Common/Queue/*.cs",
+      "../../Common/Queue/Auth/*.cs",
+      "../../Common/Queue/Protocol/*.cs",
+      "../../Common/Queue/Account/*.cs",
+
+      "../../WindowsRuntime/Queue/*.cs",
+      "../../WindowsRuntime/Queue/Protocol/*.cs"
+    ]
+  }
+}

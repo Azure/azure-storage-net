@@ -15,11 +15,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
@@ -308,7 +308,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <c>ICancellableAsyncResult</c> that represents the asynchronous commit, which could still be pending.</returns>
         public override ICancellableAsyncResult BeginCommit(AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.CommitAsync(), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CommitAsync(), callback, state);
         }
 
         /// <summary>

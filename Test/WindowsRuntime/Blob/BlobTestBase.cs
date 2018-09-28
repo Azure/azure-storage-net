@@ -24,7 +24,7 @@ using System.Threading;
 #endif
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     public partial class BlobTestBase : TestBase
     {

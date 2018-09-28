@@ -20,9 +20,9 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Azure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Blob;
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     public partial class FileTestBase : TestBase
     {

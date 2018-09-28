@@ -15,12 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Shared.Protocol
+namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Auth;
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
@@ -238,6 +238,31 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 
             builder.Add(Constants.QueryConstants.Component, "undelete");
             StorageRequestMessage request = CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            return request;
+        }
+
+        /// <summary>
+        /// Creates a web request to get the properties of the account.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the service.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>
+        /// A web request to get the service properties.
+        /// </returns>
+        internal static StorageRequestMessage GetAccountProperties(Uri uri, UriQueryBuilder builder, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            if (builder == null)
+            {
+                builder = new UriQueryBuilder();
+            }
+
+            builder.Add(Constants.QueryConstants.Component, "properties");
+            builder.Add(Constants.QueryConstants.ResourceType, "account");
+
+            StorageRequestMessage request = CreateRequestMessage(HttpMethod.Head, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             return request;
         }
 

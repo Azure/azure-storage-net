@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Executor
+namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.IO;
 

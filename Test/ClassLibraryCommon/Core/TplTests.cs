@@ -20,7 +20,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System.Threading.Tasks;
 

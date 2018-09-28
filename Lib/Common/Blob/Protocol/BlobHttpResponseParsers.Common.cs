@@ -18,13 +18,14 @@
 // </summary>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Globalization;
     using System.IO;
+    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -33,8 +34,18 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 #else
     public
 #endif
-        static partial class BlobHttpResponseParsers
+    static partial class BlobHttpResponseParsers
     {
+        /// <summary>
+        /// Reads account properties from an HttpResponseMessage object.
+        /// </summary>
+        /// <param name="response">The HttpResponseMessage from which to read the account properties.</param>
+        /// <returns>The account properties stored in the header.</returns>
+        public static AccountProperties ReadAccountProperties(HttpResponseMessage response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+
         /// <summary>
         /// Reads service properties from a stream.
         /// </summary>

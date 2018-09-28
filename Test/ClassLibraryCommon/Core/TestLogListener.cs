@@ -15,11 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Diagnostics;
 
-namespace Microsoft.Azure.Storage.Core
+namespace Microsoft.WindowsAzure.Storage.Core
 {
     public partial class TestLogListener : TraceListener
     {

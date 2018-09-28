@@ -15,14 +15,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.Azure.Storage;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.RetryPolicies;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     
     /// <summary>
@@ -205,12 +205,12 @@ namespace Microsoft.Azure.Storage.File
         {
             get
             {
-                return Microsoft.Azure.Storage.RetryPolicies.LocationMode.PrimaryOnly;
+                return Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode.PrimaryOnly;
             }
 
             set
             {
-                if (value != Microsoft.Azure.Storage.RetryPolicies.LocationMode.PrimaryOnly)
+                if (value != Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode.PrimaryOnly)
                 {
                     throw new NotSupportedException(SR.PrimaryOnlyCommand);
                 }

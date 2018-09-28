@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Auth
+namespace Microsoft.WindowsAzure.Storage.Core.Auth
 {
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Net;

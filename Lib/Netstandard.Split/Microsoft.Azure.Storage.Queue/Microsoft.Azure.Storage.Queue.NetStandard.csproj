@@ -1,17 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <AssemblyTitle>Microsoft.Azure.Storage.Queue</AssemblyTitle>
-    <VersionPrefix>9.4.0-preview</VersionPrefix>
+    <OutputType>Library</OutputType>
     <TargetFramework>netstandard1.3</TargetFramework>
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DelaySign>true</DelaySign>
-    <AssemblyName>Microsoft.Azure.Storage.Queue</AssemblyName>
-    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
-    <PackageId>Microsoft.Azure.Storage.Queue</PackageId>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -24,31 +19,39 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RootNamespace>Microsoft.Azure.Storage.Queue</RootNamespace>
   </PropertyGroup>
-  <!--<ItemGroup>
-    <Compile Include="..\..\Common\Queue\*.cs;..\..\Common\Queue\Auth\*.cs;..\..\Common\Queue\Protocol\*.cs;..\..\Common\Queue\Account\*.cs;..\..\WindowsRuntime\Queue\*.cs;..\..\WindowsRuntime\Queue\Protocol\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
-  </ItemGroup>-->
+  <PropertyGroup>
+    <AssemblyName>Microsoft.Azure.Storage.Queue</AssemblyName>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>NETCORE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>true</DelaySign>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>NETCORE;SIGN</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\WindowsRuntime\Queue\*.cs" />
-    <Compile Include="..\..\WindowsRuntime\Queue\Protocol\*.cs" />
+    <Compile Include="..\..\WindowsRuntime\Queue\**\*.cs" Exclude="**\obj\**;**\bin\**;**\*.xproj;**\packages\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Common\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Queue\Protocol\*.cs">
-      <Link>Queue\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Queue\Auth\*.cs">
-      <Link>Queue\Auth\Auth</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Queue\Account\*.cs">
-      <Link>Queue\Account\Account</Link>
-    </Compile>
+    <ProjectReference Include="..\..\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0.2-preview" />
-  </ItemGroup>
+  <Import Project="..\..\Common.Split\Shared\Queue.Shared\Microsoft.Azure.Storage.Common.Queue.projitems" Label="Shared" />
 
 </Project>

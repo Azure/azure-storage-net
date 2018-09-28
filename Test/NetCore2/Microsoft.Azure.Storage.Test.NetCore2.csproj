@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
@@ -10,14 +10,27 @@
     <RootNamespace>Microsoft.Azure.Storage.Test</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>true</DelaySign>
+    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0;WINDOWS_DESKTOP;TASK</DefineConstants>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;NETCOREAPP2_0;WINDOWS_DESKTOP;TASK</DefineConstants>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault" Version="2.3.2" />
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
     <PackageReference Include="Microsoft.Azure.KeyVault.Extensions" Version="2.0.5" />
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0.2-preview" />
+    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="3.19.8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.2.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.2.0" />
@@ -29,46 +42,11 @@
     <Compile Include="..\WindowsDesktop\WCFBufferManagerAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Common\*.cs">
+    <Compile Include="..\Common\**\*.cs" Exclude="..\Common\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\Common\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\Common\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\Common\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\Common\TestConfigProcess\*.cs">
-      <Link>TestConfigProcess\TestConfigProcess</Link>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\ClassLibraryCommon\*.cs" />
-    <Compile Include="..\ClassLibraryCommon\Blob\*.cs">
-      <Link>Blob\Blob</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Properties\*.cs">
-      <Link>Properties\Properties</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Blob\Protocol\*.cs">
-      <Link>Blob\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\File\Protocol\*.cs">
-      <Link>File\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\ClassLibraryCommon\Queue\*.cs">
-      <Link>Queue\Queue</Link>
+    <Compile Include="..\ClassLibraryCommon\**\*.cs" Exclude="..\ClassLibraryCommon\Analytics\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -93,7 +71,7 @@
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\Blob\Microsoft.Azure.Storage.Blob.NetStandard2.csproj" />
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\File\Microsoft.Azure.Storage.File.NetStandard2.csproj" />
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\Queue\Microsoft.Azure.Storage.Queue.NetStandard2.csproj" />
-    <ProjectReference Include="..\FaultInjection\AzureStorageMangler\AzureStorageMangler.csproj" />
+	<ProjectReference Include="..\FaultInjection\AzureStorageMangler\AzureStorageMangler.csproj" />
     <ProjectReference Include="..\FaultInjection\HttpMangler\HttpMangler.csproj" />
   </ItemGroup>
   <ItemGroup>

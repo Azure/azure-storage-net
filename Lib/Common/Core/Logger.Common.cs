@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core
+namespace Microsoft.WindowsAzure.Storage.Core
 {
     using System.Globalization;
 

@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     /// <summary>
     /// Represents the encrypted message that is stored on the service.

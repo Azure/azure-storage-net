@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Blob.Protocol;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -110,7 +110,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => CreateAsync(accessType, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => CreateAsync(accessType, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -279,7 +279,7 @@ namespace Microsoft.Azure.Storage.Blob
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => CreateIfNotExistsAsync(accessType, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => CreateIfNotExistsAsync(accessType, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -441,12 +441,8 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.DeleteContainerImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteAsync(accessCondition, modifiedOptions, operationContext), callback, state);
         }
 
         /// <summary>
@@ -455,7 +451,8 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndDelete(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            ((CancellableAsyncResultTaskWrapper)(asyncResult)).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -477,7 +474,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DeleteAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginDelete, this.EndDelete, cancellationToken);
+            return this.DeleteAsync(default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -593,7 +590,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteIfExists(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteIfExistsAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         
@@ -743,7 +740,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetBlobReferenceFromServer(string blobName, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<ICloudBlob>(token => this.GetBlobReferenceFromServerAsync(blobName, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetBlobReferenceFromServerAsync(blobName, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -947,7 +944,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginListBlobsSegmented(string prefix, bool useFlatBlobListing, BlobListingDetails blobListingDetails, int? maxResults, BlobContinuationToken currentToken, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<BlobResultSegment>(token => this.ListBlobsSegmentedAsync(prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ListBlobsSegmentedAsync(prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -982,7 +979,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<BlobResultSegment> ListBlobsSegmentedAsync(BlobContinuationToken currentToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListBlobsSegmented, this.EndListBlobsSegmented, currentToken, cancellationToken);
+            return this.ListBlobsSegmentedAsync(default(string) /* prefix */, false /* useFlatBlobListing */, default(BlobListingDetails), default(int?) /* maxResults */, currentToken, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1102,7 +1099,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetPermissions(BlobContainerPermissions permissions, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetPermissionsAsync(permissions, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetPermissionsAsync(permissions, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1135,7 +1132,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetPermissionsAsync(BlobContainerPermissions permissions, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetPermissions, this.EndSetPermissions, permissions, cancellationToken);
+            return this.SetPermissionsAsync(permissions, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1216,7 +1213,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetPermissions(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<BlobContainerPermissions>(token => this.GetPermissionsAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetPermissionsAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1350,7 +1347,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         private ICancellableAsyncResult BeginExists(bool primaryOnly, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.ExistsAsync(primaryOnly, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ExistsAsync(primaryOnly, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1472,7 +1469,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1581,7 +1578,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1703,7 +1700,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAcquireLease(TimeSpan? leaseTime, string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<string>(token => this.AcquireLeaseAsync(leaseTime, proposedLeaseId, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.AcquireLeaseAsync(leaseTime, proposedLeaseId, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1830,7 +1827,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginRenewLease(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.RenewLeaseAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.RenewLeaseAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1945,7 +1942,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         public virtual ICancellableAsyncResult BeginChangeLease(string proposedLeaseId, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<string>(token => ChangeLeaseAsync(proposedLeaseId, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => ChangeLeaseAsync(proposedLeaseId, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2062,7 +2059,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginReleaseLease(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.ReleaseLeaseAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ReleaseLeaseAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2183,7 +2180,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginBreakLease(TimeSpan? breakPeriod, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<TimeSpan>(token => BreakLeaseAsync(breakPeriod, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => BreakLeaseAsync(breakPeriod, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2724,5 +2721,137 @@ namespace Microsoft.Azure.Storage.Blob
             this.Properties.ETag = parsedProperties.ETag;
             this.Properties.LastModified = parsedProperties.LastModified;
         }
+
+        #region GetAccountProperties
+
+        /// <summary>
+        /// Begins an asynchronous operation to get properties for the account this container resides on.
+        /// </summary>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetAccountProperties(AsyncCallback callback, object state)
+        {
+            return this.BeginGetAccountProperties(null /* requestOptions */, null /* operationContext */, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to get properties for the account this container resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object to be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetAccountProperties(BlobRequestOptions requestOptions, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            requestOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetAccountPropertiesAsync(requestOptions, operationContext), callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to get properties for the account this container resides on.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="AccountProperties"/> object.</returns>
+        public virtual AccountProperties EndGetAccountProperties(IAsyncResult asyncResult)
+        {
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<AccountProperties>)(asyncResult)).GetAwaiter().GetResult();
+        }
+
+#if TASK
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this container resides on.
+        /// </summary>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync()
+        {
+            return this.GetAccountPropertiesAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this container resides on.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(CancellationToken cancellationToken)
+        {
+            return this.GetAccountPropertiesAsync(default(BlobRequestOptions), default(OperationContext), cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this container resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext)
+        {
+            return this.GetAccountPropertiesAsync(requestOptions, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to get properties for the account this container resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="AccountProperties"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            requestOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteAsync(
+                this.GetAccountPropertiesImpl(requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Gets properties for the account this container resides on.
+        /// </summary>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>An <see cref="AccountProperties"/> object.</returns>
+        [DoesServiceRequest]
+        public virtual AccountProperties GetAccountProperties(BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
+        {
+            requestOptions = BlobRequestOptions.ApplyDefaults(requestOptions, BlobType.Unspecified, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteSync(
+                this.GetAccountPropertiesImpl(requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        private RESTCommand<AccountProperties> GetAccountPropertiesImpl(BlobRequestOptions requestOptions)
+        {
+            RESTCommand<AccountProperties> retCmd = new RESTCommand<AccountProperties>(this.ServiceClient.Credentials, this.StorageUri);
+            retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => ContainerHttpRequestMessageFactory.GetAccountProperties(uri, builder, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            retCmd.RetrieveResponseStream = true;
+            retCmd.PreProcessResponse =
+                (cmd, resp, ex, ctx) =>
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+
+            retCmd.PostProcessResponseAsync =
+                (cmd, resp, ctx, ct) => Task.FromResult(ContainerHttpResponseParsers.ReadAccountProperties(resp));
+            requestOptions.ApplyToStorageCommand(retCmd);
+            return retCmd;
+        }
+        #endregion
     }
 }

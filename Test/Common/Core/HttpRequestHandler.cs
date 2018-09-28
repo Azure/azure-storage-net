@@ -14,11 +14,11 @@
  // </copyright>
  // -----------------------------------------------------------------------------------------
  
- namespace Microsoft.Azure.Storage.Shared.Protocol
+ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
  {
      using System.Net.Http;
      using System.Linq;
-     using Microsoft.Azure.Storage.Core.Util;
+     using Microsoft.WindowsAzure.Storage.Core.Util;
      using System;
  
      internal static partial class HttpRequestHandler

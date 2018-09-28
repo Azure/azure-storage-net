@@ -15,11 +15,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -117,6 +117,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                                 {
                                     switch (reader.Name)
                                     {
+                                        case Constants.CreationTimeElement:
+                                            blob.Properties.Created = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
+                                            break;
+
                                         case Constants.LastModifiedElement:
                                             blob.Properties.LastModified = (await reader.ReadElementContentAsStringAsync().ConfigureAwait(false)).ToUTCTime();
                                             break;

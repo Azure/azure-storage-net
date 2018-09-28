@@ -8,16 +8,9 @@
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>Microsoft.Azure.Storage.Common.Blob</Import_RootNamespace>
   </PropertyGroup>
-  <ItemGroup>  
-        <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\Blob\*.cs" >
-		</Compile >
-		<Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Blob\Protocol\*.cs">
-		</Compile>
-		<Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Blob\Auth\*.cs">
-		</Compile>
-		<Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Blob\Util\*.cs">
-		</Compile>
-		<Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Blob\Account\*.cs">
-		</Compile>
+  <ItemGroup>
+    <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\Blob\**\*.cs" >
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>	
   </ItemGroup>
 </Project>

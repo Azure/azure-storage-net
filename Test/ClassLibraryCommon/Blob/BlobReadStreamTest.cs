@@ -20,13 +20,13 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Shared.Protocol;
-using Microsoft.Azure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System.Threading.Tasks;
-using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobReadStreamTest : BlobTestBase

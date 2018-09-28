@@ -19,7 +19,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Security.Cryptography;
 
-namespace Microsoft.Azure.Storage.Core.Util
+namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
     [TestClass()]
     public class MD5WrapperTests

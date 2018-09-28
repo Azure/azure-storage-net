@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Blob.Protocol;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -138,7 +138,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenWrite(bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudBlobStream>(token => this.OpenWriteAsync(createNew, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.OpenWriteAsync(createNew, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -399,7 +399,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, true /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, true /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -420,7 +420,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, true /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, true /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -442,7 +442,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromStream(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, true /*createNew*/, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, true /*createNew*/, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), token), callback, state);
         }
 
         /// <summary>
@@ -461,7 +461,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, length, true /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, length, true /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -483,7 +483,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, length, true /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, length, true /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -506,7 +506,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, length, true /*createNew*/, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, length, true /*createNew*/, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), token), callback, state);
         }
 
         /// <summary>
@@ -522,7 +522,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAppendFromStream(Stream source, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, false /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, false /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -542,7 +542,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAppendFromStream(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, false /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, false /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -563,7 +563,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginAppendFromStream(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, false /*createNew*/, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, false /*createNew*/, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), token), callback, state);
         }
 
         /// <summary>
@@ -580,7 +580,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAppendFromStream(Stream source, long length, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, length, false /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, length, false /*createNew*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -601,7 +601,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAppendFromStream(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, length, false /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, length, false /*createNew*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, token), callback, state);
         }
 
         /// <summary>
@@ -623,7 +623,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginAppendFromStream(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, length, false /*createNew*/, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, length, false /*createNew*/, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1170,7 +1170,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromFile(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromFileAsync(path, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromFileAsync(path, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1228,7 +1228,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginAppendFromFile(string path, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.AppendFromFileAsync(path, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.AppendFromFileAsync(path, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
       
@@ -1559,7 +1559,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1634,7 +1634,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginAppendFromByteArray(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.AppendFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.AppendFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1959,7 +1959,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadText(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadTextAsync(content, encoding, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadTextAsync(content, encoding, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2026,7 +2026,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginAppendText(string content, Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.AppendTextAsync(content, encoding, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.AppendTextAsync(content, encoding, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2273,7 +2273,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateOrReplace(AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.CreateOrReplaceAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateOrReplaceAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2499,7 +2499,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginAppendBlock(Stream blockData, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<long>(token => this.AppendBlockAsync(blockData, contentMD5, accessCondition,options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.AppendBlockAsync(blockData, contentMD5, accessCondition,options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -2732,7 +2732,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginDownloadText(Encoding encoding, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<string>(token => this.DownloadTextAsync(encoding, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadTextAsync(encoding, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2971,7 +2971,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudAppendBlob>(token => this.CreateSnapshotAsync(metadata, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateSnapshotAsync(metadata, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>

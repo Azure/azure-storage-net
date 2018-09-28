@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Table
+namespace Microsoft.WindowsAzure.Storage.Table
 {
     using System;
     using System.Collections.Generic;
@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Storage.Table
     using System.Linq.Expressions;
     using System.Reflection;
     using EntityActivator = System.Func<object[], object>;
-    using Microsoft.Azure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core;
 #endif
 
     internal static class EntityUtilities

@@ -1,3 +1,16 @@
+Tracking Breaking Changes since 9.0 combined package:
+
+- Removed support for PCL and NetStandard 1.0.
+- Moving back to using Microsoft.WindowsAzure.Storage instead of Microsoft.Azure.Storage.  This is a temporary change to ease the transition for existing libraries.  The namespace will change back at a future time.
+- WinRT/WinPhoneRT: Removed support for Windows8.1 and WindowsPhone 8.1 in favor of UWP support through Netstandard2.0.
+- Added NetStandard2.0 target support.
+- Desktop: Transitioned from HttpWebRequest to HttpClient in all the protocol layer APIs and classes. 
+- NetStandard2.0: Added support for synchronous methods. Please note that the synchrounous APIs are wrappers over the asynchronous APIs (sync-over-async) due to transition to HttpClient which does not offer a true sync functionality.
+- NetStandard2.0: Added support for Client Side Encryption.
+- Desktop: Any exception thrown from the APM APIs will surface only when the respective End* method is called.
+- Desktop: Etag header must be wrapped within a double quote ("").
+
+
 Tracking Breaking Changes since 8.0 combined package:
 
 - Updated the names spaces from Microsoft.WindowsAzure.Storage to Microsoft.Azure.Storage.

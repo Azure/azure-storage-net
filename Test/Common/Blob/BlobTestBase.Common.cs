@@ -18,14 +18,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     public partial class BlobTestBase : TestBase
     {
@@ -56,6 +57,31 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 
             return container;
+        }
+
+        public static CloudBlobContainer GenerateRandomWriteOnlyBlobContainer()
+        {
+            string blobContainerName = "n" + Guid.NewGuid().ToString("N");
+
+            SharedAccessAccountPolicy sasAccountPolicy = new SharedAccessAccountPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-15),
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                Permissions = SharedAccessAccountPermissions.Write | SharedAccessAccountPermissions.Delete,
+                Services = SharedAccessAccountServices.Blob,
+                ResourceTypes = SharedAccessAccountResourceTypes.Object | SharedAccessAccountResourceTypes.Container
+
+            };
+
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudStorageAccount account = new CloudStorageAccount(blobClient.Credentials, false);
+            string accountSASToken = account.GetSharedAccessSignature(sasAccountPolicy);
+            StorageCredentials accountSAS = new StorageCredentials(accountSASToken);
+            StorageUri storageUri = blobClient.StorageUri;
+            CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
+            CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
+            CloudBlobContainer containerWithSAS = blobClientWithSAS.GetContainerReference(blobContainerName);
+            return containerWithSAS;
         }
 
         public static List<string> GetBlockIdList(int count)

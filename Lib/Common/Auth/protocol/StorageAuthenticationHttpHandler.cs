@@ -15,12 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Auth.Protocol
+namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Auth;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Net;
     using System.Globalization;
@@ -69,9 +69,13 @@ namespace Microsoft.Azure.Storage.Auth.Protocol
         {
             Func<StorageRequestMessage, CancellationToken, Task<HttpResponseMessage>> authenticationHandler;
 
-            if (request.Credentials != null && request.Credentials.IsSharedKey)
+            if (request.Credentials?.IsSharedKey == true)
             {
                 authenticationHandler = this.GetSharedKeyAuthenticationTask;
+            }
+            else if (request.Credentials?.IsToken == true)
+            {
+                authenticationHandler = this.GetTokenAuthenticationTask;
             }
             else
             {

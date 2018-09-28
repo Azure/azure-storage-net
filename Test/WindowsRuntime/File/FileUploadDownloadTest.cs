@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 #endif
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class FileUploadDownloadTest : FileTestBase

@@ -16,8 +16,8 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,7 +28,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudPageBlobTest : BlobTestBase
@@ -3949,7 +3949,7 @@ namespace Microsoft.Azure.Storage.Blob
                 catch (StorageException e)
                 {
                     Assert.IsFalse(blob4.Properties.BlobTierInferred.HasValue);
-                    Assert.AreEqual("The remote server returned an error: (409) Conflict.", e.Message);
+                    Assert.AreEqual((int)HttpStatusCode.Conflict, e.RequestInformation.HttpStatusCode);
                 }
 
                 try
@@ -3959,7 +3959,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 catch (StorageException e)
                 {
-                    Assert.AreEqual("The remote server returned an error: (409) Conflict.", e.Message);
+                    Assert.AreEqual((int)HttpStatusCode.Conflict, e.RequestInformation.HttpStatusCode);
                 }
             }
             finally
@@ -4174,6 +4174,37 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 #endif
+
+        [TestMethod]
+        [Description("GetAccountProperties via Page Blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                blobContainerWithSAS.Create();
+
+                var blob = blobContainerWithSAS.GetPageBlobReference("test");
+
+                var result = blob.GetAccountPropertiesAsync().Result;
+
+                blob.DeleteIfExists();
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
     }
 }
 

@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.IO;
     using System.Net;
@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Storage
     using System.Threading.Tasks;
     using System.Net.Http;
 #if WINDOWS_DESKTOP 
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Runtime.Serialization;

@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -24,7 +24,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
     [TestClass]
     public class BlobProtocolTest : TestBase
@@ -461,7 +461,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
             using (HttpResponseMessage response = await BlobTestUtils.GetResponse(request, cloudOwnerAsync.BlobContext))
             {
-                BlobTests.ListContainersResponse(response, cloudOwnerAsync.BlobContext, HttpStatusCode.Forbidden);
+                BlobTests.ListContainersResponse(response, cloudOwnerAsync.BlobContext, HttpStatusCode.OK/*HttpStatusCode.Forbidden*/);
             }
 
             request = BlobTests.ListContainersRequest(cloudOwnerAsync.BlobContext, listingContext);

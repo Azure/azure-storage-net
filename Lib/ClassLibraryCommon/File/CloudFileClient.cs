@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.File.Protocol;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -180,12 +180,8 @@ namespace Microsoft.Azure.Storage.File
         public virtual ICancellableAsyncResult BeginListSharesSegmented(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
-            return Executor.BeginExecuteAsync(
-                this.ListSharesImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
-                modifiedOptions.RetryPolicy, 
-                operationContext, 
-                callback, 
-                state);
+
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, currentToken, modifiedOptions, operationContext), callback, state);
         }
 
         /// <summary>
@@ -195,8 +191,9 @@ namespace Microsoft.Azure.Storage.File
         /// <returns>A result segment of shares.</returns>
         public virtual ShareResultSegment EndListSharesSegmented(IAsyncResult asyncResult)
         {
-            ResultSegment<CloudFileShare> resultSegment = Executor.EndExecuteAsync<ResultSegment<CloudFileShare>>(asyncResult);
-            return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            var resultSegment = ((CancellableAsyncResultTaskWrapper<ShareResultSegment>)(asyncResult)).GetAwaiter().GetResult();
+            return new ShareResultSegment(resultSegment.Results, resultSegment.ContinuationToken);
         }
         
 #if TASK
@@ -220,7 +217,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(FileContinuationToken currentToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListSharesSegmented, this.EndListSharesSegmented, currentToken, cancellationToken);
+            return ListSharesSegmentedAsync(default(string) /*prefix*/, currentToken, cancellationToken);
         }
 
         /// <summary>
@@ -247,9 +244,8 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, FileContinuationToken currentToken, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListSharesSegmented, this.EndListSharesSegmented, prefix, currentToken, cancellationToken);
-        }
-        
+            return this.ListSharesSegmentedAsync(prefix, default(ShareListingDetails), default(int?) /*maxResults*/, currentToken, default(FileRequestOptions), default(OperationContext), cancellationToken);
+        }        
         /// <summary>
         /// Returns a task that performs an asynchronous request to return a result segment containing a collection of shares
         /// whose names begin with the specified prefix.
@@ -282,9 +278,15 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task<ShareResultSegment> ListSharesSegmentedAsync(string prefix, ShareListingDetails detailsIncluded, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginListSharesSegmented, this.EndListSharesSegmented, prefix, detailsIncluded, maxResults, currentToken, options, operationContext, cancellationToken);
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this);
+            ResultSegment<CloudFileShare> resultSegment = await Executor.ExecuteAsync(
+                this.ListSharesImpl(prefix, detailsIncluded, currentToken, maxResults, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken).ConfigureAwait(false);
+            return new ShareResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
         }
 #endif
 
@@ -313,12 +315,8 @@ namespace Microsoft.Azure.Storage.File
         {
             requestOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
-            return Executor.BeginExecuteAsync(
-                this.GetServicePropertiesImpl(requestOptions),
-                requestOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetServicePropertiesAsync(requestOptions, operationContext), callback, state);
         }
 
         /// <summary>
@@ -328,7 +326,8 @@ namespace Microsoft.Azure.Storage.File
         /// <returns>A <see cref="FileServiceProperties"/> object.</returns>
         public virtual FileServiceProperties EndGetServiceProperties(IAsyncResult asyncResult)
         {
-            return Executor.EndExecuteAsync<FileServiceProperties>(asyncResult);
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            return ((CancellableAsyncResultTaskWrapper<FileServiceProperties>)(asyncResult)).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -350,7 +349,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileServiceProperties> GetServicePropertiesAsync(CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetServiceProperties, this.EndGetServiceProperties, cancellationToken);
+            return this.GetServicePropertiesAsync(default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -375,7 +374,13 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<FileServiceProperties> GetServicePropertiesAsync(FileRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromApm(this.BeginGetServiceProperties, this.EndGetServiceProperties, requestOptions, operationContext, cancellationToken);
+            requestOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteAsync(
+                this.GetServicePropertiesImpl(requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 
@@ -425,12 +430,8 @@ namespace Microsoft.Azure.Storage.File
         {
             requestOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
             operationContext = operationContext ?? new OperationContext();
-            return Executor.BeginExecuteAsync(
-                this.SetServicePropertiesImpl(properties, requestOptions),
-                requestOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetServicePropertiesAsync(properties, requestOptions, operationContext), callback, state);
         }
 
         /// <summary>
@@ -439,7 +440,8 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndSetServiceProperties(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            ((CancellableAsyncResultTaskWrapper)(asyncResult)).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -463,7 +465,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetServicePropertiesAsync(FileServiceProperties properties, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetServiceProperties, this.EndSetServiceProperties, properties, cancellationToken);
+            return this.SetServicePropertiesAsync(properties, default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -490,7 +492,13 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task SetServicePropertiesAsync(FileServiceProperties properties, FileRequestOptions requestOptions, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return AsyncExtensions.TaskFromVoidApm(this.BeginSetServiceProperties, this.EndSetServiceProperties, properties, requestOptions, operationContext, cancellationToken);
+            requestOptions = FileRequestOptions.ApplyDefaults(requestOptions, this);
+            operationContext = operationContext ?? new OperationContext();
+            return Executor.ExecuteAsync(
+                this.SetServicePropertiesImpl(properties, requestOptions),
+                requestOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 #endif
 

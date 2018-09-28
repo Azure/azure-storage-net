@@ -15,16 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Shared.Protocol
+namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Xml;
@@ -110,6 +111,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                         IsRetryable = false
                     };
             }
+        }
+
+        /// <summary>
+        /// Reads account properties from an HttpResponseMessage object.
+        /// </summary>
+        /// <param name="response">The response from which to read the account properties.</param>
+        /// <returns>The account properties stored in the headers.</returns>
+        internal static AccountProperties ReadAccountProperties(HttpResponseMessage response)
+        {
+            return AccountProperties.FromHttpResponseHeaders(response.Headers);
         }
 
         /// <summary>

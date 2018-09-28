@@ -15,10 +15,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -69,7 +69,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>An <c>IAsyncResult</c> that represents the asynchronous read, which could still be pending.</returns>
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<int>(token => this.ReadAsync(buffer, offset, count, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ReadAsync(buffer, offset, count, token), callback, state);
         }
 
         /// <summary>

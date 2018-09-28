@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     using System.Collections.Generic;
 
@@ -24,6 +24,11 @@ namespace Microsoft.Azure.Storage.File
     /// </summary>
     public class FileResultSegment
     {
+        /// <summary>
+        /// Creates in instance of FileResultSegment.
+        /// </summary>
+        /// <param name="files">An enumerable collection of <see cref="IListFileItem"/> objects.</param>
+        /// <param name="continuationToken">The <see cref="FileContinuationToken"/> used to retrieve the next segment of <see cref="IListFileItem"/> results.</param>
         public FileResultSegment(IEnumerable<IListFileItem> files, FileContinuationToken continuationToken)
         {
             this.Results = files;

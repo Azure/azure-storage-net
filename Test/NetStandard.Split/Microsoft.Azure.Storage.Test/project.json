@@ -1,0 +1,47 @@
+{
+    "version": "9.0.0-preview",
+    "testRunner": "xunit",
+
+  "dependencies": {
+    "xunit": "2.1.0",
+    "dotnet-test-xunit": "2.2.0-preview2-build1029",
+    "XUnitForMsTest": "1.0.0-*",
+    "Microsoft.Azure.Storage.Blob": "9.0.0-preview",
+    "Microsoft.Azure.Storage.File": "9.0.0-preview",
+    "Microsoft.Azure.Storage.Queue": "9.0.0-preview",
+    "Microsoft.Azure.Storage.Common": "9.0.0-preview"
+  },
+
+    "frameworks": {
+        "netcoreapp1.0": {
+            "dependencies": {
+                "Microsoft.NETCore.App": {
+                    "type": "platform",
+                    "version": "1.0.0"
+                }
+            },
+            "imports": [
+                "dnxcore50"
+            ]
+        }
+    },
+
+    "buildOptions": {
+        "define": [ "NETCORE", "XUNIT" ],
+        "delaySign": true,
+        "keyFile": "MSSharedLibKey.snk",
+      "compile": [
+        "**/*.cs",
+        "../../Common/*.cs",
+        "../../Common/Blob/*.cs",
+        "../../Common/Core/*.cs",
+        "../../Common/File/*.cs",
+        "../../Common/Queue/*.cs",
+        "../../Common/TestConfigProcess/**/*.cs",
+        "../../WindowsRuntime/Core/**/*.cs",
+        "../../WindowsRuntime/Blob/**/*.cs",
+        "../../WindowsRuntime/Queue/**/*.cs",
+        "../../WindowsRuntime/File/**/*.cs"
+      ]
+    }
+}

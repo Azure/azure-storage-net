@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     /// <summary>
     /// Enum for Queue message type.

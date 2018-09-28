@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +25,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.File.Protocol
+namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     internal class FileClientTests
     {
@@ -164,7 +164,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             HttpRequestMessage request = FileTests.PutFileRequest(FileContext, shareName, fileName, properties, content, content.Length, null);
             request.Content = new ByteArrayContent(content);
             Assert.IsTrue(request != null, "Failed to create HttpRequestMessage");
-            HttpRequestHandler.SetContentLength(request, content.Length);
+            //HttpRequestHandler.SetContentLength(request, content.Length);
 
             HttpResponseMessage response = await FileTestUtils.GetResponse(request, FileContext);
             try

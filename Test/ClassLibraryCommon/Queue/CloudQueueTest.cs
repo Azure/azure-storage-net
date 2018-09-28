@@ -22,10 +22,10 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Queue.Protocol;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System.IO;
 using System.Xml.Linq;
 
@@ -35,7 +35,7 @@ using System.IO;
 using System.Xml.Linq;
 #endif
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     [TestClass]
     public class CloudQueueTest : QueueTestBase
@@ -1572,8 +1572,8 @@ namespace Microsoft.Azure.Storage.Queue
                     Uri queueSASUri = new Uri(queue.Uri + queueSAS.SASToken);
                     StorageUri queueSASStorageUri = new StorageUri(new Uri(queue.StorageUri.PrimaryUri + queueSAS.SASToken), new Uri(queue.StorageUri.SecondaryUri + queueSAS.SASToken));
 
-                    int httpPort = queueSASUri.Port;
                     int securePort = 443;
+                    int httpPort = (queueSASUri.Port == securePort) ? 80 : queueSASUri.Port;
 
                     if (!string.IsNullOrEmpty(TestBase.TargetTenantConfig.QueueSecurePortOverride))
                     {

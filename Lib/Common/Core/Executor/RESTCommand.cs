@@ -15,12 +15,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Executor
+namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -124,9 +124,6 @@ namespace Microsoft.Azure.Storage.Core.Executor
 
         // Length of data to send to server from stream.
         public long? SendStreamLength = null;
-
-        // Func to construct the request
-        public Func<Uri, UriQueryBuilder, int?, bool, OperationContext, HttpRequestMessage> BuildRequestDelegate = null;
 
         // Delegate to Set custom headers
         public Action<HttpRequestMessage, OperationContext> SetHeaders = null;

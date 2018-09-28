@@ -15,12 +15,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Executor
+namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.RetryPolicies;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -31,29 +31,14 @@ namespace Microsoft.Azure.Storage.Core.Executor
 
     internal class Executor : ExecutorBase
     {
-        #region APM
-
-        // Cancellation will be handled by a flag in the return type ( CancellationToken in .net4+ )
-        public static ICancellableAsyncResult BeginExecuteAsync<T>(RESTCommand<T> cmd, IRetryPolicy policy, OperationContext operationContext, AsyncCallback callback, object asyncState)
-        {
-            return new CancellableAsyncResultTaskWrapper<T>(token => ExecuteAsync(cmd, policy, operationContext, token), callback, asyncState);
-        }
-
-        public static T EndExecuteAsync<T>(IAsyncResult result)
-        {
-            CommonUtility.AssertNotNull("result", result);
-            return ((CancellableAsyncResultTaskWrapper<T>)(result)).GetAwaiter().GetResult();            
-        }
-
-        #endregion
-
         #region Sync
 #if SYNC
         public static T ExecuteSync<T>(RESTCommand<T> cmd, IRetryPolicy policy, OperationContext operationContext)
         {
             using (ExecutionState<T> executionState = new ExecutionState<T>(cmd, policy, operationContext))
             {
-                return ExecuteAsync(cmd, policy, operationContext, CancellationToken.None).GetAwaiter().GetResult();
+                return
+                    CommonUtility.RunWithoutSynchronizationContext(() => ExecuteAsync(cmd, policy, operationContext, CancellationToken.None).GetAwaiter().GetResult());
             }
         }
 #endif

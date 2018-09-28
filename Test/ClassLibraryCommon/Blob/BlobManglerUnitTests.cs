@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobManglerUnitTests : BlobTestBase

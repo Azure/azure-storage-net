@@ -16,8 +16,8 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -30,7 +30,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobContainerTest : BlobTestBase
@@ -768,6 +768,10 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 Assert.IsTrue(container2.Exists());
                 Assert.IsNotNull(container2.Properties.ETag);
+                Assert.IsTrue(container2.Properties.HasImmutabilityPolicy.HasValue);
+                Assert.IsTrue(container2.Properties.HasLegalHold.HasValue);
+                Assert.IsFalse(container2.Properties.HasImmutabilityPolicy.Value);
+                Assert.IsFalse(container2.Properties.HasLegalHold.Value);
             }
             finally
             {
@@ -3388,6 +3392,187 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
+        class MockProxy : IWebProxy
+        {
+            private WebProxy webProxy;
+
+            public MockProxy(Uri address, NetworkCredential credentials)
+            {
+                this.webProxy = new WebProxy { Address = address, Credentials = credentials };
+            }
+
+            public class MemberAccessEventArgs : EventArgs
+            {
+                public MemberAccessEventArgs(string memberName, object value)
+                {
+                    this.MemberName = memberName;
+                    this.Value = value;
+                }
+
+                public string MemberName { get; private set; }
+                public object Value { get; private set; }
+            }
+
+            public event EventHandler<MemberAccessEventArgs> MemberAccess
+            {
+                add
+                {
+                    memberAccess += value;
+                }
+
+                remove
+                {
+                    memberAccess -= value;
+                }
+            }
+
+            EventHandler<MemberAccessEventArgs> memberAccess;
+
+            private void OnMemberAccess(string memberName, object value)
+            {
+                var h = this.memberAccess;
+
+                if (h != null)
+                {
+                    h(this, new MemberAccessEventArgs(memberName, value));
+                }
+            }
+
+            public ICredentials Credentials
+            {
+                get
+                {
+                    var value = this.webProxy.Credentials;
+                    this.OnMemberAccess("Credentials", value);
+                    return value;
+                }
+
+                set
+                {
+                    this.webProxy.Credentials = value;
+                }
+            }
+
+            public Uri GetProxy(Uri destination)
+            {
+                this.OnMemberAccess("GetProxy", destination);
+                return this.webProxy.GetProxy(destination);
+            }
+
+            public bool IsBypassed(Uri host)
+            {
+                this.OnMemberAccess("IsBypassed", host);
+                return this.webProxy.IsBypassed(host);
+            }
+        }
+
+        [TestMethod]
+        [Description("Verify that a proxy gets used")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Ignore]
+        public async Task CloudBlobContainerVerifyProxyHit()
+        {
+            //CloudBlobContainer container = GetRandomContainerReference();
+
+            //try
+            //{
+            //    const string proxyAddress = "http://127.0.0.1";
+            //    const string proxyUser = "user";
+            //    const string proxyPassword = "password";
+
+            //    var cts = new CancellationTokenSource();
+
+            //    var proxyHit = false;
+
+            //    var mockProxy =
+            //        new MockProxy(
+            //            new Uri(proxyAddress),
+            //            new NetworkCredential(proxyUser, proxyPassword)
+            //            );
+
+            //    mockProxy.MemberAccess += (s, e) =>
+            //    {
+            //        cts.Cancel();
+            //        proxyHit = true;
+            //    };
+
+            //    OperationContext operationContext = new OperationContext()
+            //    {
+            //        Proxy = mockProxy
+            //    };
+
+            //    try
+            //    {
+            //        await container.CreateAsync(BlobContainerPublicAccessType.Off, default(BlobRequestOptions), operationContext, cts.Token);
+            //    }
+            //    catch (TaskCanceledException)
+            //    {
+            //        // expected, but not required
+            //    }
+
+            //    Assert.IsTrue(proxyHit, "Proxy not hit");
+            //}
+            //finally
+            //{
+            //    container.DeleteIfExistsAsync().Wait();
+            //}
+        }
+
+        [TestMethod]
+        [Description("Verify that a proxy doesn't interfere")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Ignore]
+        public async Task CloudBlobContainerCreateWithProxy()
+        {
+            //CloudBlobContainer container = GetRandomContainerReference();
+
+            //try
+            //{
+            //    const string proxyAddress = "http://localhost:8877"; // HttpMangler's proxy address
+            //    const string proxyUser = "user";
+            //    const string proxyPassword = "password";
+
+            //    var cts = new CancellationTokenSource();
+
+            //    var proxyHit = false;
+
+            //    var mockProxy =
+            //        new MockProxy(
+            //            new Uri(proxyAddress),
+            //            new NetworkCredential(proxyUser, proxyPassword)
+            //            );
+
+            //    mockProxy.MemberAccess += (s, e) =>
+            //    {
+            //        proxyHit = true;
+            //    };
+
+            //    OperationContext operationContext = new OperationContext()
+            //    {
+            //        Proxy = mockProxy
+            //    };
+
+            //    using (new Test.Network.HttpMangler())
+            //    {
+            //        await container.CreateAsync(BlobContainerPublicAccessType.Off, default(BlobRequestOptions), operationContext, cts.Token);
+            //    }
+
+            //    // if we get here without an exception, assume the call was 
+            //    // successful and verify that the proxy was used
+            //    Assert.IsTrue(proxyHit, "Proxy not hit");
+            //}
+            //finally
+            //{
+            //    container.DeleteIfExistsAsync().Wait();
+            //}
+        }
+
         [TestMethod]
         [Description("Get a blob reference without knowing its type")]
         [TestCategory(ComponentCategory.Blob)]
@@ -3570,6 +3755,98 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 #endif
+
+        private void ValidateWebContainer(CloudBlobContainer webContainer)
+        {
+            CloudBlockBlob blob0 = webContainer.GetBlockBlobReference("blob");
+            blob0.Properties.ContentType = @"multipart/form-data; boundary=thingz";  // Content-type is important for the $web container
+            CloudBlockBlob blob1 = webContainer.GetBlockBlobReference("blob/abcd");
+            blob1.Properties.ContentType = @"image/gif";
+            CloudBlockBlob blob2 = webContainer.GetBlockBlobReference("blob/other.html");
+            blob2.Properties.ContentType = @"text/html; charset=utf-8";
+
+            List<CloudBlockBlob> expectedBlobs = new List<CloudBlockBlob> { blob0, blob1, blob2 };
+            List<string> texts = new List<string> { "blob0text", "blbo1text", "blob2text" };
+            for (int i = 0; i < 3; i++)
+            {
+                expectedBlobs[i].UploadText(texts[i]);
+            }
+
+            List<CloudBlob> blobs = webContainer.ListBlobs(useFlatBlobListing: true, blobListingDetails: BlobListingDetails.All).Select(blob => (CloudBlob)blob).ToList();
+            Assert.AreEqual(expectedBlobs.Count, blobs.Count);
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.AreEqual(expectedBlobs[i].Name, blobs[i].Name);
+                Assert.AreEqual(expectedBlobs[i].Properties.ContentType, blobs[i].Properties.ContentType);
+                Assert.AreEqual(texts[i], ((CloudBlockBlob)blobs[i]).DownloadText());
+            }
+        }
+
+        [TestMethod]
+        [Description("Test to ensure container operations work on the $web container.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerWebContainerOperations()
+        {
+            // Test operations with shard key
+            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobContainer webContainer = blobClient.GetContainerReference("$web");
+            try
+            {
+                webContainer.DeleteIfExists();
+                Assert.IsFalse(webContainer.Exists());
+                TestHelper.SpinUpToNSecondsIgnoringFailures(() => webContainer.Create(), 120);
+                Assert.IsTrue(webContainer.Exists());
+                Assert.IsTrue(blobClient.ListContainers("$").Any(container => container.Name == webContainer.Name));
+
+                ValidateWebContainer(webContainer);
+
+                // Clear out the old data, faster than deleting / re-creating the container.
+                foreach (CloudBlob blob in webContainer.ListBlobs(useFlatBlobListing: true))
+                {
+                    blob.Delete();
+                }
+
+                // Test relevant operations with a service SAS.
+                string webContainerSAS = webContainer.GetSharedAccessSignature(new SharedAccessBlobPolicy() { SharedAccessExpiryTime = DateTime.Now + TimeSpan.FromDays(30), Permissions = SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Delete | SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Write });
+                ValidateWebContainer(new CloudBlobContainer(new Uri(webContainer.Uri + webContainerSAS)));
+                webContainer.Delete();
+                Assert.IsFalse(blobClient.ListContainers("$").Any(container => container.Name == webContainer.Name));
+            }
+            finally
+            {
+                webContainer.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("GetAccountProperties via Blob container")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                blobContainerWithSAS.Create();
+
+                var result = blobContainerWithSAS.GetAccountPropertiesAsync().Result;
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExists();
+            }
+        }
 
         private CloudBlobContainer GenerateRandomWriteOnlyBlobContainer()
         {

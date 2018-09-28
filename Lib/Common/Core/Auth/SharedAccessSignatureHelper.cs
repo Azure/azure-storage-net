@@ -15,17 +15,17 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Auth
+namespace Microsoft.WindowsAzure.Storage.Core.Auth
 {
-    using Microsoft.Azure.Storage;
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 #if ALL_SERVICES
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.File;
-    using Microsoft.Azure.Storage.Queue;
-    using Microsoft.Azure.Storage.Table;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.WindowsAzure.Storage.Queue;
+    using Microsoft.WindowsAzure.Storage.Table;
 #endif
     using System;
     using System.Collections.Generic;

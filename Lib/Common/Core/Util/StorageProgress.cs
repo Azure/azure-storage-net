@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------
 
 #if !WINDOWS_RT
-namespace Microsoft.Azure.Storage.Core.Util
+namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
     using System;
     using System.IO;

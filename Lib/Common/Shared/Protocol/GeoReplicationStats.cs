@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Shared.Protocol
+namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
-    using Microsoft.Azure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core;
     using System;
     using System.Globalization;
     using System.Xml.Linq;

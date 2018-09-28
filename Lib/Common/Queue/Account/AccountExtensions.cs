@@ -1,9 +1,9 @@
-﻿using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Queue;
-using Microsoft.Azure.Storage.Core;
+﻿using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     public static class QueueAccountExtensions
     {

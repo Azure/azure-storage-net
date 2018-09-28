@@ -1,4 +1,4 @@
-﻿    //-----------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------
 // <copyright file="CancellableAsyncResultTaskWrapper.cs" company="Microsoft">
 //    Copyright 2016 Microsoft Corporation
 //
@@ -14,7 +14,7 @@
 //    limitations under the License.
 // </copyright>
 //-----------------------------------------------------------------------
-namespace Microsoft.Azure.Storage.Core.Util
+namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
     using System;
     using System.Threading;
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Storage.Core.Util
     /// 
     /// public virtual ICancellableAsyncResult BeginDoThing(AsyncCallback callback, object state)
     /// {
-    ///     return new CancellableAsyncResultTaskWrapper(token => DoThingAsync(token), callback, state);
+    ///     return CancellableAsyncResultTaskWrapper.Create(token => DoThingAsync(token), callback, state);
     /// }
     /// 
     /// public virtual void EndDoThing(IAsyncResult asyncResult)
@@ -46,13 +46,23 @@ namespace Microsoft.Azure.Storage.Core.Util
         protected CancellationTokenSource cancellationTokenSource;
         protected bool completedSync = false;
 
+        public static ICancellableAsyncResult Create(Func<CancellationToken, Task> generateTask, AsyncCallback callback, Object state)
+        {
+            return new CancellableAsyncResultTaskWrapper(generateTask, callback, state);
+        }
+
+        public static ICancellableAsyncResult Create<T>(Func<CancellationToken, Task<T>> generateTask, AsyncCallback callback, Object state)
+        {
+            return new CancellableAsyncResultTaskWrapper<T>(generateTask, callback, state);
+        }
+
         /// <summary>
         /// Creates a new ICancellableAsyncResult task wrapper object.
         /// </summary>
         /// <param name="generateTask">This is essentially the async method that does the actual work we want to wrap.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        public CancellableAsyncResultTaskWrapper(Func<CancellationToken, Task> generateTask, AsyncCallback callback, Object state) : this()
+        CancellableAsyncResultTaskWrapper(Func<CancellationToken, Task> generateTask, AsyncCallback callback, Object state) : this()
         {
             // We cannot pass the user callback into the AsApm method, because it breaks the general APM contract - namely, that the IAsyncResult returned from the Begin method
             // (this) is what's passed into the callback. The AsApm method will pass in this.internalAsyncResult to its callback, not this.
@@ -123,7 +133,7 @@ namespace Microsoft.Azure.Storage.Core.Util
 
         internal void Wait()
         {
-            ((Task)this.internalAsyncResult).Wait();
+            CommonUtility.RunWithoutSynchronizationContext(() => ((Task)this.internalAsyncResult).Wait());
         }
 
         internal System.Runtime.CompilerServices.TaskAwaiter GetAwaiter()
@@ -150,8 +160,8 @@ namespace Microsoft.Azure.Storage.Core.Util
             // is what's passed into the callback. The AsApm method will pass in this.internalAsyncResult to its callback, not this.
             AsyncCallback newCallback = ar =>
             {
-                // Avoid the potential race condition where the callback is called before AsApm returns.
-                this.internalAsyncResult = ar;
+                    // Avoid the potential race condition where the callback is called before AsApm returns.
+                    this.internalAsyncResult = ar;
                 if (callback != null)
                 {
                     callback(this);
@@ -170,7 +180,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         {
             get
             {
-                return ((Task<TResult>)this.internalAsyncResult).Result;
+                return CommonUtility.RunWithoutSynchronizationContext(() => ((Task<TResult>)this.internalAsyncResult).Result);
             }
         }
 

@@ -30,10 +30,10 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 using Windows.Storage.Streams;
-using Microsoft.Azure.Storage.Core;
+using Microsoft.WindowsAzure.Storage.Core;
 #endif
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobWriteStreamTest : BlobTestBase

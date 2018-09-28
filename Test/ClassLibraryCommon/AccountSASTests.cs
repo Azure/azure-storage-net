@@ -15,16 +15,16 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Storage;
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.File;
-    using Microsoft.Azure.Storage.Queue;
-    using Microsoft.Azure.Storage.Queue.Protocol;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.WindowsAzure.Storage.Queue;
+    using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -491,6 +491,10 @@ namespace Microsoft.Azure.Storage
                 {
                     storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
                 }
+                else
+                {
+                    storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "http", 80), TransformSchemeAndPort(storageUri.SecondaryUri, "http", 80));
+                }
 
                 CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, storageUri, null, null, null);
                 CloudBlobClient blobClientWithSAS = accountWithSAS.CreateCloudBlobClient();
@@ -527,6 +531,11 @@ namespace Microsoft.Azure.Storage
                 {
                     storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
                 }
+                else
+                {
+                    storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "http", 80), TransformSchemeAndPort(storageUri.SecondaryUri, "http", 80));
+                }
+
 
                 CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, storageUri, null, null);
                 CloudQueueClient queueClientWithSAS = accountWithSAS.CreateCloudQueueClient();
@@ -560,6 +569,11 @@ namespace Microsoft.Azure.Storage
                 {
                     storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "https", httpsPort.Value), TransformSchemeAndPort(storageUri.SecondaryUri, "https", httpsPort.Value));
                 }
+                else
+                {
+                    storageUri = new StorageUri(TransformSchemeAndPort(storageUri.PrimaryUri, "http", 80), TransformSchemeAndPort(storageUri.SecondaryUri, "http", 80));
+                }
+
 
                 CloudStorageAccount accountWithSAS = new CloudStorageAccount(accountSAS, null, null, null, storageUri);
                 CloudFileClient fileClientWithSAS = accountWithSAS.CreateCloudFileClient();

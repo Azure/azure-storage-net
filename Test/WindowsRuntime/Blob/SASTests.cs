@@ -16,14 +16,14 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Core;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class SASTests : BlobTestBase

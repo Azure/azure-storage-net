@@ -16,6 +16,13 @@
     <TenantType>Cloud</TenantType>
     <AccountName>[ACCOUNT NAME HERE]</AccountName>
     <AccountKey>[ACCOUNT KEY HERE]</AccountKey>
+
+    <!-- Active Directory information for OAUTH tests -->
+    <ActiveDirectoryApplicationId>[APPLICATION ID HERE]</ActiveDirectoryApplicationId>
+    <ActiveDirectoryApplicationSecret>[APPLICATION SECRET HERE]</ActiveDirectoryApplicationSecret>
+    <ActiveDirectoryTenantId>[TENANT ID HERE]</ActiveDirectoryTenantId>
+
+    <!-- Endpoints -->
     <BlobServiceEndpoint>http://[ACCOUNT].blob.core.windows.net</BlobServiceEndpoint>
     <QueueServiceEndpoint>http://[ACCOUNT].queue.core.windows.net</QueueServiceEndpoint>
     <TableServiceEndpoint>http://[ACCOUNT].table.core.windows.net</TableServiceEndpoint>

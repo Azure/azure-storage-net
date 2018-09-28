@@ -16,10 +16,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Core.Util;
-using Microsoft.Azure.Storage.RetryPolicies;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +27,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class CloudFileClientTest : FileTestBase
@@ -80,6 +80,34 @@ namespace Microsoft.Azure.Storage.File
             CloudFileClient fileClient = new CloudFileClient(baseAddressUri, TestBase.StorageCredentials);
             CloudFileShare share = fileClient.GetShareReference("share");
             share.Exists();
+        }
+
+        [TestMethod]
+        [Description("Create a service client with token")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileClientWithToken()
+        {
+            TokenCredential token = new TokenCredential(TestBase.GenerateOAuthToken());
+            StorageCredentials credentials = new StorageCredentials(token);
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint);
+
+            CloudFileClient client = new CloudFileClient(baseAddressUri, credentials);
+            CloudFileShare share = client.GetShareReference("share");
+
+            try
+            {
+                share.Exists();
+                Assert.Fail();
+            }
+            catch (Exception ex)
+            {
+                // InvalidOperationException in legacy, but unable to port that specific behavior to
+                // split library due to change in authentication handling
+                Assert.IsInstanceOfType(ex, typeof(StorageException));
+            }
         }
 
         [TestMethod]

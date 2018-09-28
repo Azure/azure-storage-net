@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Shared.Protocol
+namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -353,6 +353,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const string EtagElement = "Etag";
 
         /// <summary>
+        /// XML element for the creation date.
+        /// </summary>
+        public const string CreationTimeElement = "Creation-Time";
+
+        /// <summary>
         /// XML element for the last modified date.
         /// </summary>
         public const string LastModifiedElement = "Last-Modified";
@@ -576,6 +581,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// XML element for blob types.
         /// </summary>
         public const string BlobTypeElement = "BlobType";
+
+        /// <summary>
+        /// XML element for immutability policy.
+        /// </summary>
+        public const string HasImmutabilityPolicyElement = "HasImmutabilityPolicy";
+
+        /// <summary>
+        /// XML element for legal hold.
+        /// </summary>
+        public const string HasLegalHoldElement = "HasLegalHold";
 
         /// <summary>
         /// XML element for the lease status.
@@ -878,7 +893,6 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed.")]
         public static class HeaderConstants
         {
-
             static HeaderConstants()
             {
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
@@ -915,8 +929,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "9.4.0.-preview";
-
+            public const string UserAgentProductVersion = "9.4.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -959,9 +972,24 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             public const string ContentLanguageHeader = "Content-Language";
 
             /// <summary>
+            /// Header that specifies the creation time value for the resource.
+            /// </summary>
+            public const string CreationTimeHeader = PrefixForStorageHeader + "creation-time";
+
+            /// <summary>
             /// Header that specifies the ETag value for the resource.
             /// </summary>
             public const string EtagHeader = "ETag";
+
+            /// <summary>
+            /// Header that specifies the immutability policy value for the resource.
+            /// </summary>
+            public const string HasImmutabilityPolicyHeader = PrefixForStorageHeader + "has-immutability-policy";
+
+            /// <summary>
+            /// Header that specifies the legal hold value for the resource.
+            /// </summary>
+            public const string HasLegalHoldHeader = PrefixForStorageHeader + "has-legal-hold";
 
             /// <summary>
             /// Header that specifies if a resourse is fully encrypted server-side.
@@ -992,6 +1020,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header for copy source.
             /// </summary>
             public const string CopySourceHeader = PrefixForStorageHeader + "copy-source";
+
+            /// <summary>
+            /// Header for copy sync.
+            /// </summary>
+            public const string RequiresSyncHeader = PrefixForStorageHeader + "requires-sync";
+
+            /// <summary>
+            /// Header for source ranges.
+            /// </summary>
+            public const string SourceRangeHeader = PrefixForStorageHeader + "source-range";
 
             /// <summary>
             /// Header for the If-Match condition.
@@ -1042,6 +1080,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header that specifies file content MD5.
             /// </summary>
             public const string FileContentMD5Header = PrefixForStorageHeader + "content-md5";
+
+            /// <summary>
+            /// Header that specifies source content MD5.
+            /// </summary>
+            public const string SourceContentMD5Header = PrefixForStorageHeader + "source-content-md5";
 
             /// <summary>
             /// Header that specifies file content type.
@@ -1227,7 +1270,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2017-07-29";
+            public const string TargetStorageVersion = "2018-03-28";
 
             /// <summary>
             /// Specifies the file type.
@@ -1369,6 +1412,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header that specifies the share quota, in gigabytes.
             /// </summary>
             public const string ShareQuota = PrefixForStorageHeader + "share-quota";
+
+            /// <summary>
+            /// The name of the SKU name header element.
+            /// </summary>
+            internal const string SkuNameName = PrefixForStorageHeader + "sku-name";
+
+            /// <summary>
+            /// The name of the account kind header element.
+            /// </summary>
+            internal const string AccountKindName = PrefixForStorageHeader + "account-kind";
 
             /// <summary>
             /// Header that specifies the Accept type for the response payload.

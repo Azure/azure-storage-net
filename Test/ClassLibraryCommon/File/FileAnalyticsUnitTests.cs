@@ -15,15 +15,15 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Storage.Shared.Protocol;
-    using Microsoft.Azure.Storage.File.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.File.Protocol;
 
     [TestClass]
     public class FileAnalyticsUnitTests : TestBase

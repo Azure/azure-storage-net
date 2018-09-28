@@ -15,10 +15,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core
+namespace Microsoft.WindowsAzure.Storage.Core
 {
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core.Auth;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
     using System;
     using System.Net.Http;
 

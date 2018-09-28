@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.File.Protocol;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.CreateAsync(options, operationContext), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateAsync(options, operationContext), callback, state);
         }
 
         /// <summary> 
@@ -216,7 +216,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.CreateIfNotExistsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateIfNotExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -354,7 +354,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DeleteAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -492,7 +492,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteIfExists(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteIfExistsAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -627,7 +627,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.ExistsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -735,7 +735,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -946,7 +946,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginListFilesAndDirectoriesSegmented(string prefix, int? maxResults, FileContinuationToken currentToken, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<FileResultSegment>(token => this.ListFilesAndDirectoriesSegmentedAsync(prefix, maxResults, currentToken, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ListFilesAndDirectoriesSegmentedAsync(prefix, maxResults, currentToken, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1102,7 +1102,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>

@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Util
+namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
 #if WINDOWS_RT
     using Windows.Security.Cryptography;

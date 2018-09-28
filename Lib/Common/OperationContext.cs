@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
     using System;
     using System.Collections.Generic;
@@ -55,12 +55,17 @@ namespace Microsoft.Azure.Storage
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "ID", Justification = "Back compatibility.")]
         public string ClientRequestID { get; set; }
 
+#if WINDOWS_DESKTOP
         /// <summary>
         /// Gets or sets a custom UserAgent value to be prepended to the existing library UserAgent.
         /// </summary>
         /// <value>A string containing the specified UserAgent value.</value>
-#if WINDOWS_DESKTOP
         /// <remarks>This value will be overridden if the UserAgent value is modified via SendingRequestEvent (per instance or global).</remarks>
+#else
+        /// <summary>
+        /// Gets or sets a custom UserAgent value to be prepended to the existing library UserAgent.
+        /// </summary>
+        /// <value>A string containing the specified UserAgent value.</value>
 #endif
         public string CustomUserAgent { get; set; }
 

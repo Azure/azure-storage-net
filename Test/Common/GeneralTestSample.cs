@@ -21,7 +21,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
     [TestClass]
     public class GeneralTestSample : TestBase
@@ -34,7 +34,7 @@ namespace Microsoft.Azure.Storage
         public void SkipForCloudTestSample()
         {
             // This is also an example to show how the two test projects share the same unit test code. 
-            TestHelper.ValidateIfTestSupportTargetTenant(TenantType.DevStore | TenantType.DevFabric);
+            //TestHelper.ValidateIfTestSupportTargetTenant(TenantType.DevStore | TenantType.DevFabric);
         }
     }
 }

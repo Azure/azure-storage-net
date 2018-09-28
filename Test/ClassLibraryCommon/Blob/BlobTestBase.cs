@@ -22,7 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     public partial class BlobTestBase : TestBase
     {
@@ -45,6 +45,16 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 Thread.Sleep(1000);
                 blob.FetchAttributesAsync().Wait();
+                copyInProgress = (blob.CopyState.Status == CopyStatus.Pending);
+            }
+        }
+        public static async Task WaitForCopyAsync(CloudBlob blob)
+        {
+            bool copyInProgress = true;
+            while (copyInProgress)
+            {
+                await Task.Delay(1000);
+                await blob.FetchAttributesAsync();
                 copyInProgress = (blob.CopyState.Status == CopyStatus.Pending);
             }
         }

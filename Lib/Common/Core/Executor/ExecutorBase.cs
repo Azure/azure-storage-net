@@ -15,11 +15,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Executor
+namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.RetryPolicies;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;

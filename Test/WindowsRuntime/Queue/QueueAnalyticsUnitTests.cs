@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     using System;
     using System.Collections.Generic;
@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Storage.Queue
     using System.Net;
     using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     [TestClass]
     public class QueueAnalyticsUnitTests : TestBase

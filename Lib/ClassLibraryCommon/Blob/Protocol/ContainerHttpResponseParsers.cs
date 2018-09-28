@@ -15,16 +15,26 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System.Collections.Generic;
     using System.Net.Http;
 
 
     public static partial class ContainerHttpResponseParsers
     {
+        /// <summary>
+        /// Reads account properties from a HttpWebResponse.
+        /// </summary>
+        /// <param name="response">The HttpWebResponse from which to read the account properties.</param>
+        /// <returns>The account properties stored in the headers.</returns>
+        public static AccountProperties ReadAccountProperties(HttpResponseMessage response)
+        {
+            return HttpResponseParsers.ReadAccountProperties(response);
+        }
+
         /// <summary>
         /// Gets the container's properties from the response.
         /// </summary>
@@ -48,6 +58,14 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             // Reading public access
             containerProperties.PublicAccess = GetAcl(response);
+
+            // WORM policies
+            string hasImmutability = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.HasImmutabilityPolicyHeader);
+            containerProperties.HasImmutabilityPolicy = string.IsNullOrEmpty(hasImmutability) ? (bool?)null : bool.Parse(hasImmutability);
+
+            string hasLegalHold = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.HasLegalHoldHeader);
+            containerProperties.HasLegalHold = string.IsNullOrEmpty(hasLegalHold) ? (bool?)null : bool.Parse(hasLegalHold);
+
             return containerProperties;
         }
 

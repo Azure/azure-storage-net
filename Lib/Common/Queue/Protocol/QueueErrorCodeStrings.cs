@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Queue.Protocol
+namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
 {
     /// <summary>
     /// Provides error code strings that are specific to the Queue service.

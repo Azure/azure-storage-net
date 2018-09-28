@@ -15,15 +15,15 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
-    using Microsoft.Azure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
 
     /// <summary>
     /// An interface required for request option types.
     /// </summary>
-    /// <remarks>The <see cref="Microsoft.Azure.Storage.Queue.QueueRequestOptions"/>, <see cref="Microsoft.Azure.Storage.Blob.BlobRequestOptions"/>, and <see cref="Microsoft.Azure.Storage.Table.TableRequestOptions"/> classes implement the <see cref="IRequestOptions"/> interface.</remarks>
+    /// <remarks>The <see cref="Microsoft.WindowsAzure.Storage.Queue.QueueRequestOptions"/>, <see cref="Microsoft.WindowsAzure.Storage.Blob.BlobRequestOptions"/>, and <see cref="Microsoft.WindowsAzure.Storage.Table.TableRequestOptions"/> classes implement the <see cref="IRequestOptions"/> interface.</remarks>
     public interface IRequestOptions
     {
         /// <summary>
@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Storage
         /// <summary>
         /// Gets or sets the location mode of the request.
         /// </summary>
-        /// <value>A <see cref="Microsoft.Azure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
+        /// <value>A <see cref="Microsoft.WindowsAzure.Storage.RetryPolicies.LocationMode"/> enumeration value.</value>
         LocationMode? LocationMode { get; set; }
 
         /// <summary>

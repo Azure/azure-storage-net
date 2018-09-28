@@ -15,15 +15,15 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Auth.Protocol;
-    using Microsoft.Azure.Storage.Blob.Protocol;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -373,6 +373,66 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
 #region Analytics
+
+        /// <summary>
+        /// Gets the properties of the blob service.
+        /// </summary>
+        /// <returns>The blob account properties.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync()
+        {
+            return this.GetAccountPropertiesAsync(null /* options */, null /* operationContext */);
+        }
+
+        /// <summary>
+        /// Gets the properties of the blob service.
+        /// </summary>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The blob account properties.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions options, OperationContext operationContext)
+        {
+            return this.GetAccountPropertiesAsync(options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Gets the properties of the blob service.
+        /// </summary>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies execution options, such as retry policy and timeout settings, for the operation.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The blob account properties.</returns>
+        [DoesServiceRequest]
+        public virtual Task<AccountProperties> GetAccountPropertiesAsync(BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
+            operationContext = operationContext ?? new OperationContext();
+
+            return Task.Run(
+                async () => await Executor.ExecuteAsync(
+                    this.GetAccountPropertiesImpl(modifiedOptions),
+                    modifiedOptions.RetryPolicy,
+                    operationContext,
+                    cancellationToken), cancellationToken);
+        }
+
+        private RESTCommand<AccountProperties> GetAccountPropertiesImpl(BlobRequestOptions requestOptions)
+        {
+            RESTCommand<AccountProperties> retCmd = new RESTCommand<AccountProperties>(this.Credentials, this.StorageUri);
+
+            retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => HttpRequestMessageFactory.GetAccountProperties(uri, builder, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
+            retCmd.RetrieveResponseStream = true;
+            retCmd.PreProcessResponse =
+                (cmd, resp, ex, ctx) =>
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+
+            retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => Task.FromResult(HttpResponseParsers.ReadAccountProperties(resp));
+
+            requestOptions.ApplyToStorageCommand(retCmd);
+            return retCmd;
+        }
 
         /// <summary>
         /// Gets the properties of the blob service.

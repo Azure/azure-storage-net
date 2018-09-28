@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File.Protocol
+namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     using System.Globalization;
     using System.Xml.Linq;

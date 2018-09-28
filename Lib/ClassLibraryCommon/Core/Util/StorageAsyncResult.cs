@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Util
+namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-    using Microsoft.Azure.Storage;
+    using Microsoft.WindowsAzure.Storage;
     using System;
     using System.Diagnostics;
 

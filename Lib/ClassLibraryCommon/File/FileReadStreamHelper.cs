@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 #if WINDOWS_RT
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     using System;
     using System.IO;

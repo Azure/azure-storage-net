@@ -1,16 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <ProjectGuid>27d74fe0-4fd0-41a4-be7e-298f9e84feb8</ProjectGuid>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisWindowsDesktop.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\Debug\netstandard2.0\Microsoft.Azure.Storage.xml</DocumentationFile>
-    <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
-  </PropertyGroup>
-  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RootNamespace>Microsoft.Azure.Storage.Common</RootNamespace>
+    <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile> 
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Optimize>false</Optimize>
@@ -27,85 +27,12 @@
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
- <ItemGroup>
-    <Compile Include="..\..\ClassLibraryCommon\ICancellableAsyncResult.cs" />
-    <Compile Include="..\..\ClassLibraryCommon\Auth\*.cs">
-      <Link>Auth\Auth</Link>
-    </Compile>
-    <Compile Include="..\..\ClassLibraryCommon\Shared\Protocol\*.cs">
-      <Link>Shared\Protocol\Protocol</Link>
-    </Compile>
-    <Compile Include="..\..\ClassLibraryCommon\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\..\ClassLibraryCommon\Core\Util\*.cs">
-      <Link>Core\Util\Util</Link>
-    </Compile>
-    <Compile Include="..\..\ClassLibraryCommon\Core\Executor\*.cs">
-      <Link>Core\Executor\Executor</Link>
-    </Compile>
-    <Compile Include="..\..\ClassLibraryCommon\Core\Auth\*.cs">
-      <Link>Core\Auth\Auth</Link>
-    </Compile>
-  </ItemGroup>
   <ItemGroup>
-    <!-- Root -->
-    <Compile Include="..\..\Common\AccessCondition.cs" />
-    <Compile Include="..\..\Common\AuthenticationScheme.cs" />
-    <Compile Include="..\..\Common\CloudStorageAccount.cs" />
-    <Compile Include="..\..\Common\DoesServiceRequestAttribute.cs" />
-    <Compile Include="..\..\Common\EncryptionAgent.cs" />
-    <Compile Include="..\..\Common\EncryptionAlgorithm.cs" />
-    <Compile Include="..\..\Common\EncryptionData.cs" />
-    <Compile Include="..\..\Common\IBufferManager.cs" />
-    <Compile Include="..\..\Common\IContinuationToken.cs" />
-    <Compile Include="..\..\Common\IPAddressOrRange.cs" />
-    <Compile Include="..\..\Common\IRequestOptions.cs" />
-    <Compile Include="..\..\Common\LogLevel.cs" />
-    <Compile Include="..\..\Common\NameValidator.cs" />
-    <Compile Include="..\..\Common\OperationContext.cs" />
-    <Compile Include="..\..\Common\RequestEventArgs.cs" />
-    <Compile Include="..\..\Common\RequestResult.cs" />
-    <Compile Include="..\..\Common\ResultSegment.cs" />
-    <Compile Include="..\..\Common\SharedAccessAccountPermissions.cs" />
-    <Compile Include="..\..\Common\SharedAccessAccountPolicy.cs" />
-    <Compile Include="..\..\Common\SharedAccessAccountResourceTypes.cs" />
-    <Compile Include="..\..\Common\SharedAccessAccountServices.cs" />
-    <Compile Include="..\..\Common\SharedAccessProtocol.cs" />
-    <Compile Include="..\..\Common\StorageException.cs" />
-    <Compile Include="..\..\Common\StorageExtendedErrorInformation.cs" />
-    <Compile Include="..\..\Common\StorageLocation.cs" />
-    <Compile Include="..\..\Common\StorageUri.cs" />
-    <Compile Include="..\..\Common\WrappedKey.cs" />
-    <!-- Auth -->
-    <Compile Include="..\..\Common\Auth\*.cs">
-      <Link>Auth\Auth</Link>
+    <Compile Include="..\..\ClassLibraryCommon\**\*.cs" Exclude="..\..\ClassLibraryCommon\Analytics\**;..\..\ClassLibraryCommon\Auth\Protocol\**;..\..\ClassLibraryCommon\Core\Blob\**;..\..\ClassLibraryCommon\Blob\**;..\..\ClassLibraryCommon\File\**;..\..\ClassLibraryCommon\Queue\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\..\Common\Auth\Protocol\*.cs">
-      <Link>Auth\Protocol\Protocol</Link>
-    </Compile>
-    <!-- Core -->
-    <Compile Include="..\..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Core\Executor\*.cs">
-      <Link>Core\Executor\Executor</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Core\Util\*.cs">
-      <Link>Core\Util\Util</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Core\Auth\*.cs">
-      <Link>Core\Auth\Auth</Link>
-    </Compile>
-    <!-- Services-->
-    <Compile Include="..\..\Common\RetryPolicies\*.cs">
-      <Link>RetryPolicies\RetryPolicies</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Shared\*.cs">
-      <Link>Shared\Shared</Link>
-    </Compile>
-    <Compile Include="..\..\Common\Shared\Protocol\*.cs">
-      <Link>Shared\Protocol\Protocol</Link>
+    <Compile Include="..\..\Common\**\*.cs" Exclude="..\..\Common\Blob\**;..\..\Common\File\**;..\..\Common\Queue\**;..\..\Common\Table\**;..\..\Common\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

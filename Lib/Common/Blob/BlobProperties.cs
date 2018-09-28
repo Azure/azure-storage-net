@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
 
     /// <summary>
@@ -51,6 +51,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.ContentMD5 = other.ContentMD5;
             this.Length = other.Length;
             this.ETag = other.ETag;
+            this.Created = other.Created;
             this.LastModified = other.LastModified;
             this.PageBlobSequenceNumber = other.PageBlobSequenceNumber;
             this.AppendBlobCommittedBlockCount = other.AppendBlobCommittedBlockCount;
@@ -123,6 +124,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <value>A string containing the blob's ETag value.</value>
         public string ETag { get; internal set; }
+
+        /// <summary>
+        /// Gets the the creation time for the blob, expressed as a UTC value.
+        /// </summary>
+        /// <value>A <see cref="DateTimeOffset"/> containing the blob's creation time, in UTC format.</value>
+        public DateTimeOffset? Created { get; internal set; }
 
         /// <summary>
         /// Gets the the last-modified time for the blob, expressed as a UTC value.

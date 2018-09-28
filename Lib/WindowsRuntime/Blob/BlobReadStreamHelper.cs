@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 #if !(NETCORE)
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;
     using System.IO;

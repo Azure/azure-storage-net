@@ -15,11 +15,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using System;
     using System.Collections.Generic;
-    using Microsoft.Azure.Storage;
+    using Microsoft.WindowsAzure.Storage;
 
     /// <summary>
     /// An interface required for Microsoft Azure blob types. The <see cref="CloudBlockBlob"/> and <see cref="CloudPageBlob"/> classes implement the <see cref="ICloudBlob"/> interface.

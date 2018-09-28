@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage;
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Auth;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
@@ -29,6 +29,19 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
     internal static class ContainerHttpRequestMessageFactory
     {
+        /// <summary>
+        /// Creates a web request to get the properties of the Blob service account.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the Blob service endpoint.</param>
+        /// <param name="builder">A <see cref="UriQueryBuilder"/> object specifying additional parameters to add to the URI query string.</param>
+        /// <param name="timeout">The server timeout interval, in seconds.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage GetAccountProperties(Uri uri, UriQueryBuilder builder, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            return HttpRequestMessageFactory.GetAccountProperties(uri, builder, timeout, content, operationContext, canonicalizer, credentials);
+        }
+
         /// <summary>
         /// Constructs a web request to create a new container.
         /// </summary>

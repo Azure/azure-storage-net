@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Table.Queryable
+namespace Microsoft.WindowsAzure.Storage.Table.Queryable
 {
     #region Namespaces.
 

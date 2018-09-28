@@ -9,17 +9,8 @@
     <Import_RootNamespace>Microsoft.Azure.Storage.Common.File</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\File\*.cs" >
-    </Compile >
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\File\Protocol\*.cs">
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\File\Auth\*.cs">
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\File\Util\*.cs">
-    </Compile>	
-	<Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\File\Account\*.cs">
-    </Compile>
-	<Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\File\Shared\*.cs">
+    <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\File\**\*.cs" >
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>	
   </ItemGroup>
 </Project>

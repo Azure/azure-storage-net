@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Queue.Protocol;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.CreateAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -215,7 +215,7 @@ namespace Microsoft.Azure.Storage.Queue
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.CreateIfNotExistsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateIfNotExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -386,7 +386,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteIfExists(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteIfExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -531,7 +531,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDelete(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DeleteAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -643,7 +643,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetPermissions(QueuePermissions permissions, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetPermissionsAsync(permissions, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetPermissionsAsync(permissions, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -757,7 +757,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetPermissions(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<QueuePermissions>(token => this.GetPermissionsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetPermissionsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -894,7 +894,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         private ICancellableAsyncResult BeginExists(bool primaryOnly, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.ExistsAsync(primaryOnly, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ExistsAsync(primaryOnly, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1018,7 +1018,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetMetadataAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetMetadataAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1127,7 +1127,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.FetchAttributesAsync(options, operationContext, token), callback, state);
 
         }
 
@@ -1249,7 +1249,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAddMessage(CloudQueueMessage message, TimeSpan? timeToLive, TimeSpan? initialVisibilityDelay, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.AddMessageAsync(message, timeToLive, initialVisibilityDelay, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.AddMessageAsync(message, timeToLive, initialVisibilityDelay, options, operationContext, token), callback, state);
 
         }
 
@@ -1385,7 +1385,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUpdateMessage(CloudQueueMessage message, TimeSpan visibilityTimeout, MessageUpdateFields updateFields, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UpdateMessageAsync(message, visibilityTimeout, updateFields, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UpdateMessageAsync(message, visibilityTimeout, updateFields, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1559,7 +1559,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteMessage(string messageId, string popReceipt, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DeleteMessageAsync(messageId, popReceipt, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteMessageAsync(messageId, popReceipt, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1739,7 +1739,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetMessages(int messageCount, TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<IEnumerable<CloudQueueMessage>>(token => this.GetMessagesAsync(messageCount, visibilityTimeout, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetMessagesAsync(messageCount, visibilityTimeout, options, operationContext, token), callback, state);
 
 
         }
@@ -1859,7 +1859,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetMessage(TimeSpan? visibilityTimeout, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudQueueMessage>(token => this.GetMessageAsync(visibilityTimeout, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetMessageAsync(visibilityTimeout, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1977,7 +1977,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginPeekMessages(int messageCount, QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<IEnumerable<CloudQueueMessage>>(token => this.PeekMessagesAsync(messageCount, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.PeekMessagesAsync(messageCount, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2086,7 +2086,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginPeekMessage(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudQueueMessage>(token => this.PeekMessageAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.PeekMessageAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2196,7 +2196,7 @@ namespace Microsoft.Azure.Storage.Queue
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginClear(QueueRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.ClearAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ClearAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>

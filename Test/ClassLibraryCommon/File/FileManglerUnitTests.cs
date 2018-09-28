@@ -23,7 +23,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class FileManglerUnitTests : FileTestBase

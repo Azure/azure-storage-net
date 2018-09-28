@@ -1,20 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <ProjectGuid>155b87ef-5f70-44af-90bf-cf5859ee7b0e</ProjectGuid>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisWindowsDesktop.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\$(Configuration)\Microsoft.WindowsAzure.Storage.xml</DocumentationFile>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Microsoft.Azure.Storage.Queue</AssemblyName>
+    <RootNamespace>Microsoft.Azure.Storage.Queue</RootNamespace>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Optimize>false</Optimize>
     <DefineConstants>WINDOWS_DESKTOP;SYNC;APM;TASK;CODE_ANALYSIS</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AssemblyName>Microsoft.Azure.Storage.Queue</AssemblyName>
-    <RootNamespace>Microsoft.Azure.Storage.Queue</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <SignAssembly>true</SignAssembly>
@@ -25,19 +25,18 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0.2-preview" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\ClassLibraryCommon\Queue\*.cs">
-      <Link>Queue\Queue</Link>
-    </Compile>
-    <Compile Include="..\..\ClassLibraryCommon\Queue\Protocol\*.cs">
-      <Link>Queue\Protocol\Protocol</Link>
+    <Compile Include="..\..\ClassLibraryCommon\Queue\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <CodeAnalysisDictionary Include="..\..\CustomDictionary.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common.Split\NetStandard2\Microsoft.Azure.Storage.Common.NetStandard2.csproj" />
   </ItemGroup>
   <Import Project="..\..\Common.Split\Shared\Queue.Shared\Microsoft.Azure.Storage.Common.Queue.projitems" Label="Shared" />
 </Project>

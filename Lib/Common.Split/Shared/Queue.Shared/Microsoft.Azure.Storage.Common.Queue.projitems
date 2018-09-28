@@ -9,13 +9,8 @@
     <Import_RootNamespace>Microsoft.Azure.Storage.Common.Queue</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-      <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\Queue\*.cs" >
-    </Compile >
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Queue\Protocol\*.cs">
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Queue\Auth\*.cs">
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Queue\Account\*.cs">
-    </Compile>		
+    <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\Queue\**\*.cs" >
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>	
   </ItemGroup>
 </Project>

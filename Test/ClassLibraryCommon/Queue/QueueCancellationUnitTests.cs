@@ -17,13 +17,13 @@
 
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Queue.Protocol;
+using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 
 using Microsoft.Azure.Test.Network;
 using Microsoft.Azure.Test.Network.Behaviors;
 using System;
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     [TestClass]
     public class QueueCancellationUnitTests : QueueTestBase

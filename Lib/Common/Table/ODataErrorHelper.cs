@@ -15,12 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
-    using Microsoft.Azure.Storage.Table.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Table.Protocol;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using System;
@@ -34,9 +34,6 @@ namespace Microsoft.Azure.Storage
 #endif
 
 #if WINDOWS_DESKTOP && !WINDOWS_PHONE
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
-    using System.Net.Http;
 #elif WINDOWS_RT
     using Windows.Storage.Streams;
 #endif
@@ -57,7 +54,7 @@ namespace Microsoft.Azure.Storage
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream, HttpResponseMessage response, string contentType)
 #else
         public static StorageExtendedErrorInformation ReadFromStreamUsingODataLib(Stream inputStream,
-                HttpResponseMessage response, string contentType)
+                HttpWebResponse response, string contentType)
 #endif
 
         {
@@ -68,19 +65,16 @@ namespace Microsoft.Azure.Storage
             {
                 return null;
             }
-<<<<<<< HEAD
-
 
 #if WINDOWS_RT || NETCORE
-=======
-            
->>>>>>> ea7d0914016bd6ad5dca15535dbd7eac6bca8b78
             string actualContentType = response.Content.Headers.ContentType.ToString();
-
+#else
+            string actualContentType = response.ContentType;
+#endif
             // Some table operations respond with XML - request body too large, for example.
             if (actualContentType.Contains(@"xml"))
             {
-                return StorageExtendedErrorInformation.ReadFromStreamAsync(inputStream).GetAwaiter().GetResult();
+                return StorageExtendedErrorInformation.ReadFromStream(inputStream);
             }
 
             return ReadAndParseExtendedError(new NonCloseableStream(inputStream));
@@ -93,7 +87,7 @@ namespace Microsoft.Azure.Storage
         /// <returns>The error details.</returns>
         public static StorageExtendedErrorInformation ReadAndParseExtendedError(Stream inputStream)
         {
-            return ReadAndParseExtendedErrorAsync(inputStream, CancellationToken.None).GetAwaiter().GetResult();
+            return CommonUtility.RunWithoutSynchronizationContext(() => ReadAndParseExtendedErrorAsync(inputStream, CancellationToken.None).GetAwaiter().GetResult());
         }
 
         /// <summary>
@@ -112,14 +106,14 @@ namespace Microsoft.Azure.Storage
                     reader.DateParseHandling = DateParseHandling.None;
                     JObject dataSet = await JObject.LoadAsync(reader, cancellationToken).ConfigureAwait(false);
 
-                    Dictionary<string, object> properties = dataSet.ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                    Dictionary<string, object> properties = dataSet.ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
 
                     StorageExtendedErrorInformation errorInformation = new StorageExtendedErrorInformation();
 
                     errorInformation.AdditionalDetails = new Dictionary<string, string>();
                     if (properties.ContainsKey(@"odata.error"))
                     {
-                        Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                        Dictionary<string, object> errorProperties = ((JObject)properties[@"odata.error"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
                         if (errorProperties.ContainsKey(@"code"))
                         {
 #pragma warning disable 618
@@ -128,7 +122,7 @@ namespace Microsoft.Azure.Storage
                         }
                         if (errorProperties.ContainsKey(@"message"))
                         {
-                            Dictionary<string, object> errorMessageProperties = ((JObject)errorProperties[@"message"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                            Dictionary<string, object> errorMessageProperties = ((JObject)errorProperties[@"message"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
                             if (errorMessageProperties.ContainsKey(@"value"))
                             {
                                 errorInformation.ErrorMessage = (string)errorMessageProperties[@"value"];
@@ -136,7 +130,7 @@ namespace Microsoft.Azure.Storage
                         }
                         if (errorProperties.ContainsKey(@"innererror"))
                         {
-                            Dictionary<string, object> innerErrorDictionary = ((JObject)errorProperties[@"innererror"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Create());
+                            Dictionary<string, object> innerErrorDictionary = ((JObject)errorProperties[@"innererror"]).ToObject<Dictionary<string, object>>(DefaultSerializer.Instance);
                             if (innerErrorDictionary.ContainsKey(@"message"))
                             {
                                 errorInformation.AdditionalDetails[Constants.ErrorExceptionMessage] = (string)innerErrorDictionary[@"message"];

@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.File.Protocol;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => CreateAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => CreateAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateIfNotExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => CreateIfNotExistsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateIfNotExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -344,7 +344,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public ICancellableAsyncResult BeginSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudFileShare>(token => this.SnapshotAsync(metadata, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SnapshotAsync(metadata, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -487,7 +487,7 @@ namespace Microsoft.Azure.Storage.File
         public virtual ICancellableAsyncResult BeginDelete(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DeleteAsync(deleteSnapshotsOption, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteAsync(deleteSnapshotsOption, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -681,7 +681,7 @@ namespace Microsoft.Azure.Storage.File
         public virtual ICancellableAsyncResult BeginDeleteIfExists(DeleteShareSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition,
             FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(deleteSnapshotsOption, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteIfExistsAsync(deleteSnapshotsOption, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -843,7 +843,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => ExistsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -951,7 +951,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1062,7 +1062,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetPermissions(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<FileSharePermissions>(token => this.GetPermissionsAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetPermissionsAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1174,7 +1174,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetStats(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<ShareStats>(token => this.GetStatsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetStatsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1284,7 +1284,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetMetadata(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetMetadataAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1398,7 +1398,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetPermissions(FileSharePermissions permissions, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetPermissionsAsync(permissions, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetPermissionsAsync(permissions, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1519,7 +1519,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetPropertiesAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetPropertiesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>

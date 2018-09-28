@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Auth
+namespace Microsoft.WindowsAzure.Storage.Auth
 {
     internal struct StorageAccountKey
     {

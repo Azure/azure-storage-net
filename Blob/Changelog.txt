@@ -1,3 +1,31 @@
+Changes in 9.4.0:
+
+- Feature parity with the 9.3.2 release of the non-split library.
+- Removed support for PCL and NetStandard 1.0.
+- Moving back to using Microsoft.WindowsAzure.Storage instead of Microsoft.Azure.Storage.  This is a temporary change to ease the transition for existing libraries.  The namespace will change back at a future time.
+
+Changes in 9.4.0-preview:
+
+- WinRT/WinPhoneRT: Removed support for Windows8.1 and WindowsPhone 8.1 in favor of UWP support through Netstandard2.0.
+- Added NetStandard2.0 target support.
+- Desktop: Transitioned from HttpWebRequest to HttpClient in all the protocol layer APIs and classes. 
+- NetStandard2.0: Added support for synchronous methods. Please note that the synchrounous APIs are wrappers over the asynchronous APIs (sync-over-async) due to transition to HttpClient which does not offer a true sync functionality.
+- NetStandard2.0: Added support for Client Side Encryption.
+- All: Updated Get*BlobReference APIs to inherit the existing ServiceClient instance.
+- All: Removed the un-necessary stream wrapping when progress tracking is not requested.
+- Blob(RT/NetCore): Removed Task.Run from CloudBlob Undelete API.
+
+Changes in 9.0.0-preview:
+- All: Support for 2017-07-29 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.3.
+- Blobs : Added support for soft delete feature. If a delete retention policy is enabled through the set service properties API, then blobs or snapshots can be deleted softly and retained for a specified number of days, before being permanently removed by garbage collection.
+- Queues: Added support for infinite TTL on queue messages.
+- All:  When a storage request fails, the error code may now be retrieved directly from the RequestResult and StorageException classes. This error code is populated even in cases where there is no ExtendedErrorInformation available, such as in calls to FetchAttributes.
+- All: Upgarded NewtonSoft.json dependency to 10.0.2.
+- All: Upgraded Netstandard dependency to 1.6.1.
+- All (RT/NetCore): Improved performance by avoiding Task.Run
+- Blobs (RT/NetCore): Fixed an infinite loop bug for StartCopyAsync API on PageBlob.
+
+
 Changes in 8.7.0-preview:
 
 - Removed support for WindowsPhone8.

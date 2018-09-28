@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core
+namespace Microsoft.WindowsAzure.Storage.Core
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.File;
-    using Microsoft.Azure.Storage.Queue;
-    using Microsoft.Azure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.WindowsAzure.Storage.Queue;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -360,6 +360,8 @@ namespace Microsoft.Azure.Storage.Core
 
             public void Dispose()
             {
+                var epsilon = 0.02;
+
                 Assert.IsNull(this.error, this.error);
                 Assert.AreEqual(this.initialLocation, this.OperationContext.RequestResults[0].TargetLocation);
                 Assert.AreEqual(this.retryInfoList.Count + 1, this.OperationContext.RequestResults.Count);
@@ -369,7 +371,8 @@ namespace Microsoft.Azure.Storage.Core
 
                     TimeSpan retryInterval = this.OperationContext.RequestResults[i + 1].StartTime - this.OperationContext.RequestResults[i].EndTime;
                     string error = string.Format("{0} <= {1}", this.retryInfoList[i].RetryInterval, retryInterval);
-                    Assert.IsTrue(this.retryInfoList[i].RetryInterval <= retryInterval, error);
+                    var dT = Math.Abs((this.retryInfoList[i].RetryInterval - retryInterval).TotalSeconds);
+                    Assert.IsTrue(dT <= epsilon, $"{dT} not <= {epsilon}");
                 }
             }
         }

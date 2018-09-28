@@ -1,15 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Azure Storage Common SDK for NetCore</Description>
     <AssemblyTitle>Microsoft.Azure.Storage.Common</AssemblyTitle>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <VersionPrefix>9.4.0-preview</VersionPrefix>
+    <VersionPrefix>9.4.0</VersionPrefix>
     <Authors>Microsoft Corporation</Authors>
     <TargetFramework>netstandard1.3</TargetFramework>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
-    <PackageId>Microsoft.Azure.Storage.Common</PackageId>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	<PackageId>Microsoft.Azure.Storage.Common</PackageId>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -23,73 +22,40 @@
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
-   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-      <DebugSymbols>true</DebugSymbols>
-      <DebugType>full</DebugType>
-      <Optimize>false</Optimize>
-      <DefineConstants>TRACE;DEBUG;NETCORE;</DefineConstants>
-      <ErrorReport>prompt</ErrorReport>
-      <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-      <SignAssembly>true</SignAssembly>
-      <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
-      <DelaySign>true</DelaySign>
-      <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+  
+  <PropertyGroup>
+    <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>TRACE;DEBUG;NETCORE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>true</DelaySign>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <DebugType>pdbonly</DebugType>
-      <Optimize>true</Optimize>
-      <DefineConstants>RELEASE;NETSTANDARD1_3;NETCORE;SIGN</DefineConstants>
-      <ErrorReport>prompt</ErrorReport>
-      <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-  <!--<ItemGroup>
-    <Compile Include="..\..\Common\*.cs;..\..\Common\Shared\**\*.cs;..\..\Common\Auth\**\*.cs;..\..\Common\Core\**\*.cs;..\..\Common\RetryPolicies\**\*.cs;..\..\WindowsRuntime\*.cs;..\..\WindowsRuntime\Auth\**\*.cs;..\..\WindowsRuntime\Core\**\*.cs;..\..\WindowsRuntime\Shared\**\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
-  </ItemGroup>-->
+    <Optimize>true</Optimize>
+    <DefineConstants>RELEASE;NETSTANDARD1_3;NETCORE;SIGN</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Extensions\*.cs" />
   </ItemGroup>
- <ItemGroup>
-    <Compile Include="..\..\..\WindowsRuntime\Auth\Protocol\*.cs" />
-    <Compile Include="..\..\..\WindowsRuntime\Core\Auth\*.cs" />
-    <Compile Include="..\..\..\WindowsRuntime\Core\Executor\*.cs" />
-    <Compile Include="..\..\..\WindowsRuntime\Core\*.cs" />
-    <Compile Include="..\..\..\WindowsRuntime\Core\Util\*.cs" />
-    <Compile Include="..\..\..\WindowsRuntime\ExceptionInfo.cs" />
-    <Compile Include="..\..\..\WindowsRuntime\Shared\Protocol\*.cs" />
-  </ItemGroup>
   <ItemGroup>
-    <!-- Root -->
-    <Compile Include="..\..\..\Common\*.cs" />
-    <!-- Auth -->
-    <Compile Include="..\..\..\Common\Auth\*.cs">
-      <Link>Auth\Auth</Link>
+    <Compile Include="..\..\..\WindowsRuntime\**\*.cs" Exclude="**\obj\**;**\bin\**;**\*.xproj;**\packages\**;..\..\..\WindowsRuntime\Blob\**;..\..\..\WindowsRuntime\File\**;..\..\..\WindowsRuntime\Queue\**;..\..\..\WindowsRuntime\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
-    <Compile Include="..\..\..\Common\Auth\Protocol\*.cs">
-      <Link>Auth\Protocol\Protocol</Link>
-    </Compile>
-    <!-- Core -->
-    <Compile Include="..\..\..\Common\Core\*.cs">
-      <Link>Core\Core</Link>
-    </Compile>
-    <Compile Include="..\..\..\Common\Core\Auth\*.cs">
-      <Link>Core\Auth\Auth</Link>
-    </Compile>
-    <Compile Include="..\..\..\Common\Core\Executor\*.cs">
-      <Link>Core\Executor\Executor</Link>
-    </Compile>
-    <Compile Include="..\..\..\Common\Core\Util\*.cs">
-      <Link>Core\Util\Util</Link>
-    </Compile>
-    <!-- Services-->
-    <Compile Include="..\..\..\Common\RetryPolicies\*.cs">
-      <Link>RetryPolicies\RetryPolicies</Link>
-    </Compile>
-    <Compile Include="..\..\..\Common\Shared\*.cs">
-      <Link>Shared\Shared</Link>
-    </Compile>
-    <Compile Include="..\..\..\Common\Shared\Protocol\*.cs">
-      <Link>Shared\Protocol\Protocol</Link>
+    <Compile Include="..\..\..\Common\**\*.cs" Exclude="**\obj\**;**\bin\**;**\*.xproj;**\packages\**;..\..\..\Common\Blob\**;..\..\..\Common\File\**;..\..\..\Common\Queue\**;..\..\..\Common\Table\**;..\..\..\Common\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

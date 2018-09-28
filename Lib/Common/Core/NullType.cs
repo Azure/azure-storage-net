@@ -17,7 +17,7 @@
 
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Core
+namespace Microsoft.WindowsAzure.Storage.Core
 {
     /// <summary>
     /// A NullTaskReturn type.

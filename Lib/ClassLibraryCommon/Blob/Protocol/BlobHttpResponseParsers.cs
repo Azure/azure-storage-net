@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -60,6 +60,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 {
                     properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
                 }
+
+                string created = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CreationTimeHeader);
+                properties.Created = string.IsNullOrEmpty(created) ? (DateTimeOffset?)null : DateTimeOffset.Parse(created, CultureInfo.InvariantCulture).ToUniversalTime();
 
                 string blobEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
                 properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);

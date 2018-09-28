@@ -16,17 +16,17 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Auth.Protocol;
-using Microsoft.Azure.Storage.Core.Auth;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+using Microsoft.WindowsAzure.Storage.Core.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.Azure.Storage.Blob.Protocol
+namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 {
     internal class BlobTests
     {
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 BlobTestUtils.LastModifiedHeader(response);
                 BlobTestUtils.ContentMd5Header(response);
                 BlobTestUtils.RequestIdHeader(response);
-                BlobTestUtils.ContentLengthHeader(response, -1); //Should this be -1 or 0?
+                BlobTestUtils.ContentLengthHeader(response, 0);
             }
             else
             {
@@ -251,7 +251,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ContentMd5Header(response);
                 BlobTestUtils.RequestIdHeader(response);
-                BlobTestUtils.ContentLengthHeader(response, -1);
+                BlobTestUtils.ContentLengthHeader(response, 0);
             }
             else
             {
@@ -283,7 +283,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ContentMd5Header(response);
                 BlobTestUtils.RequestIdHeader(response);
-                BlobTestUtils.ContentLengthHeader(response, -1);
+                BlobTestUtils.ContentLengthHeader(response, 0);
             }
             else
             {

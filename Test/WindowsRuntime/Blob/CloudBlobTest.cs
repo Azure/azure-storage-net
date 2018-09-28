@@ -28,7 +28,7 @@ using System.Security.Cryptography;
 
 #endif
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobTest : BlobTestBase

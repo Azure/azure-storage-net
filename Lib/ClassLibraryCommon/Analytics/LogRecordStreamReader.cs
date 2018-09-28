@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Analytics
+namespace Microsoft.WindowsAzure.Storage.Analytics
 {
-    using Microsoft.Azure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core;
     using System;
     using System.IO;
     using System.Text;

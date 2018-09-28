@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
     using System;
     using System.Collections.Generic;
@@ -44,6 +44,7 @@ namespace Microsoft.Azure.Storage
             foreach (XElement tenantConfigurationElement in testConfigurationsElement.Element("TenantConfigurations").Elements("TenantConfiguration"))
             {
                 TenantConfiguration config = new TenantConfiguration();
+
                 config.TenantName = (string)tenantConfigurationElement.Element("TenantName");
                 config.AccountName = (string)tenantConfigurationElement.Element("AccountName");
                 config.AccountKey = (string)tenantConfigurationElement.Element("AccountKey");
@@ -60,6 +61,10 @@ namespace Microsoft.Azure.Storage
                 config.FileSecurePortOverride = (string)tenantConfigurationElement.Element("FileSecurePortOverride");
                 config.QueueSecurePortOverride = (string)tenantConfigurationElement.Element("QueueSecurePortOverride");
                 config.TableSecurePortOverride = (string)tenantConfigurationElement.Element("TableSecurePortOverride");
+                config.ActiveDirectoryApplicationId = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationId");
+                config.ActiveDirectoryApplicationSecret = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationSecret");
+                config.ActiveDirectoryTenantId = (string)tenantConfigurationElement.Element("ActiveDirectoryTenantId");
+
                 tenantConfigurationList.Add(config);
             }
 

@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.Azure.Storage.Blob;
-using Microsoft.Azure.Storage.Shared.Protocol;
-using Microsoft.Azure.Storage.File.Protocol;
-using Microsoft.Azure.Storage.File;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.File.Protocol;
+using Microsoft.WindowsAzure.Storage.File;
 using System;
 using System.IO;
 using System.Linq;
@@ -31,7 +31,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
     public partial class TestHelper
     {
@@ -576,11 +576,44 @@ namespace Microsoft.Azure.Storage
             {
                 Assert.IsNull(propsA.DeleteRetentionPolicy);
                 Assert.IsNull(propsB.DeleteRetentionPolicy);
+            }
 
+            if (propsA.StaticWebsite != null && propsB.StaticWebsite != null)
+            {
+                Assert.AreEqual(propsA.StaticWebsite.IndexDocument, propsB.StaticWebsite.IndexDocument);
+                Assert.AreEqual(propsA.StaticWebsite.ErrorDocument404Path, propsB.StaticWebsite.ErrorDocument404Path);
+            }
+            else
+            {
+                Assert.IsNull(propsA.StaticWebsite);
+                Assert.IsNull(propsB.StaticWebsite);
             }
         }
 
-        internal static void SpinUpTo30SecondsIgnoringFailures(Action test)
+        internal static async Task SpinUpToNSecondsIgnoringFailuresAsync(Func<Task> test, int secondCount)
+        {
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+
+            while (true)
+            {
+                try
+                {
+                    await test();
+                    return;
+                }
+                catch (Exception)
+                {
+                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(secondCount))
+                    {
+                        throw;
+                    }
+                }
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
+        internal static void SpinUpToNSecondsIgnoringFailures(Action test, int secondCount)
         {
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
@@ -594,7 +627,7 @@ namespace Microsoft.Azure.Storage
                 }
                 catch (Exception)
                 {
-                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                    if (stopwatch.Elapsed > TimeSpan.FromSeconds(secondCount))
                     {
                         throw;
                     }
@@ -604,6 +637,16 @@ namespace Microsoft.Azure.Storage
                     }
                 }
             }
+        }
+
+        internal static Task SpinUpTo30SecondsIgnoringFailuresAsync(Func<Task> test)
+        {
+            return SpinUpToNSecondsIgnoringFailuresAsync(test, 30);
+        }
+
+        internal static void SpinUpTo30SecondsIgnoringFailures(Action test)
+        {
+            SpinUpToNSecondsIgnoringFailures(test, 30);
         }
 
         /// <summary>

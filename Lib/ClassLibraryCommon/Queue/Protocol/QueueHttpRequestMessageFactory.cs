@@ -15,13 +15,13 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Queue.Protocol
+namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
 {
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Auth;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Auth;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
@@ -244,8 +244,12 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
         /// <summary>
         /// Constructs a web request to get messages for a queue.
         /// </summary>
-        /// <param name="uri">The absolute URI to the queue.</param>
-        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to get. The maximum number of messages that may be retrieved at one time is 32.</param>
+        /// <param name="visibilityTimeout">A <see cref="TimeSpan"/> value specifying the visibility timeout.</param>
+        /// <param name="content">The contents of the HTTP request message.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage GetMessages(Uri uri, int? timeout, int numberOfMessages, TimeSpan? visibilityTimeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
@@ -265,8 +269,11 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
         /// <summary>
         /// Constructs a web request to peek messages for a queue.
         /// </summary>
-        /// <param name="uri">The absolute URI to the queue.</param>
-        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the queue.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="numberOfMessages">An integer specifying the number of messages to peek. The maximum number of messages that may be retrieved at one time is 32.</param>
+        /// <param name="content">The contents of the HTTP request message.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage PeekMessages(Uri uri, int? timeout, int numberOfMessages, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {

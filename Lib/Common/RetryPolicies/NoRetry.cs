@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.RetryPolicies
+namespace Microsoft.WindowsAzure.Storage.RetryPolicies
 {
     using System;
 

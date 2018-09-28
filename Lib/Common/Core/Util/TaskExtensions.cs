@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Util
+namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
     using System;
     using System.Threading;
@@ -26,6 +26,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// <summary>
         ///  Extension method to add cancellation logic to non-cancellable operations.
         /// </summary>
+        /// <param name="task">The <see cref="Task"/> to enable cancellation on.</param>
         /// <param name="cancellationToken">the cancellation token which will be used to cancel the combined task </param>
         /// <remarks>Please refer to this post for more information: https://blogs.msdn.microsoft.com/pfxteam/2012/10/05/how-do-i-cancel-non-cancelable-async-operations/ </remarks>
         internal static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken)
@@ -41,6 +42,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// <summary>
         ///  Extension method to add cancellation logic to non-cancellable operations.
         /// </summary>
+        /// <param name="task">The <see cref="Task"/> to enable cancellation on.</param>
         /// <param name="cancellationToken">the cancellation token which will be used to cancel the combined task</param>
         /// <remarks>Please refer to this post for more information: https://blogs.msdn.microsoft.com/pfxteam/2012/10/05/how-do-i-cancel-non-cancelable-async-operations/ </remarks>
         internal static async Task WithCancellation(this Task task, CancellationToken cancellationToken)

@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File.Protocol
+namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     /// <summary>
     /// Represents an item that may be returned by a file listing operation.

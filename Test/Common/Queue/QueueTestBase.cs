@@ -17,7 +17,7 @@
 
 using System;
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     public class QueueTestBase : TestBase
     {

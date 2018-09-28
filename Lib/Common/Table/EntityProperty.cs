@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Table
+namespace Microsoft.WindowsAzure.Storage.Table
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -457,7 +457,26 @@ byte[] input)
             {
                 if (!this.IsNull)
                 {
-                    this.EnforceType(EdmType.Double);
+                    // We have to special case these post-9.0, since they may be missing EdmType data at the server, and inferred as String
+                    if (this.PropertyAsObject is string)
+                    {
+                        switch ((string)this.PropertyAsObject)
+                        {
+                            case "NaN":
+                                return double.NaN;
+                            case "Infinity":
+                                return double.PositiveInfinity;
+                            case "-Infinity":
+                                return double.NegativeInfinity;
+                            default:
+                                this.EnforceType(EdmType.Double);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        this.EnforceType(EdmType.Double);
+                    }
                 }
 
                 return (double?)this.PropertyAsObject;

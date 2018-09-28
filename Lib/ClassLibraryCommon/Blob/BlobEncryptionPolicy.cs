@@ -14,12 +14,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using Microsoft.Azure.KeyVault.Core;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
@@ -141,20 +141,14 @@ namespace Microsoft.Azure.Storage.Blob
                     switch (encryptionData.EncryptionAgent.EncryptionAlgorithm)
                     {
                         case EncryptionAlgorithm.AES_CBC_256:
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
                             using (AesCryptoServiceProvider aesProvider = new AesCryptoServiceProvider())
-#else
-                        using (AesManaged aesProvider = new AesManaged())
-#endif
                             {
                                 aesProvider.IV = iv != null ? iv : encryptionData.ContentEncryptionIV;
                                 aesProvider.Key = contentEncryptionKey;
 
                                 if (noPadding)
                                 {
-#if WINDOWS_DESKTOP && !WINDOWS_PHONE
                                     aesProvider.Padding = PaddingMode.None;
-#endif
                                 }
 
                                 transform = aesProvider.CreateDecryptor();

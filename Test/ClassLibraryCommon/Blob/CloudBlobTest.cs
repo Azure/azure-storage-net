@@ -18,11 +18,13 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobTest : BlobTestBase
@@ -235,21 +237,21 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobSnapshotTask()
+        public async Task CloudBlobSnapshotTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
                 CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
-                appendBlob.CreateOrReplaceAsync().Wait();
-                appendBlob.AppendBlockAsync(originalData, null).Wait();
+                await appendBlob.CreateOrReplaceAsync();
+                await appendBlob.AppendBlockAsync(originalData, null);
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
-                blob.FetchAttributesAsync().Wait();
-                CloudBlob snapshot1 = blob.SnapshotAsync().Result;
+                await blob.FetchAttributesAsync();
+                CloudBlob snapshot1 = await blob.SnapshotAsync();
                 Assert.AreEqual(blob.Properties.ETag, snapshot1.Properties.ETag);
                 Assert.AreEqual(blob.Properties.LastModified, snapshot1.Properties.LastModified);
                 Assert.IsTrue(snapshot1.IsSnapshot);
@@ -259,55 +261,55 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreNotEqual(snapshot1.Uri, snapshot1.SnapshotQualifiedUri);
                 Assert.IsTrue(snapshot1.SnapshotQualifiedUri.Query.Contains("snapshot"));
 
-                CloudBlob snapshot2 = blob.SnapshotAsync().Result;
+                CloudBlob snapshot2 = await blob.SnapshotAsync();
                 Assert.IsTrue(snapshot2.SnapshotTime.Value > snapshot1.SnapshotTime.Value);
 
-                snapshot1.FetchAttributesAsync().Wait();
-                snapshot2.FetchAttributesAsync().Wait();
-                blob.FetchAttributesAsync().Wait();
+                await snapshot1.FetchAttributesAsync();
+                await snapshot2.FetchAttributesAsync();
+                await blob.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, blob.Properties);
 
                 CloudBlob snapshot1Clone = new CloudBlob(new Uri(blob.Uri + "?snapshot=" + snapshot1.SnapshotTime.Value.ToString("O")), blob.ServiceClient.Credentials);
                 Assert.IsNotNull(snapshot1Clone.SnapshotTime, "Snapshot clone does not have SnapshotTime set");
                 Assert.AreEqual(snapshot1.SnapshotTime.Value, snapshot1Clone.SnapshotTime.Value);
-                snapshot1Clone.FetchAttributesAsync().Wait();
+                await snapshot1Clone.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties);
 
                 CloudBlob snapshotCopy = container.GetBlobReference("blob2");
-                snapshotCopy.StartCopyAsync(snapshot1.Uri, null, null, null, null).Wait();
-                WaitForCopy(snapshotCopy);
+                await snapshotCopy.StartCopyAsync(snapshot1.Uri, null, null, null, null);
+                await WaitForCopyAsync(snapshotCopy);
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
-                using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
+                using (Stream snapshotStream = await snapshot1.OpenReadAsync())
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
                 //overwriting will create another snapshot
-                appendBlob.CreateOrReplaceAsync().Wait();
-                blob.FetchAttributesAsync().Wait();
+                await appendBlob.CreateOrReplaceAsync();
+                await blob.FetchAttributesAsync();
 
-                using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
+                using (Stream snapshotStream = await snapshot1.OpenReadAsync())
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
                 List<IListBlobItem> blobs =
-                    container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null)
-                             .Result
+                    (await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null))
                              .Results
                              .ToList();
-                Assert.AreEqual(4, blobs.Count);
+                Assert.AreEqual(5, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
-                AssertAreEqual(blob, (CloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
+                Assert.IsTrue(((CloudBlob)blobs[2]).IsDeleted);
+                AssertAreEqual(blob, (CloudBlob)blobs[3]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[4]);
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -455,6 +457,38 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 #endif
+
+        [TestMethod]
+        [Description("Ensure different regions can parse blob headers.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobLocaleParsing()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            var currCulture = Thread.CurrentThread.CurrentCulture;
+            try
+            {
+                const string blobname = "tempfile";
+                container.Create();
+                var blockBlob = container.GetBlockBlobReference(blobname);
+                OperationContext context = new OperationContext();
+
+                blockBlob.UploadText("placeholder", null, null, null, context);
+
+                foreach (var culture in CultureInfo.GetCultures(CultureTypes.AllCultures))
+                {
+                    Thread.CurrentThread.CurrentCulture = culture;
+                    Assert.IsTrue(blockBlob.Exists()); // parses the header to ensure can be parsed across cultures
+                }                                      // failed assertion means we never tested the parser
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = currCulture;
+                container.DeleteIfExists();
+            }
+        }
 
         #region Soft-Delete
 

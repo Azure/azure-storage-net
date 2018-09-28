@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Core.Executor
+namespace Microsoft.WindowsAzure.Storage.Core.Executor
 {
     using System;
     using System.IO;
@@ -25,8 +25,8 @@ namespace Microsoft.Azure.Storage.Core.Executor
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;    
 
-    using Microsoft.Azure.Storage;
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
     internal abstract class StorageCommandBase<T>

@@ -15,23 +15,24 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Blob;
-using Microsoft.Azure.Storage.Core;
-using Microsoft.Azure.Storage.File;
-using Microsoft.Azure.Storage.Queue;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Core;
+using Microsoft.WindowsAzure.Storage.File;
+using Microsoft.WindowsAzure.Storage.Queue;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Linq;
 using System.ServiceModel.Channels;
 
 #if WINDOWS_DESKTOP || NETCOREAPP2_0
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 
-namespace Microsoft.Azure.Storage
+namespace Microsoft.WindowsAzure.Storage
 {
     public partial class TestBase
     {
@@ -71,6 +72,22 @@ namespace Microsoft.Azure.Storage
         public static MockBufferManager TableBufferManager = new MockBufferManager(64 * (int)Constants.KB);
 
         public static MockBufferManager QueueBufferManager = new MockBufferManager((int)Constants.KB);
+#endif
+
+#if WINDOWS_DESKTOP
+        public static string GenerateOAuthToken()
+        {
+            string authority = string.Format("https://login.microsoftonline.com/{0}/oauth2/token",
+                TestBase.TargetTenantConfig.ActiveDirectoryTenantId);
+
+            ClientCredential credential = new ClientCredential(TestBase.TargetTenantConfig.ActiveDirectoryApplicationId,
+                TestBase.TargetTenantConfig.ActiveDirectoryApplicationSecret);
+
+            AuthenticationContext context = new AuthenticationContext(authority);
+            AuthenticationResult result = context.AcquireTokenAsync("https://storage.azure.com", credential).Result;
+
+            return result.AccessToken;
+        }
 #endif
 
         public static CloudBlobClient GenerateCloudBlobClient()

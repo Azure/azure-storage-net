@@ -18,7 +18,7 @@
 // </summary>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File.Protocol
+namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
     using System;
     using System.Collections.Generic;

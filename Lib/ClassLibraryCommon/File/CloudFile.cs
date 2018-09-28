@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.File.Protocol;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.File.Protocol;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenRead(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<Stream>(token => this.OpenReadAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.OpenReadAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginOpenWrite(long? size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudFileStream>(token => this.OpenWriteAsync(size, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.OpenWriteAsync(size, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -366,7 +366,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginDownloadToStream(Stream target, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DownloadToStreamAsync(target, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadToStreamAsync(target, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -536,7 +536,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginDownloadToFile(string path, FileMode mode, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadToFileAsync(path, mode, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -712,7 +712,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginDownloadToByteArray(byte[] target, int index, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<int>(token => this.DownloadToByteArrayAsync(target, index, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadToByteArrayAsync(target, index, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -863,7 +863,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginDownloadText(Encoding encoding, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DownloadTextAsync(encoding, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadTextAsync(encoding, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
 
@@ -985,7 +985,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1003,7 +1003,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1022,7 +1022,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginDownloadRangeToStream(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1158,7 +1158,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? fileOffset, long? length, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<int>(token => this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1177,7 +1177,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<int>(token => this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1197,7 +1197,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginDownloadRangeToByteArray(byte[] target, int index, long? fileOffset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<int>(token => this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DownloadRangeToByteArrayAsync(target, index, fileOffset, length, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1427,7 +1427,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1443,7 +1443,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1460,7 +1460,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromStream(Stream source, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsyncHelper(source, null /*length*/, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1474,7 +1474,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => UploadFromStreamAsyncHelper(source, length, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => UploadFromStreamAsyncHelper(source, length, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1491,7 +1491,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1509,7 +1509,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => UploadFromStreamAsyncHelper(source, length, accessCondition, options, operationContext, progressHandler, token), callback, state);
 
         }
 
@@ -1695,7 +1695,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromFile(string path, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromFileAsync(path, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromFileAsync(path, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1711,7 +1711,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromFile(string path, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromFileAsync(path, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromFileAsync(path, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1728,7 +1728,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromFile(string path, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromFileAsync(path, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromFileAsync(path, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1849,7 +1849,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1867,7 +1867,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -1886,7 +1886,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -2010,7 +2010,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadText(string content, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadTextAsync(content, null /*encoding*/, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadTextAsync(content, null /*encoding*/, default(AccessCondition), default(FileRequestOptions), default(OperationContext), default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -2027,7 +2027,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadText(string content, Encoding encoding, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadTextAsync(content, encoding, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadTextAsync(content, encoding, accessCondition, options, operationContext, default(IProgress<StorageProgress>), token), callback, state);
         }
 
         /// <summary>
@@ -2045,7 +2045,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadText(string content, Encoding encoding, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadTextAsync(content, encoding, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadTextAsync(content, encoding, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -2179,7 +2179,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.CreateAsync(size, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateAsync(size, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2292,7 +2292,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginExists(FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => ExistsAsync(options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => ExistsAsync(options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2400,7 +2400,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginFetchAttributes(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.FetchAttributesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2510,7 +2510,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDelete(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.DeleteAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2644,7 +2644,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginDeleteIfExists(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<bool>(token => this.DeleteIfExistsAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.DeleteIfExistsAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2782,7 +2782,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginListRanges(long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<IEnumerable<FileRange>>(token => this.ListRangesAsync(offset, length, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ListRangesAsync(offset, length, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2897,7 +2897,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetProperties(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => SetPropertiesAsync(accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => SetPropertiesAsync(accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -3011,7 +3011,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginResize(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.ResizeAsync(size, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ResizeAsync(size, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -3128,12 +3128,8 @@ namespace Microsoft.Azure.Storage.File
         {
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            return Executor.BeginExecuteAsync(
-                this.SetMetadataImpl(accessCondition, modifiedOptions),
-                modifiedOptions.RetryPolicy,
-                operationContext,
-                callback,
-                state);
+
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetMetadataAsync(accessCondition, modifiedOptions, operationContext), callback, state);
         }
 
         /// <summary>
@@ -3142,7 +3138,8 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
         public virtual void EndSetMetadata(IAsyncResult asyncResult)
         {
-            Executor.EndExecuteAsync<NullType>(asyncResult);
+            CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
+            ((CancellableAsyncResultTaskWrapper)(asyncResult)).GetAwaiter().GetResult();
         }
 
 #if TASK
@@ -3324,7 +3321,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginWriteRange(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.WriteRangeAsync(rangeData, startOffset, contentMD5, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WriteRangeAsync(rangeData, startOffset, contentMD5, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }        
 
         /// <summary>
@@ -3527,7 +3524,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginClearRange(long startOffset, long length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.ClearRangeAsync(startOffset, length, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ClearRangeAsync(startOffset, length, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -3723,7 +3720,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<string>(token => this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -3758,7 +3755,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(CloudBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<string>(token => this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
         }
 #endif
 
@@ -3994,7 +3991,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginAbortCopy(string copyId, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.AbortCopyAsync(copyId, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.AbortCopyAsync(copyId, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>

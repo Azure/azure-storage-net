@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 using Windows.Storage.Streams;
 #endif
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class MD5FlagsTest : BlobTestBase

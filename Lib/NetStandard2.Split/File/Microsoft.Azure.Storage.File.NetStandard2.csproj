@@ -1,13 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <ProjectGuid>bebf9e2b-d401-4fab-989d-a21c79e8f797</ProjectGuid>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisWindowsDesktop.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\$(Configuration)\Microsoft.WindowsAzure.Storage.xml</DocumentationFile>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <AssemblyName>Microsoft.Azure.Storage.File</AssemblyName>
     <RootNamespace>Microsoft.Azure.Storage.File</RootNamespace>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -23,22 +25,20 @@
     <Optimize>true</Optimize>
     <DefineConstants>WINDOWS_DESKTOP;SYNC;APM;TASK;SIGN</DefineConstants>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0.2-preview" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\ClassLibraryCommon\File\*.cs">
-      <Link>File\File</Link>
-    </Compile>
-    <Compile Include="..\..\ClassLibraryCommon\File\Protocol\*.cs">
-      <Link>File\Protocol\Protocol</Link>
+    <Compile Include="..\..\ClassLibraryCommon\File\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
   <Import Project="..\..\Common.Split\Shared\File.Shared\Microsoft.Azure.Storage.Common.File.projitems" Label="Shared" />
   <ItemGroup>
     <CodeAnalysisDictionary Include="..\..\CustomDictionary.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common.Split\NetStandard2\Microsoft.Azure.Storage.Common.NetStandard2.csproj" />
   </ItemGroup>
 </Project>

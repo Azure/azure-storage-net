@@ -16,10 +16,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Shared.Protocol;
-using Microsoft.Azure.Storage.Core;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Linq;
 using System.Net;
@@ -30,7 +30,7 @@ using System.Xml.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class SASTests : BlobTestBase
@@ -823,8 +823,8 @@ namespace Microsoft.Azure.Storage.Blob
                     Uri blockBlobSASUri = new Uri(blockBlob.Uri + blockBlobSAS.SASToken);
                     StorageUri blockBlobSASStorageUri = new StorageUri(new Uri(blockBlob.StorageUri.PrimaryUri + blockBlobSAS.SASToken), new Uri(blockBlob.StorageUri.SecondaryUri + blockBlobSAS.SASToken));
 
-                    int httpPort = blockBlobSASUri.Port;
                     int securePort = 443;
+                    int httpPort = (blockBlobSASUri.Port == securePort) ? 80 : blockBlobSASUri.Port;
 
                     if (!string.IsNullOrEmpty(TestBase.TargetTenantConfig.BlobSecurePortOverride))
                     {

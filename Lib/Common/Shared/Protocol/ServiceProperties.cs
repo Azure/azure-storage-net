@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Shared.Protocol
+namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -139,6 +139,26 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         internal const string AllowedHeadersName = "AllowedHeaders";
 
         /// <summary>
+        /// Name of the Static Website XML element that groups the static website-related properties.
+        /// </summary>
+        internal const string StaticWebsiteName = "StaticWebsite";
+
+        /// <summary>
+        /// Name of the Enabled XML element under static website properties.
+        /// </summary>
+        internal const string StaticWebsiteEnabledName = "Enabled";
+
+        /// <summary>
+        /// Name of the Index Document XML element under static website properties.
+        /// </summary>
+        internal const string StaticWebsiteIndexDocumentName = "IndexDocument";
+
+        /// <summary>
+        /// Name of the Error Document 404 Path XML element under static website properties.
+        /// </summary>
+        internal const string StaticWebsiteErrorDocument404PathName = "ErrorDocument404Path";
+
+        /// <summary>
         /// The name of the RetainedVersionsPerBlob XML element.
         /// </summary>
         internal const string RetainedVersionsPerBlob = "RetainedVersionsPerBlob";
@@ -154,13 +174,21 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// Initializes a new instance of the ServiceProperties class.
         /// </summary>
         public ServiceProperties(LoggingProperties logging = null, MetricsProperties hourMetrics = null, MetricsProperties minuteMetrics = null, CorsProperties cors = null, DeleteRetentionPolicy deleteRetentionPolicy = null)
+            : this(logging, hourMetrics, minuteMetrics, cors, deleteRetentionPolicy, staticWebsite: null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the ServiceProperties class.
+        /// </summary>
+        public ServiceProperties(LoggingProperties logging, MetricsProperties hourMetrics, MetricsProperties minuteMetrics, CorsProperties cors, DeleteRetentionPolicy deleteRetentionPolicy, StaticWebsiteProperties staticWebsite = null)
         {
             this.Logging = logging;
             this.HourMetrics = hourMetrics;
             this.MinuteMetrics = minuteMetrics;
             this.Cors = cors;
             this.DeleteRetentionPolicy = deleteRetentionPolicy;
-
+            this.StaticWebsite = staticWebsite;
         }
 
         /// <summary>
@@ -224,6 +252,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Gets or sets the Static Website properties
+        /// </summary>
+        /// <value>The Static Website properties</value>
+        public StaticWebsiteProperties StaticWebsite
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Constructs a <c>ServiceProperties</c> object from an XML document received from the service.
         /// </summary>
         /// <param name="servicePropertiesDocument">The XML document.</param>
@@ -237,7 +275,8 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                 HourMetrics = ReadMetricsPropertiesFromXml(servicePropertiesElement.Element(HourMetricsName)),
                 MinuteMetrics = ReadMetricsPropertiesFromXml(servicePropertiesElement.Element(MinuteMetricsName)),
                 Cors = ReadCorsPropertiesFromXml(servicePropertiesElement.Element(CorsName)),
-                DeleteRetentionPolicy = ReadDeleteRetentionPolicyFromXml(servicePropertiesElement.Element(DeleteRetentionPolicyName))
+                DeleteRetentionPolicy = ReadDeleteRetentionPolicyFromXml(servicePropertiesElement.Element(DeleteRetentionPolicyName)),
+                StaticWebsite = ReadStaticWebsitePropertiesFromXml(servicePropertiesElement.Element(StaticWebsiteName))
             };
 
             XElement defaultServiceVersionXml = servicePropertiesElement.Element(DefaultServiceVersionName);
@@ -256,7 +295,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "SetServiceProperties", Justification = "API name is properly spelled")]
         internal XDocument ToServiceXml()
         {
-            if (this.Logging == null && this.HourMetrics == null && this.MinuteMetrics == null && this.Cors == null && this.DeleteRetentionPolicy == null && this.DefaultServiceVersion == null)
+            if (this.Logging == null && this.HourMetrics == null && this.MinuteMetrics == null && this.Cors == null && this.DeleteRetentionPolicy == null && this.DefaultServiceVersion == null && this.StaticWebsite == null)
             {
                 throw new InvalidOperationException(SR.SetServicePropertiesRequiresNonNullSettings);
             }
@@ -287,9 +326,15 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             {
                 storageServiceElement.Add(new XElement(DefaultServiceVersionName, this.DefaultServiceVersion));
             }
+
             if (this.DeleteRetentionPolicy != null)
             {
                 storageServiceElement.Add(GenerateDeleteRetentionPolicyXml(this.DeleteRetentionPolicy));
+            }
+
+            if (this.StaticWebsite != null)
+            {
+                storageServiceElement.Add(GenerateStaticWebsitePropertiesXml(this.StaticWebsite));
             }
 
             return new XDocument(storageServiceElement);
@@ -433,6 +478,33 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         }
 
         /// <summary>
+        /// Generates XML representing the given static website properties.
+        /// </summary>
+        /// <param name="staticWebsiteProperties">The static website properties.</param>
+        /// <returns>An XML element corresponding to the input properties.</returns>
+        private static XElement GenerateStaticWebsitePropertiesXml(StaticWebsiteProperties staticWebsiteProperties)
+        {
+            CommonUtility.AssertNotNull("staticWebsiteProperties", staticWebsiteProperties);
+
+            bool enabled = staticWebsiteProperties.Enabled;
+            XElement xml = new XElement(StaticWebsiteName, new XElement(StaticWebsiteEnabledName, enabled));
+
+            if (!enabled) return xml;
+
+            if (!string.IsNullOrWhiteSpace(staticWebsiteProperties.IndexDocument))
+            {
+                xml.Add(new XElement(StaticWebsiteIndexDocumentName, staticWebsiteProperties.IndexDocument));
+            }
+
+            if (!string.IsNullOrWhiteSpace(staticWebsiteProperties.ErrorDocument404Path))
+            {
+                xml.Add(new XElement(StaticWebsiteErrorDocument404PathName, staticWebsiteProperties.ErrorDocument404Path));
+            }
+
+            return xml;
+        }
+
+        /// <summary>
         /// Constructs a <c>LoggingProperties</c> object from an XML element.
         /// </summary>
         /// <param name="element">The XML element.</param>
@@ -499,6 +571,21 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                 MetricsLevel = state,
                 RetentionDays = ReadRetentionPolicyFromXml(element.Element(RetentionPolicyName))
             };
+        }
+
+        /// <summary>
+        /// Constructs a retention policy (number of days) from an XML element.
+        /// </summary>
+        /// <param name="element">The XML element.</param>
+        /// <returns>The number of days to retain, or <c>null</c> if retention is disabled.</returns>
+        private static int? ReadRetentionPolicyFromXml(XElement element)
+        {
+            if (!bool.Parse(element.Element(EnabledName).Value))
+            {
+                return null;
+            }
+
+            return int.Parse(element.Element(DaysName).Value, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -572,18 +659,30 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         }
 
         /// <summary>
-        /// Constructs a retention policy (number of days) from an XML element.
+        /// Constructs a <c>StaticWebsiteProperties</c> object from an XML element.
         /// </summary>
-        /// <param name="element">The XML element.</param>
-        /// <returns>The number of days to retain, or <c>null</c> if retention is disabled.</returns>
-        private static int? ReadRetentionPolicyFromXml(XElement element)
+        /// <param name="element">the XML element</param>
+        /// <returns>A <c>StaticWebsiteProperties</c> object containing the properties in the element</returns>
+        internal static StaticWebsiteProperties ReadStaticWebsitePropertiesFromXml(XElement element)
         {
-            if (!bool.Parse(element.Element(EnabledName).Value))
+            if (element == null)
             {
                 return null;
             }
 
-            return int.Parse(element.Element(DaysName).Value, CultureInfo.InvariantCulture);
+            var enabledElement = element.Element(StaticWebsiteEnabledName);
+            var enabled = (enabledElement != null) ? bool.Parse(enabledElement.Value) : false;
+
+            var indexDocumentElement = element.Element(StaticWebsiteIndexDocumentName);
+            var errorDocumentElement = element.Element(StaticWebsiteErrorDocument404PathName);
+
+            return
+                new StaticWebsiteProperties
+                {
+                    Enabled = enabled,
+                    IndexDocument = (enabled && indexDocumentElement != null) ? indexDocumentElement.Value : default(string),
+                    ErrorDocument404Path = (enabled && errorDocumentElement != null) ? errorDocumentElement.Value : default(string)
+                };
         }
 
         /// <summary>

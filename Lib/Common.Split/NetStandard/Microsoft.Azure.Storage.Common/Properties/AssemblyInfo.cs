@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Microsoft Azure Storage")]
-[assembly: AssemblyCopyright("Copyright © 2014 Microsoft Corp.")]
+[assembly: AssemblyCopyright("Copyright © 2018 Microsoft Corp.")]
 [assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
 [assembly: AssemblyCulture("")]
 
@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyVersion("9.4.0.0")]
 [assembly: AssemblyFileVersion("9.4.0.0")]
-[assembly: AssemblyInformationalVersion("9.4.0.0-preview")]
+[assembly: AssemblyInformationalVersion("9.4.0.0")]
 
 #if SIGN
 [assembly: InternalsVisibleTo(

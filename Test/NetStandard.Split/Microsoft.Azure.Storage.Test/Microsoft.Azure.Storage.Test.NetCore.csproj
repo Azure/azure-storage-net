@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <VersionPrefix>9.4.0-preview</VersionPrefix>
+    <VersionPrefix>9.4.0</VersionPrefix>
     <TargetFramework>netcoreapp1.0</TargetFramework>
     <DefineConstants>$(DefineConstants);NETCORE;XUNIT</DefineConstants>
     <DelaySign>true</DelaySign>
@@ -19,14 +19,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\Common\*.cs;..\..\Common\Blob\*.cs;..\..\Common\Core\*.cs;..\..\Common\File\*.cs;..\..\Common\Queue\*.cs;..\..\Common\TestConfigProcess\**\*.cs;..\..\WindowsRuntime\Core\**\*.cs;..\..\WindowsRuntime\Blob\**\*.cs;..\..\WindowsRuntime\Queue\**\*.cs;..\..\WindowsRuntime\File\**\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+    <Compile Include="..\..\Common\**\*.cs;..\..\WindowsRuntime\Core\**\*.cs;..\..\WindowsRuntime\Blob\**\*.cs;..\..\WindowsRuntime\Queue\**\*.cs;..\..\WindowsRuntime\File\**\*.cs" Exclude="..\..\WindowsRuntime\Properties\**">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TestBase.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\Common\TestConfigurations.xml" Link="TestConfigurations.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Storage.Common" Version="9.4.0.2-preview" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.0.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.console" Version="2.3.1" />
@@ -35,6 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Lib\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Blob\Microsoft.Azure.Storage.Blob.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.File\Microsoft.Azure.Storage.File.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Queue\Microsoft.Azure.Storage.Queue.NetStandard.csproj" />

@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Table
+namespace Microsoft.WindowsAzure.Storage.Table
 {
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Table.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Table.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -126,6 +126,10 @@ namespace Microsoft.Azure.Storage.Table
             return this;
         }
 
+        /// <summary>
+        /// Creates a new copy of the <see cref="TableQuery"/> instance.
+        /// </summary>
+        /// <returns>A <see cref="TableQuery"/> instance.</returns>
         public TableQuery<TElement> Copy()
         {
             TableQuery<TElement> copy = new TableQuery<TElement>();

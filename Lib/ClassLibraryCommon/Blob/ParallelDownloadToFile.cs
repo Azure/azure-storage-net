@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
 #if !WINDOWS_PHONE && !WINDOWS_RT && !WINDOWS_PHONE_RT
     using System;
@@ -27,9 +27,9 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Threading;
     using System.Threading.Tasks;
     using System.Runtime.CompilerServices;
-    using Microsoft.Azure.Storage.Shared.Protocol;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core;
     using System.Globalization;
 
     /// <summary>
@@ -62,12 +62,19 @@ namespace Microsoft.Azure.Storage.Blob
         private OperationContext operationContext;
         private AccessCondition accessCondition;
 
-        private ParallelDownloadToFile(CloudBlob blob, string filePath, long offset, long? length, CancellationToken cancellationToken)
+        private int MaxIdleTimeInMs
+        {
+            get;
+            set;
+        }
+
+        private ParallelDownloadToFile(CloudBlob blob, string filePath, long offset, long? length, int maxIdleTimeInMs, CancellationToken cancellationToken)
         {
             this.FilePath = filePath;
             this.Blob = blob;
             this.Offset = offset;
             this.Length = length;
+            this.MaxIdleTimeInMs = maxIdleTimeInMs;
             this.cancellationToken = cancellationToken;
         }
 
@@ -87,9 +94,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="ParallelDownloadToFile"/> object which contains a task that can be awaited for completion.</returns>
-        public static ParallelDownloadToFile Start(CloudBlob blob, string filePath, FileMode fileMode, int parallelIOCount, long? rangeSizeInBytes, long offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public static ParallelDownloadToFile Start(CloudBlob blob, string filePath, FileMode fileMode, int parallelIOCount, long? rangeSizeInBytes, long offset, long? length, int maxIdleTimeInMs, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            ParallelDownloadToFile parallelDownload = new ParallelDownloadToFile(blob, filePath, offset, length, cancellationToken);
+            ParallelDownloadToFile parallelDownload = new ParallelDownloadToFile(blob, filePath, offset, length, maxIdleTimeInMs, cancellationToken);
 
             parallelDownload.operationContext = operationContext;
             parallelDownload.blobRequestOptions = options;
@@ -216,6 +223,7 @@ namespace Microsoft.Azure.Storage.Blob
         private async Task DownloadToStreamWrapperAsync(MemoryMappedViewStream viewStream, long blobOffset, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             long startingOffset = blobOffset;
+            long startingLength = length;
             ParallelDownloadStream largeDownloadStream = null;
             try
             {
@@ -224,7 +232,7 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     try
                     {
-                        largeDownloadStream = new ParallelDownloadStream(viewStream);
+                        largeDownloadStream = new ParallelDownloadStream(viewStream, this.MaxIdleTimeInMs);
                         using (CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(largeDownloadStream.HangingCancellationToken, cancellationToken))
                         {
                             await this.Blob.DownloadRangeToStreamAsync(
@@ -245,7 +253,7 @@ namespace Microsoft.Azure.Storage.Blob
                         if (!cancellationToken.IsCancellationRequested)
                         {
                             blobOffset = startingOffset + largeDownloadStream.Position;
-                            length -= (blobOffset - startingOffset);
+                            length = startingLength - largeDownloadStream.Position;
                             if (length == 0)
                             {
                                 break;

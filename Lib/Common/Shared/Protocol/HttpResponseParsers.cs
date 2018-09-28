@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Shared.Protocol
+namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -166,7 +166,10 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 
         internal static string GetHeader(HttpResponseMessage response, string headerName)
         {
-            return response.Content.Headers.Contains(headerName) ? response.Content.Headers.GetValues(headerName).First() : null;
+            return 
+                response.Content.Headers.Contains(headerName) ? response.Content.Headers.GetValues(headerName).First()
+                : response.Headers.Contains(headerName) ? response.Headers.GetValues(headerName).First()
+                : null;
         }
 
         internal static List<string> GetAllHeaders(HttpResponseMessage response)

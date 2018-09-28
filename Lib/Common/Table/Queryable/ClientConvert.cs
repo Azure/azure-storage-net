@@ -15,11 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Table.Queryable
+namespace Microsoft.WindowsAzure.Storage.Table.Queryable
 {
     #region Namespaces.
     
-    using Microsoft.Azure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -200,7 +200,7 @@ namespace Microsoft.Azure.Storage.Table.Queryable
             // Debug.Assert(IsBinaryValue(binaryValue), "IsBinaryValue(binaryValue) - otherwise TryKeyBinaryToString shouldn't have been called.");
             const System.Reflection.BindingFlags Flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.InvokeMethod;
             byte[] bytes = (byte[])binaryValue.GetType().InvokeMember("ToArray", Flags, null, binaryValue, null, null /* ParamModifiers */, System.Globalization.CultureInfo.InvariantCulture, null /* NamedParams */);
-            return Microsoft.Azure.Storage.Table.Queryable.WebConvert.TryKeyPrimitiveToString(bytes, out result);
+            return Microsoft.WindowsAzure.Storage.Table.Queryable.WebConvert.TryKeyPrimitiveToString(bytes, out result);
         }
 #endif
 
@@ -223,7 +223,7 @@ namespace Microsoft.Azure.Storage.Table.Queryable
                 value = ((DateTimeOffset?)value).Value.UtcDateTime;
             }
 
-            return Microsoft.Azure.Storage.Table.Queryable.WebConvert.TryKeyPrimitiveToString(value, out result);
+            return Microsoft.WindowsAzure.Storage.Table.Queryable.WebConvert.TryKeyPrimitiveToString(value, out result);
         }
 
         internal static bool ToNamedType(string typeName, out Type type)

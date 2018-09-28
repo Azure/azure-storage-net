@@ -15,13 +15,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.Storage.Blob.Protocol;
-    using Microsoft.Azure.Storage.Core;
-    using Microsoft.Azure.Storage.Core.Executor;
-    using Microsoft.Azure.Storage.Core.Util;
-    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.WindowsAzure.Storage.Core.Executor;
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         internal virtual ICancellableAsyncResult BeginOpenWrite(long? size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudBlobStream>(token => this.OpenWriteAsync(size, premiumPageBlobTier, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.OpenWriteAsync(size, premiumPageBlobTier, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -470,7 +470,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, null /* premiumPageBlobTier */, null /* accessCondition */, null /* options */, null /* operationContext */, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, null /* premiumPageBlobTier */, null /* accessCondition */, null /* options */, null /* operationContext */, token), callback, state);
         }
 
         /// <summary>
@@ -486,7 +486,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, null /*premiumPageBlobTier*/, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, null /*premiumPageBlobTier*/, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
         }
 
         /// <summary>
@@ -503,7 +503,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, premiumPageBlobTier, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, premiumPageBlobTier, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
         }
 
         /// <summary>
@@ -521,7 +521,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromStream(Stream source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -535,7 +535,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, length, null /*premiumPageBlobTier*/, null /* accessCondition */, null /* options */, null /* operationContext */, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, length, null /*premiumPageBlobTier*/, null /* accessCondition */, null /* options */, null /* operationContext */, token), callback, state);
         }
 
         /// <summary>
@@ -552,7 +552,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, length, null /*premiumPageBlobTier*/, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, length, null /*premiumPageBlobTier*/, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -570,7 +570,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, length, premiumPageBlobTier, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, length, premiumPageBlobTier, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -578,7 +578,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="source">A <see cref="System.IO.Stream"/> object providing the blob content.</param>
         /// <param name="length">Specifies the number of bytes from the Stream source to upload from the start position.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -589,7 +589,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromStream(Stream source, long length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromStreamAsync(source, length, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromStreamAsync(source, length, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -922,7 +922,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromFile(string path, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromFileAsync(path, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromFileAsync(path, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
 
@@ -1008,7 +1008,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// Initiates an asynchronous operation to upload a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
         /// <param name="path">A string containing the file path providing the blob content.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1077,7 +1077,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, null /*premiumPageBlobTier*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, null /*premiumPageBlobTier*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, token), callback, state);
         }
 
         /// <summary>
@@ -1095,7 +1095,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, null /*premiumPageBlobTier*/, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, null /*premiumPageBlobTier*/, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
         }
 
         /// <summary>
@@ -1114,7 +1114,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, null /*progressHandler*/, token), callback, state);
         }
 
         /// <summary>
@@ -1134,7 +1134,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginUploadFromByteArray(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.UploadFromByteArrayAsync(buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.UploadFromByteArrayAsync(buffer, index, count, premiumPageBlobTier, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
         /// <summary>
@@ -1332,7 +1332,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreate(long size, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.CreateAsync(size, premiumPageBlobTier, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateAsync(size, premiumPageBlobTier, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1471,7 +1471,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginResize(long size, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.ResizeAsync(size, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ResizeAsync(size, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1592,7 +1592,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetSequenceNumber(SequenceNumberAction sequenceNumberAction, long? sequenceNumber, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetSequenceNumberAsync(sequenceNumberAction, sequenceNumber, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetSequenceNumberAsync(sequenceNumberAction, sequenceNumber, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1715,7 +1715,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetPageRanges(long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<IEnumerable<PageRange>>(token => this.GetPageRangesAsync(offset, length, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetPageRangesAsync(offset, length, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1837,7 +1837,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginGetPageRangesDiff(DateTimeOffset previousSnapshotTime, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<IEnumerable<PageDiffRange>>(token => this.GetPageRangesDiffAsync(previousSnapshotTime, offset, length, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.GetPageRangesDiffAsync(previousSnapshotTime, offset, length, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -1959,7 +1959,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginCreateSnapshot(IDictionary<string, string> metadata, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<CloudPageBlob>(token => this.CreateSnapshotAsync(metadata, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.CreateSnapshotAsync(metadata, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2174,7 +2174,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         private ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
               /// <summary>
@@ -2394,7 +2394,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginClearPages(long startOffset, long length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.ClearPagesAsync(startOffset, length, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.ClearPagesAsync(startOffset, length, accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2547,7 +2547,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, true /* incrementalCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2646,7 +2646,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartIncrementalCopy(Uri sourceSnapshot, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper<string>(token => this.StartIncrementalCopyAsync(sourceSnapshot, destAccessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.StartIncrementalCopyAsync(sourceSnapshot, destAccessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2799,7 +2799,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, true /* incrementalCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -2850,7 +2850,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetPremiumBlobTier(PremiumPageBlobTier premiumPageBlobTier, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return new CancellableAsyncResultTaskWrapper(token => this.SetPremiumBlobTierAsync(premiumPageBlobTier, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetPremiumBlobTierAsync(premiumPageBlobTier, options, operationContext, token), callback, state);
         }
 
         /// <summary>

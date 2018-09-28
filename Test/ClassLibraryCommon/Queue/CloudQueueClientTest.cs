@@ -16,9 +16,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage.Core.Util;
-using Microsoft.Azure.Storage.Queue.Protocol;
-using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,7 +30,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Microsoft.Azure.Storage.Queue
+namespace Microsoft.WindowsAzure.Storage.Queue
 {
     /// <summary>
     /// Summary description for CloudQueueClientTest
@@ -82,6 +83,23 @@ namespace Microsoft.Azure.Storage.Queue
         public void CloudQueueClientConstructorInvalidParam()
         {
             TestHelper.ExpectedException<ArgumentNullException>(() => new CloudQueueClient((Uri)null, TestBase.StorageCredentials), "Pass null into CloudQueueClient");
+        }
+
+        [TestMethod]
+        [Description("Create a service client with token")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueClientWithToken()
+        {
+            TokenCredential token = new TokenCredential(TestBase.GenerateOAuthToken());
+            StorageCredentials credentials = new StorageCredentials(token);
+            Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint);
+
+            CloudQueueClient client = new CloudQueueClient(baseAddressUri, credentials);
+            CloudQueue queue = client.GetQueueReference("queue");
+            queue.Exists();
         }
 
         [TestMethod]

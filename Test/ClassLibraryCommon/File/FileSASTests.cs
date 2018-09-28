@@ -15,10 +15,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Auth;
-using Microsoft.Azure.Storage.Shared.Protocol;
-using Microsoft.Azure.Storage.Core;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Core;
 using System;
 using System.Linq;
 using System.Net;
@@ -27,7 +27,7 @@ using System.Threading;
 using System.Xml.Linq;
 using System.IO;
 
-namespace Microsoft.Azure.Storage.File
+namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class FileSASTests : FileTestBase
@@ -504,8 +504,8 @@ namespace Microsoft.Azure.Storage.File
                     Uri fileSASUri = new Uri(fileWithKey.Uri + fileSAS.SASToken);
                     StorageUri fileSASStorageUri = new StorageUri(new Uri(fileWithKey.StorageUri.PrimaryUri + fileSAS.SASToken), new Uri(fileWithKey.StorageUri.SecondaryUri + fileSAS.SASToken));
 
-                    int httpPort = fileSASUri.Port;
                     int securePort = 443;
+                    int httpPort = (fileSASUri.Port == securePort) ? 80 : fileSASUri.Port;
 
                     if (!string.IsNullOrEmpty(TestBase.TargetTenantConfig.FileSecurePortOverride))
                     {

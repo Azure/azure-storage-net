@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.Azure.Storage.Shared.Protocol;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +24,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.WindowsAzure.Storage.Core.Util;
 using System.Threading;
 
 #if NETCORE
@@ -35,7 +35,7 @@ using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 #endif
 
-namespace Microsoft.Azure.Storage.Blob
+namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlockBlobTest : BlobTestBase
@@ -1479,6 +1479,76 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobPutBlockViaCopyAsync()
+        {
+            byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                BlobContainerPermissions permissions = await container.GetPermissionsAsync();
+
+                permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+
+                await container.SetPermissionsAsync(permissions);
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+
+                List<string> blockList = GetBlockIdList(2);
+
+                using (MemoryStream resultingData = new MemoryStream())
+                {
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        await blob.PutBlockAsync(blockList[0], memoryStream, null);
+                        resultingData.Write(buffer, 0, buffer.Length);
+
+                        int offset = buffer.Length - 1024;
+                        memoryStream.Seek(offset, SeekOrigin.Begin);
+                        await blob.PutBlockAsync(blockList[1], memoryStream, null);
+                        resultingData.Write(buffer, offset, buffer.Length - offset);
+                    }
+
+                    await blob.PutBlockListAsync(blockList);
+
+                    CloudBlockBlob destBlob = container.GetBlockBlobReference("blob2");
+                    List<string> destBlockList = GetBlockIdList(2);
+                    await destBlob.PutBlockAsync(destBlockList[0], blob.Uri, 50, 100, null);
+                    await destBlob.PutBlockAsync(destBlockList[1], blob.Uri, 500, 100, null);
+
+                    await destBlob.PutBlockListAsync(destBlockList);
+
+                    using (MemoryStream blobData = new MemoryStream())
+                    {
+                        await destBlob.DownloadToStreamAsync(blobData);
+                        Assert.AreEqual(200, blobData.Length);
+
+                        var expectedData = resultingData.ToArray();
+                        expectedData =
+                            expectedData
+                            .Skip(50).Take(100)
+                            .Concat(expectedData.Skip(500).Take(100))
+                            .ToArray();
+
+                        Assert.IsTrue(blobData.ToArray().SequenceEqual(expectedData), "downloaded data doesn't match expected data");
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload blocks and then verify the contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlockBlobPutBlockAsync()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
@@ -1950,6 +2020,37 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("GetAccountProperties via Block Blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlockBlobGetAccountProperties()
+        {
+            CloudBlobContainer blobContainerWithSAS = GenerateRandomWriteOnlyBlobContainer();
+            try
+            {
+                await blobContainerWithSAS.CreateAsync();
+
+                var blob = blobContainerWithSAS.GetBlockBlobReference("test");
+
+                var result = await blob.GetAccountPropertiesAsync();
+
+                await blob.DeleteIfExistsAsync();
+
+                Assert.IsNotNull(result);
+
+                Assert.IsNotNull(result.SkuName);
+
+                Assert.IsNotNull(result.AccountKind);
+            }
+            finally
+            {
+                blobContainerWithSAS.DeleteIfExistsAsync().Wait();
             }
         }
     }
