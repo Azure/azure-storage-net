@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 return Task.FromResult(readCount);
             }
 
-            return this.DispatchReadASync(buffer, offset, count);
+            return this.DispatchReadAsync(buffer, offset, count, cancellationToken);
         }
 
         /// <summary>
@@ -126,8 +126,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// <param name="offset">The byte offset in buffer at which to begin writing
         /// data read from the stream.</param>
         /// <param name="count">The maximum number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>Number of bytes read from the stream.</returns>
-        private async Task<int> DispatchReadASync(byte[] buffer, int offset, int count)
+        private async Task<int> DispatchReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             try
             {
@@ -138,7 +139,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                     this.GetReadSize(),
                     null /* accessCondition */,
                     this.options,
-                    this.operationContext).ConfigureAwait(false);
+                    this.operationContext,
+                    cancellationToken).ConfigureAwait(false);
 
                 if (!this.file.Properties.ETag.Equals(this.accessCondition.IfMatchETag, StringComparison.Ordinal))
                 {
