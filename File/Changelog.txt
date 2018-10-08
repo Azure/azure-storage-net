@@ -3,6 +3,7 @@ Changes in 9.4.0:
 - Feature parity with the 9.3.2 release of the non-split library.
 - Removed support for PCL and NetStandard 1.0.
 - Moving back to using Microsoft.WindowsAzure.Storage instead of Microsoft.Azure.Storage.  This is a temporary change to ease the transition for existing libraries.  The namespace will change back at a future time.
+- Fixed issue where FileReadStream.ReadAsync didn't appropriately use the passed in CancellationToken.
 
 Changes in 9.4.0-preview:
 
