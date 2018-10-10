@@ -14,6 +14,7 @@ Changes in 9.4.0-preview:
 - All: Updated Get*BlobReference APIs to inherit the existing ServiceClient instance.
 - All: Removed the un-necessary stream wrapping when progress tracking is not requested.
 - Blob(RT/NetCore): Removed Task.Run from CloudBlob Undelete API.
+- Fixed issue where CloudBlob.StartCopyImpl didn't appropriately use the passed in CancellationToken.
 
 Changes in 9.0.0-preview:
 - All: Support for 2017-07-29 REST version. Please see our REST API documentation and blogs for information about the related added features. If you are using the Storage Emulator, please update to Emulator version 5.3.
