@@ -3882,23 +3882,23 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return putCmd;
         }
 
-    /// <summary>
-    /// Implementation of the StartCopy method. Result is a BlobAttributes object derived from the response headers.
-    /// </summary>
-    /// <param name="blobAttributes">The attributes.</param>
-    /// <param name="source">The URI of the source blob.</param>
-    /// <param name="sourceContentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
-    /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
-    /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
-    /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-    /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
-    /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-    /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-    /// <returns>
-    /// A <see cref="RESTCommand{T}"/> that starts to copy.
-    /// </returns>
-    /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-    internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        /// <summary>
+        /// Implementation of the StartCopy method. Result is a BlobAttributes object derived from the response headers.
+        /// </summary>
+        /// <param name="attributes">The attributes.</param>
+        /// <param name="source">The URI of the source blob.</param>
+        /// <param name="sourceContentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>
+        /// A <see cref="RESTCommand{T}"/> that starts to copy.
+        /// </returns>
+        /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
     {
         if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
         {
