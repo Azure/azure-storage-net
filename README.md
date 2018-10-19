@@ -51,7 +51,7 @@ For the best development experience, developers should use the official Microsof
 
 ## Download & Install
 
-The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `Azure.Storage` package. 
+The Storage Client Library ships with the Microsoft Azure SDK for .NET and also on NuGet. You'll find the latest version and hotfixes on NuGet via the `WindowsAzure.Storage` package. 
 
 This version of the Storage Client Library ships with the storage version 2018-03-28.
 
