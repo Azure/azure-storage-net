@@ -379,12 +379,24 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 file.Metadata["key1"] = "value1";
+                file.Properties.CacheControl = "no-transform";
+                file.Properties.ContentDisposition = "attachment";
+                file.Properties.ContentEncoding = "gzip";
+                file.Properties.ContentLanguage = "tr,en";
+                file.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                file.Properties.ContentType = "text/html";
                 await file.CreateAsync(1024);
 
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
                 await file2.FetchAttributesAsync();
                 Assert.AreEqual(1, file2.Metadata.Count);
                 Assert.AreEqual("value1", file2.Metadata["key1"]);
+                Assert.AreEqual("no-transform", file2.Properties.CacheControl);
+                Assert.AreEqual("attachment", file2.Properties.ContentDisposition);
+                Assert.AreEqual("gzip", file2.Properties.ContentEncoding);
+                Assert.AreEqual("tr,en", file2.Properties.ContentLanguage);
+                Assert.AreEqual("MDAwMDAwMDA=", file2.Properties.ContentMD5);
+                Assert.AreEqual("text/html", file2.Properties.ContentType);
             }
             finally
             {

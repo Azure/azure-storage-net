@@ -79,30 +79,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             if (properties.CacheControl != null)
             {
-                request.Headers.CacheControl = CacheControlHeaderValue.Parse(properties.CacheControl);
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobCacheControlHeader, properties.CacheControl);
             }
 
-            if (content != null)
+            if (properties.ContentType != null)
             {
-                if (properties.ContentType != null)
-                {
-                    content.Headers.ContentType = MediaTypeHeaderValue.Parse(properties.ContentType);
-                }
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentTypeHeader, properties.ContentType);
+            }
 
-                if (properties.ContentMD5 != null)
-                {
-                    content.Headers.ContentMD5 = Convert.FromBase64String(properties.ContentMD5);
-                }
+            if (properties.ContentMD5 != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentMD5Header, properties.ContentMD5);
+            }
 
-                if (properties.ContentLanguage != null)
-                {
-                    content.Headers.ContentLanguage.Add(properties.ContentLanguage);
-                }
+            if (properties.ContentLanguage != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentLanguageHeader, properties.ContentLanguage);
+            }
 
-                if (properties.ContentEncoding != null)
-                {
-                    content.Headers.ContentEncoding.Add(properties.ContentEncoding);
-                }
+            if (properties.ContentEncoding != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentEncodingHeader, properties.ContentEncoding);
             }
 
             if (properties.ContentDisposition != null)
