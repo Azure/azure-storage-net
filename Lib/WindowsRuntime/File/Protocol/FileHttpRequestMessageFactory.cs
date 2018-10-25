@@ -46,35 +46,32 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
 
             if (properties.CacheControl != null)
             {
-                request.Headers.CacheControl = CacheControlHeaderValue.Parse(properties.CacheControl);
+                request.AddOptionalHeader(Constants.HeaderConstants.FileCacheControlHeader, properties.CacheControl);
+            }
+            
+            if (properties.ContentType != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileContentTypeHeader, properties.ContentType);
             }
 
-            if (content != null)
+            if (properties.ContentMD5 != null)
             {
-                if (properties.ContentType != null)
-                {
-                    content.Headers.ContentType = MediaTypeHeaderValue.Parse(properties.ContentType);
-                }
+                request.AddOptionalHeader(Constants.HeaderConstants.FileContentMD5Header, properties.ContentMD5);
+            }
 
-                if (properties.ContentMD5 != null)
-                {
-                    content.Headers.ContentMD5 = Convert.FromBase64String(properties.ContentMD5);
-                }
+            if (properties.ContentLanguage != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileContentLanguageHeader, properties.ContentLanguage);
+            }
 
-                if (properties.ContentLanguage != null)
-                {
-                    content.Headers.ContentLanguage.Add(properties.ContentLanguage);
-                }
+            if (properties.ContentEncoding != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileContentEncodingHeader, properties.ContentEncoding);
+            }
 
-                if (properties.ContentEncoding != null)
-                {
-                    content.Headers.ContentEncoding.Add(properties.ContentEncoding);
-                }
-
-                if (properties.ContentDisposition != null)
-                {
-                    content.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse(properties.ContentDisposition);
-                }
+            if (properties.ContentDisposition != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileContentDispositionRequestHeader, properties.ContentDisposition);
             }
 
             request.Headers.Add(Constants.HeaderConstants.FileType, Constants.HeaderConstants.File);

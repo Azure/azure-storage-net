@@ -509,12 +509,25 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 blob.Metadata["key1"] = "value1";
+                blob.Properties.CacheControl = "no-transform";
+                blob.Properties.ContentDisposition = "attachment";
+                blob.Properties.ContentEncoding = "gzip";
+                blob.Properties.ContentLanguage = "tr,en";
+                blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                blob.Properties.ContentType = "text/html";
                 await blob.CreateAsync(1024);
 
                 CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual("value1", blob2.Metadata["key1"]);
+                Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
+                Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
+                Assert.AreEqual("gzip", blob2.Properties.ContentEncoding);
+                Assert.AreEqual("tr,en", blob2.Properties.ContentLanguage);
+                Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
+                Assert.AreEqual("text/html", blob2.Properties.ContentType);
+
             }
             finally
             {

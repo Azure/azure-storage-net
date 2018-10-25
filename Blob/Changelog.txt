@@ -1,3 +1,6 @@
+Changes in ...:
+- Fix bug where certain content headers were not being sent to the server.
+
 Changes in 9.4.0:
 
 - Feature parity with the 9.3.2 release of the non-split library.
