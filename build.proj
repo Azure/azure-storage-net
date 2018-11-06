@@ -4,13 +4,23 @@
   DefaultTargets="Clean;BuildDebug;BuildReleaseSigned">
   
   <ItemGroup>
-    <StorageSln Include=".\Lib\WindowsDesktop\Microsoft.WindowsAzure.Storage.csproj" />
-    <StorageSln Include=".\Lib\WindowsRuntime\Microsoft.WindowsAzure.Storage.csproj" />
-    <StorageSln Include=".\Lib\WindowsRuntimeTable\Microsoft.WindowsAzure.Storage.Table.csproj" />
-    <StorageSln Include=".\Lib\WindowsPhone\Microsoft.WindowsAzure.Storage.csproj" />
-    <StorageSln Include=".\Lib\WindowsPhoneRT\Microsoft.WindowsAzure.Storage.csproj" />
+    <StorageSln Include=".\Lib\Common.Split\NetFx\Microsoft.Azure.Storage.Common.NetFx.csproj" />
+    <StorageSln Include=".\Lib\Common.Split\NetStandard\Microsoft.Azure.Storage.Common.NetStandard.csproj" />
+    <StorageSln Include=".\Lib\Common.Split\NetStandard2\Microsoft.Azure.Storage.Common.NetStandard2.csproj" />
+
+    <StorageSln Include=".\Lib\NetStandard.Split\Microsoft.Azure.Storage.Blob\Microsoft.Azure.Storage.Blob.NetStandard.csproj" />
+    <StorageSln Include=".\Lib\NetStandard.Split\Microsoft.Azure.Storage.File\Microsoft.Azure.Storage.File.NetStandard.csproj" />
+    <StorageSln Include=".\Lib\NetStandard.Split\Microsoft.Azure.Storage.Queue\Microsoft.Azure.Storage.Queue.NetStandard.csproj" />
+
+    <StorageSln Include=".\Lib\NetStandard2.Split\Blob\Microsoft.Azure.Storage.Blob.NetStandard2.csproj" />
+    <StorageSln Include=".\Lib\NetStandard2.Split\File\Microsoft.Azure.Storage.File.NetStandard2.csproj" />
+    <StorageSln Include=".\Lib\NetStandard2.Split\Queue\Microsoft.Azure.Storage.Queue.NetStandard2.csproj" />
+
+    <StorageSln Include=".\Lib\WindowsDesktop.Split\Blob\Microsoft.Azure.Storage.Blob.NetFx.csproj" />
+    <StorageSln Include=".\Lib\WindowsDesktop.Split\File\Microsoft.Azure.Storage.File.NetFx.csproj" />
+    <StorageSln Include=".\Lib\WindowsDesktop.Split\Queue\Microsoft.Azure.Storage.Queue.NetFx.csproj" />
   </ItemGroup>
-  
+
   <!-- Clean the build in all configurations -->
   <Target Name="Clean">
     <!-- Clean the solutions -->
