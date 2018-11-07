@@ -101,6 +101,42 @@ namespace Microsoft.WindowsAzure.Storage.File
         }
 
         [TestMethod]
+        [Description("Download a file, with progress")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileDownloadToStreamTestAsyncWithNullProgress()
+        {
+            byte[] uploadBuffer = GetRandomBuffer(20 * 1024 * 1024);
+
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                using (MemoryStream srcStream = new MemoryStream(uploadBuffer))
+                {
+                    await file.UploadFromStreamAsync(srcStream);
+                }
+
+                using (MemoryStream targetStream = new MemoryStream())
+                {
+                    CancellationToken cancellationToken = new CancellationToken();
+
+                    await file.DownloadToStreamAsync(targetStream, null, null, null, default(IProgress<StorageProgress>), cancellationToken);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
         [Description("Download a specific range of the file to a stream")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -178,6 +214,36 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
+        [TestMethod]
+        [Description("Upload a stream to a file, with progress")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task FileUploadFromStreamTestAsyncWithNullProgress()
+        {
+            byte[] buffer = GetRandomBuffer(20 * 1024 * 1024);
+
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                using (MemoryStream srcStream = new MemoryStream(buffer))
+                {
+                    CancellationToken cancellationToken = new CancellationToken();
+
+                    await file.UploadFromStreamAsync(srcStream, null, null, null, default(IProgress<StorageProgress>), cancellationToken);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
 
         [TestMethod]
         [Description("Upload a stream to a file")]

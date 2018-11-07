@@ -128,6 +128,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Upload a stream to a block blob, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobUploadFromStreamTestAsyncWithNullProgress()
+        {
+            await DoBlobUploadFromStreamTestAsyncWithNullProgress(
+               () => this.testContainer.GetBlockBlobReference("blob1"),
+               (blob, stream, progressHandler, cancellationToken) =>
+                   blob.UploadFromStreamAsync(stream, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken)
+                   );
+        }
+
+        [TestMethod]
         [Description("Upload a stream to a page blob, with progress")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -144,6 +159,22 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Upload a stream to a page blob, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobUploadFromStreamTestAsyncWithNullProgress()
+        {
+            await DoBlobUploadFromStreamTestAsyncWithNullProgress(
+               () => this.testContainer.GetPageBlobReference("blob1"),
+               (blob, stream, progressHandler, cancellationToken) =>
+                   blob.UploadFromStreamAsync(stream, null, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), progressHandler, cancellationToken),
+               5000
+                   );
+        }
+
+        [TestMethod]
         [Description("Upload a stream to an append blob, with progress")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -152,6 +183,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task AppendBlobUploadFromStreamTestAsyncWithProgress()
         {
             await DoBlobUploadFromStreamTestAsyncWithProgress(
+               () => this.testContainer.GetAppendBlobReference("blob1"),
+               (blob, stream, progressHandler, cancellationToken) =>
+                   blob.UploadFromStreamAsync(stream, null, null, null, progressHandler, cancellationToken)
+                   );
+        }
+
+        [TestMethod]
+        [Description("Upload a stream to an append blob, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobUploadFromStreamTestAsyncWithNullProgress()
+        {
+            await DoBlobUploadFromStreamTestAsyncWithNullProgress(
                () => this.testContainer.GetAppendBlobReference("blob1"),
                (blob, stream, progressHandler, cancellationToken) =>
                    blob.UploadFromStreamAsync(stream, null, null, null, progressHandler, cancellationToken)
@@ -188,6 +234,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        private static async Task DoBlobUploadFromStreamTestAsyncWithNullProgress<T>(
+            Func<T> blobFactory,
+            Func<T, Stream, IProgress<StorageProgress>, CancellationToken, Task> uploadTask,
+            int delay = 0
+            )
+            where T : ICloudBlob
+        {
+            byte[] buffer = GetRandomBuffer(2 * 1024 * 1024);
+
+            T blob = blobFactory();
+
+            using (MemoryStream srcStream = new MemoryStream(buffer))
+            {
+                CancellationToken cancellationToken = new CancellationToken();
+
+                await uploadTask(blob, srcStream, default(IProgress<StorageProgress>), cancellationToken);
+
+                await Task.Delay(delay);
+            }
+        }
+
         [TestMethod]
         [Description("Download a block blob to a stream, with progress")]
         [TestCategory(ComponentCategory.Blob)]
@@ -197,6 +264,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task BlockBlobDownloadToStreamTestAsyncWithProgress()
         {
             await DoBlobDownloadToStreamTestAsyncWithProgress(
+                () => this.testContainer.GetBlockBlobReference("blob1"),
+                (blob, targetStream, progressHandler, cancellationToken) =>
+                    blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
+                    );
+        }
+
+        [TestMethod]
+        [Description("Download a block blob to a stream, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobDownloadToStreamTestAsyncWithNullProgress()
+        {
+            await DoBlobDownloadToStreamTestAsyncWithNullProgress(
                 () => this.testContainer.GetBlockBlobReference("blob1"),
                 (blob, targetStream, progressHandler, cancellationToken) =>
                     blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
@@ -219,6 +301,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Download a page blob to a stream, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobDownloadToStreamTestAsyncWithNullProgress()
+        {
+            await DoBlobDownloadToStreamTestAsyncWithNullProgress(
+                () => this.testContainer.GetPageBlobReference("blob1"),
+                (blob, targetStream, progressHandler, cancellationToken) =>
+                    blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
+                    );
+        }
+
+        [TestMethod]
         [Description("Download an append blob to a stream, with progress")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -227,6 +324,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task AppendBlobDownloadToStreamTestAsyncWithProgress()
         {
             await DoBlobDownloadToStreamTestAsyncWithProgress(
+                () => this.testContainer.GetAppendBlobReference("blob1"),
+                (blob, targetStream, progressHandler, cancellationToken) =>
+                    blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
+                    );
+        }
+
+        [TestMethod]
+        [Description("Download an append blob to a stream, with progress")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobDownloadToStreamTestAsyncWithNullProgress()
+        {
+            await DoBlobDownloadToStreamTestAsyncWithNullProgress(
                 () => this.testContainer.GetAppendBlobReference("blob1"),
                 (blob, targetStream, progressHandler, cancellationToken) =>
                     blob.DownloadToStreamAsync(targetStream, null, null, null, progressHandler, cancellationToken)
@@ -263,6 +375,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 StorageProgress lastProgress = progressList.Last();
 
                 Assert.AreEqual(targetStream.Length, lastProgress.BytesTransferred, "Final progress has unexpected value");
+            }
+        }
+
+        private static async Task DoBlobDownloadToStreamTestAsyncWithNullProgress<T>(
+            Func<T> blobFactory,
+            Func<T, Stream, IProgress<StorageProgress>, CancellationToken, Task> downloadTask
+            )
+            where T : ICloudBlob
+        {
+            byte[] uploadBuffer = GetRandomBuffer(20 * 1024 * 1024);
+
+            T uploadBlob = blobFactory();
+
+            using (MemoryStream srcStream = new MemoryStream(uploadBuffer))
+            {
+                await uploadBlob.UploadFromStreamAsync(srcStream);
+            }
+
+            T downloadBlob = blobFactory();
+
+            using (MemoryStream targetStream = new MemoryStream())
+            {
+                CancellationToken cancellationToken = new CancellationToken();
+
+                await downloadTask(downloadBlob, targetStream, default(IProgress<StorageProgress>), cancellationToken);
             }
         }
 
