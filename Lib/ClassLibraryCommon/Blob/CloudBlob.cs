@@ -277,7 +277,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target)
         {
-            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), default(AggregatingProgressIncrementer), CancellationToken.None);
         }
 
         /// <summary>
@@ -289,7 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target, CancellationToken cancellationToken)
         {
-            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), default(AggregatingProgressIncrementer), cancellationToken);
         }
 
         /// <summary>
@@ -303,7 +303,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), CancellationToken.None);
         }
 
         /// <summary>
@@ -318,7 +318,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadToStreamAsync(Stream target, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, null /*null*/, null /*length*/, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), cancellationToken);
         }
 
         /// <summary>
@@ -1115,7 +1115,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length)
         {
-            return this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), default(AggregatingProgressIncrementer), CancellationToken.None);
         }
 
         /// <summary>
@@ -1129,7 +1129,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, CancellationToken cancellationToken)
         {
-            return this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), AggregatingProgressIncrementer.None, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, offset, length, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), default(AggregatingProgressIncrementer), cancellationToken);
         }
 
         /// <summary>
@@ -1145,7 +1145,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, CancellationToken.None);
+            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), CancellationToken.None);
         }
 
         /// <summary>
@@ -1162,7 +1162,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, cancellationToken);
+            return this.DownloadRangeToStreamAsync(target, offset, length, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), cancellationToken);
         }
 
         /// <summary>
@@ -1199,6 +1199,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         private Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("target", target);
+
+            progressIncrementer = progressIncrementer ?? AggregatingProgressIncrementer.None;
 
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(

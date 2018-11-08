@@ -449,7 +449,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, bool createNew, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.UploadFromStreamAsyncHelper(source, length, createNew, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, cancellationToken);
+            return this.UploadFromStreamAsyncHelper(source, length, createNew, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), cancellationToken);
         }
 #endif
 
@@ -495,6 +495,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     throw new ArgumentOutOfRangeException("length", SR.StreamLengthShortError);
                 }
             }
+
+            progressIncrementer = progressIncrementer ?? AggregatingProgressIncrementer.None;
 
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);

@@ -321,7 +321,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         internal Task UploadFromStreamAsyncHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.UploadFromStreamAsyncHelper(source, length, premiumPageBlobTier, accessCondition, options, operationContext, AggregatingProgressIncrementer.None, cancellationToken);
+            return this.UploadFromStreamAsyncHelper(source, length, premiumPageBlobTier, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), cancellationToken);
         }
 #endif
 
@@ -357,6 +357,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 #endif
         {
             CommonUtility.AssertNotNull("source", source);
+
+            progressIncrementer = progressIncrementer ?? AggregatingProgressIncrementer.None;
 
             Stream sourceAsStream = source;
             if (!sourceAsStream.CanSeek)
