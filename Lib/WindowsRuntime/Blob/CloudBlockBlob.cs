@@ -997,6 +997,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             Stream seekableStream = blockDataAsStream;
             bool seekableStreamCreated = false;
 
+            progressIncrementer = progressIncrementer ?? AggregatingProgressIncrementer.None;
+
             try
             {
                 if (!blockDataAsStream.CanSeek || requiresContentMD5)
