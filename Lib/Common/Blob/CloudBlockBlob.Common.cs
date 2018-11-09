@@ -200,7 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="progressIncrementer"> An <see cref="AggregatingProgressIncrementer"/> object to gather progress deltas.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning", Justification = "Reviewed.")]
@@ -228,6 +228,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             List<string> blockList = new List<string>();
             List<Task> uploadTaskList = new List<Task>();
             int blockNum = 0;
+
+            progressIncrementer = progressIncrementer ?? AggregatingProgressIncrementer.None;
 
             foreach (Stream block in streamList)
             {

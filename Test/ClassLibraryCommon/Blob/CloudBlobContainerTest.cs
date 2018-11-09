@@ -2144,7 +2144,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.Create();
+                await container.CreateAsync();
                 List<string> pageBlobNames = await CreateBlobs(container, countPerType, BlobType.PageBlob);
                 List<string> blockBlobNames = await CreateBlobs(container, countPerType, BlobType.BlockBlob);
                 List<string> appendBlobNames = await CreateBlobs(container, countPerType, BlobType.AppendBlob);
