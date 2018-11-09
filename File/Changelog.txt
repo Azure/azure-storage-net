@@ -1,4 +1,4 @@
-Changes in ...:
+Changes in 9.4.1:
 - Fix bug where certain content headers were not being sent to the server.
 - Fix bug where passing a null progress handler could lead to a null reference exception.
 
