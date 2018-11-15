@@ -52,13 +52,10 @@
   <ItemGroup>
     <Content Include="..\Common\Readme.txt">
     </Content>
-    <Content Include="..\Common\TestConfigurationsTemplate.xml">
-    </Content>
-  </ItemGroup>
-  <ItemGroup Condition="Exists('..\Common\TestConfigurations.xml')">
-    <Content Include="..\Common\TestConfigurations.xml">
+    <Content Include="..\Common\TestConfigurations.xml" Link="TestConfigurations.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="..\Common\TestConfigurationsTemplate.xml">
     </Content>
   </ItemGroup>
   <ItemGroup>

@@ -30,6 +30,7 @@
     <Content Include="..\..\Common\TestConfigurations.xml" Link="TestConfigurations.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\Common\TestConfigurationsTemplate.xml" Link="TestConfigurationsTemplate.xml" />
   </ItemGroup>
 
   <ItemGroup>
