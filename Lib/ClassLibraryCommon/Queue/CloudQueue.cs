@@ -2301,7 +2301,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
                 expectedHttpStatusCodes[0] = HttpStatusCode.Created;
                 expectedHttpStatusCodes[1] = HttpStatusCode.NoContent;
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(expectedHttpStatusCodes, resp, NullType.Value, cmd, ex);
-                GetMessageCountAndMetadataFromResponse(resp);
+
+                // no payload to parse
+
                 return NullType.Value;
             };
 
@@ -2396,7 +2398,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
-                GetMessageCountAndMetadataFromResponse(resp);
+
+                // no payload to parse
+
                 return NullType.Value;
             };
 
@@ -2424,7 +2428,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.NoContent, resp, NullType.Value, cmd, ex);
-                GetMessageCountAndMetadataFromResponse(resp);
+
+                // no payload to parse
+
                 return NullType.Value;
             };
 
@@ -2447,7 +2453,6 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             getCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                this.GetMessageCountAndMetadataFromResponse(resp);
                 QueuePermissions queueAcl = new QueuePermissions();
                 await QueueHttpResponseParsers.ReadSharedAccessIdentifiersAsync(cmd.ResponseStream, queueAcl, ct).ConfigureAwait(false);
                 return queueAcl;

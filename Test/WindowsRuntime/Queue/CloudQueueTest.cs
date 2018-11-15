@@ -185,7 +185,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
             await queueToRetrieve.FetchAttributesAsync();
-            Assert.AreEqual<int>(0, queueToRetrieve.Metadata.Count);
+            Assert.AreEqual(0, queueToRetrieve.Metadata.Count);
 
             queue.Metadata.Add("key1", "value1");
             await queue.SetMetadataAsync();
@@ -200,9 +200,54 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             queue.Metadata.Clear();
             await queue.SetMetadataAsync();
+            Assert.AreEqual(0, queue.Metadata.Count);
 
             await queueToRetrieve.FetchAttributesAsync();
+            Assert.AreEqual(0, queueToRetrieve.Metadata.Count);
+
+            await queue.DeleteAsync();
+        }
+
+        [TestMethod]
+        [Description("Set/get a queue with metadata")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudQueueSetGetMetadataAsync_NullArgs()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+
+            await queue.CreateAsync();
+
+            CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+            await queueToRetrieve.FetchAttributesAsync();
             Assert.AreEqual<int>(0, queueToRetrieve.Metadata.Count);
+
+            queue.Metadata.Add("key1", "value1");
+            await queue.SetMetadataAsync();
+
+            await queueToRetrieve.FetchAttributesAsync();
+            Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
+            Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
+
+            CloudQueue listedQueue = (await client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null)).Results.First();
+            Assert.AreEqual(1, listedQueue.Metadata.Count);
+            Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+
+            await queue.SetMetadataAsync(null, null);
+            Assert.AreEqual(1, queue.Metadata.Count);
+
+            await queueToRetrieve.FetchAttributesAsync();
+            Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
+
+            queue.Metadata.Clear();
+            await queue.SetMetadataAsync();
+            Assert.AreEqual(0, queue.Metadata.Count);
+
+            await queueToRetrieve.FetchAttributesAsync();
+            Assert.AreEqual(0, queueToRetrieve.Metadata.Count);
 
             await queue.DeleteAsync();
         }

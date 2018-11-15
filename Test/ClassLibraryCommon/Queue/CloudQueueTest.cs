@@ -684,7 +684,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
                 queueToRetrieve.FetchAttributes();
-                Assert.AreEqual<int>(0, queueToRetrieve.Metadata.Count);
+                Assert.AreEqual(0, queueToRetrieve.Metadata.Count);
 
                 queue.Metadata.Add("key1", "value1");
                 queue.SetMetadata();
@@ -699,9 +699,59 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
                 queue.Metadata.Clear();
                 queue.SetMetadata();
+                Assert.AreEqual(0, queue.Metadata.Count);
 
                 queueToRetrieve.FetchAttributes();
+                Assert.AreEqual(0, queueToRetrieve.Metadata.Count);
+            }
+            finally
+            {
+                queue.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set/get a queue with metadata")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueSetGetMetadata_NullArgs()
+        {
+            CloudQueueClient client = GenerateCloudQueueClient();
+            CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
+
+            try
+            {
+                queue.Create();
+
+                CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
+                queueToRetrieve.FetchAttributes();
                 Assert.AreEqual<int>(0, queueToRetrieve.Metadata.Count);
+
+                queue.Metadata.Add("key1", "value1");
+                queue.SetMetadata();
+
+                queueToRetrieve.FetchAttributes();
+                Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
+                Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
+
+                CloudQueue listedQueue = client.ListQueues(queue.Name, QueueListingDetails.All, null, null).First();
+                Assert.AreEqual(1, listedQueue.Metadata.Count);
+                Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+
+                queue.SetMetadata(null, null);
+                Assert.AreEqual(1, queue.Metadata.Count);
+
+                queueToRetrieve.FetchAttributes();
+                Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
+
+                queue.Metadata.Clear();
+                queue.SetMetadata();
+                Assert.AreEqual(0, queue.Metadata.Count);
+
+                queueToRetrieve.FetchAttributes();
+                Assert.AreEqual(0, queueToRetrieve.Metadata.Count);
             }
             finally
             {
