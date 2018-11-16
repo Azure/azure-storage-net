@@ -85,7 +85,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-      <ProjectReference Include="..\..\Lib\Common.Split\NetFx\Microsoft.Azure.Storage.Common.NetFx.csproj">
+    <ProjectReference Include="..\..\Lib\Common.Split\NetFx\Microsoft.Azure.Storage.Common.NetFx.csproj">
       <Project>{aa73796a-c515-4fe1-9da0-db95821d353c}</Project>
       <Name>Microsoft.Azure.Storage.Common.NetFx</Name>
     </ProjectReference>

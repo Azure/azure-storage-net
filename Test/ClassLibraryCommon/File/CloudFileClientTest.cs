@@ -142,7 +142,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             string name = GetRandomShareName();
             List<string> shareNames = new List<string>();
-            CloudFileClient fileClient = GenerateCloudFileClient();
+            DelegatingHandlerImpl delegatingHandlerImpl = new DelegatingHandlerImpl(new DelegatingHandlerImpl());
+            CloudFileClient fileClient = GenerateCloudFileClient(delegatingHandlerImpl);
 
             for (int i = 0; i < 3; i++)
             {
@@ -163,6 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
 
             Assert.AreEqual(0, shareNames.Count);
+            Assert.AreNotEqual(0, delegatingHandlerImpl.CallCount);
         }
 
         [TestMethod]

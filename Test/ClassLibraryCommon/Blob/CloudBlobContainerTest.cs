@@ -3472,53 +3472,53 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        [Ignore]
         public async Task CloudBlobContainerVerifyProxyHit()
         {
-            //CloudBlobContainer container = GetRandomContainerReference();
+            CloudBlobContainer container = null;
 
-            //try
-            //{
-            //    const string proxyAddress = "http://127.0.0.1";
-            //    const string proxyUser = "user";
-            //    const string proxyPassword = "password";
+            try
+            {
+                const string proxyAddress = "http://127.0.0.1";
+                const string proxyUser = "user";
+                const string proxyPassword = "password";
 
-            //    var cts = new CancellationTokenSource();
+                var cts = new CancellationTokenSource();
 
-            //    var proxyHit = false;
+                var proxyHit = false;
 
-            //    var mockProxy =
-            //        new MockProxy(
-            //            new Uri(proxyAddress),
-            //            new NetworkCredential(proxyUser, proxyPassword)
-            //            );
+                var mockProxy =
+                    new MockProxy(
+                        new Uri(proxyAddress),
+                        new NetworkCredential(proxyUser, proxyPassword)
+                        );
 
-            //    mockProxy.MemberAccess += (s, e) =>
-            //    {
-            //        cts.Cancel();
-            //        proxyHit = true;
-            //    };
+                mockProxy.MemberAccess += (s, e) =>
+                {
+                    cts.Cancel();
+                    proxyHit = true;
+                };
 
-            //    OperationContext operationContext = new OperationContext()
-            //    {
-            //        Proxy = mockProxy
-            //    };
+                DelegatingHandlerImpl delegatingHandlerImpl = new DelegatingHandlerImpl(mockProxy);
 
-            //    try
-            //    {
-            //        await container.CreateAsync(BlobContainerPublicAccessType.Off, default(BlobRequestOptions), operationContext, cts.Token);
-            //    }
-            //    catch (TaskCanceledException)
-            //    {
-            //        // expected, but not required
-            //    }
+                container = GetRandomContainerReference(delegatingHandlerImpl);
 
-            //    Assert.IsTrue(proxyHit, "Proxy not hit");
-            //}
-            //finally
-            //{
-            //    container.DeleteIfExistsAsync().Wait();
-            //}
+                OperationContext operationContext = new OperationContext();
+
+                try
+                {
+                    await container.CreateAsync(BlobContainerPublicAccessType.Off, default(BlobRequestOptions), operationContext, cts.Token);
+                }
+                catch (StorageException)
+                {
+                    // expected, but not required
+                }
+
+                Assert.IsTrue(proxyHit, "Proxy not hit");
+            }
+            finally
+            {
+                container?.DeleteIfExistsAsync().Wait();
+            }
         }
 
         [TestMethod]

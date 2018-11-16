@@ -18,10 +18,14 @@
 namespace Microsoft.WindowsAzure.Storage.File
 {
     using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
+    using System.Net.Http;
 
     /// <summary>
     /// Provides a client-side logical representation of the Microsoft Azure File service. This client is used to configure and execute requests against the File service.
@@ -32,14 +36,17 @@ namespace Microsoft.WindowsAzure.Storage.File
     {
         private AuthenticationScheme authenticationScheme;
 
+        internal HttpClient HttpClient;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFileClient"/> class using the specified File service endpoint
         /// and account credentials.
         /// </summary>
         /// <param name="baseUri">The File service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-        public CloudFileClient(Uri baseUri, StorageCredentials credentials)
-            : this(new StorageUri(baseUri), credentials)
+        /// <param name="delegatingHandler">A chain of 1 or more DelegatingHandler instances, the innermost of which must have a null InnerHandler.</param>
+        public CloudFileClient(Uri baseUri, StorageCredentials credentials, DelegatingHandler delegatingHandler = null)
+            : this(new StorageUri(baseUri), credentials, delegatingHandler)
         {
         }
 
@@ -49,7 +56,8 @@ namespace Microsoft.WindowsAzure.Storage.File
         /// </summary>
         /// <param name="storageUri">The File service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-        public CloudFileClient(StorageUri storageUri, StorageCredentials credentials)
+        /// <param name="delegatingHandler">A chain of 1 or more DelegatingHandler instances, the innermost of which must have a null InnerHandler.</param>
+        public CloudFileClient(StorageUri storageUri, StorageCredentials credentials, DelegatingHandler delegatingHandler = null)
         {
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
@@ -62,6 +70,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 };
             this.AuthenticationScheme = AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
+            this.HttpClient = HttpClientFactory.HttpClientFromDelegatingHandler(delegatingHandler);
         }
 
         /// <summary>

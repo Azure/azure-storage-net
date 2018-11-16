@@ -55,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 TimeSpan delay = TimeSpan.Zero;
 
                 // Create a new client
-                HttpClient client = HttpClientFactory.Instance;
+                HttpClient client = cmd.HttpClient ?? HttpClientFactory.Instance;
 
                 do
                 {

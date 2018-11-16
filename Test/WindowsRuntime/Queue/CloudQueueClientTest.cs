@@ -88,7 +88,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudQueueClientListQueuesBasicAsync()
         {
-            CloudQueueClient client = GenerateCloudQueueClient();
+            DelegatingHandlerImpl delegatingHandlerImpl = new DelegatingHandlerImpl(new DelegatingHandlerImpl());
+            CloudQueueClient client = GenerateCloudQueueClient(delegatingHandlerImpl);
             string prefix = GenerateNewQueueName();
             List<string> queueNames = new List<string>();
             int count = 30;
@@ -120,6 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             }
 
             Assert.AreEqual<int>(count, results.Results.Count());
+            Assert.AreNotEqual(0, delegatingHandlerImpl.CallCount);
         }
 
         [TestMethod]

@@ -18,6 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Auth.Protocol;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Core.Auth;
     using Microsoft.WindowsAzure.Storage.Core.Util;
@@ -25,12 +26,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using System.Net.Http;
 
     /// <summary>
     /// Provides a client-side logical representation of Microsoft Azure Blob storage.
     /// </summary>
     public partial class CloudBlobClient
     {
+        internal HttpClient HttpClient;
+
         /// <summary>
         /// Stores the default delimiter.
         /// </summary>
@@ -43,8 +47,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// and anonymous credentials.
         /// </summary>
         /// <param name="baseUri">A <see cref="System.Uri"/> object containing the Blob service endpoint to use to create the client.</param>
-        public CloudBlobClient(Uri baseUri)
-            : this(baseUri, null /* credentials */)
+        /// <param name="delegatingHandler">A chain of 1 or more DelegatingHandler instances, the innermost of which must have a null InnerHandler.</param>
+        public CloudBlobClient(Uri baseUri, DelegatingHandler delegatingHandler = null)
+            : this(baseUri, null /* credentials */, delegatingHandler)
         {
         }
 
@@ -54,8 +59,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="baseUri">A <see cref="System.Uri"/> object containing the Blob service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-        public CloudBlobClient(Uri baseUri, StorageCredentials credentials)
-            : this(new StorageUri(baseUri), credentials)
+        /// <param name="delegatingHandler">A chain of 1 or more DelegatingHandler instances, the innermost of which must have a null InnerHandler.</param>
+        public CloudBlobClient(Uri baseUri, StorageCredentials credentials, DelegatingHandler delegatingHandler = null)
+            : this(new StorageUri(baseUri), credentials, delegatingHandler)
         {
         }
 
@@ -65,7 +71,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// </summary>
         /// <param name="storageUri">A <see cref="StorageUri"/> object containing the Blob service endpoint to use to create the client.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
-        public CloudBlobClient(StorageUri storageUri, StorageCredentials credentials)
+        /// <param name="delegatingHandler">A chain of 1 or more DelegatingHandler instances, the innermost of which must have a null InnerHandler.</param>
+        public CloudBlobClient(StorageUri storageUri, StorageCredentials credentials, DelegatingHandler delegatingHandler = null)
         {
             this.StorageUri = storageUri;
             this.Credentials = credentials ?? new StorageCredentials();
@@ -80,6 +87,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.DefaultDelimiter = NavigationHelper.Slash;
             this.AuthenticationScheme = this.Credentials.IsToken ? AuthenticationScheme.Token : AuthenticationScheme.SharedKey;
             this.UsePathStyleUris = CommonUtility.UsePathStyleAddressing(this.BaseUri);
+            this.HttpClient = HttpClientFactory.HttpClientFromDelegatingHandler(delegatingHandler);
         }
 
         /// <summary>

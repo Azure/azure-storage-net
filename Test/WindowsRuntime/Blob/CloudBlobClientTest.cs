@@ -140,7 +140,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudBlobClientListBlobsSegmentedWithPrefixAsync()
         {
             string name = "bb" + GetRandomContainerName();
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            DelegatingHandlerImpl delegatingHandlerImpl = new DelegatingHandlerImpl(new DelegatingHandlerImpl());
+            CloudBlobClient blobClient = GenerateCloudBlobClient(delegatingHandlerImpl);
             CloudBlobContainer rootContainer = blobClient.GetRootContainerReference();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 
@@ -189,6 +190,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 while (token != null);
                 Assert.AreEqual(0, blobNames.Count);
+                Assert.AreNotEqual(0, delegatingHandlerImpl.CallCount);
             }
             finally
             {

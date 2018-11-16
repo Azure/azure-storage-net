@@ -42,7 +42,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             MemoryStream stream2 = new MemoryStream();
 
             OperationContext tempOperationContext = new OperationContext();
-            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null);
+            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null, null);
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             // Test basic write
@@ -75,7 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             MemoryStream stream2 = new MemoryStream();
             
             OperationContext tempOperationContext = new OperationContext();
-            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null);
+            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null, null);
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
             
             // Test write with exact number of bytes
@@ -120,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
             MemoryStream stream2 = new MemoryStream();
 
             OperationContext tempOperationContext = new OperationContext();
-            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null);
+            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null, null);
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             // Test write with exact number of bytes

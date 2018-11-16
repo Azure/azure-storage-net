@@ -538,7 +538,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 Marker = currentToken != null ? currentToken.NextMarker : null
             };
 
-            RESTCommand<ResultSegment<CloudFileShare>> getCmd = new RESTCommand<ResultSegment<CloudFileShare>>(this.Credentials, this.StorageUri);
+            RESTCommand<ResultSegment<CloudFileShare>> getCmd = new RESTCommand<ResultSegment<CloudFileShare>>(this.Credentials, this.StorageUri, this.HttpClient);
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommonUtility.GetListingLocationMode(currentToken);
@@ -570,7 +570,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
         private RESTCommand<FileServiceProperties> GetServicePropertiesImpl(FileRequestOptions requestOptions)
         {
-            RESTCommand<FileServiceProperties> retCmd = new RESTCommand<FileServiceProperties>(this.Credentials, this.StorageUri);
+            RESTCommand<FileServiceProperties> retCmd = new RESTCommand<FileServiceProperties>(this.Credentials, this.StorageUri, this.HttpClient);
 
             retCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.GetServiceProperties(uri, serverTimeout, ctx, this.GetCanonicalizer(), this.Credentials);
@@ -598,7 +598,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 throw new ArgumentException(invalidOpException.Message, "properties");
             }
 
-            RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri);
+            RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri, this.HttpClient);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
             retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);

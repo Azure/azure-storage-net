@@ -135,7 +135,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public async Task CloudBlobClientListBlobsWithPrefix()
         {
             string name = "bb" + GetRandomContainerName();
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            DelegatingHandlerImpl delegatingHandlerImpl = new DelegatingHandlerImpl(new DelegatingHandlerImpl());
+            CloudBlobClient blobClient = GenerateCloudBlobClient(delegatingHandlerImpl);
             CloudBlobContainer rootContainer = blobClient.GetRootContainerReference();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 
@@ -163,6 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     Assert.IsTrue(blobNames.Remove(blob.Name));
                 }
                 Assert.AreEqual(0, blobNames.Count);
+                Assert.AreNotEqual(0, delegatingHandlerImpl.CallCount);
             }
             finally
             {

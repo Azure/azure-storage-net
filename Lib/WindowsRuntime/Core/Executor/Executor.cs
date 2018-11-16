@@ -66,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
                 // Note - The service accepts both api-version and x-ms-version and therefore it is ok to add x-ms-version to all requests.
                 
                 // Create a new client
-                HttpClient client = HttpClientFactory.Instance;
+                HttpClient client = cmd.HttpClient ?? HttpClientFactory.Instance;
 
                 do
                 {

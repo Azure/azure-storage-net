@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -541,7 +542,8 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueClientCreateQueueSharedKeyLite()
         {
-            CloudQueueClient queueClient = GenerateCloudQueueClient();
+            DelegatingHandlerImpl delegatingHandlerImpl = new DelegatingHandlerImpl(new DelegatingHandlerImpl());
+            CloudQueueClient queueClient = GenerateCloudQueueClient(delegatingHandlerImpl);
             queueClient.AuthenticationScheme = AuthenticationScheme.SharedKeyLite;
 
             string queueName = Guid.NewGuid().ToString("N");
@@ -550,6 +552,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
 
             bool exists = queue.Exists();
             Assert.IsTrue(exists);
+            Assert.AreNotEqual(0, delegatingHandlerImpl.CallCount);
         }
 
         [TestMethod]

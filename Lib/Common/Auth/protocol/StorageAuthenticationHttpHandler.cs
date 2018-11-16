@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth.Protocol
 
     internal sealed partial class StorageAuthenticationHttpHandler : HttpClientHandler
     {
-        private StorageAuthenticationHttpHandler()
+        internal StorageAuthenticationHttpHandler()
         {
 #if NETCORE
             this.AutomaticDecompression = DecompressionMethods.None;

@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public async Task WriteToMultiBufferMemoryStreamTestAsync()
         {
             OperationContext tempOperationContext = new OperationContext();
-            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null);
+            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null, null);
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);

@@ -24,6 +24,10 @@ using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.Linq;
 using System.ServiceModel.Channels;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Net;
 
 #if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -90,20 +94,20 @@ namespace Microsoft.WindowsAzure.Storage
         }
 #endif
 
-        public static CloudBlobClient GenerateCloudBlobClient()
+        public static CloudBlobClient GenerateCloudBlobClient(DelegatingHandler delegatingHandler = null)
         {
             CloudBlobClient client;
             if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint))
             {
                 Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
-                client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials);
+                client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
             }
             else
             {
                 StorageUri baseAddressUri = new StorageUri(
                     new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint),
                     new Uri(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint));
-                client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials);
+                client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
             }
 
             client.AuthenticationScheme = DefaultAuthenticationScheme;
@@ -115,40 +119,40 @@ namespace Microsoft.WindowsAzure.Storage
             return client;
         }
 
-        public static CloudFileClient GenerateCloudFileClient()
+        public static CloudFileClient GenerateCloudFileClient(DelegatingHandler delegatingHandler = null)
         {
             CloudFileClient client;
             if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.FileServiceSecondaryEndpoint))
             {
                 Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint);
-                client = new CloudFileClient(baseAddressUri, TestBase.StorageCredentials);
+                client = new CloudFileClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
             }
             else
             {
                 StorageUri baseAddressUri = new StorageUri(
                     new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint),
                     new Uri(TestBase.TargetTenantConfig.FileServiceSecondaryEndpoint));
-                client = new CloudFileClient(baseAddressUri, TestBase.StorageCredentials);
+                client = new CloudFileClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
             }
 
             client.AuthenticationScheme = DefaultAuthenticationScheme;
             return client;
         }
 
-        public static CloudQueueClient GenerateCloudQueueClient()
+        public static CloudQueueClient GenerateCloudQueueClient(DelegatingHandler delegatingHandler = null)
         {
             CloudQueueClient client;
             if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.QueueServiceSecondaryEndpoint))
             {
                 Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint);
-                client = new CloudQueueClient(baseAddressUri, TestBase.StorageCredentials);
+                client = new CloudQueueClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
             }
             else
             {
                 StorageUri baseAddressUri = new StorageUri(
                     new Uri(TestBase.TargetTenantConfig.QueueServiceEndpoint),
                     new Uri(TestBase.TargetTenantConfig.QueueServiceSecondaryEndpoint));
-                client = new CloudQueueClient(baseAddressUri, TestBase.StorageCredentials);
+                client = new CloudQueueClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
             }
 
             client.AuthenticationScheme = DefaultAuthenticationScheme;
@@ -158,6 +162,42 @@ namespace Microsoft.WindowsAzure.Storage
 #endif
 
             return client;
+        }
+
+        public class DelegatingHandlerImpl : DelegatingHandler
+        {
+            public int CallCount { get; private set; }
+
+            private readonly IWebProxy Proxy;
+
+            private bool FirstCall = true;
+
+            public DelegatingHandlerImpl() : base()
+            {
+
+            }
+
+            public DelegatingHandlerImpl(HttpMessageHandler httpMessageHandler) : base(httpMessageHandler)
+            {
+
+            }
+
+            public DelegatingHandlerImpl(IWebProxy proxy)
+            {
+                this.Proxy = proxy;
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                CallCount++;
+                if(FirstCall && this.Proxy != null)
+                {
+                    HttpClientHandler inner = (HttpClientHandler)this.InnerHandler;
+                    inner.Proxy = this.Proxy;
+                }
+                FirstCall = false;
+                return base.SendAsync(request, cancellationToken);
+            }
         }
 
         public static TenantConfiguration TargetTenantConfig { get; private set; }

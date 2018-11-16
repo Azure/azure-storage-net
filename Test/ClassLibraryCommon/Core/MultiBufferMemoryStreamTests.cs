@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public void WriteToMultiBufferMemoryStreamTest()
         {
             OperationContext tempOperationContext = new OperationContext();
-            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null);
+            RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null, null);
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
@@ -89,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
                 byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
                 MemoryStream stream1 = new MemoryStream(buffer);
 
-                RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null);
+                RESTCommand<NullType> cmd = new RESTCommand<NullType>(TestBase.StorageCredentials, null, null);
                 ExecutionState<NullType> state = new ExecutionState<NullType>(cmd, new NoRetry(), new OperationContext());
                 StreamDescriptor copyState = new StreamDescriptor();
 

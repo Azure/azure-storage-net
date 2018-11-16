@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using System.Net.Http;
 #if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 #else
@@ -35,9 +36,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return string.Concat("testc", Guid.NewGuid().ToString("N"));
         }
 
-        public static CloudBlobContainer GetRandomContainerReference()
+        public static CloudBlobContainer GetRandomContainerReference(DelegatingHandler delegatingHandler = null)
         {
-            CloudBlobClient blobClient = GenerateCloudBlobClient();
+            CloudBlobClient blobClient = GenerateCloudBlobClient(delegatingHandler);
             string name = GetRandomContainerName();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 

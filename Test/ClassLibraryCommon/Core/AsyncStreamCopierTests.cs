@@ -385,7 +385,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             DataValidationStream input = new DataValidationStream(buffer, inputSync, inputDelayInMs, inputFailRequest, seekable);
             DataValidationStream output = new DataValidationStream(buffer, outputSync, outputDelayInMs, outputFailRequest, seekable);
-            RESTCommand<NullType> cmdWithTimeout = new RESTCommand<NullType>(new StorageCredentials(), null) { OperationExpiryTime = copyTimeout };
+            RESTCommand<NullType> cmdWithTimeout = new RESTCommand<NullType>(new StorageCredentials(), null, null) { OperationExpiryTime = copyTimeout };
             ExecutionState<NullType> state = new ExecutionState<NullType>(cmdWithTimeout, null, null);
             StreamDescriptor copyState = new StreamDescriptor();
 

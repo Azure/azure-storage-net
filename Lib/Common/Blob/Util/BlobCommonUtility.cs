@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <returns>Temporary ExecutionState object</returns>
         internal static ExecutionState<NullType> CreateTemporaryExecutionState(BlobRequestOptions options)
         {
-            RESTCommand<NullType> cmdWithTimeout = new RESTCommand<NullType>(new StorageCredentials(), null /* Uri */);
+            RESTCommand<NullType> cmdWithTimeout = new RESTCommand<NullType>(new StorageCredentials(), null /* Uri */, null /* HttpClient */);
             if (options != null)
             {
                 options.ApplyToStorageCommand(cmdWithTimeout);

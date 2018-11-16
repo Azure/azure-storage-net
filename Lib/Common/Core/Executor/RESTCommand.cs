@@ -32,16 +32,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
     internal class RESTCommand<T> : StorageCommandBase<T>
     {
         #region Ctors
-        public RESTCommand(StorageCredentials credentials, StorageUri storageUri)
-            : this(credentials, storageUri, null)
+        public RESTCommand(StorageCredentials credentials, StorageUri storageUri, HttpClient httpClient)
+            : this(credentials, storageUri, null, httpClient)
         {
         }
 
-        public RESTCommand(StorageCredentials credentials, StorageUri storageUri, UriQueryBuilder builder)
+        public RESTCommand(StorageCredentials credentials, StorageUri storageUri, UriQueryBuilder builder, HttpClient httpClient)
         {
             this.Credentials = credentials;
             this.StorageUri = storageUri;
             this.Builder = builder;
+            this.HttpClient = httpClient;
         }
         #endregion
 
@@ -54,6 +55,8 @@ namespace Microsoft.WindowsAzure.Storage.Core.Executor
         public StorageCredentials Credentials;
 
         public StorageUri StorageUri;
+
+        public HttpClient HttpClient;
 
         // The UriQueryBuilder used to create the request
         public UriQueryBuilder Builder;

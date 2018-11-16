@@ -63,6 +63,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         public const string CryptoError = "Cryptographic error occurred. Please check the inner exception for more details.";
         public const string CryptoFunctionFailed = "Crypto function failed with error code '{0}'";
         public const string DecryptionLogicError = "Decryption logic threw error. Please check the inner exception for more details.";
+        public const string DelegatingHandlerNonNullInnerHandler = "Innermost DelegatingHandler must have a null InnerHandler.";
         public const string DeleteSnapshotsNotValidError = "The option '{0}' must be 'None' to delete a specific snapshot specified by '{1}'";
         public const string Directory = "directory";
         public const string EmptyBatchOperation = "Cannot execute an empty batch operation";

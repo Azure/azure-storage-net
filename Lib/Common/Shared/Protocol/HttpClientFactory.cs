@@ -18,6 +18,7 @@
 namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
 {
     using Microsoft.WindowsAzure.Storage.Auth.Protocol;
+    using Microsoft.WindowsAzure.Storage.Core;
     using System;
     using System.Net.Http;
     using System.Net.Http.Headers;
@@ -28,15 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         private static Lazy<HttpClient> instance = new Lazy<HttpClient>(
                     () =>
                     {
-                        HttpClient newClient = new HttpClient(StorageAuthenticationHttpHandler.Instance, false);
-
-                        newClient.DefaultRequestHeaders.ExpectContinue = false;
-                        newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
-                        newClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
-                        newClient.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
-                        newClient.Timeout = Timeout.InfiniteTimeSpan;
-
-                        return newClient;
+                        return BuildHttpClient(StorageAuthenticationHttpHandler.Instance);
                     });
 
         public static HttpClient Instance
@@ -45,6 +38,43 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             {
                 return instance.Value;
             }
+        }
+
+        internal static HttpClient HttpClientFromDelegatingHandler(DelegatingHandler delegatingHandler)
+        {
+            if (delegatingHandler == null)
+            {
+                return null;
+            }
+
+            var currentHandler = delegatingHandler;
+
+            while (currentHandler.InnerHandler != null)
+            {
+                var innerHandler = currentHandler.InnerHandler;
+
+                if (!(innerHandler is DelegatingHandler))
+                {
+                    throw new ArgumentException(SR.DelegatingHandlerNonNullInnerHandler);
+                }
+                currentHandler = (DelegatingHandler)innerHandler;
+            }
+
+            currentHandler.InnerHandler = new StorageAuthenticationHttpHandler();
+            return BuildHttpClient(delegatingHandler);
+        }
+
+        private static HttpClient BuildHttpClient(HttpMessageHandler httpMessageHandler)
+        {
+            HttpClient httpClient = new HttpClient(httpMessageHandler, false);
+
+            httpClient.DefaultRequestHeaders.ExpectContinue = false;
+            httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
+            httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation(Constants.HeaderConstants.StorageVersionHeader, Constants.HeaderConstants.TargetStorageVersion);
+            httpClient.Timeout = Timeout.InfiniteTimeSpan;
+
+            return httpClient;
         }
     }
 }
