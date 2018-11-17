@@ -29,21 +29,21 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="content">The content of the message as a byte array.</param>
         /// <returns>The new message as a <see cref="CloudQueueMessage"/> object.</returns>
+        [Obsolete("Use new CloudQueueMessage(Convert.ToBase64String(content), true)")]
 #if NETCORE
         public static CloudQueueMessage CreateCloudQueueMessageFromByteArray(byte[] content)
 #else
         public static CloudQueueMessage CreateCloudQueueMessageFromByteArray([ReadOnlyArray] byte[] content)
 #endif
         {
-            CloudQueueMessage message = new CloudQueueMessage(null);
-            message.SetMessageContent(content);
-            return message;
+            return new CloudQueueMessage(Convert.ToBase64String(content), true);
         }
 
         /// <summary>
         /// Sets the content of this message.
         /// </summary>
         /// <param name="content">The new message content.</param>
+        [Obsolete("Use SetMessageContent2(Convert.ToBase64String(content), true)")]
 #if NETCORE
         public void SetMessageContent(byte[] content)
 #else
@@ -51,8 +51,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         public void SetMessageContent([ReadOnlyArray] byte[] content)
 #endif
         {
-            this.RawString = Convert.ToBase64String(content);
-            this.MessageType = QueueMessageType.Base64Encoded;
+            this.SetMessageContent2(Convert.ToBase64String(content), true);
         }
     }
 }

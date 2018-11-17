@@ -93,15 +93,12 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CloudQueueMessage"/> class with the given string.
+        /// Initializes a new instance of the <see cref="CloudQueueMessage"/> class with the given byte array.
         /// </summary>
-        /// <param name="content">The content of the message as a string of text.</param>
-        public CloudQueueMessage(string content)
+        /// <param name="content">The content of the message as a byte array.</param>
+        public CloudQueueMessage(byte[] content)
         {
-            this.SetMessageContent(content);
-
-            // At this point, without knowing whether or not the message will be Base64 encoded, we can't fully validate the message size.
-            // So we leave it to CloudQueue so that we have a central place for this logic.
+            this.SetMessageContent2(content);
         }
 
         /// <summary>
@@ -121,15 +118,9 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         /// </summary>
         /// <param name="content">The text string.</param>
         /// <param name="isBase64Encoded">Whether the string is Base64 encoded.</param>
-        internal CloudQueueMessage(string content, bool isBase64Encoded)
+        public CloudQueueMessage(string content, bool isBase64Encoded = false)
         {
-            if (content == null)
-            {
-                content = string.Empty;
-            }
-
-            this.RawString = content;
-            this.MessageType = isBase64Encoded ? QueueMessageType.Base64Encoded : QueueMessageType.RawString;
+            this.SetMessageContent2(content, isBase64Encoded);
         }
 
         /// <summary>
@@ -321,19 +312,36 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         }
 
         /// <summary>
+        /// Sets the content of this message as a raw string.
+        /// </summary>
+        /// <param name="content">A string containing the new message content.</param>
+        [Obsolete("Use SetMessageContent2(string, false)")]
+        public void SetMessageContent(string content)
+        {
+            this.SetMessageContent2(content, false);
+        }
+
+        /// <summary>
+        /// Sets the content of this message.
+        /// </summary>
+        /// <param name="content">A byte array containing the new message content.</param>
+        public void SetMessageContent2(byte[] content)
+        {
+            this.RawBytes = content;
+            this.RawString = null;
+            this.MessageType = QueueMessageType.RawBytes;
+        }
+
+        /// <summary>
         /// Sets the content of this message.
         /// </summary>
         /// <param name="content">A string containing the new message content.</param>
-        public void SetMessageContent(string content)
+        /// <param name="isBase64Encoded">Whether the string is Base64 encoded.</param>
+        public void SetMessageContent2(string content, bool isBase64Encoded)
         {
-            if (content == null)
-            {
-                // Protocol will return null for empty content
-                content = string.Empty;
-            }
-
-            this.RawString = content;
-            this.MessageType = QueueMessageType.RawString;
+            this.RawBytes = null;
+            this.RawString = content ?? string.Empty;
+            this.MessageType = isBase64Encoded ? QueueMessageType.Base64Encoded : QueueMessageType.RawString;
         }
     }
 }

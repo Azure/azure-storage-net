@@ -25,25 +25,13 @@ namespace Microsoft.WindowsAzure.Storage.Queue
     public sealed partial class CloudQueueMessage
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CloudQueueMessage"/> class with the given byte array.
-        /// </summary>
-        /// <param name="content">The content of the message as a byte array.</param>
-        public CloudQueueMessage(byte[] content)
-        {
-            this.SetMessageContent(content);
-
-            // While binary messages will be Base64-encoded and we could validate the message size here,
-            // for consistency, we leave it to CloudQueue so that we have a central place for this logic.
-        }
-
-        /// <summary>
         /// Sets the content of this message.
         /// </summary>
         /// <param name="content">The content of the message as a byte array.</param>
+        [Obsolete("Use SetMessageContent2(byte[])")]
         public void SetMessageContent(byte[] content)
         {
-            this.RawBytes = content;
-            this.MessageType = QueueMessageType.RawBytes;
+            this.SetMessageContent2(content);
         }
     }
 }

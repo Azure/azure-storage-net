@@ -1,6 +1,8 @@
 Changes in 9.4.1:
 
 - Fixed issue where CloudQueue metadata was cleared after various calls which didn't return metadata payload.
+- Obsoleted CloudQueueMessage.SetMessageContent, replaced with SetMessageContent2 to resolve long-standing inconsistency between platforms.
+- Added more ctors to CloudQueueMessage.
 
 Changes in 9.4.0:
 

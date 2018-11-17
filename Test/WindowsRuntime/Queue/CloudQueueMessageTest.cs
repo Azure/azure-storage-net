@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Queue
@@ -60,6 +61,116 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             {
                 Assert.AreEqual(0, TestBase.QueueBufferManager.OutstandingBufferCount);
             }
+        }
+
+        [TestMethod]
+        [Description("Test creating messages with different content types.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueMessageCreate()
+        {
+            var s = "1234";
+            var bytes = Encoding.UTF8.GetBytes(s);
+            var s64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(s));
+
+            var message = new CloudQueueMessage();
+
+            Assert.IsNull(message.RawBytes);
+            Assert.IsNull(message.RawString);
+
+            message = new CloudQueueMessage(bytes);
+
+            Assert.AreSame(bytes, message.RawBytes);
+            Assert.IsNull(message.RawString);
+            Assert.AreEqual(QueueMessageType.RawBytes, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+
+            message = new CloudQueueMessage(s);
+
+            Assert.IsNull(message.RawBytes);
+            Assert.AreEqual(s, message.RawString);
+            Assert.AreEqual(QueueMessageType.RawString, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+
+            message = new CloudQueueMessage(s64, true);
+
+            Assert.IsNull(message.RawBytes);
+            Assert.AreEqual(s64, message.RawString);
+            Assert.AreEqual(QueueMessageType.Base64Encoded, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+
+            message = new CloudQueueMessage(s, false);
+
+            Assert.IsNull(message.RawBytes);
+            Assert.AreEqual(s, message.RawString);
+            Assert.AreEqual(QueueMessageType.RawString, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+        }
+
+        [TestMethod]
+        [Description("Test setting message content with different content types.")]
+        [TestCategory(ComponentCategory.Queue)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudQueueMessageSetContent()
+        {
+            var s = "1234";
+            var bytes = Encoding.UTF8.GetBytes(s);
+            var s64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(s));
+
+            var message = new CloudQueueMessage();
+
+            Assert.IsNull(message.RawBytes);
+            Assert.IsNull(message.RawString);
+
+            message.SetMessageContent2(bytes);
+
+            Assert.AreSame(bytes, message.RawBytes);
+            Assert.IsNull(message.RawString);
+            Assert.AreEqual(QueueMessageType.RawBytes, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+
+            message.SetMessageContent2(s64, true);
+
+            Assert.IsNull(message.RawBytes);
+            Assert.AreEqual(s64, message.RawString);
+            Assert.AreEqual(QueueMessageType.Base64Encoded, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+
+            message.SetMessageContent2(s, false);
+
+            Assert.IsNull(message.RawBytes);
+            Assert.AreEqual(s, message.RawString);
+            Assert.AreEqual(QueueMessageType.RawString, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+
+            // obsolete APIs
+
+            message.SetMessageContent(bytes);
+
+            Assert.IsNull(message.RawBytes);
+            Assert.AreEqual(s64, message.RawString);
+            Assert.AreEqual(QueueMessageType.Base64Encoded, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
+
+            message.SetMessageContent(s);
+
+            Assert.IsNull(message.RawBytes);
+            Assert.AreEqual(s, message.RawString);
+            Assert.AreEqual(QueueMessageType.RawString, message.MessageType);
+            Assert.AreEqual(s, message.AsString);
+            Assert.IsTrue(bytes.SequenceEqual(message.AsBytes));
         }
 
         [TestMethod]
