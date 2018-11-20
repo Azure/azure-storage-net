@@ -3,6 +3,7 @@ Changes in 9.4.1:
 - Fixed issue where CloudQueue metadata was cleared after various calls which didn't return metadata payload.
 - Obsoleted CloudQueueMessage.SetMessageContent, replaced with SetMessageContent2 to resolve long-standing inconsistency between platforms.
 - Added more ctors to CloudQueueMessage.
+- Added support for passing in a DelegatingHandler to use for HTTP calls.  A chain of DelegatingHandler instances is supported, but the innermost handler must have a null InnerHandler, which will be assigned our own HttpClientHandler instance for authentication purposes.  The DelegatingHandler can modify properties on the HttpClientHandler, such as Proxy.  This instance will be unique to the client in that case.  Not passing in a DelegatingHandler will continue to use a singleton HttpClientHandler.
 
 Changes in 9.4.0:
 
