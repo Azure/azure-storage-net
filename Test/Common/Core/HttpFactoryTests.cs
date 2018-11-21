@@ -68,9 +68,8 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
         public void HttpClientFromDelegatingHandlerNullInnerTest()
         {
             DelegatingHandler delegatingHandler = new DelegatingHandlerImpl();
-            StorageAuthenticationHttpHandler storageAuthenticationHttpHandler = StorageAuthenticationHttpHandler.Instance;
             HttpClientFactory.HttpClientFromDelegatingHandler(delegatingHandler);
-            Assert.AreEqual(storageAuthenticationHttpHandler, delegatingHandler.InnerHandler);
+            Assert.IsInstanceOfType(delegatingHandler.InnerHandler, typeof(StorageAuthenticationHttpHandler));
         }
 
         [TestMethod]
@@ -82,9 +81,8 @@ using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
         public void HttpClientFromDelegatingHandlerChainTest()
         {
             DelegatingHandler delegatingHandler = new DelegatingHandlerImpl(new DelegatingHandlerImpl());
-            StorageAuthenticationHttpHandler storageAuthenticationHttpHandler = StorageAuthenticationHttpHandler.Instance;
             HttpClientFactory.HttpClientFromDelegatingHandler(delegatingHandler);
-            Assert.AreEqual(storageAuthenticationHttpHandler, ((DelegatingHandler)delegatingHandler.InnerHandler).InnerHandler);
+            Assert.IsInstanceOfType(((DelegatingHandler)delegatingHandler.InnerHandler).InnerHandler, typeof(StorageAuthenticationHttpHandler));
         }
     }
 }
