@@ -3884,67 +3884,67 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             return putCmd;
         }
 
-    /// <summary>
-    /// Implementation of the StartCopy method. Result is a BlobAttributes object derived from the response headers.
-    /// </summary>
-    /// <param name="blobAttributes">The attributes.</param>
-    /// <param name="source">The URI of the source blob.</param>
-    /// <param name="sourceContentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
-    /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
-    /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
-    /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-    /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
-    /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-    /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-    /// <returns>
-    /// A <see cref="RESTCommand{T}"/> that starts to copy.
-    /// </returns>
-    /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-    internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
-    {
-        if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
+        /// <summary>
+        /// Implementation of the StartCopy method. Result is a BlobAttributes object derived from the response headers.
+        /// </summary>
+        /// <param name="attributes">The attributes.</param>
+        /// <param name="source">The URI of the source blob.</param>
+        /// <param name="sourceContentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
+        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>
+        /// A <see cref="RESTCommand{T}"/> that starts to copy.
+        /// </returns>
+        /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
-            throw new ArgumentException(SR.LeaseConditionOnSource, "sourceAccessCondition");
-        }
-
-        RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, attributes.StorageUri, this.ServiceClient.HttpClient);
-
-        options.ApplyToStorageCommand(putCmd);
-        putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
-        {
-            StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
-            BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
-            return msg;
-        };
-        putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
-        {
-            HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
-            CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
-            CopyState state = BlobHttpResponseParsers.GetCopyAttributes(resp);
-            attributes.CopyState = state;
-            this.attributes.Properties.PremiumPageBlobTier = premiumPageBlobTier;
-            if (premiumPageBlobTier.HasValue)
+            if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
-                this.attributes.Properties.BlobTierInferred = false;
+                throw new ArgumentException(SR.LeaseConditionOnSource, "sourceAccessCondition");
             }
 
-            return state.CopyId;
-        };
+            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, attributes.StorageUri, this.ServiceClient.HttpClient);
 
-        return putCmd;
-    }
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
+                return msg;
+            };
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
+                CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
+                CopyState state = BlobHttpResponseParsers.GetCopyAttributes(resp);
+                attributes.CopyState = state;
+                this.attributes.Properties.PremiumPageBlobTier = premiumPageBlobTier;
+                if (premiumPageBlobTier.HasValue)
+                {
+                    this.attributes.Properties.BlobTierInferred = false;
+                }
 
-    /// <summary>
-    /// Implementation of the AbortCopy method. No result is produced.
-    /// </summary>
-    /// <param name="attributes">The attributes.</param>
-    /// <param name="copyId">The copy ID of the copy operation to abort.</param>
-    /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
-    /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-    /// <returns>
-    /// A <see cref="RESTCommand{T}"/> that aborts the copy.
-    /// </returns>
-    private RESTCommand<NullType> AbortCopyImpl(BlobAttributes attributes, string copyId, AccessCondition accessCondition, BlobRequestOptions options)
+                return state.CopyId;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation of the AbortCopy method. No result is produced.
+        /// </summary>
+        /// <param name="attributes">The attributes.</param>
+        /// <param name="copyId">The copy ID of the copy operation to abort.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>
+        /// A <see cref="RESTCommand{T}"/> that aborts the copy.
+        /// </returns>
+        private RESTCommand<NullType> AbortCopyImpl(BlobAttributes attributes, string copyId, AccessCondition accessCondition, BlobRequestOptions options)
         {
             CommonUtility.AssertNotNull("copyId", copyId);
 

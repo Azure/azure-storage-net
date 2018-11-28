@@ -457,7 +457,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobClient.ParseUserPrefix(prefix, out containerName, out listingPrefix);
 
             CloudBlobContainer container = this.GetContainerReference(containerName);
-            return container.ListBlobsSegmentedAsync(listingPrefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext);
+            return container.ListBlobsSegmentedAsync(listingPrefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken);
         }
 #endif
 
