@@ -131,6 +131,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="offset">The byte offset in buffer at which to begin writing
         /// data read from the stream.</param>
         /// <param name="count">The maximum number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>Number of bytes read from the stream.</returns>
         private async Task<int> DispatchReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {

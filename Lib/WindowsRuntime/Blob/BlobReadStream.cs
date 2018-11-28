@@ -117,7 +117,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 return Task.FromResult(readCount);
             }
 
-            return this.DispatchReadAsync(buffer, offset, count);
+            return this.DispatchReadAsync(buffer, offset, count, cancellationToken);
         }
 
         /// <summary>
@@ -128,8 +128,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="offset">The byte offset in buffer at which to begin writing
         /// data read from the stream.</param>
         /// <param name="count">The maximum number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>Number of bytes read from the stream.</returns>
-        private async Task<int> DispatchReadAsync(byte[] buffer, int offset, int count)
+        private async Task<int> DispatchReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             try
             {
@@ -140,7 +141,8 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     this.GetReadSize(),
                     this.accessCondition,
                     this.options,
-                    this.operationContext).ConfigureAwait(false);
+                    this.operationContext,
+                    cancellationToken).ConfigureAwait(false);
 
                 this.internalBuffer.Seek(0, SeekOrigin.Begin);
                 return this.ConsumeBuffer(buffer, offset, count);

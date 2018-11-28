@@ -18,6 +18,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
@@ -129,6 +131,55 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                     Stream dstStream = blob.OpenRead();
                     TestHelper.AssertStreamsAreEqual(srcStream, dstStream);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("OpenRead")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlobOpenReadWithCancelTest()
+        {
+            var cts = new CancellationTokenSource();
+            var buffer = new byte[4 * 1024 * 1024];
+            var container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+                var blob = container.GetPageBlobReference("blob1");
+                using (var srcStream = new MemoryStream(buffer))
+                {
+                    blob.UploadFromStream(srcStream);
+                }
+
+                var dstStream = await blob.OpenReadAsync(null, null, null, cts.Token);
+
+                cts.Cancel();
+
+                try
+                {
+                    Assert.IsTrue(cts.Token.IsCancellationRequested);
+
+                    var bytesRead = 0;
+
+                    do
+                    {
+                        bytesRead = await dstStream.ReadAsync(buffer, 0, buffer.Length, cts.Token);
+                    }
+                    while (bytesRead > 0);
+
+                    Assert.Fail("Expected exception not raised");
+                }
+                catch (StorageException e)
+                {
+                    Assert.AreEqual("A task was canceled.", e.Message);
                 }
             }
             finally

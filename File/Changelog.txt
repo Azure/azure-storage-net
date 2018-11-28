@@ -1,3 +1,7 @@
+Changes in -----:
+
+- Fixed issue where FileReadStream.ReadAsync didn't appropriately use the passed in CancellationToken.
+
 Changes in 9.4.1:
 
 - Fix bug where certain content headers were not being sent to the server.
