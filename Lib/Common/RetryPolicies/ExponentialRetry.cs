@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Net;
+    using System.Threading;
 
     /// <summary>
     /// Represents a retry policy that performs a specified number of retries, using a randomized exponential back off scheme to determine the interval between retries. 
@@ -37,6 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         private int maximumAttempts;
         private DateTimeOffset? lastPrimaryAttempt = null;
         private DateTimeOffset? lastSecondaryAttempt = null;
+        private readonly Random random = new Random();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExponentialRetry"/> class.
@@ -86,8 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
 
             if (currentRetryCount < this.maximumAttempts)
             {
-                Random r = new Random();
-                double increment = (Math.Pow(2, currentRetryCount) - 1) * r.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2));
+                double increment = CalculateIncrement(currentRetryCount);
                 retryInterval = (increment < 0) ?
                     ExponentialRetry.MaxBackoff :
                     TimeSpan.FromMilliseconds(Math.Min(ExponentialRetry.MaxBackoff.TotalMilliseconds, ExponentialRetry.MinBackoff.TotalMilliseconds + increment));
@@ -95,6 +96,21 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
             }
 
             return false;
+        }
+
+        static class StaticRandom
+        {
+            static int seed = Environment.TickCount;
+
+            static readonly ThreadLocal<Random> random =
+                new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
+
+            public static Random Instance => random.Value;
+        }
+
+        private double CalculateIncrement(int currentRetryCount)
+        {
+            return (Math.Pow(2, currentRetryCount) - 1) * StaticRandom.Instance.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2));
         }
 
         /// <summary>
