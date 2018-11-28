@@ -298,11 +298,13 @@ namespace Microsoft.Azure.Test.Network
                     & ~FiddlerCoreStartupFlags.RegisterAsSystemProxy
                     & ~FiddlerCoreStartupFlags.DecryptSSL;
 
-                // For now, hardcoding 8877 for the proxy port seems appropriate.
-                FiddlerApplication.Startup(8877, flags);
+                // In the event that the HttpMangler class is used from multiple AppDomains and FiddlerOneTimeInitializer() 
+                // is called more than once, randomize the web proxy port used by FiddlerCore to prevent conflicts. 
+                int port = 8800 + FiddlerOneTimeInitializer.Random.Next(0, 100);
+                FiddlerApplication.Startup(port, flags);
 
                 this.oldProxy = WebRequest.DefaultWebProxy;
-                this.newProxy = new WebProxy("http://localhost:8877", true);
+                this.newProxy = new WebProxy("http://localhost:" + port.ToString(), true);
             }
 
             /// <summary>
@@ -311,6 +313,21 @@ namespace Microsoft.Azure.Test.Network
             ~FiddlerOneTimeInitializer()
             {
                 FiddlerApplication.Shutdown();
+            }
+
+            // Thread-safe random number source
+
+            static int seed = Environment.TickCount;
+
+            static readonly ThreadLocal<Random> random =
+                new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
+
+            static Random Random
+            {
+                get
+                {
+                    return random.Value;
+                }
             }
         }
     }
