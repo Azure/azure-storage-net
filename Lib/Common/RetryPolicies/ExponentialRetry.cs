@@ -38,7 +38,6 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
         private int maximumAttempts;
         private DateTimeOffset? lastPrimaryAttempt = null;
         private DateTimeOffset? lastSecondaryAttempt = null;
-        private readonly Random random = new Random();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExponentialRetry"/> class.
@@ -98,19 +97,9 @@ namespace Microsoft.WindowsAzure.Storage.RetryPolicies
             return false;
         }
 
-        static class StaticRandom
-        {
-            static int seed = Environment.TickCount;
-
-            static readonly ThreadLocal<Random> random =
-                new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
-
-            public static Random Instance => random.Value;
-        }
-
         private double CalculateIncrement(int currentRetryCount)
         {
-            return (Math.Pow(2, currentRetryCount) - 1) * StaticRandom.Instance.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2));
+            return (Math.Pow(2, currentRetryCount) - 1) * CommonUtility.Random.Next((int)(this.deltaBackoff.TotalMilliseconds * 0.8), (int)(this.deltaBackoff.TotalMilliseconds * 1.2));
         }
 
         /// <summary>

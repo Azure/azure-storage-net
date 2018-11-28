@@ -35,6 +35,13 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
     internal static class CommonUtility
     {
+        static int seed = Environment.TickCount;
+
+        static readonly ThreadLocal<Random> random =
+            new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
+        
+        internal static Random Random => random.Value;
+
         /// <summary>
         /// Determines which location can the listing command target by looking at the
         /// continuation token.
