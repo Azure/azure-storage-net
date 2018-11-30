@@ -26,11 +26,9 @@
       </group>
       <group targetFramework=".NETStandard2.0">
         <dependency id="NETStandard.Library" version="2.0.1" />
-        <dependency id="Microsoft.Azure.KeyVault.Core" version="2.0.4" />
         <dependency id="Microsoft.Azure.Storage.Common" version="9.4.1" />
       </group>
       <group targetFramework=".NETFramework4.5">
-        <dependency id="Microsoft.Azure.KeyVault.Core" version="1.0.0" />
         <dependency id="Microsoft.Azure.Storage.Common" version="9.4.1" />
       </group>
     </dependencies>
