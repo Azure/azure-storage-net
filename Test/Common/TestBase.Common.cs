@@ -32,6 +32,7 @@ using System.Net;
 #if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+[assembly: Parallelize(Workers = 0, Scope = ExecutionScope.MethodLevel)]
 #else
 using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
