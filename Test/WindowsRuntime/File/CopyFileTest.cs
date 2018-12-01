@@ -15,37 +15,18 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Net;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class CopyFileTest : FileTestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        // removed when we support mstest on projectK
-        public CopyFileTest()
-        {
-            MyTestInitialize();
-        }
-        public void Dispose()
-        {
-            MyTestCleanup();
-        }
-#endif
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]

@@ -15,21 +15,16 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-using Microsoft.WindowsAzure.Storage.File.Protocol;
 using Microsoft.WindowsAzure.Storage.File;
+using Microsoft.WindowsAzure.Storage.File.Protocol;
+using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Net;
-
-#if WINDOWS_DESKTOP || NETCOREAPP2_0
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-#endif
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage
 {

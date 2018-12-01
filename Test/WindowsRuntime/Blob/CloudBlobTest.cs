@@ -15,39 +15,20 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-#if NETCORE
-using System.Security.Cryptography;
-#else
-
-#endif
-
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobTest : BlobTestBase
-#if XUNIT
-, IDisposable
-#endif
     {
         const string BlobName = "blob1";
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        public CloudBlobTest()
-        {
-            MyTestInitialize();
-        }
-        public void Dispose()
-        {
-            MyTestCleanup();
-        }
-#endif
+
         internal static async Task CreateForTestAsync(CloudBlockBlob blob, int blockCount, int blockSize, bool commit = true)
         {
             byte[] buffer = GetRandomBuffer(blockSize);

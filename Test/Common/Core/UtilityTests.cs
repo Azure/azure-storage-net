@@ -17,15 +17,9 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using System;
-    using System.Collections.Generic;
-
-#if WINDOWS_DESKTOP || NETCOREAPP2_0
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-#endif
+    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using System.Collections.Generic;
 
     [TestClass]
     public class UtilityTests : TestBase

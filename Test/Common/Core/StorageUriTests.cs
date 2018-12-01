@@ -17,19 +17,12 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.WindowsAzure.Storage.Queue;
     using System;
-    using System.Collections.Generic;
-    using System.Net;
-
-#if WINDOWS_DESKTOP || NETCOREAPP2_0
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-#endif
 
     [TestClass]
     public class StorageUriTests : TestBase

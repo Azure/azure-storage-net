@@ -17,35 +17,15 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.File.Protocol;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
     using System.Threading.Tasks;
 
     [TestClass]
     public class CloudFileServiceTest : FileTestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        // removed when we support mstest on projectK
-        public CloudFileServiceTest()
-        {
-            MyTestInitialize();
-        }
-        public void Dispose()
-        {
-            MyTestCleanup();
-        }
-#endif
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]

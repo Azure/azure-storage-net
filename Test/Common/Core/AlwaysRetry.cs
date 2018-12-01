@@ -17,17 +17,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
     using System.Collections.Generic;
-
-#if WINDOWS_DESKTOP || NETCOREAPP2_0
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-#endif
-
-    public class AlwaysRetry : IExtendedRetryPolicy
+        public class AlwaysRetry : IExtendedRetryPolicy
     {
         private IList<RetryContext> retryContextList;
         private IList<RetryInfo> retryInfoList;

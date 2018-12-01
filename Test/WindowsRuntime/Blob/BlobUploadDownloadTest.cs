@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
@@ -33,24 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class BlobUploadDownloadTest : BlobTestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        // removed when we support mstest on projectK
-        public BlobUploadDownloadTest()
-        {
-            TestInitialize();
-        }
-        public void Dispose()
-        {
-            TestCleanup();
-        }
-#endif
-
         private CloudBlobContainer testContainer;
 
         [TestInitialize]

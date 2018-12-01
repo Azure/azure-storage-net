@@ -17,34 +17,16 @@
 
 namespace Microsoft.WindowsAzure.Storage.Queue
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     [TestClass]
     public class QueueAnalyticsUnitTests : TestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        public QueueAnalyticsUnitTests()
-        {
-            MyClassInitialize(null);
-            MyTestInitialize();
-        }
-        public void Dispose()
-        {
-            MyClassCleanup();
-            MyTestCleanup();
-        }
-#endif
         #region Locals + Ctors
         private TestContext testContextInstance;
 

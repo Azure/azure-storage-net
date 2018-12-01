@@ -17,33 +17,16 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 
     [TestClass]
     public class BlobAnalyticsUnitTests : TestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        public BlobAnalyticsUnitTests()
-        {
-            MyClassInitialize(null);
-            MyTestInitialize();
-        }
-        public void Dispose()
-        {
-            MyClassCleanup();
-            MyTestCleanup();
-        }
-#endif
         #region Locals + Ctors
 
         private TestContext testContextInstance;

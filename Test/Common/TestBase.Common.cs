@@ -17,7 +17,6 @@
 
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Core;
 using Microsoft.WindowsAzure.Storage.File;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
@@ -28,15 +27,13 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Net;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-[assembly: Parallelize(Workers = 0, Scope = ExecutionScope.MethodLevel)]
-#else
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
 #endif
 
+[assembly: Parallelize(Workers = 0, Scope = ExecutionScope.MethodLevel)]
 namespace Microsoft.WindowsAzure.Storage
 {
     public partial class TestBase

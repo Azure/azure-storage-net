@@ -17,13 +17,12 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Queue;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
 

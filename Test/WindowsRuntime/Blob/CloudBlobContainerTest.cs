@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Auth;
 using System;
 using System.Collections.Generic;
@@ -24,7 +24,6 @@ using System.Net;
 using System.Threading.Tasks;
 
 #if NETCORE
-using System.Globalization;
 using System.Threading;
 #else
 using Windows.Globalization;
@@ -35,23 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobContainerTest : BlobTestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        public CloudBlobContainerTest()
-        {
-            MyTestInitialize();
-        }
-        public void Dispose()
-        {
-            MyTestCleanup();
-        }
-#endif
-
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]

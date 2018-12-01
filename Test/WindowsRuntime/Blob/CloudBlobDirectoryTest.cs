@@ -17,10 +17,8 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -29,23 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
     [TestClass]
     public class CloudBlobDirectoryTest : BlobTestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        public CloudBlobDirectoryTest()
-        {
-            MyTestInitialize();
-        }
-        public void Dispose()
-        {
-            MyTestCleanup();
-        }
-#endif
-
         string[] Delimiters = new string[] { ":", "$", "@", "-", "%", "/", "|", "$$", "::", "//" };
 
         private async Task<bool> CloudBlobDirectorySetupWithDelimiterAsync(CloudBlobContainer container, string delimiter = "/")

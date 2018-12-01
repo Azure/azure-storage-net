@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <VersionPrefix>9.4.0</VersionPrefix>
     <TargetFramework>netcoreapp1.0</TargetFramework>
-    <DefineConstants>$(DefineConstants);NETCORE;XUNIT</DefineConstants>
+    <DefineConstants>TRACE;NETCORE</DefineConstants>
     <DelaySign>true</DelaySign>
     <AssemblyName>Microsoft.Azure.Storage.Test</AssemblyName>
     <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
@@ -34,17 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="1.4.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.5.3" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.console" Version="2.4.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="xunit.runner.reporters" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -52,7 +45,6 @@
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Blob\Microsoft.Azure.Storage.Blob.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.File\Microsoft.Azure.Storage.File.NetStandard.csproj" />
     <ProjectReference Include="..\..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Queue\Microsoft.Azure.Storage.Queue.NetStandard.csproj" />
-    <ProjectReference Include="..\XUnitForMsTest\XUnitForMsTest.csproj" />
   </ItemGroup>
 
   <ItemGroup>

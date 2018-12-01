@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Blob.Protocol;
 using System;
 using System.Collections.Generic;
@@ -33,23 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 {
     [TestClass]
     public class LeaseTests : BlobTestBase
-#if XUNIT
-, IDisposable
-#endif
-{
-
-#if XUNIT
-    // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-    public LeaseTests()
     {
-        TestInitialize();
-    }
-    public void Dispose()
-    {
-        TestCleanup();
-    }
-#endif
-
     /// <summary>
     /// The prefix to use for the current test. New containers and blobs in the root container begin with this prefix
     /// to avoid conflicting with other tests or concurrent runs of the same test. This also allows a test to easily

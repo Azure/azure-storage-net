@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using System.Net;
@@ -29,23 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 {
     [TestClass]
     public class FileUploadDownloadTest : FileTestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        // removed when we support mstest on projectK
-        public FileUploadDownloadTest()
-        {
-            TestInitialize();
-        }
-        public void Dispose()
-        {
-            TestCleanup();
-        }
-#endif
         private CloudFileShare testShare;
 
         [TestInitialize]

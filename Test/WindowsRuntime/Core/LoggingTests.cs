@@ -15,35 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using System;
-using System.Diagnostics;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.WindowsAzure.Storage.Blob;
+using System;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Microsoft.WindowsAzure.Storage.Core
 {
     [TestClass]
     public class LoggingTests : TestBase
-#if XUNIT
-, IDisposable
-#endif
     {
-
-#if XUNIT
-        // Todo: The simple/nonefficient workaround is to minimize change and support Xunit,
-        // removed when we support mstest on projectK
-        public LoggingTests()
-        {
-            TestInitialize();
-        }
-        public void Dispose()
-        {
-            TestCleanup();
-        }
-#endif
         private TestLogListener traceListener;
 
         [TestInitialize]

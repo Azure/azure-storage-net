@@ -17,7 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage
 {
-    using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System.IO;
     using System.Xml.Linq;
 

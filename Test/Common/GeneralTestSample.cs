@@ -15,11 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-#if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-#endif
 
 namespace Microsoft.WindowsAzure.Storage
 {

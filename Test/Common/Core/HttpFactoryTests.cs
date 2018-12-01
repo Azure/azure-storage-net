@@ -17,18 +17,13 @@
 
 namespace Microsoft.Azure.Storage.Core
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Auth.Protocol;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Net.Http;
-
-#if WINDOWS_DESKTOP || NETCOREAPP2_0
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-#else
-using Microsoft.VisualStudio.TestPlatform.UnitTestFramework;
-#endif
 
     [TestClass]
     public class HttpFactoryTests : TestBase
