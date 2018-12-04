@@ -17,18 +17,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.Blob
 {
-    using Microsoft.Azure.KeyVault;
-    using Microsoft.Azure.KeyVault.Core;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using Newtonsoft.Json;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Security.Cryptography;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     [TestClass]
     public class BlobServerEncryptionTests : BlobTestBase

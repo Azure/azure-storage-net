@@ -107,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 // Create the Key to be used for wrapping.
                 // This code creates a random encryption key.
-                Microsoft.Azure.KeyVault.SymmetricKey aesKey = new SymmetricKey(kid: "symencryptionkey");
+                SymmetricKey aesKey = new SymmetricKey(kid: "symencryptionkey");
 
                 // Create the encryption policy to be used for upload.
                 BlobEncryptionPolicy uploadPolicy = new BlobEncryptionPolicy(key: aesKey, keyResolver: null);

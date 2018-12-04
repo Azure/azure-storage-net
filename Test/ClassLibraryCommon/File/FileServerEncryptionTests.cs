@@ -17,8 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.File
 {
-    using Microsoft.Azure.KeyVault;
-    using Microsoft.Azure.KeyVault.Core;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Core;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
