@@ -1,4 +1,4 @@
-Changes in -----:
+Changes in 9.4.2:
 
 - Fixed issue where BlobReadStream.ReadAsync didn't appropriately use the passed in CancellationToken.
 - Fixed issue where CloudBlob.StartCopyImpl didn't appropriately use the passed in CancellationToken.

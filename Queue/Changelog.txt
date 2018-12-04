@@ -1,3 +1,7 @@
+Changes in 9.4.2:
+
+- None
+
 Changes in 9.4.1:
 
 - Fixed issue where CloudQueue metadata was cleared after various calls which didn't return metadata payload.
