@@ -161,7 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
 
             await this.DispatchWriteAsync().ConfigureAwait(false);
-            await Task.Run(() => this.noPendingWritesEvent.Wait(), cancellationToken);
+            await this.noPendingWritesEvent.WaitAsync().WithCancellation(cancellationToken).ConfigureAwait(false);
 
             if (this.lastException != null)
             {
@@ -254,14 +254,14 @@ namespace Microsoft.WindowsAzure.Storage.File
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
-            Task writePagesTask = this.file.WriteRangeAsync(rangeData, offset, contentMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(task =>
+            Task writePagesTask = this.file.WriteRangeAsync(rangeData, offset, contentMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(async task =>
             {
                 if (task.Exception != null)
                 {
                     this.lastException = task.Exception;
                 }
 
-                this.noPendingWritesEvent.Decrement();
+                await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                 this.parallelOperationSemaphore.Release();
             });
         }

@@ -26,7 +26,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Globalization;
     using System.IO;
     using System.Text;
-    using System.Threading;
 
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
     internal abstract class BlobWriteStreamBase :
@@ -46,7 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         protected AccessCondition accessCondition;
         protected BlobRequestOptions options;
         protected OperationContext operationContext;
-        protected CounterEvent noPendingWritesEvent;
+        protected CounterEventAsync noPendingWritesEvent;
         protected MD5Wrapper blobMD5;
         protected MD5Wrapper blockMD5;
 #if WINDOWS_DESKTOP
@@ -73,7 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             this.currentOffset = 0;
             this.options = options;
             this.operationContext = operationContext;
-            this.noPendingWritesEvent = new CounterEvent();
+            this.noPendingWritesEvent = new CounterEventAsync();
             this.blobMD5 = this.options.StoreBlobContentMD5.Value ? new MD5Wrapper() : null;
             this.blockMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
 #if WINDOWS_DESKTOP

@@ -235,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
             ThrowLastExceptionIfExists();
             await this.DispatchWriteAsync(null, cancellationToken).ConfigureAwait(false);
-            await Task.Run(() => this.noPendingWritesEvent.Wait(), cancellationToken);
+            await this.noPendingWritesEvent.WaitAsync().WithCancellation(cancellationToken).ConfigureAwait(false);
             ThrowLastExceptionIfExists();
         }
 
@@ -376,7 +376,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
                 finally
                 {
-                    this.noPendingWritesEvent.Decrement();
+                    await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
             }, token).ConfigureAwait(false);

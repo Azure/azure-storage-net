@@ -22,7 +22,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using Microsoft.WindowsAzure.Storage.Core.Util;
     using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Net;
@@ -306,7 +305,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {  
                 this.ThrowLastExceptionIfExists();
                 await this.DispatchWriteAsync(null, token).ConfigureAwait(false);
-                await Task.Run(() => this.noPendingWritesEvent.Wait(), token);
+                await this.noPendingWritesEvent.WaitAsync().WithCancellation(token).ConfigureAwait(false);
                 this.ThrowLastExceptionIfExists();
             }
         }
@@ -492,7 +491,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    this.noPendingWritesEvent.Decrement();
+                    await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
             }, token).ConfigureAwait(false);
@@ -517,7 +516,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    this.noPendingWritesEvent.Decrement();
+                    await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
             }, token).ConfigureAwait(false);
@@ -562,7 +561,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 finally
                 {
-                    this.noPendingWritesEvent.Decrement();
+                    await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
             }, token).ConfigureAwait(false);

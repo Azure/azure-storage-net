@@ -1,6 +1,7 @@
 Changes in -----:
 
 - Fixed issue where FileReadStream.ReadAsync didn't appropriately use the passed in CancellationToken.
+- [GitHub Issue #755] Switch to use CounterEventAsync.
 
 Changes in 9.4.1:
 

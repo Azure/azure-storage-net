@@ -1,3 +1,7 @@
+Changes in -----:
+
+- [GitHub Issue #755] Switch to use CounterEventAsync.
+
 Changes in 9.4.1:
 
 - None

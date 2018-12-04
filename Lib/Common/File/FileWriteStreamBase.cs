@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         protected AccessCondition accessCondition;
         protected FileRequestOptions options;
         protected OperationContext operationContext;
-        protected CounterEvent noPendingWritesEvent;
+        protected CounterEventAsync noPendingWritesEvent;
         protected MD5Wrapper fileMD5;
         protected MD5Wrapper rangeMD5;
         protected volatile Exception lastException;
@@ -65,7 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             this.accessCondition = accessCondition;
             this.options = options;
             this.operationContext = operationContext;
-            this.noPendingWritesEvent = new CounterEvent();
+            this.noPendingWritesEvent = new CounterEventAsync();
             this.fileMD5 = this.options.StoreFileContentMD5.Value ? new MD5Wrapper() : null;
             this.rangeMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
 #if !(NETCORE || WINDOWS_RT)
