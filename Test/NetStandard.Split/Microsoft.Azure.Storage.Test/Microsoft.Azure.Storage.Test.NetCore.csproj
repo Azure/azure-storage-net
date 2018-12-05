@@ -16,6 +16,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <RootNamespace>Microsoft.Azure.Storage.Test</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Configurations>Debug;Release;Official</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

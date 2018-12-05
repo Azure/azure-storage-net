@@ -8,6 +8,8 @@
     <AssemblyName>Microsoft.Azure.Storage.Test</AssemblyName>
 
     <RootNamespace>Microsoft.Azure.Storage.Test</RootNamespace>
+
+    <Configurations>Debug;Release;Official</Configurations>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -22,7 +24,7 @@
     <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0;WINDOWS_DESKTOP;TASK</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Official|AnyCPU' ">
     <DefineConstants>TRACE;NETCOREAPP2_0;WINDOWS_DESKTOP;TASK</DefineConstants>
   </PropertyGroup>
   
