@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata minClientVersion="3.6">
     <id>Microsoft.Azure.Storage.Queue</id>
-    <version>9.4.2-preview</version>
+    <version>9.4.2</version>
     <title>Azure Storage Queue</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -22,14 +22,14 @@
     <dependencies>
       <group targetFramework=".NETStandard1.3">
         <dependency id="NETStandard.Library" version="1.6.1" />
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.4.2-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.4.2" />
       </group>
       <group targetFramework=".NETStandard2.0">
         <dependency id="NETStandard.Library" version="2.0.1" />
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.4.2-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.4.2" />
       </group>
       <group targetFramework=".NETFramework4.5">
-        <dependency id="Microsoft.Azure.Storage.Common" version="9.4.2-preview" />
+        <dependency id="Microsoft.Azure.Storage.Common" version="9.4.2" />
       </group>
     </dependencies>
     <references>
