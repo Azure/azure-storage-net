@@ -94,6 +94,18 @@ namespace Microsoft.WindowsAzure.Storage.Core
         }
 
         [TestMethod]
+        [Description("Basic instantiation and disposal.")]
+        [TestCategory(ComponentCategory.Core)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.Smoke)]
+        [TestCategory(TenantTypeCategory.Cloud)]
+        public void TokenDispose()
+        {
+            var token = new TokenCredential("TOKEN_STRING");
+            token.Dispose();
+        }
+
+        [TestMethod]
         [Description("Basic timer triggering test.")]
         [TestCategory(ComponentCategory.Core)]
         [TestCategory(TestTypeCategory.UnitTest)]

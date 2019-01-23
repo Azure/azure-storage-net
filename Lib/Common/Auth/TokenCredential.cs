@@ -119,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         /// <summary>
         /// Calling Dispose stops the timer and periodicTokenRenewer.
         /// </summary>
-        public void Dispose() { this.timer.Dispose(); this.cancellationTokenSource.Cancel(); } // TODO should probably track that we've already been disposed, and no-op
+        public void Dispose() { this.timer?.Dispose(); this.cancellationTokenSource?.Cancel(); } // TODO should probably track that we've already been disposed, and no-op
 
         /// <summary>
         /// This method is triggered by the timer. 

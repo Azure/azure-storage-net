@@ -1,3 +1,7 @@
+Changes in 9.4.3:
+
+- [GitHub Issue #844] Guard against nulls TokenCredential.Dispose
+
 Changes in 9.4.2:
 
 - [GitHub Issue #755] Switch to use CounterEventAsync.
