@@ -257,6 +257,46 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// </summary>
         public const string EndElement = "End";
 
+        /// <summary> 
+        /// XML element for handle id elements. 
+        /// </summary> 
+        public const string HandleIdElement = "HandleId";
+
+        /// <summary> 
+        /// XML element for handle file/directory name elements. 
+        /// </summary> 
+        public const string PathElement = "Path";
+
+        /// <summary> 
+        /// XML element for handle client IP elements. 
+        /// </summary> 
+        public const string ClientIpElement = "ClientIp";
+  
+        /// <summary> 
+        /// XML element for handle opened time elements. 
+        /// </summary> 
+        public const string OpenTimeElement = "OpenTime";
+
+        /// <summary> 
+        /// Last time this handle was reconnected. 
+        /// </summary> 
+        public const string LastReconnectTimeElement = "LastReconnectTime";
+
+        /// <summary> 
+        /// XML element for handle file id elements. 
+        /// </summary> 
+        public const string FileIdElement = "FileId";
+
+        /// <summary> 
+        /// XML element for handle parent id elements. 
+        /// </summary> 
+        public const string ParentIdElement = "ParentId";
+
+        /// <summary> 
+        /// XML element for handle session id elements. 
+        /// </summary> 
+        public const string SessionIdElement = "SessionId";
+
         /// <summary>
         /// XML element for delimiters.
         /// </summary>
@@ -651,6 +691,16 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
         /// XML element for file list elements.
         /// </summary>
         public const string FileRangeListElement = "Ranges";
+
+        /// <summary> 
+        /// XML element for file handles. 
+        /// </summary> 
+        public const string HandleElement = "Handle";
+
+        /// <summary> 
+        /// XML element for file list elements. 
+        /// </summary> 
+        public const string FileHandleListElement = "HandleList";
 
         /// <summary>
         /// XML element for files.
@@ -1277,6 +1327,21 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// </summary>
             public const string File = "File";
 
+            /// <summary> 
+            /// Specifies the wildcard for specifying all file handles. 
+            /// </summary> 
+            public const string AllFileHandles = "*";
+
+            /// <summary> 
+            /// Header that specifies what handle to close. 
+            /// </summary> 
+            public const string HandleId = PrefixForStorageHeader + "handle-id";
+
+            /// <summary> 
+            /// Header that specifies how many SMB handles a close handles operation closed. 
+            /// </summary> 
+            public const string NumHandlesClosed = PrefixForStorageHeader + "number-of-handles-closed";
+
             /// <summary>
             /// Specifies the page blob type.
             /// </summary>
@@ -1411,7 +1476,17 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// <summary>
             /// Header that specifies the share quota, in gigabytes.
             /// </summary>
-            public const string ShareQuota = PrefixForStorageHeader + "share-quota";
+            public const string ShareQuota = PrefixForStorageHeader + "share-quota"; 
+            
+            /// <summary> 
+            /// Header that specifies whether the specified operation should recurse. 
+            /// </summary> 
+            public const string Recursive = PrefixForStorageHeader + "recursive";
+            
+            /// <summary> 
+            /// Header that specifies a continuation token. 
+            /// </summary> 
+            public const string Marker = PrefixForStorageHeader + "marker";
 
             /// <summary>
             /// The name of the SKU name header element.
@@ -1627,7 +1702,6 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             /// Query component for the copy ID.
             /// </summary>
             public const string CopyId = "copyid";
-            
         }
 
         /// <summary>

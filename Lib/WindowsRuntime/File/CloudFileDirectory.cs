@@ -435,6 +435,71 @@ namespace Microsoft.WindowsAzure.Storage.File
             return new FileResultSegment(resultSegment.Results, (FileContinuationToken)resultSegment.ContinuationToken);
         }
 
+        /// <summary> 
+        /// Returns a task that performs an asynchronous operation to get the SMB handles open on this directory. 
+        /// </summary> 
+        /// <param name="token">Continuation token for paginated results.</param> 
+        /// <param name="maxResults">The maximum number of results to be returned by the server.</param> 
+        /// <param name="recursive">Whether to recurse through this directory's files and subfolders. A lack of value is interpreted as false.</param> 
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param> 
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param> 
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
+        [DoesServiceRequest]
+        public virtual Task<FileHandleResultSegment> ListHandlesSegmentedAsync(FileContinuationToken token, int? maxResults = null, bool? recursive = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.ListHandlesImpl(token, maxResults, recursive, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary> 
+        /// Returns a task that performs an asynchronous operation to close all SMB handles on this directory. 
+        /// </summary> 
+        /// <param name="token">Continuation token for closing the handles.</param> 
+        /// <param name="recursive">Whether to recurse through this directory's sub files and folders. A lack of value is interpreted as false.</param> 
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param> 
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param> 
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
+        [DoesServiceRequest]
+        public virtual Task<CloseFileHandleResultSegment> CloseAllHandlesSegmentedAsync(FileContinuationToken token, bool? recursive = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.CloseHandleImpl(token, Constants.HeaderConstants.AllFileHandles, recursive, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary> 
+        /// Returns a task that performs an asynchronous operation to close the specified SMB handle on this directory. 
+        /// </summary> 
+        /// <param name="handleId">Id of the handle, "*" if all handles on the file.</param> 
+        /// <param name="token">Continuation token for when closing the handle takes exceedingly long.</param> 
+        /// <param name="recursive">Whether to recurse through this directory's sub files and folders. A lack of value is interpreted as false.</param> 
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param> 
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param> 
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param> 
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
+        /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
+        [DoesServiceRequest]
+        public virtual Task<CloseFileHandleResultSegment> CloseHandleSegmentedAsync(string handleId, FileContinuationToken token, bool? recursive = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.CloseHandleImpl(token, handleId, recursive, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken ?? CancellationToken.None);
+        }
+
         /// <summary>
         /// Updates the directory's metadata.
         /// </summary>
@@ -545,6 +610,99 @@ namespace Microsoft.WindowsAzure.Storage.File
             };
 
             return getCmd;
+        }
+
+        /// <summary> 
+        /// Gets the list handles implementation. 
+        /// </summary> 
+        /// <param name="token">Continuation token for paged responses.</param> 
+        /// <param name="maxResults">The maximum number of results to be returned by the server.</param> 
+        /// <param name="recursive">Whether to recurse through this directory's files and subfolders.</param> 
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param> 
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param> 
+        /// <returns>A <see cref="RESTCommand{T}"/> for getting the handles.</returns> 
+        private RESTCommand<FileHandleResultSegment> ListHandlesImpl(FileContinuationToken token, int? maxResults, bool? recursive, AccessCondition accessCondition, FileRequestOptions options)
+        {
+            RESTCommand<FileHandleResultSegment> getCmd = new RESTCommand<FileHandleResultSegment>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
+            options.ApplyToStorageCommand(getCmd);
+
+            getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            getCmd.RetrieveResponseStream = true;
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                var msg = FileHttpRequestMessageFactory.ListHandles(uri, serverTimeout, maxResults, recursive, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
+            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+            getCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) =>
+            {
+                ListHandlesResponse listHandlesResponse = new ListHandlesResponse(cmd.ResponseStream);
+
+                return Task.FromResult(new FileHandleResultSegment()
+                {
+                    Results = listHandlesResponse.Handles,
+                    ContinuationToken = new FileContinuationToken()
+                    {
+                        NextMarker = listHandlesResponse.NextMarker
+                    }
+                });
+            };
+
+            return getCmd;
+        }
+
+        /// <summary> 
+        /// Gets the close handles implementation. 
+        /// </summary> 
+        /// <param name="token">Continuation token for closing many files.</param> 
+        /// <param name="handleId">Id of the handle, "*" if all handles on the file.</param> 
+        /// <param name="recursive">Whether to recurse through this directory's files and subfolders.</param> 
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param> 
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param> 
+        /// <returns>A <see cref="RESTCommand{T}"/> for closing the handles.</returns> 
+        private RESTCommand<CloseFileHandleResultSegment> CloseHandleImpl(FileContinuationToken token, string handleId, bool? recursive, AccessCondition accessCondition, FileRequestOptions options)
+        {
+            RESTCommand<CloseFileHandleResultSegment> putCmd = new RESTCommand<CloseFileHandleResultSegment>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
+            options.ApplyToStorageCommand(putCmd);
+
+            putCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            putCmd.RetrieveResponseStream = true;
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                var msg = FileHttpRequestMessageFactory.CloseHandle(uri, serverTimeout, handleId, recursive, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                var res = HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+                int handlesClosed;
+
+                if (!int.TryParse(resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.NumHandlesClosed) ?? "", out handlesClosed))
+                {
+                    handlesClosed = -1;
+                }
+
+                FileContinuationToken continuation = null;
+                string marker;
+
+                if ((marker = resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.Marker)) != null)
+                {
+                    continuation = new FileContinuationToken()
+                    {
+                        NextMarker = marker
+                    };
+                }
+
+                return new CloseFileHandleResultSegment()
+                {
+                    NumHandlesClosed = handlesClosed,
+                    ContinuationToken = continuation
+                };
+            };
+
+            return putCmd;
         }
 
         /// <summary>

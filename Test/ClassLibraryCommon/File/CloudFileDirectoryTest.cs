@@ -26,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.File
     using System.Net;
     using System.Threading;
     using Microsoft.WindowsAzure.Storage.Core;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class CloudFileDirectoryTest : FileTestBase
@@ -578,8 +579,352 @@ namespace Microsoft.WindowsAzure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
+#endif 
+
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be checked.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryListHandlesNullCase()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                List<FileHandle> handles = new List<FileHandle>();
+
+                do
+                {
+                    var response = dir.ListHandlesSegmented(token);
+                    handles.AddRange(response.Results);
+                    token = response.ContinuationToken;
+                } while (token.NextMarker != null);
+
+                Assert.AreEqual(0, handles.Count);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be checked.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryListHandlesNullCaseAPM()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    FileContinuationToken token = null;
+                    List<FileHandle> handles = new List<FileHandle>();
+
+                    do
+                    {
+                        IAsyncResult result = dir.BeginListHandlesSegmented(token, null, null, null, null, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+
+                        var response = dir.EndListHandlesSegmented(result);
+
+                        handles.AddRange(response.Results);
+
+                        token = response.ContinuationToken;
+                    } while (token.NextMarker != null);
+
+                    Assert.AreEqual(0, handles.Count);
+                }
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be checked.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryListHandlesNullCaseTask()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                List<FileHandle> handles = new List<FileHandle>();
+
+                do
+                {
+                    var response = await dir.ListHandlesSegmentedAsync(token, null, null, null, null, null, CancellationToken.None);
+                    handles.AddRange(response.Results);
+                    token = response.ContinuationToken;
+                } while (token.NextMarker != null);
+
+                Assert.AreEqual(0, handles.Count);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
 #endif
 
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be closed.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCloseAllHandles()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                int handlesClosed = 0;
+
+                do
+                {
+                    var response = dir.CloseAllHandlesSegmented(token);
+                    handlesClosed += response.NumHandlesClosed;
+                    token = response.ContinuationToken;
+                } while (token != null && token.NextMarker != null);
+
+                Assert.AreEqual(handlesClosed, 0);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be closed.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCloseAllHandlesNullCaseAPM()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                int handlesClosed = 0;
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    do
+                    {
+                        IAsyncResult result = dir.BeginCloseAllHandlesSegmented(token, null, null, null, null, ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+
+                        var response = dir.EndCloseAllHandlesSegmented(result);
+
+                        handlesClosed += response.NumHandlesClosed;
+
+                        token = response.ContinuationToken;
+                    } while (token != null && token.NextMarker != null);
+                }
+                Assert.AreEqual(handlesClosed, 0);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be closed.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryCloseAllHandlesTask()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                int handlesClosed = 0;
+
+                do
+                {
+                    var response = await dir.CloseAllHandlesSegmentedAsync(token, null, null, null, null, CancellationToken.None);
+                    handlesClosed += response.NumHandlesClosed;
+                    token = response.ContinuationToken;
+                } while (token != null && token.NextMarker != null);
+
+                Assert.AreEqual(handlesClosed, 0);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be closed.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCloseHandle()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                int handlesClosed = 0;
+                const string nonexistentHandle = "12345";
+
+                do
+                {
+                    var response = dir.CloseHandleSegmented(nonexistentHandle, token);
+                    handlesClosed += response.NumHandlesClosed;
+                    token = response.ContinuationToken;
+                } while (token != null && token.NextMarker != null);
+
+                Assert.AreEqual(handlesClosed, 0);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be closed.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCloseHandleNullCaseAPM()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                int handlesClosed = 0;
+                const string nonexistentHandle = "12345";
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    do
+                    {
+                        IAsyncResult result = dir.BeginCloseHandleSegmented(nonexistentHandle, token, default(bool?), default(AccessCondition), default(FileRequestOptions), default(OperationContext), ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+
+                        var response = dir.EndCloseHandleSegmented(result);
+
+                        handlesClosed += response.NumHandlesClosed;
+
+                        token = response.ContinuationToken;
+                    } while (token != null && token.NextMarker != null);
+                }
+                Assert.AreEqual(handlesClosed, 0);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Create a directory and verify its SMB handles can be closed.")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryCloseHandleTask()
+        {
+            // TODO add non-zero test cases if OpenHandle is ever available over REST 
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir.Create();
+
+                FileContinuationToken token = null;
+                int handlesClosed = 0;
+                const string nonexistentHandle = "12345";
+
+                do
+                {
+                    var response = await dir.CloseHandleSegmentedAsync(nonexistentHandle, token);
+                    handlesClosed += response.NumHandlesClosed;
+                    token = response.ContinuationToken;
+                } while (token != null && token.NextMarker != null);
+
+                Assert.AreEqual(handlesClosed, 0);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+#endif
+        
         [TestMethod]
         [Description("CloudFileDirectory listing")]
         [TestCategory(ComponentCategory.File)]

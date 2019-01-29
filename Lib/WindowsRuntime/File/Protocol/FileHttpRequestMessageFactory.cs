@@ -240,6 +240,81 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             return request;
         }
 
+        /// <summary> 
+        /// Constructs a web request to return the list of open handles for a file or directory. 
+        /// </summary> 
+        /// <param name="uri">The absolute URI to the file.</param> 
+        /// <param name="timeout">The server timeout interval.</param> 
+        /// <param name="maxResults">The maximum number of results to be returned by the server.</param> 
+        /// <param name="recursive">Whether to recurse through a directory's files and subfolders.</param>
+        /// <param name="nextMarker">Marker returned by a previous call to continue fetching results.</param> 
+        /// <param name="accessCondition">The access condition to apply to the request.</param> 
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param> 
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns> 
+        public static StorageRequestMessage ListHandles(Uri uri, int? timeout, int? maxResults, bool? recursive, FileContinuationToken nextMarker, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "listhandles");
+
+            if (maxResults.HasValue)
+            {
+                builder.Add(Constants.MaxResults, maxResults.Value.ToString());
+            }
+
+            if (nextMarker != null)
+            {
+                builder.Add(Constants.HeaderConstants.Marker, nextMarker.NextMarker);
+            }
+
+            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            request.ApplyAccessCondition(accessCondition);
+
+            if (recursive.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.Recursive, recursive.Value.ToString());
+            }
+
+            return request;
+        }
+
+        /// <summary> 
+        /// Constructs a web request to close one or more open handles for a file or directory. 
+        /// </summary> 
+        /// <param name="uri">The absolute URI to the file.</param> 
+        /// <param name="timeout">The server timeout interval.</param> 
+        /// <param name="handleId">ID of the handle to be closed, "*" if all should be closed.</param> 
+        /// <param name="recursive">Whether to recurse through this directory's subfiles and folders.</param> 
+        /// <param name="token">Continuation token for closing many handles.</param> 
+        /// <param name="accessCondition">The access condition to apply to the request.</param> 
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param> 
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns> 
+        public static StorageRequestMessage CloseHandle(Uri uri, int? timeout, string handleId, bool? recursive, FileContinuationToken token, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "closehandles");
+
+            if (token != null && token.NextMarker != null)
+            {
+                builder.Add(Constants.HeaderConstants.Marker, token.NextMarker);
+            }
+
+            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+
+            if (handleId != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.HandleId, handleId);
+            }
+
+            if (recursive.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.Recursive, recursive.Value.ToString());
+            }
+
+            request.ApplyAccessCondition(accessCondition);
+
+            return request;
+        }
+
         /// <summary>
         /// Constructs a web request to set system properties for a file.
         /// </summary>
