@@ -1527,7 +1527,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 var res = HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
                 int handlesClosed;
 
-                if (!int.TryParse(resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.NumHandlesClosed) ?? "", out handlesClosed))
+                if (!int.TryParse(resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.NumHandlesClosed), out handlesClosed))
                 {
                     handlesClosed = -1;
                 }
@@ -1535,7 +1535,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 FileContinuationToken continuation = null;
                 string marker;
 
-                if ((marker = resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.Marker)) != null)
+                if ((marker = resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.Marker)) != "")
                 {
                     continuation = new FileContinuationToken()
                     {
