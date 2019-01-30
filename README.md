@@ -1,4 +1,4 @@
-﻿# Microsoft Azure Storage SDK for .NET (9.4.1)
+﻿# Microsoft Azure Storage SDK for .NET (9.4.2)
 
 > Server Version: 2018-03-28
 
