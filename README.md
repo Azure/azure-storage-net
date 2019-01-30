@@ -9,8 +9,8 @@ This repository contains the open source subset of the .NET SDK. For documentati
 complete Azure SDK, please see the [Microsoft Azure .NET Developer Center][].
 
 > Note:
-> As of 9.4.0, the Table service is not supported by this library.  
-> If you require Table support at the present time, remain on the pre-9.4 [WindowsAzure.Storage][] NuGet package.
+> As of 9.4.0, the Table service is not supported by this library.
+> Table support is being provided by [CosmosDB][Microsoft.Azure.Cosmos.Table].
 
 ## Features
 
@@ -185,6 +185,7 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum][]
 [File]: https://www.nuget.org/packages/Microsoft.Azure.Storage.File/
 [Queue]: https://www.nuget.org/packages/Microsoft.Azure.Storage.Queue/
 [WindowsAzure.Storage]: https://www.nuget.org/packages/WindowsAzure.Storage/
+[Microsoft.Azure.Cosmos.Table]: https://www.nuget.org/packages/Microsoft.Azure.Cosmos.Table
 
 [Newtonsoft.Json]: https://www.nuget.org/packages/Newtonsoft.Json/
 [IdentityModel.Clients.ActiveDirectory]: https://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory/
