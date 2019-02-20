@@ -33,6 +33,7 @@ namespace Microsoft.Azure.Storage.Core
         public const string BatchExceededMaximumNumberOfOperations = "The maximum number of operations allowed in one batch has been exceeded.";
         public const string BatchOperationRequiresPartitionKeyRowKey = "A batch non-retrieve operation requires a non-null partition key and row key.";
         public const string BatchErrorInOperation = "Element {0} in the batch returned an unexpected response code.";
+        public const string BatchSubOperationError = "One or more of the sub responses on this batch operation has failed. Check the list members on this exception to determine which operations were unsuccessful.";
         public const string BinaryMessageShouldUseBase64Encoding = "EncodeMessage should be true for binary message.";
         public const string Blob = "blob";
         public const string BlobAlreadyExists = "The specified blob already exists.";

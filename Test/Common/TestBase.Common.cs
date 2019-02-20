@@ -88,11 +88,11 @@ namespace Microsoft.Azure.Storage
 #if WINDOWS_DESKTOP
         public static string GenerateOAuthToken()
         {
-            string authority = string.Format(TestBase.TargetTenantConfig.ActiveDirectoryAuthEndpoint + "/{0}/oauth2/token",
-                TestBase.TargetTenantConfig.ActiveDirectoryTenantId);
+            string authority = string.Format(TestBase.TargetOauthTenantConfig.ActiveDirectoryAuthEndpoint + "/{0}",
+                TestBase.TargetOauthTenantConfig.ActiveDirectoryTenantId);
 
-            ClientCredential credential = new ClientCredential(TestBase.TargetTenantConfig.ActiveDirectoryApplicationId,
-                TestBase.TargetTenantConfig.ActiveDirectoryApplicationSecret);
+            ClientCredential credential = new ClientCredential(TestBase.TargetOauthTenantConfig.ActiveDirectoryApplicationId,
+                TestBase.TargetOauthTenantConfig.ActiveDirectoryApplicationSecret);
 
             AuthenticationContext context = new AuthenticationContext(authority);
             AuthenticationResult result = context.AcquireTokenAsync("https://storage.azure.com", credential).Result;
@@ -101,21 +101,40 @@ namespace Microsoft.Azure.Storage
         }
 #endif
 
-        public static CloudBlobClient GenerateCloudBlobClient(DelegatingHandler delegatingHandler = null)
+        public static CloudBlobClient GenerateCloudBlobClient(DelegatingHandler delegatingHandler = null, bool oauthTenant = false)
         {
             CloudBlobClient client;
-            if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint))
+            if(oauthTenant)
             {
-                Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
-                client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
+                if (string.IsNullOrEmpty(TestBase.TargetOauthTenantConfig.BlobServiceSecondaryEndpoint))
+                {
+                    Uri baseAddressUri = new Uri(TestBase.TargetOauthTenantConfig.BlobServiceEndpoint);
+                    client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
+                }
+                else
+                {
+                    StorageUri baseAddressUri = new StorageUri(
+                        new Uri(TestBase.TargetOauthTenantConfig.BlobServiceEndpoint),
+                        new Uri(TestBase.TargetOauthTenantConfig.BlobServiceSecondaryEndpoint));
+                    client = new CloudBlobClient(baseAddressUri, TestBase.OauthStorageCredentials, delegatingHandler);
+                }
             }
             else
             {
-                StorageUri baseAddressUri = new StorageUri(
-                    new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint),
-                    new Uri(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint));
-                client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
+                if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint))
+                {
+                    Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint);
+                    client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
+                }
+                else
+                {
+                    StorageUri baseAddressUri = new StorageUri(
+                        new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint),
+                        new Uri(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint));
+                    client = new CloudBlobClient(baseAddressUri, TestBase.StorageCredentials, delegatingHandler);
+                }
             }
+
 
             client.AuthenticationScheme = DefaultAuthenticationScheme;
 
@@ -269,16 +288,22 @@ namespace Microsoft.Azure.Storage
 
         public static TenantConfiguration PremiumBlobTenantConfig { get; private set; }
 
+        public static TenantConfiguration TargetOauthTenantConfig { get; private set; }
+
         public static TenantType CurrentTenantType { get; private set; }
 
         public static StorageCredentials StorageCredentials { get; private set; }
+
+        public static StorageCredentials OauthStorageCredentials { get; private set; }
 
         public static StorageCredentials PremiumBlobStorageCredentials { get; private set; }
 
         private static void Initialize(TestConfigurations configurations)
         {
             TestBase.TargetTenantConfig = configurations.TenantConfigurations.Single(config => config.TenantName == configurations.TargetTenantName);
+            TestBase.TargetOauthTenantConfig = configurations.TenantConfigurations.Single(config => config.TenantName == configurations.TargetOauthTenantName);
             TestBase.StorageCredentials = new StorageCredentials(TestBase.TargetTenantConfig.AccountName, TestBase.TargetTenantConfig.AccountKey);
+            TestBase.OauthStorageCredentials = new StorageCredentials(TestBase.TargetOauthTenantConfig.AccountName, TestBase.TargetOauthTenantConfig.AccountKey);
             TestBase.CurrentTenantType = TargetTenantConfig.TenantType;
 
             try

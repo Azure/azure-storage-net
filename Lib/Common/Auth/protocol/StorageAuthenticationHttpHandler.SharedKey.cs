@@ -28,21 +28,31 @@ namespace Microsoft.Azure.Storage.Auth.Protocol
     using System.Threading;
     using System.Threading.Tasks;
 
-    partial class StorageAuthenticationHttpHandler
+    internal partial class StorageAuthenticationHttpHandler
     {
         private Task<HttpResponseMessage> GetSharedKeyAuthenticationTask(StorageRequestMessage request, CancellationToken cancellationToken)
+        { 
+            AddDateHeader(request);
+
+            AddSharedKeyAuth(request);
+
+            return base.SendAsync(request, cancellationToken);
+        }
+
+        internal static void AddDateHeader(StorageRequestMessage request)
         {
-            StorageRequestMessage storageRequest = request as StorageRequestMessage;
-
-            ICanonicalizer canonicalizer = storageRequest.Canonicalizer;
-            StorageCredentials credentials = storageRequest.Credentials;
-            string accountName = storageRequest.AccountName;
-
             if (!request.Headers.Contains(Constants.HeaderConstants.Date))
             {
                 string dateString = HttpWebUtility.ConvertDateTimeToHttpString(DateTimeOffset.UtcNow);
                 request.Headers.Add(Constants.HeaderConstants.Date, dateString);
             }
+        }
+
+        internal static void AddSharedKeyAuth(StorageRequestMessage request)
+        {
+            string accountName = request.AccountName;
+            StorageCredentials credentials = request.Credentials;
+            ICanonicalizer canonicalizer = request.Canonicalizer;
 
             if (credentials.IsSharedKey)
             {
@@ -59,8 +69,6 @@ namespace Microsoft.Azure.Storage.Auth.Protocol
                     canonicalizer.AuthorizationScheme,
                     string.Format(CultureInfo.InvariantCulture, "{0}:{1}", credentials.AccountName, signature));
             }
-
-            return base.SendAsync(request, cancellationToken);
         }
     }
 }

@@ -15,6 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
+using Microsoft.Azure.Storage.Auth;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,6 +36,14 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.FetchAttributes();
                 copyInProgress = (blob.CopyState.Status == CopyStatus.Pending);
             }
+        }
+        public static CloudBlobClient GetOAuthClient()
+        {
+            TokenCredential tokenCredential = new TokenCredential(GenerateOAuthToken());
+            StorageCredentials storageCredentials = new StorageCredentials(tokenCredential);
+
+            Uri endpoint = new Uri(TargetOauthTenantConfig.BlobServiceEndpoint);
+            return new CloudBlobClient(endpoint, storageCredentials);
         }
 
 #if TASK

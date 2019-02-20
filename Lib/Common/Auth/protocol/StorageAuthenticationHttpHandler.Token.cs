@@ -24,16 +24,21 @@ namespace Microsoft.Azure.Storage.Auth.Protocol
     using System;
     using System.Globalization;
     using System.Net.Http;
-    using System.Net.Http.Headers;
     using System.Threading;
     using System.Threading.Tasks;
 
-    partial class StorageAuthenticationHttpHandler
+    internal partial class StorageAuthenticationHttpHandler
     {
         private Task<HttpResponseMessage> GetTokenAuthenticationTask(StorageRequestMessage request, CancellationToken cancellationToken)
         {
             StorageRequestMessage storageRequest = request as StorageRequestMessage;
-            StorageCredentials credentials = storageRequest.Credentials;
+            AddTokenAuth(storageRequest);
+            return base.SendAsync(request, cancellationToken);
+        }
+
+        internal static void AddTokenAuth(StorageRequestMessage request)
+        {
+            StorageCredentials credentials = request.Credentials;
 
             if (!request.Headers.Contains(Constants.HeaderConstants.Date))
             {
@@ -41,7 +46,7 @@ namespace Microsoft.Azure.Storage.Auth.Protocol
                 request.Headers.Add(Constants.HeaderConstants.Date, dateString);
             }
 
-            if (!"https".Equals(storageRequest.RequestUri.Scheme, StringComparison.OrdinalIgnoreCase))
+            if (!"https".Equals(request.RequestUri.Scheme, StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(SR.OnlyHttpsIsSupportedForTokenCredential);
             }
@@ -52,8 +57,6 @@ namespace Microsoft.Azure.Storage.Auth.Protocol
                     "Authorization",
                     string.Format(CultureInfo.InvariantCulture, "Bearer {0}", credentials.TokenCredential.Token));
             }
-
-            return base.SendAsync(request, cancellationToken);
         }
     }
 }

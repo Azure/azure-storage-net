@@ -17,6 +17,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Blob.Protocol;
 using Microsoft.Azure.Storage.Core.Util;
 using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
@@ -109,7 +110,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
-                    blob.PutBlockAsync(block, stream, null, null, null, null).Wait();
+                    blob.PutBlockAsync(block, stream, null).Wait();
                 }
             }
 
@@ -200,6 +201,374 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test blob set tier batch")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        public async Task CloudBlockBlobSetTierBatchTestAsync()
+        {
+            // TODO: Test arg validation. Test uber request failure. Sub request failure. Varying numbers of operations (0, 1, many). Failure then success. Success then failure. Mixed failures and successes. Multiple of each.
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                var blobName1 = "ºth3r(h@racter$/?:.&%=";
+                var blobName2 = "white space";
+                var blobNameUncreated = "uncreated";
+
+                var blob1 = container.GetBlockBlobReference(blobName1);
+                var blob2 = container.GetBlockBlobReference(blobName2);
+                var blob3 = container.GetBlockBlobReference(blobNameUncreated);
+
+                CreateForTest(blob1, 0, 0, false);
+
+                // Test a batch with one successful operation.
+                BlobSetTierBatchOperation batch = new BlobSetTierBatchOperation();
+                batch.AddSubOperation(blob1, StandardBlobTier.Cool, null, null);
+
+                IList<BlobBatchSubOperationResponse> results = await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+
+                Assert.AreEqual(results.Count, 1);
+                ValidateSuccessfulBatchResponse(results, HttpStatusCode.OK);
+
+                // Test a batch with multiple successful operations.
+                // TODO: Test with page blob when it is possible to get a premium account with batch enabled.
+                CreateForTest(blob2, 0, 0, false);
+
+                batch = new BlobSetTierBatchOperation();
+                batch.AddSubOperation(blob1, StandardBlobTier.Hot);
+                batch.AddSubOperation(blob2, StandardBlobTier.Cool);
+
+                results = await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+
+                Assert.AreEqual(results.Count, 2);
+                ValidateSuccessfulBatchResponse(results, HttpStatusCode.OK);
+
+                // Test a batch with one failure.
+
+                batch = new BlobSetTierBatchOperation();
+                batch.AddSubOperation(blob3, StandardBlobTier.Hot);
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (BlobBatchException e)
+                {
+                    Assert.AreEqual(e.SuccessfulResponses.Count, 0);
+                    Assert.AreEqual(e.ErrorResponses.Count, 1);
+                    ValidateFailedBatchResponse(e.ErrorResponses);
+                }
+
+                // Test a batch with multiple operations that all failed.
+                batch.AddSubOperation(blob3, StandardBlobTier.Cool);
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (BlobBatchException e)
+                {
+                    Assert.AreEqual(e.SuccessfulResponses.Count, 0);
+                    Assert.AreEqual(e.ErrorResponses.Count, 2);
+                    ValidateFailedBatchResponse(e.ErrorResponses);
+                }
+
+                // Test a batch with successful and failed operations interleaved. This tests parsing an error after a success and a success after an error.
+                // Parsing an error after an error and a success after a success was covered above. This should cover all cases.
+                batch = new BlobSetTierBatchOperation();
+                batch.AddSubOperation(blob1, StandardBlobTier.Hot);
+                batch.AddSubOperation(blob3, StandardBlobTier.Cool);
+                batch.AddSubOperation(blob2, StandardBlobTier.Archive);
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (BlobBatchException e)
+                {
+                    Assert.AreEqual(e.SuccessfulResponses.Count, 2);
+                    Assert.AreEqual(e.ErrorResponses.Count, 1);
+                    ValidateSuccessfulBatchResponse(e.SuccessfulResponses, HttpStatusCode.OK);
+                    ValidateFailedBatchResponse(e.ErrorResponses);
+                }
+
+                // Test an empty batch. This also tests a failed uber request. 
+                batch = new BlobSetTierBatchOperation();
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (StorageException)
+                {
+                    
+                }
+
+                // SAS auth sub request tests
+                var blob4Name = "blob4";
+                var blob5Name = "blob5";
+                var blob4 = container.GetBlockBlobReference(blob4Name);
+                var blob5 = container.GetBlockBlobReference(blob5Name);
+                CreateForTest(blob4, 1, 1, false);
+                CreateForTest(blob5, 1, 1, false);
+
+                var policy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddDays(1),
+                    Permissions = SharedAccessBlobPermissions.Add | SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Write
+                };
+
+                string sas = container.GetSharedAccessSignature(policy);
+                var sasContainer = new CloudBlobContainer(new Uri(container.Uri.ToString() + sas));
+                blob4 = sasContainer.GetBlockBlobReference(blob4Name);
+                blob5 = sasContainer.GetBlockBlobReference(blob5Name);
+
+                batch = new BlobSetTierBatchOperation();
+                batch.AddSubOperation(blob4, StandardBlobTier.Hot);
+                batch.AddSubOperation(blob5, StandardBlobTier.Cool);
+
+                await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+            }
+            finally
+            {
+                await container.DeleteIfExistsAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test blob delete batch")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        public async Task CloudBlockBlobDeleteBatchTestAsync()
+        {
+            // TODO: Test arg validation. Test uber request failure. Sub request failure. Varying numbers of operations (0, 1, many). Failure then success. Success then failure. Mixed failures and successes. Multiple of each.
+            var container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                var blobName1 = "ºth3r(h@racter$/?:.&%=";
+                var blobName2 = "white space";
+                var blobNameUncreated = "uncreated";
+
+                var blob1 = container.GetBlockBlobReference(blobName1);
+                var blob2 = container.GetBlockBlobReference(blobName2);
+                var blob3 = container.GetBlockBlobReference(blobNameUncreated);
+
+                CreateForTest(blob1, 1, 1, false);
+                CreateForTest(blob2, 1, 1, false);
+
+                var batch = new BlobDeleteBatchOperation();
+                batch.AddSubOperation(blob1);
+                batch.AddSubOperation(blob2);
+
+                var results = await blob1.ServiceClient.ExecuteBatchAsync(batch);
+
+                Assert.AreEqual(2, results.Count);
+                ValidateSuccessfulBatchResponse(results, HttpStatusCode.Accepted);
+
+                // Test a batch with one failure.
+                CreateForTest(blob1, 1, 1, false);
+                CreateForTest(blob2, 1, 1, false);
+
+                batch = new BlobDeleteBatchOperation();
+                batch.AddSubOperation(blob1);
+                batch.AddSubOperation(blob2);
+                batch.AddSubOperation(blob3);
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (BlobBatchException e)
+                {
+                    Assert.AreEqual(2, e.SuccessfulResponses.Count);
+                    Assert.AreEqual(1, e.ErrorResponses.Count);
+                    ValidateFailedBatchResponse(e.ErrorResponses);
+                }
+
+                // Test a batch with multiple operations that all failed.
+                batch = new BlobDeleteBatchOperation();
+                batch.AddSubOperation(blob1);
+                batch.AddSubOperation(blob2);
+                batch.AddSubOperation(blob3);
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (BlobBatchException e)
+                {
+                    Assert.AreEqual(0, e.SuccessfulResponses.Count);
+                    Assert.AreEqual(3, e.ErrorResponses.Count);
+                    ValidateFailedBatchResponse(e.ErrorResponses);
+                }
+
+                // Test a batch with successful and failed operations interleaved. This tests parsing an error after a success and a success after an error.
+                // Parsing an error after an error and a success after a success was covered above. This should cover all cases.
+                CreateForTest(blob1, 1, 1, false);
+                CreateForTest(blob2, 1, 1, false);
+
+                batch = new BlobDeleteBatchOperation();
+                batch.AddSubOperation(blob1);
+                batch.AddSubOperation(blob3);
+                batch.AddSubOperation(blob2);
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (BlobBatchException e)
+                {
+                    Assert.AreEqual(2, e.SuccessfulResponses.Count);
+                    Assert.AreEqual(1, e.ErrorResponses.Count);
+                    ValidateSuccessfulBatchResponse(e.SuccessfulResponses, HttpStatusCode.Accepted);
+                    ValidateFailedBatchResponse(e.ErrorResponses);
+                }
+
+                // Test an empty batch. This also tests a failed uber request. 
+                batch = new BlobDeleteBatchOperation();
+
+                try
+                {
+                    await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                    Assert.Fail();
+                }
+                catch (StorageException)
+                {
+
+                }
+
+                // SAS auth sub request tests
+                CreateForTest(blob1, 1, 1, false);
+                CreateForTest(blob2, 1, 1, false);
+
+                var policy = new SharedAccessBlobPolicy()
+                {
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddDays(1),
+                    Permissions = SharedAccessBlobPermissions.Delete
+                };
+
+                string sas = container.GetSharedAccessSignature(policy);
+                var sasContainer = new CloudBlobContainer(new Uri(container.Uri.ToString() + sas));
+                blob3 = sasContainer.GetBlockBlobReference(blobName1);
+                var blob4 = sasContainer.GetBlockBlobReference(blobName2);
+
+                batch = new BlobDeleteBatchOperation();
+                batch.AddSubOperation(blob3);
+                batch.AddSubOperation(blob4);
+
+                await blob1.ServiceClient.ExecuteBatchAsync(batch).ConfigureAwait(false);
+
+            }
+            finally
+            {
+                await container.DeleteIfExistsAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test blob delete batch with token auth")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        public async Task CloudBlockBlobDeleteBatchTokenAuthTestAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference(oauthTenant: true);
+            try
+            {
+                // Arrange
+                string blobName = "blobName";
+                CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
+                await container.CreateAsync();
+                CreateForTest(blob, 1, 1, true);
+
+                CloudBlobClient tokenClient = GetOAuthClient();
+                CloudBlobContainer tokenContainer = tokenClient.GetContainerReference(container.Name);
+                CloudBlockBlob tokenBlob = tokenContainer.GetBlockBlobReference(blobName);
+
+                BlobDeleteBatchOperation batch = new BlobDeleteBatchOperation();
+                batch.AddSubOperation(tokenBlob);
+
+                // Act
+                await blob.ServiceClient.ExecuteBatchAsync(batch);
+                //await tokenBlob.DeleteAsync();
+            }
+            finally
+            {
+                await container.DeleteIfExistsAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test blob set tier batch with token auth")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        public async Task CloudBlockBlobSetTierBatchTokenAuthTestAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference(oauthTenant: true);
+            try
+            {
+                // Arrange
+                string blobName = "blobName";
+                CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
+                await container.CreateAsync();
+                CreateForTest(blob, 1, 1, true);
+
+                CloudBlobClient tokenClient = GetOAuthClient();
+                CloudBlobContainer tokenContainer = tokenClient.GetContainerReference(container.Name);
+                CloudBlockBlob tokenBlob = tokenContainer.GetBlockBlobReference(blobName);
+
+                BlobSetTierBatchOperation batch = new BlobSetTierBatchOperation();
+                batch.AddSubOperation(tokenBlob, StandardBlobTier.Hot);
+
+                // Act
+                await blob.ServiceClient.ExecuteBatchAsync(batch);
+            }
+            finally
+            {
+                await container.DeleteIfExistsAsync();
+            }
+        }
+
+        private void ValidateSuccessfulBatchResponse(IList<BlobBatchSubOperationResponse> results, HttpStatusCode expectedSuccessCode)
+        {
+            int count = -1;
+            foreach (BlobBatchSubOperationResponse result in results)
+            {
+                // The index sequence may not be continuous if errors and successes are mixed, but it should monotonically increase.
+                Assert.IsTrue(result.OperationIndex > count);
+                count = result.OperationIndex;
+
+                Assert.AreEqual(expectedSuccessCode, result.StatusCode);
+                Assert.IsTrue(result.Headers.ContainsKey(Constants.HeaderConstants.RequestIdHeader));
+            }
+        }
+
+        private void ValidateFailedBatchResponse(IList<BlobBatchSubOperationError> errors)
+        {
+            int count = -1;
+            foreach (BlobBatchSubOperationError error in errors)
+            {
+                // The index sequence may not be continuous if errors and successes are mixed, but it should monotonically increase.
+                Assert.IsTrue(error.OperationIndex > count);
+                count = error.OperationIndex;
+
+                Assert.AreEqual(HttpStatusCode.NotFound, error.StatusCode);
+                Assert.AreEqual(BlobErrorCodeStrings.BlobNotFound, error.ErrorCode);
+                Assert.IsNotNull(error.ExtendedErrorInformation);
+                Assert.IsNotNull(error.ExtendedErrorInformation.ErrorMessage);
+            }
+        }
+
+        [TestMethod]
         [Description("Create a zero-length block blob and then delete it")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -254,6 +623,7 @@ namespace Microsoft.Azure.Storage.Blob
                 container.DeleteIfExistsAsync().Wait();
             }
         }
+
 #endif
 
         [TestMethod]

@@ -102,6 +102,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const int MaxRetainedVersionsPerBlob = 10;
 
         /// <summary>
+        /// The maximum number of sub operations that may be part of a batch.
+        /// </summary>
+        public const int MaxSubOperationPerBatch = 256;
+
+        /// <summary>
         /// Constant for the max value of MaximumExecutionTime.
         /// </summary>
         public static readonly TimeSpan MaxMaximumExecutionTime = TimeSpan.FromDays(24.0);
@@ -976,11 +981,12 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         internal const string BatchBoundaryMarker = @"multipart/mixed; boundary=batch_";
         internal const string ChangesetBoundaryMarker = @"Content-Type: multipart/mixed; boundary=changeset_";
 
-        internal const string BatchSeparator = @"--batch_";
+        internal const string BatchPrefix = @"batch_";
         internal const string ChangesetSeparator = @"--changeset_";
 
         internal const string ContentTypeApplicationHttp = @"Content-Type: application/http";
         internal const string ContentTransferEncodingBinary = @"Content-Transfer-Encoding: binary";
+        internal const string ContentID = "Content-ID: ";
 
         internal const string ContentTypeApplicationJson = HeaderConstants.PayloadContentTypeHeader + ": " + JsonContentTypeHeaderValue;
 
@@ -1564,12 +1570,6 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             internal const string AcceptCharset = "Accept-Charset";
 
             internal const string AcceptCharsetValue = "UTF-8";
-
-            internal const string MaxDataServiceVersion = "MaxDataServiceVersion";
-            internal const string MaxDataServiceVersionValue = "3.0;NetFx";
-
-            internal const string DataServiceVersion = "DataServiceVersion";
-            internal const string DataServiceVersionValue = "3.0;";
 
             internal const string PostTunnelling = "X-HTTP-Method";
 

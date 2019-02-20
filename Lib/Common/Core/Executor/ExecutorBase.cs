@@ -21,7 +21,6 @@ namespace Microsoft.Azure.Storage.Core.Executor
     using Microsoft.Azure.Storage.RetryPolicies;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.Net.Http;
     using System.Net.Http.Headers;
@@ -32,24 +31,29 @@ namespace Microsoft.Azure.Storage.Core.Executor
     {
         protected static void ApplyUserHeaders<T>(ExecutionState<T> executionState)
         {
-            if (!string.IsNullOrEmpty(executionState.OperationContext.ClientRequestID))
+            ApplyUserHeaders(executionState.OperationContext, executionState.Req);
+        }
+
+        internal static void ApplyUserHeaders(OperationContext operationContext, HttpRequestMessage request)
+        {
+            if (!string.IsNullOrEmpty(operationContext.ClientRequestID))
             {
-                executionState.Req.Headers.Add(Constants.HeaderConstants.ClientRequestIdHeader, executionState.OperationContext.ClientRequestID);
+                request.Headers.Add(Constants.HeaderConstants.ClientRequestIdHeader, operationContext.ClientRequestID);
             }
 
-            if (!string.IsNullOrEmpty(executionState.OperationContext.CustomUserAgent))
+            if (!string.IsNullOrEmpty(operationContext.CustomUserAgent))
             {
-                executionState.Req.Headers.UserAgent.TryParseAdd(executionState.OperationContext.CustomUserAgent);
-                executionState.Req.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
-                executionState.Req.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
+                request.Headers.UserAgent.TryParseAdd(operationContext.CustomUserAgent);
+                request.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentProductName, Constants.HeaderConstants.UserAgentProductVersion));
+                request.Headers.UserAgent.Add(new ProductInfoHeaderValue(Constants.HeaderConstants.UserAgentComment));
 
             }
 
-            if (executionState.OperationContext.UserHeaders != null && executionState.OperationContext.UserHeaders.Count > 0)
+            if (operationContext.UserHeaders != null && operationContext.UserHeaders.Count > 0)
             {
-                foreach (string key in executionState.OperationContext.UserHeaders.Keys)
+                foreach (string key in operationContext.UserHeaders.Keys)
                 {
-                    executionState.Req.Headers.Add(key, executionState.OperationContext.UserHeaders[key]);
+                    request.Headers.Add(key, operationContext.UserHeaders[key]);
                 }
             }
         }

@@ -1,6 +1,7 @@
 <TestConfigurations>
 <TargetTestTenant>ProductionTenant</TargetTestTenant>
 <TargetPremiumBlobTenant>ProductionTenant</TargetPremiumBlobTenant>
+<TargetOauthTenant>OauthTenant</TargetOauthTenant>
 <TenantConfigurations>
   <TenantConfiguration>
     <TenantName>DevStore</TenantName>
@@ -17,12 +18,6 @@
     <AccountName>[ACCOUNT NAME HERE]</AccountName>
     <AccountKey>[ACCOUNT KEY HERE]</AccountKey>
 
-    <!-- Active Directory information for OAUTH tests -->
-    <ActiveDirectoryApplicationId>[APPLICATION ID HERE]</ActiveDirectoryApplicationId>
-    <ActiveDirectoryApplicationSecret>[APPLICATION SECRET HERE]</ActiveDirectoryApplicationSecret>
-    <ActiveDirectoryTenantId>[TENANT ID HERE]</ActiveDirectoryTenantId>
-    <ActiveDirectoryAuthEndpoint>https://login.windows.net</ActiveDirectoryAuthEndpoint>
-
     <!-- Endpoints -->
     <BlobServiceEndpoint>http://[ACCOUNT].blob.core.windows.net</BlobServiceEndpoint>
     <QueueServiceEndpoint>http://[ACCOUNT].queue.core.windows.net</QueueServiceEndpoint>
@@ -31,6 +26,27 @@
     <BlobServiceSecondaryEndpoint>http://[ACCOUNT]-secondary.blob.core.windows.net</BlobServiceSecondaryEndpoint>
     <QueueServiceSecondaryEndpoint>http://[ACCOUNT]-secondary.queue.core.windows.net</QueueServiceSecondaryEndpoint>
     <TableServiceSecondaryEndpoint>http://[ACCOUNT]-secondary.table.core.windows.net</TableServiceSecondaryEndpoint>
+  </TenantConfiguration>
+  <TenantConfiguration>
+    <TenantName>OauthTenant</TenantName>
+    <TenantType>Cloud</TenantType>
+    <AccountName>[OAUTH ACCOUNT NAME]</AccountName>
+    <AccountKey>[OAUTH ACCOUNT KEY]</AccountKey>
+    
+    <ActiveDirectoryApplicationId>[AAD APPLICATION ID]</ActiveDirectoryApplicationId>
+    <ActiveDirectoryApplicationSecret>[AAD APPLICATION SECRET]</ActiveDirectoryApplicationSecret>
+    <ActiveDirectoryTenantId>[AAD TENANT ID]</ActiveDirectoryTenantId>
+    <ActiveDirectoryAuthEndpoint>https://login.windows.net</ActiveDirectoryAuthEndpoint>
+
+    <!-- Endpoints -->
+    <BlobServiceEndpoint>https://[OAUTH ACCOUNT NAME].blob.core.windows.net</BlobServiceEndpoint>
+    <QueueServiceEndpoint>https://[OAUTH ACCOUNT NAME].queue.core.windows.net</QueueServiceEndpoint>
+    <TableServiceEndpoint>https://[OAUTH ACCOUNT NAME].table.core.windows.net</TableServiceEndpoint>
+    <FileServiceEndpoint>https://[OAUTH ACCOUNT NAME].file.core.windows.net</FileServiceEndpoint>
+    <BlobServiceSecondaryEndpoint>https://[OAUTH ACCOUNT NAME]-secondary.blob.core.windows.net</BlobServiceSecondaryEndpoint>
+    <QueueServiceSecondaryEndpoint>https://[OAUTH ACCOUNT NAME]-secondary.queue.prepord.core.windows.net</QueueServiceSecondaryEndpoint>
+    <TableServiceSecondaryEndpoint>https://[OAUTH ACCOUNT NAME]-secondary.table.prepord.core.windows.net</TableServiceSecondaryEndpoint>
+    <FileServiceSecondaryEndpoint>https://[OAUTH ACCOUNT NAME]-secondary.file.core.windows.net</FileServiceSecondaryEndpoint>
   </TenantConfiguration>
 </TenantConfigurations>
 </TestConfigurations>

@@ -933,15 +933,6 @@ namespace Microsoft.Azure.Storage.Blob
             String.Format(SR.InvalidProtocolsInSAS, protocol));
         }
 
-        private CloudBlobClient GetOAuthClient()
-        {
-            TokenCredential tokenCredential = new TokenCredential(GenerateOAuthToken());
-            StorageCredentials storageCredentials = new StorageCredentials(tokenCredential);
-
-            Uri endpoint = new Uri(TargetTenantConfig.BlobServiceEndpoint);
-            return new CloudBlobClient(endpoint, storageCredentials);
-        }
-
         [TestMethod]
         [Description("Get a user delegation key")]
         [TestCategory(ComponentCategory.Auth)]

@@ -30,9 +30,9 @@ namespace Microsoft.Azure.Storage.Blob
             return string.Concat("testc", Guid.NewGuid().ToString("N"));
         }
 
-        public static CloudBlobContainer GetRandomContainerReference(DelegatingHandler delegatingHandler = null)
+        public static CloudBlobContainer GetRandomContainerReference(DelegatingHandler delegatingHandler = null, bool oauthTenant = false)
         {
-            CloudBlobClient blobClient = GenerateCloudBlobClient(delegatingHandler);
+            CloudBlobClient blobClient = GenerateCloudBlobClient(delegatingHandler, oauthTenant);
             string name = GetRandomContainerName();
             CloudBlobContainer container = blobClient.GetContainerReference(name);
 

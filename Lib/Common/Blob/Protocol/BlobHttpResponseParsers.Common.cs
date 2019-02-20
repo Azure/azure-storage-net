@@ -21,11 +21,15 @@
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Net;
     using System.Net.Http;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -323,6 +327,107 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                     premiumPageBlobTier = PremiumPageBlobTier.Unknown;
                 }
             }
+        }
+
+        internal static async Task<IList<BlobBatchSubOperationResponse>> BatchPostProcessAsync(IList<BlobBatchSubOperationResponse> result, RESTCommand<IList<BlobBatchSubOperationResponse>> cmd, IList<HttpStatusCode> successfulStatusCodes, HttpResponseMessage response, OperationContext ctx, /*BlobRequestOptions options,*/ CancellationToken cancellationToken)
+        {
+            // TODO reimplement to use ASP.NET extensions to parse multipart content from content stream
+
+            Stream responseStream = cmd.ResponseStream;
+            StreamReader streamReader = new StreamReader(responseStream);
+
+            List<BlobBatchSubOperationError> errors = new List<BlobBatchSubOperationError>();
+
+            string currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+            currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+
+            while ((currentLine != null) && !(currentLine.StartsWith(@"--batchresponse") && currentLine.EndsWith("--")))
+            {
+                while ((currentLine != null) && !currentLine.StartsWith("Content-ID"))
+                {
+                    currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                }
+                int operationIndex = int.Parse(currentLine.Split(':')[1]);
+
+                while ((currentLine != null) && !currentLine.StartsWith("HTTP"))
+                {
+                    currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                }
+                // The first line of the response looks like this:
+                // HTTP/1.1 204 No Content
+                // The HTTP status code is chars 9 - 11.
+                var statusCode = (HttpStatusCode)int.Parse(currentLine.Substring(9, 3));
+
+                currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+
+                if (successfulStatusCodes.Contains(statusCode))
+                {
+                    BlobBatchSubOperationResponse subResponse = new BlobBatchSubOperationResponse
+                    {
+                        StatusCode = statusCode,
+                        OperationIndex = operationIndex,
+                        Headers = await ParseSubRequestHeadersAsync(currentLine, streamReader).ConfigureAwait(false)
+                    };
+
+                    // Can add logic to parse body here if necessary.
+
+                    result.Add(subResponse);
+                }
+                else
+                {
+                    // ProcessExpectedStatusCodesNoException? How to share list of expected codes to avoid duplication? Change list type to HttpStatusCode.
+                    BlobBatchSubOperationError error = new BlobBatchSubOperationError
+                    {
+                        OperationIndex = operationIndex,
+                        StatusCode = statusCode
+                    };
+                    Dictionary<string, string> headers = await ParseSubRequestHeadersAsync(currentLine, streamReader).ConfigureAwait(false);
+                    error.ErrorCode = headers[Constants.HeaderConstants.StorageErrorCodeHeader];
+                    int contentLength = int.Parse(headers[Constants.HeaderConstants.ContentLengthHeader]);
+
+                    //TODO: Add check that contentLength > 0 in case we support HEAD operations.
+
+                    char[] errorInfoBuffer = new char[contentLength];
+                    var position = 0;
+
+                    while (position < contentLength)
+                    {
+                        errorInfoBuffer[position++] = (char)streamReader.Read();
+                    }
+
+                    error.ExtendedErrorInformation = await StorageExtendedErrorInformation.ReadFromStreamAsync(new MemoryStream(Encoding.UTF8.GetBytes(errorInfoBuffer))).ConfigureAwait(false); // Is this safe/performant?
+                    errors.Add(error);
+                }
+
+                currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+            }
+
+            if (errors.Count > 0)
+            {
+                BlobBatchException ex = new BlobBatchException
+                {
+                    ErrorResponses = errors,
+                    SuccessfulResponses = result
+                };
+                throw ex;
+            }
+            return result;
+        }
+
+        private static async Task<Dictionary<string, string>> ParseSubRequestHeadersAsync(string currentLine, StreamReader streamReader)
+        {
+            Dictionary<string, string> headers = new Dictionary<string, string>();
+            while (!string.IsNullOrWhiteSpace(currentLine))
+            {
+                // The headers all look like this:
+                // Cache-Control: no-cache
+                // This code below parses out the header names and values, by noting the location of the colon.
+                int colonIndex = currentLine.IndexOf(':');
+                headers[currentLine.Substring(0, colonIndex)] = currentLine.Substring(colonIndex + 2);
+                currentLine = await streamReader.ReadLineAsync().ConfigureAwait(false);
+            }
+
+            return headers;
         }
 
         /// <summary>

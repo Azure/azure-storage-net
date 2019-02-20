@@ -25,8 +25,11 @@ namespace Microsoft.Azure.Storage.Blob
     using Microsoft.Azure.Storage.RetryPolicies;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Net.Http;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Provides a client-side logical representation of Microsoft Azure Blob storage.
@@ -246,6 +249,21 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 listingPrefix = null;
             }
+        }
+
+        /// <summary>
+        /// Performs a batched operation request, returning the responses for each suboperation.
+        /// </summary>
+        /// <param name="batchOperation">The <see cref="BatchOperation"/> with the set of suboperations to include in the request.</param>
+        /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns></returns>
+        public Task<IList<BlobBatchSubOperationResponse>> ExecuteBatchAsync(BatchOperation batchOperation, BlobRequestOptions requestOptions = default(BlobRequestOptions),
+            OperationContext operationContext = default(OperationContext), CancellationToken cancellationToken = default(CancellationToken))
+        {
+            CommonUtility.AssertNotNull("batchOperation", batchOperation);
+            return batchOperation.ExecuteAsync(this, requestOptions, operationContext, cancellationToken);
         }
     }
 }

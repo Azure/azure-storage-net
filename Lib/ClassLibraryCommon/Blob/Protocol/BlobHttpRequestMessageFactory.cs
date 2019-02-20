@@ -18,15 +18,19 @@
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Auth.Protocol;
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Auth;
+    using Microsoft.Azure.Storage.Core.Executor;
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
+    using System.Text;
 
     internal static class BlobHttpRequestMessageFactory
     {
@@ -1140,6 +1144,80 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
 
             return request;
+        }
+
+        public static StorageRequestMessage PrepareBatchRequest(Uri uri, IBufferManager bufferManager, int? timeout, BatchOperation batchOperation, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "batch");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Post, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+
+            return request;
+        }
+
+        public static HttpContent WriteBatchBody(CloudBlobClient client, RESTCommand<IList<BlobBatchSubOperationResponse>> cmd, BatchOperation batchOperation, OperationContext operationContext)
+        {
+            var boundary = Constants.BatchPrefix + batchOperation.BatchID;
+            var multipartContent = new MultipartContent("mixed", boundary);
+
+            // HACK remove quotes until server recognizes quoted boundaries
+            multipartContent.Headers.ContentType = MediaTypeHeaderValue.Parse($"multipart/mixed; boundary={boundary}");
+
+            var contentID = 0;
+
+            var requests = batchOperation.Operations.Select(
+                command =>
+                command.BuildRequest(
+                    command,
+                    command.StorageUri.PrimaryUri,
+                    new UriQueryBuilder() /*??*/,
+                    command.BuildContent != null ? command.BuildContent(command, operationContext) : null,
+                    command.ServerTimeoutInSeconds,
+                    operationContext
+                    )
+                    );
+
+            foreach (var request in requests)
+            {
+                ExecutorBase.ApplyUserHeaders(operationContext, request);
+
+                if(request.Credentials?.IsSharedKey == true)
+                {
+                    StorageAuthenticationHttpHandler.AddDateHeader(request);
+                    StorageAuthenticationHttpHandler.AddSharedKeyAuth(request);
+                }
+                else if(request.Credentials?.IsSAS == true)
+                {
+                    request.RequestUri = request.Credentials.TransformUri(request.RequestUri);
+                }
+                else if (request.Credentials?.IsToken == true)
+                {
+                    StorageAuthenticationHttpHandler.AddTokenAuth(request);
+                }
+
+                request.Headers.Remove(Constants.HeaderConstants.PrefixForStorageHeader + Constants.HeaderConstants.StorageVersionHeader);
+
+                var sb = new StringBuilder();
+                sb.AppendLine($"{request.Method} {request.RequestUri.PathAndQuery} HTTP/1.1");
+
+                sb.Append(request.Headers.ToString());
+
+                if (request.Content != null)
+                {
+                    sb.AppendLine();
+                    sb.Append(request.Content.ReadAsStringAsync().ConfigureAwait(false).GetAwaiter().GetResult());
+                }
+
+                var content = new StringContent(sb.ToString());
+                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/http");
+                content.Headers.TryAddWithoutValidation("Content-Transfer-Encoding", "binary");
+                content.Headers.TryAddWithoutValidation("Content-ID", (contentID++).ToString(CultureInfo.InvariantCulture));
+
+                multipartContent.Add(content);
+            }
+
+            return multipartContent;
         }
     }
 }

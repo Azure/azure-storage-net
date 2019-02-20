@@ -1658,7 +1658,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="premiumBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that sets the blob tier.</returns>
-        private RESTCommand<NullType> SetBlobTierImpl(PremiumPageBlobTier premiumBlobTier, BlobRequestOptions options)
+        internal RESTCommand<NullType> SetBlobTierImpl(PremiumPageBlobTier premiumBlobTier, BlobRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 

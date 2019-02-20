@@ -26,7 +26,6 @@ namespace Microsoft.Azure.Storage.Blob
     using System.IO;
     using System.Net;
     using System.Net.Http;
-    using System.Net.Http;
     using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
@@ -3697,7 +3696,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> that deletes the blob.
         /// </returns>
-        private RESTCommand<NullType> DeleteBlobImpl(BlobAttributes attributes, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options)
+        internal RESTCommand<NullType> DeleteBlobImpl(BlobAttributes attributes, DeleteSnapshotsOption deleteSnapshotsOption, AccessCondition accessCondition, BlobRequestOptions options)
         {
             RESTCommand<NullType> deleteCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, attributes.StorageUri, this.ServiceClient.HttpClient);
 
