@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="BuildPackage" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <VersionNumber>9.4.3</VersionNumber>
+    <BuildName Condition="'$(GIT_BRANCH)' != '' AND '$(GIT_BRANCH)' != 'origin/master'">-$(Configuration)-$(BUILD_TAG)</BuildName>
+    <Version>$(VersionNumber)$(BuildName)</Version>
+    <IntermediateOutputPath Condition=" '$(IntermediateOutputPath)' == '' ">obj\$(Configuration)</IntermediateOutputPath>
+    <OutputPath Condition=" '$(OutputPath)' == '' ">bin\$(Configuration)</OutputPath>
+    <ProjectGuid>{A8345ED8-7712-4444-BDF5-84B1F99EE304}</ProjectGuid>
+    <Configurations>Debug;Release;Official;Preview</Configurations>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NugetProperties>Version=$(Version)</NugetProperties>
+    <NugetSymbols Condition="true">-Symbols -SymbolPackageFormat snupkg</NugetSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="Azure.Storage.Blob.nuspec">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Azure.Storage.Common.nuspec" />
+    <None Include="Azure.Storage.File.nuspec" />
+    <None Include="Azure.Storage.Queue.nuspec" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Lib\Common.Split\NetFx\Microsoft.Azure.Storage.Common.NetFx.csproj">
+      <Project>{aa73796a-c515-4fe1-9da0-db95821d353c}</Project>
+      <Name>Microsoft.Azure.Storage.Common.NetFx</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\Common.Split\NetStandard2\Microsoft.Azure.Storage.Common.NetStandard2.csproj">
+      <Project>{27d74fe0-4fd0-41a4-be7e-298f9e84feb8}</Project>
+      <Name>Microsoft.Azure.Storage.Common.NetStandard2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\Microsoft.Azure.Storage.Common.NetStandard.csproj">
+      <Project>{38ffa81a-b574-4bf8-9dec-b76f5881ec3a}</Project>
+      <Name>Microsoft.Azure.Storage.Common.NetStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Blob\Microsoft.Azure.Storage.Blob.NetStandard.csproj">
+      <Project>{db502c7f-c4b7-4074-84cf-59bb7dd5bba2}</Project>
+      <Name>Microsoft.Azure.Storage.Blob.NetStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.File\Microsoft.Azure.Storage.File.NetStandard.csproj">
+      <Project>{1fcc9c24-2834-4f21-a526-2f0ed09d7747}</Project>
+      <Name>Microsoft.Azure.Storage.File.NetStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Queue\Microsoft.Azure.Storage.Queue.NetStandard.csproj">
+      <Project>{ae114020-80b5-4b2c-b7cc-60770be7cdb0}</Project>
+      <Name>Microsoft.Azure.Storage.Queue.NetStandard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\NetStandard2.Split\Blob\Microsoft.Azure.Storage.Blob.NetStandard2.csproj">
+      <Project>{1f0b7d79-38af-44fc-85b7-69cef5d8c9d4}</Project>
+      <Name>Microsoft.Azure.Storage.Blob.NetStandard2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\NetStandard2.Split\File\Microsoft.Azure.Storage.File.NetStandard2.csproj">
+      <Project>{bebf9e2b-d401-4fab-989d-a21c79e8f797}</Project>
+      <Name>Microsoft.Azure.Storage.File.NetStandard2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\NetStandard2.Split\Queue\Microsoft.Azure.Storage.Queue.NetStandard2.csproj">
+      <Project>{155b87ef-5f70-44af-90bf-cf5859ee7b0e}</Project>
+      <Name>Microsoft.Azure.Storage.Queue.NetStandard2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\WindowsDesktop.Split\Blob\Microsoft.Azure.Storage.Blob.NetFx.csproj">
+      <Project>{04928920-d800-41d5-808d-4ed254c9e4c1}</Project>
+      <Name>Microsoft.Azure.Storage.Blob.NetFx</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\WindowsDesktop.Split\File\Microsoft.Azure.Storage.File.NetFx.csproj">
+      <Project>{4c3cbc1b-3f11-4324-8412-5b6202b1ba61}</Project>
+      <Name>Microsoft.Azure.Storage.File.NetFx</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Lib\WindowsDesktop.Split\Queue\Microsoft.Azure.Storage.Queue.NetFx.csproj">
+      <Project>{ed51f78b-ec11-4052-a9ca-5a909c8ba3b7}</Project>
+      <Name>Microsoft.Azure.Storage.Queue.NetFx</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="Clean">
+    <Delete ContinueOnError="true" Files="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)\**" />
+    <Delete ContinueOnError="true" Files="$(MSBuildProjectDirectory)\$(OutputPath)\**" />
+  </Target>
+  <Target Name="Rebuild" DependsOnTargets="BuildPackage" />
+  <Target Name="BuildPackage" DependsOnTargets="Clean">
+    <Message Text="Packaging $(Version)" />
+    <!--DLLs-->
+    <Copy SourceFiles="Azure.Storage.Common.nuspec" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Common" />
+    <Copy SourceFiles="..\..\Lib\Common.Split\NetFx\bin\$(Configuration)\Microsoft.Azure.Storage.Common.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Common\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.Common.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Common\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\Common.Split\NetStandard2\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.Common.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Common\lib\netstandard2.0" />
+    <Copy SourceFiles="Azure.Storage.Blob.nuspec" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob" />
+    <Copy SourceFiles="..\..\Lib\WindowsDesktop.Split\Blob\bin\$(Configuration)\Microsoft.Azure.Storage.Blob.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Blob\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.Blob.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\NetStandard2.Split\Blob\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.Blob.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob\lib\netstandard2.0" />
+    <Copy SourceFiles="Azure.Storage.File.nuspec" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.File" />
+    <Copy SourceFiles="..\..\Lib\WindowsDesktop.Split\File\bin\$(Configuration)\Microsoft.Azure.Storage.File.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.File\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.File\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.File.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.File\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\NetStandard2.Split\File\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.File.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.File\lib\netstandard2.0" />
+    <Copy SourceFiles="Azure.Storage.Queue.nuspec" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue" />
+    <Copy SourceFiles="..\..\Lib\WindowsDesktop.Split\Queue\bin\$(Configuration)\Microsoft.Azure.Storage.Queue.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Queue\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.Queue.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\NetStandard2.Split\Queue\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.Queue.dll" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue\lib\netstandard2.0" />
+    <!--PDBs-->
+    <Copy SourceFiles="..\..\Lib\Common.Split\NetFx\bin\$(Configuration)\Microsoft.Azure.Storage.Common.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Common\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Common.Split\NetStandard\Microsoft.Azure.Storage.Common\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.Common.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Common\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\Common.Split\NetStandard2\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.Common.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Common\lib\netstandard2.0" />
+    <Copy SourceFiles="..\..\Lib\WindowsDesktop.Split\Blob\bin\$(Configuration)\Microsoft.Azure.Storage.Blob.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Blob\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.Blob.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\NetStandard2.Split\Blob\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.Blob.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob\lib\netstandard2.0" />
+    <Copy SourceFiles="..\..\Lib\WindowsDesktop.Split\File\bin\$(Configuration)\Microsoft.Azure.Storage.File.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.File\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.File\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.File.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.File\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\NetStandard2.Split\File\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.File.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.File\lib\netstandard2.0" />
+    <Copy SourceFiles="..\..\Lib\WindowsDesktop.Split\Queue\bin\$(Configuration)\Microsoft.Azure.Storage.Queue.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue\lib\net452" />
+    <Copy SourceFiles="..\..\Lib\Netstandard.Split\Microsoft.Azure.Storage.Queue\bin\$(Configuration)\netstandard1.3\Microsoft.Azure.Storage.Queue.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue\lib\netstandard1.3" />
+    <Copy SourceFiles="..\..\Lib\NetStandard2.Split\Queue\bin\$(Configuration)\netstandard2.0\Microsoft.Azure.Storage.Queue.pdb" DestinationFolder="$(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue\lib\netstandard2.0" />
+    <!--NuGet-->
+    <Exec Command="nuget pack $(IntermediateOutputPath)\Microsoft.Azure.Storage.Common\Azure.Storage.Common.nuspec -OutputDirectory ..\..\Microsoft.Azure.Storage.Common\$(OutputPath) -Properties &quot;$(NugetProperties)&quot; $(NugetSymbols)" />
+    <Exec Command="nuget pack $(IntermediateOutputPath)\Microsoft.Azure.Storage.Blob\Azure.Storage.Blob.nuspec -OutputDirectory ..\..\Microsoft.Azure.Storage.Blob\$(OutputPath) -Properties &quot;$(NugetProperties)&quot; $(NugetSymbols)" />
+    <Exec Command="nuget pack $(IntermediateOutputPath)\Microsoft.Azure.Storage.File\Azure.Storage.File.nuspec -OutputDirectory ..\..\Microsoft.Azure.Storage.File\$(OutputPath) -Properties &quot;$(NugetProperties)&quot; $(NugetSymbols)" />
+    <Exec Command="nuget pack $(IntermediateOutputPath)\Microsoft.Azure.Storage.Queue\Azure.Storage.Queue.nuspec -OutputDirectory ..\..\Microsoft.Azure.Storage.Queue\$(OutputPath) -Properties &quot;$(NugetProperties)&quot;  $(NugetSymbols)" />
+  </Target>
+</Project>

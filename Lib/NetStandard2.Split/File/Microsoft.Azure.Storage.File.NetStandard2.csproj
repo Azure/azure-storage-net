@@ -10,7 +10,7 @@
     <AssemblyName>Microsoft.Azure.Storage.File</AssemblyName>
     <RootNamespace>Microsoft.Azure.Storage.File</RootNamespace>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    <Configurations>Debug;Release;Official</Configurations>
+    <Configurations>Debug;Release;Official;Preview</Configurations>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -19,7 +19,7 @@
     <Optimize>false</Optimize>
     <DefineConstants>WINDOWS_DESKTOP;SYNC;APM;TASK;CODE_ANALYSIS</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Official|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Preview|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Official|AnyCPU' ">
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
     <DelaySign>true</DelaySign>
