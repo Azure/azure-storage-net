@@ -1,5 +1,6 @@
 Changes in 9.4.3:
 
+- All: Support for 2018-11-09 REST version. Please see our REST API documentation and blogs for information about the related added features.
 - [GitHub Issue #844] Guard against nulls TokenCredential.Dispose
 
 Changes in 9.4.2:
