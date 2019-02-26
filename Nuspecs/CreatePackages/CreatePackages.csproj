@@ -2,8 +2,21 @@
 <Project ToolsVersion="4.0" DefaultTargets="BuildPackage" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <VersionNumber>9.4.3</VersionNumber>
-    <BuildName Condition="'$(GIT_BRANCH)' != '' AND '$(GIT_BRANCH)' != 'origin/master'">-$(Configuration)-$(BUILD_TAG)</BuildName>
+    <MasterBranch>origin/master</MasterBranch>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BUILD_TAG)' == ''">
+    <BUILD_TAG>$([System.DateTime]::UtcNow.ToString(yyyyMMdd-HHmmss))</BUILD_TAG>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <BuildName Condition="('$(GIT_BRANCH)' != '' AND '$(GIT_BRANCH)' != '$(MasterBranch)') OR ('$(Configuration)' != 'Release')">-$(Configuration)-$(BUILD_TAG)</BuildName>
     <Version>$(VersionNumber)$(BuildName)</Version>
+    <IntermediateOutputPath Condition=" '$(IntermediateOutputPath)' == '' ">obj\$(Configuration)</IntermediateOutputPath>
+    <OutputPath Condition=" '$(OutputPath)' == '' ">bin\$(Configuration)</OutputPath>
+    <ProjectGuid>{A8345ED8-7712-4444-BDF5-84B1F99EE304}</ProjectGuid>
+    <Configurations>Debug;Release;Official;Preview</Configurations>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <IntermediateOutputPath Condition=" '$(IntermediateOutputPath)' == '' ">obj\$(Configuration)</IntermediateOutputPath>
     <OutputPath Condition=" '$(OutputPath)' == '' ">bin\$(Configuration)</OutputPath>
     <ProjectGuid>{A8345ED8-7712-4444-BDF5-84B1F99EE304}</ProjectGuid>
