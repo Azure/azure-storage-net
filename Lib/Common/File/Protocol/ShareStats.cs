@@ -17,6 +17,8 @@
 
 namespace Microsoft.WindowsAzure.Storage.File.Protocol
 {
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using System;
     using System.Globalization;
     using System.Xml.Linq;
 
@@ -33,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <summary>
         /// The name of the share usage XML element.
         /// </summary>
-        private const string ShareUsageName = "ShareUsage";
+        private const string ShareUsageBytes = "ShareUsageBytes";
 
         /// <summary>
         /// Initializes a new instance of the ServiceStats class.
@@ -43,10 +45,16 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         }
 
         /// <summary>
-        /// Gets or sets the share usage.
+        /// Gets the share usage in GB, rounded up.
         /// </summary>
         /// <value>The share usage, in GB.</value>
         public int Usage { get; private set; }
+
+        /// <summary>
+        /// Gets the share usage in bytes.
+        /// </summary>
+        /// <value>The share usage, in bytes.</value>
+        public long UsageInBytes { get; private set; }
 
         /// <summary>
         /// Constructs a <c>ShareStats</c> object from an XML document received from the service.
@@ -57,9 +65,13 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         {
             XElement shareStatsElement = shareStatsDocument.Element(ShareStatsName);
 
+            var usageInBytes = int.Parse(shareStatsElement.Element(ShareUsageBytes).Value, CultureInfo.InvariantCulture);
+            var usage = (int)Math.Ceiling(usageInBytes / (double)Constants.GB);
+
             return new ShareStats()
             {
-                Usage = int.Parse(shareStatsElement.Element(ShareUsageName).Value, CultureInfo.InvariantCulture),
+                Usage = usage,
+                UsageInBytes = usageInBytes
             };
         }
     }

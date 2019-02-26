@@ -267,6 +267,45 @@ namespace Microsoft.WindowsAzure.Storage.File
             }
         }
 
+
+        [TestMethod]
+        [Description("Get service stats")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileShareGetShareStatsTask()
+        {
+            var megabyteInBytes = 1024 * 1024;
+            var bufferSize = (int)(Math.PI * megabyteInBytes);
+
+            var share = GetRandomShareReference();
+
+            try
+            {
+                await share.CreateAsync();
+
+                // should begin empty
+                var stats1 = await share.GetStatsAsync();
+                Assert.AreEqual(0, stats1.Usage);
+
+                // should round up, upload 1 MB and assert the usage is 1 GB. 
+                var directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                var file = directory.GetFileReference("file1");
+                await directory.CreateAsync();
+                await file.UploadFromByteArrayAsync(GetRandomBuffer(bufferSize), 0, bufferSize);
+
+                var stats2 = await share.GetStatsAsync();
+
+                Assert.AreEqual(1, stats2.Usage); // bufferSize, rounded up to GB, is 1
+                Assert.AreEqual(bufferSize, stats2.UsageInBytes);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
+            }
+        }
+
         [TestMethod]
         [Description("List files")]
         [TestCategory(ComponentCategory.File)]

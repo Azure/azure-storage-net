@@ -1939,25 +1939,28 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudFileShareGetShareStats()
         {
-            int megabyteInBytes = 1024 * 1024;
-            CloudFileShare share = GetRandomShareReference();
+            var megabyteInBytes = 1024 * 1024;
+            var bufferSize = (int)(Math.PI * megabyteInBytes);
+
+            var share = GetRandomShareReference();
 
             try
             {
                 share.Create();
-                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                var directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
                 directory.Create();
 
                 // should begin empty
-                ShareStats stats1 = share.GetStats();
+                var stats1 = share.GetStats();
                 Assert.AreEqual(0, stats1.Usage);
 
                 // should round up, upload 1 MB. 
-                CloudFile file = directory.GetFileReference("file1");
-                file.UploadFromByteArray(GetRandomBuffer(megabyteInBytes), 0, megabyteInBytes); //one mb
+                var file = directory.GetFileReference("file1");
+                file.UploadFromByteArray(GetRandomBuffer(bufferSize), 0, bufferSize);
 
-                ShareStats stats2 = share.GetStats();
-                Assert.AreEqual(1, stats2.Usage);
+                var stats2 = share.GetStats();
+                Assert.AreEqual(1, stats2.Usage); // bufferSize, rounded up to GB, is 1
+                Assert.AreEqual(bufferSize, stats2.UsageInBytes);
             }
             finally
             {
@@ -1973,7 +1976,9 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudFileShareGetShareStatsAPM()
         {
-            int megabyteInBytes = 1024 * 1024;
+            var megabyteInBytes = 1024 * 1024;
+            var bufferSize = (int)(Math.PI * megabyteInBytes);
+
             CloudFileShare share = GetRandomShareReference();
 
             using (AutoResetEvent waitHandle = new AutoResetEvent(false))
@@ -2004,9 +2009,9 @@ namespace Microsoft.WindowsAzure.Storage.File
                     waitHandle.WaitOne();
                     directory.EndCreate(result);
                     result = file.BeginUploadFromByteArray(
-                        GetRandomBuffer(megabyteInBytes),
+                        GetRandomBuffer(bufferSize),
                         0,
-                        megabyteInBytes,
+                        bufferSize,
                         ar => waitHandle.Set(),
                         null);
                     waitHandle.WaitOne();
@@ -2018,7 +2023,8 @@ namespace Microsoft.WindowsAzure.Storage.File
                     waitHandle.WaitOne();
 
                     ShareStats stats2 = share.EndGetStats(result);
-                    Assert.AreEqual(1, stats2.Usage);
+                    Assert.AreEqual(1, stats2.Usage); // bufferSize, rounded up to GB, is 1
+                    Assert.AreEqual(bufferSize, stats2.UsageInBytes);
 
                 }
                 finally
@@ -2039,35 +2045,35 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareGetShareStatsTask()
+        public async Task CloudFileShareGetShareStatsTask()
         {
-            int megabyteInBytes = 1024 * 1024;
-            CloudFileShare share = GetRandomShareReference();
+            var megabyteInBytes = 1024 * 1024;
+            var bufferSize = (int)(Math.PI * megabyteInBytes);
+
+            var share = GetRandomShareReference();
 
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 // should begin empty
-                Task<ShareStats> statsTask1 = share.GetStatsAsync();
-                statsTask1.Wait();
-                ShareStats stats1 = statsTask1.Result;
+                var stats1 = await share.GetStatsAsync();
                 Assert.AreEqual(0, stats1.Usage);
 
                 // should round up, upload 1 MB and assert the usage is 1 GB. 
-                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
-                CloudFile file = directory.GetFileReference("file1");
-                directory.CreateAsync().Wait();
-                file.UploadFromByteArrayAsync(GetRandomBuffer(megabyteInBytes), 0, megabyteInBytes).Wait(); //one mb
+                var directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                var file = directory.GetFileReference("file1");
+                await directory.CreateAsync();
+                await file.UploadFromByteArrayAsync(GetRandomBuffer(bufferSize), 0, bufferSize);
 
-                Task<ShareStats> statsTask2 = share.GetStatsAsync();
-                statsTask2.Wait();
-                ShareStats stats2 = statsTask2.Result;
-                Assert.AreEqual(1, stats2.Usage);
+                var stats2 = await share.GetStatsAsync();
+
+                Assert.AreEqual(1, stats2.Usage); // bufferSize, rounded up to GB, is 1
+                Assert.AreEqual(bufferSize, stats2.UsageInBytes);
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteIfExistsAsync();
             }
         }
 #endif
