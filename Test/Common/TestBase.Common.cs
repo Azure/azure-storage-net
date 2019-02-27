@@ -38,6 +38,14 @@ namespace Microsoft.WindowsAzure.Storage
 {
     public partial class TestBase
     {
+        public partial class TestConstants
+        {
+            public const int KB = 1024;
+            public const int MB = KB * 1024;
+            public const long GB = MB * 1024;
+            public const long TB = GB * 1024L;
+        }
+
         private const AuthenticationScheme DefaultAuthenticationScheme = AuthenticationScheme.SharedKey;
 
         public static byte[] GetRandomBuffer(long size)

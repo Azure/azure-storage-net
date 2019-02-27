@@ -1939,8 +1939,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudFileShareGetShareStats()
         {
-            var megabyteInBytes = 1024 * 1024;
-            var bufferSize = (int)(Math.PI * megabyteInBytes);
+            var bufferSize = (int)(Math.PI * TestConstants.MB);
 
             var share = GetRandomShareReference();
 
@@ -1976,8 +1975,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudFileShareGetShareStatsAPM()
         {
-            var megabyteInBytes = 1024 * 1024;
-            var bufferSize = (int)(Math.PI * megabyteInBytes);
+            var bufferSize = (int)(Math.PI * TestConstants.MB);
 
             CloudFileShare share = GetRandomShareReference();
 
@@ -2047,8 +2045,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudFileShareGetShareStatsTask()
         {
-            var megabyteInBytes = 1024 * 1024;
-            var bufferSize = (int)(Math.PI * megabyteInBytes);
+            var bufferSize = (int)(Math.PI * TestConstants.MB);
 
             var share = GetRandomShareReference();
 
