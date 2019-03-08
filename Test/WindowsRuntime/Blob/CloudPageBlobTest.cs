@@ -773,7 +773,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 var dest = container.GetPageBlobReference("blob1");
                 await dest.CreateAsync(buffer.Length).ConfigureAwait(false);
 
-                await dest.WritePagesAsync(source.Uri, 0, buffer.Length, 0, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
+                await dest.WritePagesAsync(source.Uri, 0, buffer.Length, 0, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
 
                 using (var resultingData = new MemoryStream())
                 {

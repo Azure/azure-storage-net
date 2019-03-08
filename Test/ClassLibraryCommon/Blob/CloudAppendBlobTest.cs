@@ -1256,7 +1256,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             var dest = container.GetAppendBlobReference("blob1");
             dest.CreateOrReplace();
 
-            dest.AppendBlock(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext));
+            dest.AppendBlock(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext));
 
             using (var resultingData = new MemoryStream())
             {
@@ -1331,7 +1331,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             var dest = container.GetAppendBlobReference("blob1");
             await dest.CreateOrReplaceAsync().ConfigureAwait(false);
 
-            await dest.AppendBlockAsync(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
+            await dest.AppendBlockAsync(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
 
             using (var resultingData = new MemoryStream())
             {

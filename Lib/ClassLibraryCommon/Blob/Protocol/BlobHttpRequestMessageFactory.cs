@@ -59,11 +59,12 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="sourceAccessCondition">The source access condition to apply to the request.</param>
+        /// <param name="destAccessCondition">The destination access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             var builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "appendblock");
@@ -71,8 +72,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
-            request.ApplyAccessCondition(accessCondition);
-            request.ApplyAppendCondition(accessCondition);
+            request.ApplyAccessConditionToSource(sourceAccessCondition);
+            request.ApplyAccessCondition(destAccessCondition);
+            request.ApplyAppendCondition(destAccessCondition);
 
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
@@ -828,13 +830,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="pageRange"></param>
-        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="sourceAccessCondition">The source access condition to apply to the request.</param>
+        /// <param name="destAccessCondition">The destination access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, PageRange pageRange, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, PageRange pageRange, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             var builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "page");
@@ -846,8 +849,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             request.Headers.Add(Constants.HeaderConstants.RangeHeader, pageRange.ToString());
             request.Headers.Add(Constants.HeaderConstants.PageWrite, "update");
 
-            request.ApplyAccessCondition(accessCondition);
-            request.ApplySequenceNumberCondition(accessCondition);
+            request.ApplyAccessConditionToSource(sourceAccessCondition);
+            request.ApplyAccessCondition(destAccessCondition);
+            request.ApplySequenceNumberCondition(destAccessCondition);
 
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
