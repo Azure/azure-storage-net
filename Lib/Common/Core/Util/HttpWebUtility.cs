@@ -17,7 +17,6 @@
 
 namespace Microsoft.WindowsAzure.Storage.Core.Util
 {
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -27,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 #if WINDOWS_DESKTOP
     using System.Net;
     using System.Net.Http;
+    using System.Collections.ObjectModel;
 #endif
 
     /// <summary>
@@ -41,17 +41,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <returns></returns>
         public static IDictionary<string, string> ParseQueryString(string query)
         {
-            Dictionary<string, string> retVal = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var retVal = new Dictionary<string, ICollection<string>>(StringComparer.OrdinalIgnoreCase);
             if (string.IsNullOrEmpty(query))
             {
-                return retVal;
+                return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)));
             }
 
             if (query.StartsWith("?", StringComparison.Ordinal))
             {
                 if (query.Length == 1)
                 {
-                    return retVal;
+                    return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)));
                 }
 
                 query = query.Substring(1);
@@ -75,18 +75,17 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     value = Uri.UnescapeDataString(pair.Substring(equalDex + 1));
                 }
 
-                string existingValue;
-                if (retVal.TryGetValue(key, out existingValue))
+                if (retVal.TryGetValue(key, out var existingValue))
                 {
-                    retVal[key] = string.Concat(existingValue, ",", value);
+                    existingValue.Add(value);
                 }
                 else
                 {
-                    retVal[key] = value;
+                    retVal[key] = new List<string> { value };
                 }
             }
 
-            return retVal;
+            return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)));
         }
 
         /// <summary>

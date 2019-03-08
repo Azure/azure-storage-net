@@ -52,6 +52,38 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         }
 
         /// <summary>
+        /// Constructs a web request to commit a block to an append blob.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
+        public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            var builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "appendblock");
+            builder.Add("fromUrl", default(string));
+
+            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+
+            request.ApplyAccessCondition(accessCondition);
+            request.ApplyAppendCondition(accessCondition);
+
+            AddCopySource(request, sourceUri);
+            AddSourceRange(request, offset, count);
+
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+
+            return request;
+        }
+
+        /// <summary>
         /// Constructs a web request to create a new block blob or page blob, or to update the content 
         /// of an existing block blob. 
         /// </summary>
@@ -760,6 +792,45 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
 
             request.ApplyAccessCondition(accessCondition);
             request.ApplySequenceNumberCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to write or clear a range of pages in a page blob.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the blob.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
+        /// <param name="offset">The byte offset at which to begin returning content.</param>
+        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="pageRange"></param>
+        /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content"> The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, PageRange pageRange, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "page");
+            builder.Add("update", default(string));
+            builder.Add("fromUrl", default(string));
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+
+            request.Headers.Add(Constants.HeaderConstants.RangeHeader, pageRange.ToString());
+            request.Headers.Add(Constants.HeaderConstants.PageWrite, "update");
+
+            request.ApplyAccessCondition(accessCondition);
+            request.ApplySequenceNumberCondition(accessCondition);
+
+            AddCopySource(request, sourceUri);
+            AddSourceRange(request, offset, count);
+
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+
             return request;
         }
 

@@ -2089,6 +2089,51 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 container.DeleteIfExists();
             }
         }
+        
+        [TestMethod]
+        [Description("Upload pages to a page blob and then verify the contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudPageBlobWritePages_FromUrl()
+        {
+            var buffer = GetRandomBuffer(4 * 1024 * 1024);
+
+            var md5 = MD5.Create();
+            var contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+
+            var container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                var permissions = container.GetPermissions();
+                permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+                container.SetPermissions(permissions);
+
+                var source = container.GetBlockBlobReference("source");
+                source.UploadFromByteArray(buffer, 0, buffer.Length);
+
+                Task.Delay(1000).Wait();
+
+                var dest = container.GetPageBlobReference("blob1");
+                dest.Create(buffer.Length);
+
+                dest.WritePages(source.Uri, 0, buffer.Length, 0, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext));
+
+                using (var resultingData = new MemoryStream())
+                {
+                    dest.DownloadToStream(resultingData);
+                    Assert.AreEqual(resultingData.Length, buffer.Length);
+                    Assert.IsTrue(resultingData.ToArray().SequenceEqual(buffer.ToArray()));
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
 
         [TestMethod]
         [Description("Single put blob and get blob")]
@@ -2244,7 +2289,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 container.DeleteIfExists();
             }
-        }
+        }        
 
 #if TASK
         [TestMethod]
@@ -2353,6 +2398,51 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                         Assert.IsTrue(blobData.ToArray().SequenceEqual(resultingData.ToArray()));
                     }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+        
+        [TestMethod]
+        [Description("Upload pages to a page blob and then verify the contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudPageBlobWritePagesTask_FromUrl()
+        {
+            var buffer = GetRandomBuffer(4 * 1024 * 1024);
+
+            var md5 = MD5.Create();
+            var contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+
+            var container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                var permissions = await container.GetPermissionsAsync();
+                permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+                await container.SetPermissionsAsync(permissions);
+
+                var source = container.GetBlockBlobReference("source");
+                await source.UploadFromByteArrayAsync(buffer, 0, buffer.Length);
+
+                await Task.Delay(1000);
+
+                var dest = container.GetPageBlobReference("blob1");
+                await dest.CreateAsync(buffer.Length);
+
+                await dest.WritePagesAsync(source.Uri, 0, buffer.Length, 0, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+
+                using (var resultingData = new MemoryStream())
+                {
+                    await dest.DownloadToStreamAsync(resultingData);
+                    Assert.AreEqual(resultingData.Length, buffer.Length);
+                    Assert.IsTrue(resultingData.ToArray().SequenceEqual(buffer.ToArray()));
                 }
             }
             finally

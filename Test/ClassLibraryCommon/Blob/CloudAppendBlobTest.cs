@@ -1092,6 +1092,27 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudAppendBlobAppendBlock_FromUrl()
+        {
+            var container = GetRandomContainerReference();
+            container.Create();
+            try
+            {
+                this.CloudAppendBlock_FromUrl(container, 6 * 512, null, 0, false);
+                this.CloudAppendBlock_FromUrl(container, 6 * 512, null, 1024, false);
+            }
+            finally
+            {
+                container.Delete();
+            }
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudAppendBlobAppendBlockAPM()
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -1114,10 +1135,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobAppendBlockTask()
+        public async Task CloudAppendBlobAppendBlockTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
             try
             {
                 this.CloudAppendBlockTask(container, 2 * 1024, null, 0);
@@ -1125,7 +1146,28 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Single put blob and get blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudAppendBlobAppendBlockTask_FromUrl()
+        {
+            var container = GetRandomContainerReference();
+            await container.CreateAsync().ConfigureAwait(false);
+            try
+            {
+                await this.CloudAppendBlockTask_FromUrl(container, 2 * 1024, null, 0).ConfigureAwait(false);
+                await this.CloudAppendBlockTask_FromUrl(container, 2 * 1024, null, 1024).ConfigureAwait(false);
+            }
+            finally
+            {
+                await container.DeleteAsync().ConfigureAwait(false);
             }
         }
 #endif
@@ -1195,6 +1237,35 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             }
         }
 
+        private void CloudAppendBlock_FromUrl(CloudBlobContainer container, int size, AccessCondition accessCondition, int startOffset, bool isAsync)
+        {
+            var buffer = GetRandomBuffer(size);
+
+            var md5 = MD5.Create();
+            var contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer.Skip(startOffset).ToArray()));
+
+            var permissions = container.GetPermissions();
+            permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+            container.SetPermissions(permissions);
+
+            var source = container.GetBlockBlobReference("source");
+            source.UploadFromByteArray(buffer, 0, buffer.Length);
+
+            Task.Delay(1000).Wait();
+
+            var dest = container.GetAppendBlobReference("blob1");
+            dest.CreateOrReplace();
+
+            dest.AppendBlock(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext));
+
+            using (var resultingData = new MemoryStream())
+            {
+                dest.DownloadToStream(resultingData);
+                Assert.AreEqual(buffer.Length - startOffset, resultingData.Length);
+                Assert.IsTrue(resultingData.ToArray().SequenceEqual(buffer.Skip(startOffset).ToArray()));
+            }
+        }
+
 #if TASK
         private void CloudAppendBlockTask(CloudBlobContainer container, int size, AccessCondition accessCondition, int startOffset)
         {
@@ -1238,6 +1309,35 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             catch (AggregateException ex)
             {
                 throw ex.InnerException;
+            }
+        }
+
+        private async Task CloudAppendBlockTask_FromUrl(CloudBlobContainer container, int size, AccessCondition accessCondition, long startOffset)
+        {
+            var buffer = GetRandomBuffer(size);
+
+            var md5 = MD5.Create();
+            var contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer.Skip((int)startOffset).ToArray()));
+
+            var permissions = await container.GetPermissionsAsync();
+            permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+            await container.SetPermissionsAsync(permissions).ConfigureAwait(false);
+
+            var source = container.GetBlockBlobReference("source");
+            await source.UploadFromByteArrayAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+
+            await Task.Delay(1000);
+
+            var dest = container.GetAppendBlobReference("blob1");
+            await dest.CreateOrReplaceAsync().ConfigureAwait(false);
+
+            await dest.AppendBlockAsync(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
+
+            using (var resultingData = new MemoryStream())
+            {
+                await dest.DownloadToStreamAsync(resultingData).ConfigureAwait(false);
+                Assert.AreEqual(buffer.Length - startOffset, resultingData.Length);
+                Assert.IsTrue(resultingData.ToArray().SequenceEqual(buffer.Skip((int)startOffset).ToArray()));
             }
         }
 #endif
