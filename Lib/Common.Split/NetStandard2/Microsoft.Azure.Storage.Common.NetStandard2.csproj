@@ -25,7 +25,7 @@
     <DefineConstants>WINDOWS_DESKTOP;SYNC;APM;TASK;SIGN</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
   </ItemGroup>
   <ItemGroup>
