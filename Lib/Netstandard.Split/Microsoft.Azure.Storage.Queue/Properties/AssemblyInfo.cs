@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Windows Azure Storage")]
-[assembly: AssemblyCopyright("Copyright © 2018 Microsoft Corp.")]
+[assembly: AssemblyCopyright("Copyright © 2019 Microsoft Corp.")]
 [assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
 [assembly: AssemblyCulture("")]
 
@@ -22,9 +22,9 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("9d154050-0b01-4f70-afa3-8e2176e9cd73")]
 
-[assembly: AssemblyVersion("9.4.2")]
-[assembly: AssemblyFileVersion("9.4.2")]
-[assembly: AssemblyInformationalVersion("9.4.2.0")]
+[assembly: AssemblyVersion("10.0.0")]
+[assembly: AssemblyFileVersion("10.0.0")]
+[assembly: AssemblyInformationalVersion("10.0.0.0")]
 
 [assembly: InternalsVisibleTo(
     "Microsoft.Azure.Storage.Test, PublicKey=" +

@@ -17,7 +17,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("TestProxy")]
-[assembly: AssemblyCopyright("Copyright © 2018 Microsoft Corp.")]
+[assembly: AssemblyCopyright("Copyright © 2019 Microsoft Corp.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

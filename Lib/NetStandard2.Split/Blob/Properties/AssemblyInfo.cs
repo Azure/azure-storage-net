@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Windows Azure Storage")]
-[assembly: AssemblyCopyright("Copyright © 2018 Microsoft Corp.")]
+[assembly: AssemblyCopyright("Copyright © 2019 Microsoft Corp.")]
 [assembly: AssemblyTrademark("Microsoft ® is a registered trademark of Microsoft Corporation.")]
 [assembly: AssemblyCulture("")]
 
@@ -35,9 +35,9 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("9.4.2.0")]
-[assembly: AssemblyFileVersion("9.4.2.0")]
-[assembly: AssemblyInformationalVersion("9.4.2.0")]
+[assembly: AssemblyVersion("10.0.0.0")]
+[assembly: AssemblyFileVersion("10.0.0.0")]
+[assembly: AssemblyInformationalVersion("10.0.0.0")]
 
 #if SIGN
 [assembly: InternalsVisibleTo(
