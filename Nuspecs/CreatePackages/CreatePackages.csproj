@@ -12,10 +12,6 @@
   <PropertyGroup>
     <BuildName Condition="('$(GIT_BRANCH)' != '' AND '$(GIT_BRANCH)' != '$(MasterBranch)') OR ('$(Configuration)' != 'Release')">-$(Configuration)-$(BUILD_TAG)</BuildName>
     <Version>$(VersionNumber)$(BuildName)</Version>
-    <IntermediateOutputPath Condition=" '$(IntermediateOutputPath)' == '' ">obj\$(Configuration)</IntermediateOutputPath>
-    <OutputPath Condition=" '$(OutputPath)' == '' ">bin\$(Configuration)</OutputPath>
-    <ProjectGuid>{A8345ED8-7712-4444-BDF5-84B1F99EE304}</ProjectGuid>
-    <Configurations>Debug;Release;Official;Preview</Configurations>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <IntermediateOutputPath Condition=" '$(IntermediateOutputPath)' == '' ">obj\$(Configuration)</IntermediateOutputPath>
     <OutputPath Condition=" '$(OutputPath)' == '' ">bin\$(Configuration)</OutputPath>
@@ -27,9 +23,7 @@
     <NugetSymbols Condition="true">-Symbols -SymbolPackageFormat snupkg</NugetSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Azure.Storage.Blob.nuspec">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="Azure.Storage.Blob.nuspec" />
     <None Include="Azure.Storage.Common.nuspec" />
     <None Include="Azure.Storage.File.nuspec" />
     <None Include="Azure.Storage.Queue.nuspec" />
