@@ -1411,9 +1411,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Commits a new block of data to the end of the blob.
         /// </summary>
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
-        /// <param name="offset">The byte offset at which to begin returning content.</param>
-        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
+        /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
+        /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="sourceContentMd5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
         /// on the blob. May be <c>null</c> or an empty string.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
@@ -1422,7 +1422,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task<long> AppendBlockAsync(Uri sourceUri, long offset, long count, string contentMD5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<long> AppendBlockAsync(Uri sourceUri, long offset, long count, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -1430,7 +1430,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             return Executor.ExecuteAsync(
-                this.AppendBlockImpl(sourceUri, offset, count, contentMD5, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.AppendBlockImpl(sourceUri, offset, count, sourceContentMd5, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -1683,19 +1683,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Commits the block to the end of the blob.
         /// </summary>
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
-        /// <param name="offset">The byte offset at which to begin returning content.</param>
-        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
+        /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that uploads the block.</returns>
-        internal RESTCommand<long> AppendBlockImpl(Uri sourceUri, long offset, long count, string contentMD5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<long> AppendBlockImpl(Uri sourceUri, long offset, long count, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             var putCmd = new RESTCommand<long>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AppendBlock(uri, sourceUri, offset, count, contentMD5, serverTimeout, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AppendBlock(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 var appendOffset = -1L;

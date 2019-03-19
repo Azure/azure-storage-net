@@ -514,7 +514,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress{StorageProgress}"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -582,7 +582,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress{StorageProgress}"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -786,7 +786,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress{StorageProgress}"/> object to gather progress deltas.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
@@ -915,7 +915,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress{StorageProgress}"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -1127,7 +1127,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress{StorageProgress}"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -2109,22 +2109,16 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Writes pages to a page blob.
         /// </summary>
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
-        /// <param name="offset">The byte offset at which to begin returning content.</param>
-        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
+        /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
         [DoesServiceRequest]
-        public virtual void WritePages(Uri sourceUri, long offset, long count, long startOffset, string contentMD5 = null, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void WritePages(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5 = null, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -2132,7 +2126,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             Executor.ExecuteSync(
-                this.PutPageImpl(sourceUri, offset, count, startOffset, contentMD5, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentMd5, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2187,27 +2181,21 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Begins an asynchronous operation to write pages to a page blob.
         /// </summary>
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
-        /// <param name="offset">The byte offset at which to begin returning content.</param>
-        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
+        /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginWritePages(Uri sourceUri, long offset, long count, long startOffset, string contentMD5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginWritePages(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.WritePagesAsync(sourceUri, offset, count, startOffset, contentMD5, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WritePagesAsync(sourceUri, offset, count, startOffset, sourceContentMd5, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2219,7 +2207,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="progressHandler"> An <see cref="IProgress"/> object to gather progress deltas.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress{StorageProgress}"/> object to gather progress deltas.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
@@ -2408,24 +2396,18 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Initiates an asynchronous operation to write pages to a page blob.
         /// </summary>
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
-        /// <param name="offset">The byte offset at which to begin returning content.</param>
-        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
+        /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="sourceContentMd5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
-        /// </remarks>
         [DoesServiceRequest]
-        public virtual async Task WritePagesAsync(Uri sourceUri, long offset, long count, long startOffset, string contentMD5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task WritePagesAsync(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -2433,7 +2415,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             await Executor.ExecuteAsync(
-                this.PutPageImpl(sourceUri, offset, count, startOffset, contentMD5, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentMd5, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken).ConfigureAwait(false);
@@ -3212,15 +3194,15 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// Implementation method for the WritePage methods.
         /// </summary>
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
-        /// <param name="offset">The byte offset at which to begin returning content.</param>
-        /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="startOffset">The start offset.</param> 
-        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
+        /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
+        /// <param name="startOffset">The offset in the destination to begin writing.</param> 
+        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that writes the pages.</returns>
-        private RESTCommand<NullType> PutPageImpl(Uri sourceUri, long offset, long count, long startOffset, string contentMD5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> PutPageImpl(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             options.AssertNoEncryptionPolicyOrStrictMode();
 
@@ -3233,7 +3215,6 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             if ((1 + pageRange.EndOffset - pageRange.StartOffset) % Constants.PageSize != 0 ||
                 (1 + pageRange.EndOffset - pageRange.StartOffset) == 0)
-
             {
                 CommonUtility.ArgumentOutOfRange("EndOffset", pageRange.EndOffset);
             }
@@ -3241,7 +3222,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             var putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, sourceUri, offset, count, contentMD5, serverTimeout, pageRange, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, pageRange, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);

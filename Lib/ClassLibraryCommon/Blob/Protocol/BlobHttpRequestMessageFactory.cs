@@ -57,18 +57,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="sourceAccessCondition">The source access condition to apply to the request.</param>
         /// <param name="destAccessCondition">The destination access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             var builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "appendblock");
-            builder.Add("fromUrl", default(string));
 
             var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
@@ -79,7 +78,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
 
-            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
 
             return request;
         }
@@ -690,7 +689,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="blockId">A string specifying the block ID for this block.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="System.Net.StorageRequestMessage"/> object.</returns>
+        /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage PutBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, string blockId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             return BlobHttpRequestMessageFactory.PutBlock(uri, sourceUri, offset, count, contentMD5, timeout, blockId, accessCondition, content, true /* useVersionHeader */, operationContext, canonicalizer, credentials);
@@ -703,14 +702,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="blockId">A string specifying the block ID for this block.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
         /// <param name="useVersionHeader">A boolean value indicating whether to set the <i>x-ms-version</i> HTTP header.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="System.Net.StorageRequestMessage"/> object.</returns>
-        public static StorageRequestMessage PutBlock(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, string blockId, AccessCondition accessCondition, HttpContent content, bool useVersionHeader, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage PutBlock(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, string blockId, AccessCondition accessCondition, HttpContent content, bool useVersionHeader, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (offset.HasValue && offset.Value < 0)
             {
@@ -727,7 +726,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
 
-            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
 
             return request;
         }
@@ -827,7 +826,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="contentMD5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="pageRange"></param>
         /// <param name="sourceAccessCondition">The source access condition to apply to the request.</param>
@@ -837,12 +836,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, string contentMD5, int? timeout, PageRange pageRange, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, PageRange pageRange, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             var builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "page");
             builder.Add("update", default(string));
-            builder.Add("fromUrl", default(string));
 
             var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
@@ -856,7 +854,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
 
-            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
 
             return request;
         }
@@ -906,7 +904,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the destination blob.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="source">A <see cref="System.Uri"/> specifying the absolute URI to the source object, including any necessary authentication parameters.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="sourceContentMd5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
@@ -917,9 +915,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string contentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            if (!syncCopy && !string.IsNullOrEmpty(contentMD5))
+            if (!syncCopy && !string.IsNullOrEmpty(sourceContentMd5))
             {
                 throw new InvalidOperationException();
             }
@@ -948,9 +946,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
                 request.Headers.Add(Constants.HeaderConstants.RequiresSyncHeader, Constants.HeaderConstants.TrueHeader);
             }
 
-            if (!string.IsNullOrEmpty(contentMD5))
+            if (!string.IsNullOrEmpty(sourceContentMd5))
             {
-                request.Headers.Add(Constants.HeaderConstants.SourceContentMD5Header, contentMD5);
+                request.Headers.Add(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
             }
 
             return request;
