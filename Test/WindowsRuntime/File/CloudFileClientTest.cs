@@ -285,7 +285,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = rootDirectory.GetFileReference("file");
                 file.StreamMinimumReadSizeInBytes = 1024 * 1024;
 
-                using (var fileStream = await file.OpenWriteAsync(8 * 1024 * 1024))
+                using (CloudFileStream fileStream = await file.OpenWriteAsync(8 * 1024 * 1024))
                 {
                     Stream fos = fileStream;
 
@@ -307,7 +307,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await fileStream.CommitAsync();
                 }
 
-                using (var fileStream = await file.OpenReadAsync())
+                using (Stream fileStream = await file.OpenReadAsync())
                 {
                     Stream fis = fileStream;
 

@@ -1784,7 +1784,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             lock (storageAsyncResult.CancellationLockerObject)
             {
-                var result = CancellableAsyncResultTaskWrapper.Create(
+                ICancellableAsyncResult result = CancellableAsyncResultTaskWrapper.Create(
                     token => this.GetAccountPropertiesAsync(options, operationContext),
                     ar =>
                     {

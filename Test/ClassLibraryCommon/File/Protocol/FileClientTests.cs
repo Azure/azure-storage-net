@@ -219,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             HttpRequestMessage listRangesRequest = FileHttpRequestMessageFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, null, opContext, null, null);
             using (HttpResponseMessage rangeResponse = await FileTestUtils.GetResponse(listRangesRequest, FileContext))
             {
-                var ranges = await ListRangesResponse.ParseAsync(await rangeResponse.Content.ReadAsStreamAsync(), CancellationToken.None);
+                IEnumerable<FileRange> ranges = await ListRangesResponse.ParseAsync(await rangeResponse.Content.ReadAsStreamAsync(), CancellationToken.None);
                 fileRanges.AddRange(ranges);
             }
 
@@ -248,7 +248,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             HttpRequestMessage newFileRangeRequest = FileHttpRequestMessageFactory.ListRanges(uri, FileContext.Timeout, null, null, null, null, null, opContext, null, null);
             using (HttpResponseMessage newFileRangeResponse =   await FileTestUtils.GetResponse(newFileRangeRequest, FileContext))
             {
-                var ranges = await ListRangesResponse.ParseAsync(await newFileRangeResponse.Content.ReadAsStreamAsync(), CancellationToken.None);
+                IEnumerable<FileRange> ranges = await ListRangesResponse.ParseAsync(await newFileRangeResponse.Content.ReadAsStreamAsync(), CancellationToken.None);
                 newFileRanges.AddRange(ranges);
             }
 

@@ -460,26 +460,26 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
         private async Task CloudAppendBlobUploadFromStreamAsyncInternal_FromUrl(CloudBlobContainer container, int size, AccessCondition accessCondition, OperationContext operationContext, long startOffset)
         {
-            var buffer = GetRandomBuffer(size);
+            byte[] buffer = GetRandomBuffer(size);
 
-            var md5 = MD5.Create();
-            var contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer.Skip((int)startOffset).ToArray()));
+            MD5 md5 = MD5.Create();
+            string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer.Skip((int)startOffset).ToArray()));
 
-            var permissions = await container.GetPermissionsAsync().ConfigureAwait(false);
+            BlobContainerPermissions permissions = await container.GetPermissionsAsync().ConfigureAwait(false);
             permissions.PublicAccess = BlobContainerPublicAccessType.Container;
             await container.SetPermissionsAsync(permissions).ConfigureAwait(false);
 
-            var source = container.GetBlockBlobReference("source");
+            CloudBlockBlob source = container.GetBlockBlobReference("source");
             await source.UploadFromByteArrayAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
 
             await Task.Delay(1000);
 
-            var dest = container.GetAppendBlobReference("blob1");
+            CloudAppendBlob dest = container.GetAppendBlobReference("blob1");
             await dest.CreateOrReplaceAsync().ConfigureAwait(false);
 
             await dest.AppendBlockAsync(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
 
-            using (var resultingData = new MemoryStream())
+            using (MemoryStream resultingData = new MemoryStream())
             {
                 await dest.DownloadToStreamAsync(resultingData).ConfigureAwait(false);
                 Assert.AreEqual(buffer.Length - startOffset, resultingData.Length);
@@ -1344,9 +1344,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await blobContainerWithSAS.CreateAsync();
 
-                var blob = blobContainerWithSAS.GetAppendBlobReference("test");
+                CloudAppendBlob blob = blobContainerWithSAS.GetAppendBlobReference("test");
 
-                var result = await blob.GetAccountPropertiesAsync();
+                Shared.Protocol.AccountProperties result = await blob.GetAccountPropertiesAsync();
 
                 await blob.DeleteIfExistsAsync();
 

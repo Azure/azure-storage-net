@@ -41,7 +41,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <returns></returns>
         public static IDictionary<string, string> ParseQueryString(string query)
         {
-            var retVal = new Dictionary<string, ICollection<string>>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, ICollection<string>> retVal = new Dictionary<string, ICollection<string>>(StringComparer.OrdinalIgnoreCase);
             if (string.IsNullOrEmpty(query))
             {
                 return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)));
@@ -75,7 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
                     value = Uri.UnescapeDataString(pair.Substring(equalDex + 1));
                 }
 
-                if (retVal.TryGetValue(key, out var existingValue))
+                if (retVal.TryGetValue(key, out ICollection<string> existingValue))
                 {
                     existingValue.Add(value);
                 }

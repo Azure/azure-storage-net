@@ -480,7 +480,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             HttpResponseMessage response = null;
             try
             {
-                var httpClient = HttpClientFactory.Instance;
+                HttpClient httpClient = HttpClientFactory.Instance;
 
                 if (token != null)
                 {

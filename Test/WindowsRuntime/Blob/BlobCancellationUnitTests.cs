@@ -74,7 +74,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
                         OperationContext operationContext = new OperationContext();
-                        var tokenSource = new CancellationTokenSource();
+                        CancellationTokenSource tokenSource = new CancellationTokenSource();
 #if NETCORE
                         Task action = blob.DownloadToStreamAsync(downloadedBlob, default(AccessCondition), default(BlobRequestOptions), operationContext, default(IProgress<StorageProgress>), tokenSource.Token);
 #else
@@ -122,7 +122,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     using (ManualResetEvent waitHandle = new ManualResetEvent(false))
                     {
                         OperationContext operationContext = new OperationContext();
-                        var tokenSource = new CancellationTokenSource();
+                        CancellationTokenSource tokenSource = new CancellationTokenSource();
 #if NETCORE
                         Task action = blob.UploadFromStreamAsync(originalBlob, originalBlob.Length, default(AccessCondition), default(BlobRequestOptions), operationContext, default(IProgress<StorageProgress>) /* progressHandler */, tokenSource.Token);
 #else

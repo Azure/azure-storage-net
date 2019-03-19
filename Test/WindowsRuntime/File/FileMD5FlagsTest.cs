@@ -121,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await file.DownloadToStreamAsync(stream, null, optionsWithMD5, null);
                     await file.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
-                    using (var fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
+                    using (Stream fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream fileStreamForRead = fileStream;
                         int read;
@@ -132,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         while (read > 0);
                     }
 
-                    using (var fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (Stream fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream fileStreamForRead = fileStream;
                         int read;
@@ -154,7 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         HttpStatusCode.OK);
                     await file.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
-                    using (var fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
+                    using (Stream fileStream = await file.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream fileStreamForRead = fileStream;
                         TestHelper.ExpectedException<IOException>(
@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                             "Downloading a file with invalid MD5 should fail");
                     }
 
-                    using (var fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (Stream fileStream = await file.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream fileStreamForRead = fileStream;
                         int read;

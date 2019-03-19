@@ -1636,10 +1636,10 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 share.Create();
 
-                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
                 dir.Create();
 
-                var file = dir.GetFileReference("myfile");
+                CloudFile file = dir.GetFileReference("myfile");
                 file.Create(512);
 
                 FileContinuationToken token = null;
@@ -1647,7 +1647,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = file.ListHandlesSegmented(token, default(int?), default(AccessCondition), default(FileRequestOptions), default(OperationContext));
+                    FileHandleResultSegment response = file.ListHandlesSegmented(token, default(int?), default(AccessCondition), default(FileRequestOptions), default(OperationContext));
                     handles.AddRange(response.Results);
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);
@@ -1687,7 +1687,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         IAsyncResult result = file.BeginListHandlesSegmented(token, null, null, null, null, ar => waitHandle.Set(), null);
                         waitHandle.WaitOne();
 
-                        var response = file.EndListHandlesSegmented(result);
+                        FileHandleResultSegment response = file.EndListHandlesSegmented(result);
 
                         handles.AddRange(response.Results);
 
@@ -1726,7 +1726,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = await file.ListHandlesSegmentedAsync(token, null, null, null, null, CancellationToken.None);
+                    FileHandleResultSegment response = await file.ListHandlesSegmentedAsync(token, null, null, null, null, CancellationToken.None);
                     handles.AddRange(response.Results);
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);
@@ -1763,7 +1763,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = file.CloseAllHandlesSegmented(token, default(AccessCondition), default(FileRequestOptions), default(OperationContext));
+                    CloseFileHandleResultSegment response = file.CloseAllHandlesSegmented(token, default(AccessCondition), default(FileRequestOptions), default(OperationContext));
                     handlesClosed += response.NumHandlesClosed;
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);
@@ -1804,7 +1804,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         IAsyncResult result = file.BeginCloseAllHandlesSegmented(token, null, null, null, ar => waitHandle.Set(), null);
                         waitHandle.WaitOne();
 
-                        var response = file.EndCloseAllHandlesSegmented(result);
+                        CloseFileHandleResultSegment response = file.EndCloseAllHandlesSegmented(result);
 
                         handlesClosed += response.NumHandlesClosed;
 
@@ -1844,7 +1844,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = await file.CloseAllHandlesSegmentedAsync(token, null, null, null, CancellationToken.None);
+                    CloseFileHandleResultSegment response = await file.CloseAllHandlesSegmentedAsync(token, null, null, null, CancellationToken.None);
                     handlesClosed += response.NumHandlesClosed;
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);
@@ -1882,7 +1882,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = file.CloseHandleSegmented(nonexistentHandle, token, default(AccessCondition), default(FileRequestOptions), default(OperationContext));
+                    CloseFileHandleResultSegment response = file.CloseHandleSegmented(nonexistentHandle, token, default(AccessCondition), default(FileRequestOptions), default(OperationContext));
                     handlesClosed += response.NumHandlesClosed;
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);
@@ -1924,7 +1924,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         IAsyncResult result = file.BeginCloseHandleSegmented(nonexistentHandle, token, null, null, null, ar => waitHandle.Set(), null);
                         waitHandle.WaitOne();
 
-                        var response = file.EndCloseAllHandlesSegmented(result);
+                        CloseFileHandleResultSegment response = file.EndCloseAllHandlesSegmented(result);
 
                         handlesClosed += response.NumHandlesClosed;
 
@@ -1965,7 +1965,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = await file.CloseHandleSegmentedAsync(nonexistentHandle, token, null, null, null, CancellationToken.None);
+                    CloseFileHandleResultSegment response = await file.CloseHandleSegmentedAsync(nonexistentHandle, token, null, null, null, CancellationToken.None);
                     handlesClosed += response.NumHandlesClosed;
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);

@@ -751,31 +751,31 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudPageBlobWritePagesAsync_FromUrl()
         {
-            var buffer = GetRandomBuffer(4 * 1024 * 1024);
+            byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
 
-            var md5 = MD5.Create();
-            var contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
+            MD5 md5 = MD5.Create();
+            string contentMD5 = Convert.ToBase64String(md5.ComputeHash(buffer));
 
-            var container = GetRandomContainerReference();
+            CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 await container.CreateAsync().ConfigureAwait(false);
 
-                var permissions = await container.GetPermissionsAsync().ConfigureAwait(false);
+                BlobContainerPermissions permissions = await container.GetPermissionsAsync().ConfigureAwait(false);
                 permissions.PublicAccess = BlobContainerPublicAccessType.Container;
                 await container.SetPermissionsAsync(permissions).ConfigureAwait(false);
 
-                var source = container.GetBlockBlobReference("source");
+                CloudBlockBlob source = container.GetBlockBlobReference("source");
                 await source.UploadFromByteArrayAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
 
                 Task.Delay(1000).Wait();
 
-                var dest = container.GetPageBlobReference("blob1");
+                CloudPageBlob dest = container.GetPageBlobReference("blob1");
                 await dest.CreateAsync(buffer.Length).ConfigureAwait(false);
 
                 await dest.WritePagesAsync(source.Uri, 0, buffer.Length, 0, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
 
-                using (var resultingData = new MemoryStream())
+                using (MemoryStream resultingData = new MemoryStream())
                 {
                     await dest.DownloadToStreamAsync(resultingData).ConfigureAwait(false);
                     Assert.AreEqual(resultingData.Length, buffer.Length);
@@ -1641,9 +1641,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await blobContainerWithSAS.CreateAsync();
 
-                var blob = blobContainerWithSAS.GetPageBlobReference("test");
+                CloudPageBlob blob = blobContainerWithSAS.GetPageBlobReference("test");
 
-                var result = await blob.GetAccountPropertiesAsync();
+                AccountProperties result = await blob.GetAccountPropertiesAsync();
 
                 await blob.DeleteIfExistsAsync();
 

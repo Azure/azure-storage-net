@@ -1188,7 +1188,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    using (var blobStream = await blob.OpenReadAsync())
+                    using (Stream blobStream = await blob.OpenReadAsync())
                     {
                         await TestHelper.AssertStreamsAreEqualAsync(wholeBlob, blobStream);
                     }
@@ -1293,7 +1293,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream;
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
@@ -1306,7 +1306,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream;
                     long length = blobStreamForRead.Length;
@@ -1356,7 +1356,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream;
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
@@ -1369,7 +1369,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream;
                     long length = blobStreamForRead.Length;
@@ -1421,7 +1421,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream;
                     await blobStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
@@ -1434,7 +1434,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
                     Stream blobStreamForRead = blobStream;
                     long length = blobStreamForRead.Length;
@@ -1556,7 +1556,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
 
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
@@ -1591,7 +1591,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
 
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);
@@ -1628,7 +1628,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var blobStream = await blob.OpenReadAsync(null, null, opContext))
+                using (Stream blobStream = await blob.OpenReadAsync(null, null, opContext))
                 {
 
                     int attempts = await BlobReadStreamSeekTestAsync(blobStream, blob.StreamMinimumReadSizeInBytes, buffer);

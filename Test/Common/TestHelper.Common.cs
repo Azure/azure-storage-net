@@ -204,8 +204,8 @@ namespace Microsoft.WindowsAzure.Storage
             Assert.AreEqual(src.Length, dst.Length);
 
             const int bufferSize = 4 * 1024;
-            var buffer1 = new byte[bufferSize];
-            var buffer2 = new byte[bufferSize];
+            byte[] buffer1 = new byte[bufferSize];
+            byte[] buffer2 = new byte[bufferSize];
 
             long origDstPosition = dst.Position;
             long origSrcPosition = src.Position;

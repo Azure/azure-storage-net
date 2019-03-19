@@ -147,19 +147,19 @@ namespace Microsoft.WindowsAzure.Storage.File
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task FileOpenReadWithCancelTest()
         {
-            var cts = new CancellationTokenSource();
-            var buffer = new byte[4 * 1024 * 1024];
-            var share = GetRandomShareReference();
+            CancellationTokenSource cts = new CancellationTokenSource();
+            byte[] buffer = new byte[4 * 1024 * 1024];
+            CloudFileShare share = GetRandomShareReference();
             try
             {
                 share.Create();
-                var file = share.GetRootDirectoryReference().GetFileReference("file1");
-                using (var srcStream = new MemoryStream(buffer))
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
                     file.UploadFromStream(srcStream);
                 }
 
-                var dstStream = await file.OpenReadAsync(null, null, null, cts.Token);
+                Stream dstStream = await file.OpenReadAsync(null, null, null, cts.Token);
 
                 cts.Cancel();
 
@@ -167,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     Assert.IsTrue(cts.Token.IsCancellationRequested);
 
-                    var bytesRead = 0;
+                    int bytesRead = 0;
 
                     do
                     {

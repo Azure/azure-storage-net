@@ -46,7 +46,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
                     await file.UploadFromStreamAsync(srcStream, null, null, null);
-                    using (var fileStream = await file.OpenReadAsync())
+                    using (Stream fileStream = await file.OpenReadAsync())
                     {
                         Stream fileStreamForRead = fileStream;
                         fileStreamForRead.Seek(2048, 0);
@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                using (var fileStream = await file.OpenWriteAsync(2048))
+                using (CloudFileStream fileStream = await file.OpenWriteAsync(2048))
                 {
                     Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -115,7 +115,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     await file.UploadFromStreamAsync(srcStream);
 
-                    var dstStream = await file.OpenReadAsync();
+                    Stream dstStream = await file.OpenReadAsync();
                     using (Stream dstStreamForRead = dstStream)
                     {
                         TestHelper.AssertStreamsAreEqual(srcStream, dstStreamForRead);
@@ -143,14 +143,14 @@ namespace Microsoft.WindowsAzure.Storage.File
                 await share.CreateAsync();
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
 
-                using (var fileStream = await file.OpenWriteAsync(2048))
+                using (CloudFileStream fileStream = await file.OpenWriteAsync(2048))
                 {
                     Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
                     await fileStreamForWrite.FlushAsync();
                 }
 
-                using (var dstStream = await file.OpenReadAsync())
+                using (Stream dstStream = await file.OpenReadAsync())
                 {
                     Stream dstStreamForRead = dstStream;
                     MemoryStream memoryStream = new MemoryStream(buffer);
@@ -179,7 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
 
                 MemoryStream memoryStream = new MemoryStream(buffer);
-                using (var fileStream = await file.OpenWriteAsync(2048))
+                using (CloudFileStream fileStream = await file.OpenWriteAsync(2048))
                 {
                     Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -199,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await fileStreamForWrite.FlushAsync();
                 }
 
-                using (var dstStream = await file.OpenReadAsync())
+                using (Stream dstStream = await file.OpenReadAsync())
                 {
                     Stream dstStreamForRead = dstStream;
                     TestHelper.AssertStreamsAreEqual(memoryStream, dstStreamForRead);
@@ -227,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 await share.CreateAsync();
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 MemoryStream memoryStream = new MemoryStream(buffer);
-                using (var fileStream = await file.OpenWriteAsync(2048))
+                using (CloudFileStream fileStream = await file.OpenWriteAsync(2048))
                 {
                     Stream fileStreamForWrite = fileStream;
                     await fileStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -270,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     await file.UploadFromStreamAsync(srcStream);
                     bool thrown = false;
                     byte[] testBuffer = new byte[2048];
-                    using (var fileStream = await file.OpenReadAsync())
+                    using (Stream fileStream = await file.OpenReadAsync())
                     {
                         Stream fileStreamForRead = fileStream;
                         try

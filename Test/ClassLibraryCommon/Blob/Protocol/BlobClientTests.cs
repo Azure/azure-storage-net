@@ -659,7 +659,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             HttpRequestMessage pageRangeRequest = BlobHttpRequestMessageFactory.GetPageRanges(uri, BlobContext.Timeout, null, null, null, null, null, opContext, null, null);
             using (HttpResponseMessage pageRangeResponse = await BlobTestUtils.GetResponse(pageRangeRequest, BlobContext))
             {
-                var ranges = await GetPageRangesResponse.ParseAsync(HttpResponseParsers.GetResponseStream(pageRangeResponse), CancellationToken.None);
+                IEnumerable<PageRange> ranges = await GetPageRangesResponse.ParseAsync(HttpResponseParsers.GetResponseStream(pageRangeResponse), CancellationToken.None);
                 pageRanges.AddRange(ranges);
             }
 
@@ -688,7 +688,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             HttpRequestMessage newPageRangeRequest = BlobHttpRequestMessageFactory.GetPageRanges(uri, BlobContext.Timeout, null, null, null, null, null, opContext, null, null);
             using (HttpResponseMessage newPageRangeResponse = await BlobTestUtils.GetResponse(newPageRangeRequest, BlobContext))
             {
-                var ranges = await GetPageRangesResponse.ParseAsync(HttpResponseParsers.GetResponseStream(newPageRangeResponse), CancellationToken.None);
+                IEnumerable<PageRange> ranges = await GetPageRangesResponse.ParseAsync(HttpResponseParsers.GetResponseStream(newPageRangeResponse), CancellationToken.None);
                 newPageRanges.AddRange(ranges);
             }
 
@@ -834,7 +834,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             using (HttpResponseMessage response = await BlobTestUtils.GetResponse(request, BlobContext))
             {
                 BlobTests.GetBlockListResponse(response, BlobContext, expectedError);
-                var getBlockListResponse = await GetBlockListResponse.ParseAsync(HttpResponseParsers.GetResponseStream(response), CancellationToken.None);
+                IEnumerable<ListBlockItem> getBlockListResponse = await GetBlockListResponse.ParseAsync(HttpResponseParsers.GetResponseStream(response), CancellationToken.None);
                 int i = 0;
                 foreach (ListBlockItem item in getBlockListResponse)
                 {

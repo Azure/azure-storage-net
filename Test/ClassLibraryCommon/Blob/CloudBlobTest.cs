@@ -467,17 +467,17 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         public void CloudBlobLocaleParsing()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            var currCulture = Thread.CurrentThread.CurrentCulture;
+            CultureInfo currCulture = Thread.CurrentThread.CurrentCulture;
             try
             {
                 const string blobname = "tempfile";
                 container.Create();
-                var blockBlob = container.GetBlockBlobReference(blobname);
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobname);
                 OperationContext context = new OperationContext();
 
                 blockBlob.UploadText("placeholder", null, null, null, context);
 
-                foreach (var culture in CultureInfo.GetCultures(CultureTypes.AllCultures))
+                foreach (CultureInfo culture in CultureInfo.GetCultures(CultureTypes.AllCultures))
                 {
                     Thread.CurrentThread.CurrentCulture = culture;
                     Assert.IsTrue(blockBlob.Exists()); // parses the header to ensure can be parsed across cultures
@@ -507,7 +507,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 //Enables a delete retention policy on the blob with 1 day of default retention days
                  container.ServiceClient.EnableSoftDelete();
-                var props = container.ServiceClient.GetServiceProperties();
+                Shared.Protocol.ServiceProperties props = container.ServiceClient.GetServiceProperties();
                 container.Create();
                                 // Upload some data to the blob.
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
@@ -879,9 +879,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 do
                 {
-                    var resultSegments = container.ListBlobsSegmentedAsync
+                    Task<BlobResultSegment> resultSegments = container.ListBlobsSegmentedAsync
         (null, true, BlobListingDetails.Snapshots | BlobListingDetails.Deleted, null, ct, null, null);
-                    var blobs = resultSegments.Result
+                    List<IListBlobItem> blobs = resultSegments.Result
                             .Results
                             .ToList();
                     ct = resultSegments.Result.ContinuationToken;

@@ -190,11 +190,11 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
-            var oldPosition = this.innerStream.Position;
+            long oldPosition = this.innerStream.Position;
 
             await this.innerStream.CopyToAsync(destination, bufferSize, cancellationToken).ConfigureAwait(false);
 
-            var newPosition = this.innerStream.Position;
+            long newPosition = this.innerStream.Position;
 
             this.incrementer.Report(newPosition - oldPosition);
         }
@@ -206,22 +206,22 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
-            var oldPosition = this.innerStream.Position;
+            long oldPosition = this.innerStream.Position;
 
             await this.innerStream.FlushAsync(cancellationToken).ConfigureAwait(false);
 
-            var newPosition = this.innerStream.Position;
+            long newPosition = this.innerStream.Position;
 
             this.incrementer.Report(newPosition - oldPosition);
         }
 
         public override void Flush()
         {
-            var oldPosition = this.innerStream.Position;
+            long oldPosition = this.innerStream.Position;
 
             this.innerStream.Flush();
 
-            var newPosition = this.innerStream.Position;
+            long newPosition = this.innerStream.Position;
 
             this.incrementer.Report(newPosition - oldPosition);
         }
@@ -243,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
             set
             {
-                var delta = value - this.innerStream.Position;
+                long delta = value - this.innerStream.Position;
 
                 this.innerStream.Position = value;
 
@@ -253,21 +253,21 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            var n = this.innerStream.Read(buffer, offset, count);
+            int n = this.innerStream.Read(buffer, offset, count);
             this.incrementer.Report(n);
             return n;
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            var n = await this.innerStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+            int n = await this.innerStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
             this.incrementer.Report(n);
             return n;
         }
 
         public override int ReadByte()
         {
-            var b = this.innerStream.ReadByte();
+            int b = this.innerStream.ReadByte();
 
             if (b != -1) // -1 = end of stream sentinel
             {
@@ -292,9 +292,9 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            var oldPosition = this.innerStream.Position;
+            long oldPosition = this.innerStream.Position;
 
-            var newPosition = this.innerStream.Seek(offset, origin);
+            long newPosition = this.innerStream.Seek(offset, origin);
 
             this.incrementer.Report(newPosition - oldPosition);
 

@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
                     await blob.UploadFromStreamAsync(srcStream, null, null, null);
-                    using (var blobStream = await blob.OpenReadAsync())
+                    using (Stream blobStream = await blob.OpenReadAsync())
                     {
                         Stream blobStreamForRead = blobStream;
                         blobStreamForRead.Seek(2048, 0);
@@ -98,7 +98,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
                 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                using (var blobStream = await blob.OpenWriteAsync(2048))
+                using (CloudBlobStream blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -162,14 +162,14 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 
-                using (var blobStream = await blob.OpenWriteAsync(2048))
+                using (CloudBlobStream blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
                     await blobStreamForWrite.FlushAsync();
                 }
 
-                using (var dstStream = await blob.OpenReadAsync())
+                using (Stream dstStream = await blob.OpenReadAsync())
                 {
                     Stream dstStreamForRead = dstStream;
                     MemoryStream memoryStream = new MemoryStream(buffer);
@@ -198,7 +198,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
 
                 MemoryStream memoryStream = new MemoryStream(buffer);
-                using (var blobStream = await blob.OpenWriteAsync(2048))
+                using (CloudBlobStream blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -218,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blobStreamForWrite.FlushAsync();
                 }
 
-                using (var dstStream = await blob.OpenReadAsync())
+                using (Stream dstStream = await blob.OpenReadAsync())
                 {
                     Stream dstStreamForRead = dstStream;
                     TestHelper.AssertStreamsAreEqual(memoryStream, dstStreamForRead);
@@ -246,7 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 MemoryStream memoryStream = new MemoryStream(buffer);
-                using (var blobStream = await blob.OpenWriteAsync(2048))
+                using (CloudBlobStream blobStream = await blob.OpenWriteAsync(2048))
                 {
                     Stream blobStreamForWrite = blobStream;
                     await blobStreamForWrite.WriteAsync(buffer, 0, 2048);
@@ -289,7 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blob.UploadFromStreamAsync(srcStream);
                     bool thrown = false;
                     byte[] testBuffer = new byte[2048];
-                    using (var blobStream = await blob.OpenReadAsync())
+                    using (Stream blobStream = await blob.OpenReadAsync())
                     {
                         Stream blobStreamForRead = blobStream;
                         try

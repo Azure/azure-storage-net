@@ -147,19 +147,19 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task BlobOpenReadWithCancelTest()
         {
-            var cts = new CancellationTokenSource();
-            var buffer = new byte[4 * 1024 * 1024];
-            var container = GetRandomContainerReference();
+            CancellationTokenSource cts = new CancellationTokenSource();
+            byte[] buffer = new byte[4 * 1024 * 1024];
+            CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 container.Create();
-                var blob = container.GetPageBlobReference("blob1");
-                using (var srcStream = new MemoryStream(buffer))
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                using (MemoryStream srcStream = new MemoryStream(buffer))
                 {
                     blob.UploadFromStream(srcStream);
                 }
 
-                var dstStream = await blob.OpenReadAsync(null, null, null, cts.Token);
+                Stream dstStream = await blob.OpenReadAsync(null, null, null, cts.Token);
 
                 cts.Cancel();
 
@@ -167,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     Assert.IsTrue(cts.Token.IsCancellationRequested);
 
-                    var bytesRead = 0;
+                    int bytesRead = 0;
 
                     do
                     {

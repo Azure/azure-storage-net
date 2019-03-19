@@ -130,7 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.Auth
         {
             try
             {
-                var newTokenAndFrequency = await this.renewTokenFuncAsync(state, this.cancellationTokenSource.Token).ConfigureAwait(false);
+                NewTokenAndFrequency newTokenAndFrequency = await this.renewTokenFuncAsync(state, this.cancellationTokenSource.Token).ConfigureAwait(false);
                 this.token = newTokenAndFrequency.Token;
                 this.renewFrequency = newTokenAndFrequency.Frequency ?? this.renewFrequency;
                     // if nothing is given, use previous frequency.

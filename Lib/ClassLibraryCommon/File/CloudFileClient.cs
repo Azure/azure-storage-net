@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.File
         public virtual ShareResultSegment EndListSharesSegmented(IAsyncResult asyncResult)
         {
             CommonUtility.AssertNotNull(nameof(asyncResult), asyncResult);
-            var resultSegment = ((CancellableAsyncResultTaskWrapper<ShareResultSegment>)(asyncResult)).GetAwaiter().GetResult();
+            ShareResultSegment resultSegment = ((CancellableAsyncResultTaskWrapper<ShareResultSegment>)(asyncResult)).GetAwaiter().GetResult();
             return new ShareResultSegment(resultSegment.Results, resultSegment.ContinuationToken);
         }
         

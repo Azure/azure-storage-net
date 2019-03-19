@@ -1478,7 +1478,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                var msg = FileHttpRequestMessageFactory.ListHandles(uri, serverTimeout, maxResults, recursive, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.ListHandles(uri, serverTimeout, maxResults, recursive, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -1518,13 +1518,13 @@ namespace Microsoft.WindowsAzure.Storage.File
             putCmd.RetrieveResponseStream = true;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                var msg = FileHttpRequestMessageFactory.CloseHandle(uri, serverTimeout, handleId, recursive, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.CloseHandle(uri, serverTimeout, handleId, recursive, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
-                var res = HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+                CloseFileHandleResultSegment res = HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
                 int handlesClosed;
 
                 if (!int.TryParse(resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.NumHandlesClosed), out handlesClosed))

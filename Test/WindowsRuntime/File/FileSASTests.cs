@@ -111,13 +111,13 @@ namespace Microsoft.WindowsAzure.Storage.File
             {
                 if ((permissions & SharedAccessFilePermissions.List) == SharedAccessFilePermissions.List)
                 {
-                    var results = await SASshare.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(null);
+                    FileResultSegment results = await SASshare.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(null);
                 }
                 else
                 {
                     context = new OperationContext();
                     await TestHelper.ExpectedExceptionAsync(
-                        async () => { var results = await SASshare.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(null /* maxResults */, null /* currentToken */, null /* options */, context); },
+                        async () => { FileResultSegment results = await SASshare.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(null /* maxResults */, null /* currentToken */, null /* options */, context); },
                         context,
                         "List files while SAS does not allow for listing",
                         HttpStatusCode.Forbidden,

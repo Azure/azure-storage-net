@@ -417,7 +417,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                var md5 = Convert.ToBase64String(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
+                string md5 = Convert.ToBase64String(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
 
                 await container.CreateAsync();
 
@@ -1524,7 +1524,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         await destBlob.DownloadToStreamAsync(blobData);
                         Assert.AreEqual(200, blobData.Length);
 
-                        var expectedData = resultingData.ToArray();
+                        byte[] expectedData = resultingData.ToArray();
                         expectedData =
                             expectedData
                             .Skip(50).Take(100)
@@ -2034,9 +2034,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await blobContainerWithSAS.CreateAsync();
 
-                var blob = blobContainerWithSAS.GetBlockBlobReference("test");
+                CloudBlockBlob blob = blobContainerWithSAS.GetBlockBlobReference("test");
 
-                var result = await blob.GetAccountPropertiesAsync();
+                AccountProperties result = await blob.GetAccountPropertiesAsync();
 
                 await blob.DeleteIfExistsAsync();
 

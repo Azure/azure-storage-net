@@ -462,7 +462,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             CommonUtility.AssertNotNull("deleteRetentionPolicy", deleteRetentionPolicy);
 
             bool enabled = deleteRetentionPolicy.Enabled;
-            var xml = new XElement(DeleteRetentionPolicyName, new XElement(EnabledName, enabled));
+            XElement xml = new XElement(DeleteRetentionPolicyName, new XElement(EnabledName, enabled));
 
             if (!enabled) return xml;
 
@@ -641,8 +641,8 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
             {
                 return null;
             }
-            
-            var deleteRetentionPolicy = new DeleteRetentionPolicy()
+
+            DeleteRetentionPolicy deleteRetentionPolicy = new DeleteRetentionPolicy()
             {
                 Enabled = false,
                 RetentionDays = null
@@ -670,11 +670,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 return null;
             }
 
-            var enabledElement = element.Element(StaticWebsiteEnabledName);
-            var enabled = (enabledElement != null) ? bool.Parse(enabledElement.Value) : false;
+            XElement enabledElement = element.Element(StaticWebsiteEnabledName);
+            bool enabled = (enabledElement != null) ? bool.Parse(enabledElement.Value) : false;
 
-            var indexDocumentElement = element.Element(StaticWebsiteIndexDocumentName);
-            var errorDocumentElement = element.Element(StaticWebsiteErrorDocument404PathName);
+            XElement indexDocumentElement = element.Element(StaticWebsiteIndexDocumentName);
+            XElement errorDocumentElement = element.Element(StaticWebsiteErrorDocument404PathName);
 
             return
                 new StaticWebsiteProperties

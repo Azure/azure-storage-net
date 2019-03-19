@@ -2026,7 +2026,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         null);
                         waitHandle.WaitOne();
 
-                        var resultSegment = container.ServiceClient.EndListContainersSegmented(result);
+                        ContainerResultSegment resultSegment = container.ServiceClient.EndListContainersSegmented(result);
                         results = resultSegment.Results;
                         ct = resultSegment.ContinuationToken;
 
@@ -3430,7 +3430,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
             private void OnMemberAccess(string memberName, object value)
             {
-                var h = this.memberAccess;
+                EventHandler<MemberAccessEventArgs> h = this.memberAccess;
 
                 if (h != null)
                 {
@@ -3442,7 +3442,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 get
                 {
-                    var value = this.webProxy.Credentials;
+                    ICredentials value = this.webProxy.Credentials;
                     this.OnMemberAccess("Credentials", value);
                     return value;
                 }
@@ -3482,11 +3482,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 const string proxyUser = "user";
                 const string proxyPassword = "password";
 
-                var cts = new CancellationTokenSource();
+                CancellationTokenSource cts = new CancellationTokenSource();
 
-                var proxyHit = false;
+                bool proxyHit = false;
 
-                var mockProxy =
+                MockProxy mockProxy =
                     new MockProxy(
                         new Uri(proxyAddress),
                         new NetworkCredential(proxyUser, proxyPassword)
@@ -3834,7 +3834,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 blobContainerWithSAS.Create();
 
-                var result = blobContainerWithSAS.GetAccountPropertiesAsync().Result;
+                Shared.Protocol.AccountProperties result = blobContainerWithSAS.GetAccountPropertiesAsync().Result;
 
                 Assert.IsNotNull(result);
 

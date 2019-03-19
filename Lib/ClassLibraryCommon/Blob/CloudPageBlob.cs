@@ -2122,7 +2122,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
-            var modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             Executor.ExecuteSync(
@@ -2434,7 +2434,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [DoesServiceRequest]
         public virtual void ClearPages(long startOffset, long length, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            var modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             Executor.ExecuteSync(
                 this.ClearPageImpl(startOffset, length, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
@@ -3211,7 +3211,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CommonUtility.ArgumentOutOfRange("startOffset", startOffset);
             }
 
-            var pageRange = new PageRange(startOffset, startOffset + count - 1);
+            PageRange pageRange = new PageRange(startOffset, startOffset + count - 1);
 
             if ((1 + pageRange.EndOffset - pageRange.StartOffset) % Constants.PageSize != 0 ||
                 (1 + pageRange.EndOffset - pageRange.StartOffset) == 0)
@@ -3219,7 +3219,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CommonUtility.ArgumentOutOfRange("EndOffset", pageRange.EndOffset);
             }
 
-            var putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, pageRange, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);

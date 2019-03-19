@@ -360,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
             public void Dispose()
             {
-                var epsilon = 0.02;
+                double epsilon = 0.02;
 
                 Assert.IsNull(this.error, this.error);
                 Assert.AreEqual(this.initialLocation, this.OperationContext.RequestResults[0].TargetLocation);
@@ -371,7 +371,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
 
                     TimeSpan retryInterval = this.OperationContext.RequestResults[i + 1].StartTime - this.OperationContext.RequestResults[i].EndTime;
                     string error = string.Format("{0} <= {1}", this.retryInfoList[i].RetryInterval, retryInterval);
-                    var dT = Math.Abs((this.retryInfoList[i].RetryInterval - retryInterval).TotalSeconds);
+                    double dT = Math.Abs((this.retryInfoList[i].RetryInterval - retryInterval).TotalSeconds);
                     Assert.IsTrue(dT <= epsilon, $"{dT} not <= {epsilon}");
                 }
             }

@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.Core
         [TestCategory(TenantTypeCategory.Cloud)]
         public void TokenDispose()
         {
-            var token = new TokenCredential("TOKEN_STRING");
+            TokenCredential token = new TokenCredential("TOKEN_STRING");
             token.Dispose();
         }
 

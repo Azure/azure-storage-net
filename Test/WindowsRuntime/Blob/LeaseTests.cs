@@ -1228,7 +1228,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 expectedStatusCode,
                 expectedErrorCode);
 
-            var writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, operationContext);
+            CloudBlobStream writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, operationContext);
             Stream stream = writeStream;
             await TestHelper.ExpectedExceptionAsync(
                 async () =>
@@ -1261,7 +1261,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await testBlob.FetchAttributesAsync();
             }
 
-            var writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, null);
+            CloudBlobStream writeStream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, null);
             Stream stream = writeStream;
             stream.WriteByte(0);
             await stream.FlushAsync();
@@ -1358,7 +1358,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             await (await testBlob.SnapshotAsync(null /* metadata */, testAccessCondition, null /* options */, null)).DeleteAsync();
             await DownloadTextAsync(testBlob, Encoding.UTF8, testAccessCondition, null /* options */, null);
 
-            var readStream = await testBlob.OpenReadAsync(testAccessCondition, null /* options */, null);
+            Stream readStream = await testBlob.OpenReadAsync(testAccessCondition, null /* options */, null);
             Stream stream = readStream;
             stream.ReadByte();
         }

@@ -109,7 +109,7 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 ()
                 =>
                 {
-                    var result = new List<KeyValuePair<string, T>>();
+                    List<KeyValuePair<string, T>> result = new List<KeyValuePair<string, T>>();
 
                     XElement root = XElement.Load(reader);
                     IEnumerable<XElement> elements = root.Elements(Constants.SignedIdentifier);

@@ -448,7 +448,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     source.Metadata["Test"] = "value";
                     source.SetMetadataAsync().Wait();
 
-                    var sasToken = source.GetSharedAccessSignature(new SharedAccessFilePolicy
+                    string sasToken = source.GetSharedAccessSignature(new SharedAccessFilePolicy
                     {
                         Permissions = SharedAccessFilePermissions.Read,
                         SharedAccessExpiryTime = DateTime.UtcNow.AddHours(24)

@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage
         static TestBase()
         {   
             XElement element;
-            using (var stream = new FileStream(TestConfigurations.DefaultTestConfigFilePath, FileMode.Open))
+            using (FileStream stream = new FileStream(TestConfigurations.DefaultTestConfigFilePath, FileMode.Open))
             {
                 element = XElement.Load(stream);
             }

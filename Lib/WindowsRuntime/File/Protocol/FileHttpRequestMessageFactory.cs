@@ -266,7 +266,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 builder.Add(Constants.HeaderConstants.Marker, nextMarker.NextMarker);
             }
 
-            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Get, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
 
             if (recursive.HasValue)
@@ -298,7 +298,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
                 builder.Add(Constants.HeaderConstants.Marker, token.NextMarker);
             }
 
-            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             if (handleId != null)
             {

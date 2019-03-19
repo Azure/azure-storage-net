@@ -267,7 +267,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                var op = new OperationContext
+                OperationContext op = new OperationContext
                 {
                     CustomUserAgent = "did"
                 };
@@ -1008,7 +1008,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                var md5 = Convert.ToBase64String(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
+                string md5 = Convert.ToBase64String(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
 
                 container.Create();
 
@@ -3808,7 +3808,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         await destBlob.DownloadToStreamAsync(blobData);
                         Assert.AreEqual(200, blobData.Length);
 
-                        var expectedData = resultingData.ToArray();
+                        byte[] expectedData = resultingData.ToArray();
                         expectedData =
                             expectedData
                             .Skip(50).Take(100)
@@ -4855,9 +4855,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 blobContainerWithSAS.Create();
 
-                var blob = blobContainerWithSAS.GetBlockBlobReference("test");
+                CloudBlockBlob blob = blobContainerWithSAS.GetBlockBlobReference("test");
 
-                var result = blob.GetAccountPropertiesAsync().Result;
+                AccountProperties result = blob.GetAccountPropertiesAsync().Result;
 
                 blob.DeleteIfExists();
 

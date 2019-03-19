@@ -47,11 +47,11 @@ namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
                 return null;
             }
 
-            var currentHandler = delegatingHandler;
+            DelegatingHandler currentHandler = delegatingHandler;
 
             while (currentHandler.InnerHandler != null)
             {
-                var innerHandler = currentHandler.InnerHandler;
+                HttpMessageHandler innerHandler = currentHandler.InnerHandler;
 
                 if (!(innerHandler is DelegatingHandler))
                 {

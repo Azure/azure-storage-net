@@ -2539,7 +2539,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
 
                 CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
-                using (var writeStream = await blockBlob.OpenWriteAsync())
+                using (CloudBlobStream writeStream = await blockBlob.OpenWriteAsync())
                 {
                 }
 
@@ -2555,10 +2555,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     opContext,
                     "Opening a page blob stream with no size should fail on a blob that does not exist",
                     HttpStatusCode.NotFound);
-                using (var writeStream = await pageBlob.OpenWriteAsync(1024))
+                using (CloudBlobStream writeStream = await pageBlob.OpenWriteAsync(1024))
                 {
                 }
-                using (var writeStream = await pageBlob.OpenWriteAsync(null))
+                using (CloudBlobStream writeStream = await pageBlob.OpenWriteAsync(null))
                 {
                 }
 
@@ -2568,7 +2568,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 Assert.AreEqual(BlobType.PageBlob, pageBlob2.Properties.BlobType);
 
                 CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob3");
-                using (var writeStream = await appendBlob.OpenWriteAsync(true))
+                using (CloudBlobStream writeStream = await appendBlob.OpenWriteAsync(true))
                 {
                 }
 
@@ -2611,7 +2611,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob = container.GetBlockBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                var blobStream = await blob.OpenWriteAsync(accessCondition, null, context);
+                CloudBlobStream blobStream = await blob.OpenWriteAsync(accessCondition, null, context);
                 blobStream.Dispose();
 
                 blob = container.GetBlockBlobReference("blob4");
@@ -2758,7 +2758,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob = container.GetPageBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                var blobStream = await blob.OpenWriteAsync(1024, accessCondition, null, context);
+                CloudBlobStream blobStream = await blob.OpenWriteAsync(1024, accessCondition, null, context);
                 blobStream.Dispose();
 
                 blob = container.GetPageBlobReference("blob4");
@@ -2861,7 +2861,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
 
                 blob = container.GetAppendBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                var blobStream = await blob.OpenWriteAsync(true, accessCondition, null, context);
+                CloudBlobStream blobStream = await blob.OpenWriteAsync(true, accessCondition, null, context);
                 blobStream.Dispose();
 
                 blob = container.GetAppendBlobReference("blob4");
@@ -2962,7 +2962,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     {
                         StoreBlobContentMD5 = true,
                     };
-                    using (var writeStream = await blob.OpenWriteAsync(null, options, null))
+                    using (CloudBlobStream writeStream = await blob.OpenWriteAsync(null, options, null))
                     {
                         Stream blobStream = writeStream;
 
@@ -3008,7 +3008,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
-                using (var writeStream = await blob.OpenWriteAsync())
+                using (CloudBlobStream writeStream = await blob.OpenWriteAsync())
                 {
                     Stream blobStream = writeStream;
 
@@ -3043,7 +3043,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
                     OperationContext opContext = new OperationContext();
-                    using (var blobStream = await blob.OpenWriteAsync(null, null, opContext))
+                    using (CloudBlobStream blobStream = await blob.OpenWriteAsync(null, null, opContext))
                     {
                         for (int i = 0; i < 3; i++)
                         {
@@ -3118,7 +3118,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         StoreBlobContentMD5 = true,
                     };
 
-                    using (var writeStream = await blob.OpenWriteAsync(buffer.Length * 3, null, options, null))
+                    using (CloudBlobStream writeStream = await blob.OpenWriteAsync(buffer.Length * 3, null, options, null))
                     {
                         Stream blobStream = writeStream;
 
@@ -3148,7 +3148,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         async () => await blob.OpenWriteAsync(null, null, options, null),
                         "OpenWrite with StoreBlobContentMD5 on an existing page blob should fail");
 
-                    using (var writeStream = await blob.OpenWriteAsync(null))
+                    using (CloudBlobStream writeStream = await blob.OpenWriteAsync(null))
                     {
                         Stream blobStream = writeStream;
                         blobStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
@@ -3200,7 +3200,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
-                    using (var writeStream = await blob.OpenWriteAsync(buffer.Length))
+                    using (CloudBlobStream writeStream = await blob.OpenWriteAsync(buffer.Length))
                     {
                         Stream blobStream = writeStream;
                         TestHelper.ExpectedException<ArgumentOutOfRangeException>(
@@ -3257,7 +3257,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     BlobRequestOptions options = new BlobRequestOptions() { StoreBlobContentMD5 = true };
                     OperationContext opContext = new OperationContext();
-                    using (var blobStream = await blob.OpenWriteAsync(4 * 512, null, options, opContext))
+                    using (CloudBlobStream blobStream = await blob.OpenWriteAsync(4 * 512, null, options, opContext))
                     {
                         for (int i = 0; i < 3; i++)
                         {
@@ -3330,7 +3330,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         StoreBlobContentMD5 = true,
                     };
 
-                    using (var writeStream = await blob.OpenWriteAsync(true, null, options, null))
+                    using (CloudBlobStream writeStream = await blob.OpenWriteAsync(true, null, options, null))
                     {
                         Stream blobStream = writeStream;
 
@@ -3381,7 +3381,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 await container.CreateAsync();
 
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                using (var writeStream = await blob.OpenWriteAsync(true))
+                using (CloudBlobStream writeStream = await blob.OpenWriteAsync(true))
                 {
                     Stream blobStream = writeStream;
 
@@ -3417,7 +3417,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 {
                     BlobRequestOptions options = new BlobRequestOptions() { StoreBlobContentMD5 = true };
                     OperationContext opContext = new OperationContext();
-                    using (var blobStream = await blob.OpenWriteAsync(true, null, options, opContext))
+                    using (CloudBlobStream blobStream = await blob.OpenWriteAsync(true, null, options, opContext))
                     {
                         for (int i = 0; i < 3; i++)
                         {
@@ -3487,7 +3487,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     AccessCondition accessCondition = new AccessCondition() { IfMaxSizeLessThanOrEqual = 34 * 1024 };
                     try
                     {
-                        using (var writeStream = await blob.OpenWriteAsync(true, accessCondition, null, context))
+                        using (CloudBlobStream writeStream = await blob.OpenWriteAsync(true, accessCondition, null, context))
                         {
                             Stream blobStream = writeStream;
 

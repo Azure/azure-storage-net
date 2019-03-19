@@ -327,7 +327,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             HttpResponseMessage response = null;
             try
             {
-                var httpClient = HttpClientFactory.Instance;
+                HttpClient httpClient = HttpClientFactory.Instance;
 
                 if (token != null)
                 {

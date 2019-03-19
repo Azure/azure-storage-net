@@ -249,7 +249,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 await share.CreateAsync();
-                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
                 await dir.CreateAsync();
 
                 FileContinuationToken token = null;
@@ -257,7 +257,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = await dir.ListHandlesSegmentedAsync(token, null, null, null, null, null, CancellationToken.None);
+                    FileHandleResultSegment response = await dir.ListHandlesSegmentedAsync(token, null, null, null, null, null, CancellationToken.None);
                     handles.AddRange(response.Results);
                     token = response.ContinuationToken;
                 } while (token.NextMarker != null);
@@ -284,7 +284,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 await share.CreateAsync();
-                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
                 await dir.CreateAsync();
 
                 FileContinuationToken token = null;
@@ -292,7 +292,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = await dir.CloseAllHandlesSegmentedAsync(token, null, null, null, null, CancellationToken.None);
+                    CloseFileHandleResultSegment response = await dir.CloseAllHandlesSegmentedAsync(token, null, null, null, null, CancellationToken.None);
                     handlesClosed += response.NumHandlesClosed;
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);
@@ -319,7 +319,7 @@ namespace Microsoft.WindowsAzure.Storage.File
             try
             {
                 await share.CreateAsync();
-                var dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
                 await dir.CreateAsync();
 
                 FileContinuationToken token = null;
@@ -328,7 +328,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 do
                 {
-                    var response = await dir.CloseHandleSegmentedAsync(nonexistentHandle, token);
+                    CloseFileHandleResultSegment response = await dir.CloseHandleSegmentedAsync(nonexistentHandle, token);
                     handlesClosed += response.NumHandlesClosed;
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);

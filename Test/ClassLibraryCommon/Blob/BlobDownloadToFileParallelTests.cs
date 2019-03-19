@@ -291,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 }
                 catch (StorageException ex)
                 {
-                    var s = ex.InnerException;
+                    Exception s = ex.InnerException;
                 }
 
                 blob.Delete();

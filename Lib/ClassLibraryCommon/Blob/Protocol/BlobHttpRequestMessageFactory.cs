@@ -66,10 +66,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            var builder = new UriQueryBuilder();
+            UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "appendblock");
 
-            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.ApplyAccessConditionToSource(sourceAccessCondition);
             request.ApplyAccessCondition(destAccessCondition);
@@ -720,7 +720,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
             builder.Add(Constants.QueryConstants.Component, "block");
             builder.Add("blockid", blockId);
 
-            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyLeaseId(accessCondition);
 
             AddCopySource(request, sourceUri);
@@ -838,11 +838,11 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, PageRange pageRange, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            var builder = new UriQueryBuilder();
+            UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "page");
             builder.Add("update", default(string));
 
-            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.RangeHeader, pageRange.ToString());
             request.Headers.Add(Constants.HeaderConstants.PageWrite, "update");

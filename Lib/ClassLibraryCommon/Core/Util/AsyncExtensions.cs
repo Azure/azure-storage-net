@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             if (task == null)
                 throw new ArgumentNullException("task");
 
-            var tcs = new TaskCompletionSource<T>(state);
+            TaskCompletionSource<T> tcs = new TaskCompletionSource<T>(state);
             task.ContinueWith(t =>
             {
                 if (t.IsFaulted)
@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
             if (task == null)
                 throw new ArgumentNullException("task");
 
-            var tcs = new TaskCompletionSource<object>(state);
+            TaskCompletionSource<object> tcs = new TaskCompletionSource<object>(state);
             task.ContinueWith(t =>
             {
                 if (t.IsFaulted)

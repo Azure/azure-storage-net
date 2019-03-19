@@ -67,10 +67,10 @@ namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
         public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            var builder = new UriQueryBuilder();
+            UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "appendblock");
 
-            var request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.ApplyAccessConditionToSource(sourceAccessCondition);
             request.ApplyAccessCondition(destAccessCondition);

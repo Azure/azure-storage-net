@@ -236,7 +236,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
 
         public async Task Set()
         {
-            var tcs = m_tcs;
+            TaskCompletionSource<bool> tcs = m_tcs;
             await Task.Factory.StartNew(s => ((TaskCompletionSource<bool>)s).TrySetResult(true),
                 tcs, CancellationToken.None, TaskCreationOptions.PreferFairness, TaskScheduler.Default);
             await tcs.Task;
@@ -246,7 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         {
             while (true)
             {
-                var tcs = m_tcs;
+                TaskCompletionSource<bool> tcs = m_tcs;
                 if (!tcs.Task.IsCompleted ||
                     Interlocked.CompareExchange(ref m_tcs, new TaskCompletionSource<bool>(), tcs) == tcs)
                     return;

@@ -56,11 +56,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageCreate()
         {
-            var s = "1234";
-            var bytes = Encoding.UTF8.GetBytes(s);
-            var s64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(s));
+            string s = "1234";
+            byte[] bytes = Encoding.UTF8.GetBytes(s);
+            string s64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(s));
 
-            var message = new CloudQueueMessage();
+            CloudQueueMessage message = new CloudQueueMessage();
 
             Assert.IsNull(message.RawBytes);
             Assert.IsNull(message.RawString);
@@ -106,11 +106,11 @@ namespace Microsoft.WindowsAzure.Storage.Queue
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudQueueMessageSetContent()
         {
-            var s = "1234";
-            var bytes = Encoding.UTF8.GetBytes(s);
-            var s64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(s));
+            string s = "1234";
+            byte[] bytes = Encoding.UTF8.GetBytes(s);
+            string s64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(s));
 
-            var message = new CloudQueueMessage();
+            CloudQueueMessage message = new CloudQueueMessage();
 
             Assert.IsNull(message.RawBytes);
             Assert.IsNull(message.RawString);

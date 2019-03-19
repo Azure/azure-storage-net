@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <remarks>Please refer to this post for more information: https://blogs.msdn.microsoft.com/pfxteam/2012/10/05/how-do-i-cancel-non-cancelable-async-operations/ </remarks>
         internal static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken)
         {
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             using (cancellationToken.Register(
                         taskCompletionSource => ((TaskCompletionSource<bool>)taskCompletionSource).TrySetResult(true), tcs))
                         if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
@@ -47,7 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.Core.Util
         /// <remarks>Please refer to this post for more information: https://blogs.msdn.microsoft.com/pfxteam/2012/10/05/how-do-i-cancel-non-cancelable-async-operations/ </remarks>
         internal static async Task WithCancellation(this Task task, CancellationToken cancellationToken)
         {
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             using (cancellationToken.Register(
                         taskCompletionSource => ((TaskCompletionSource<bool>)taskCompletionSource).TrySetResult(true), tcs))
                 if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))

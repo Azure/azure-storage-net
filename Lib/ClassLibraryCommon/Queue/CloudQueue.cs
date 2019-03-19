@@ -2515,7 +2515,7 @@ namespace Microsoft.WindowsAzure.Storage.Queue
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
             putCmd.PostProcessResponseAsync = async (cmd, resp, ctx, ct) =>
             {
-                var messages = await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
+                IEnumerable<QueueMessage> messages = await GetMessagesResponse.ParseAsync(cmd.ResponseStream, ct).ConfigureAwait(false);
                 CopyMessage(message, messages.First());
                 return NullType.Value;
             };

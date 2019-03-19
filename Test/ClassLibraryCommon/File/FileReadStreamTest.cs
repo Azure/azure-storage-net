@@ -359,7 +359,7 @@ namespace Microsoft.WindowsAzure.Storage.File
 
                 using (MemoryStream wholeFile = new MemoryStream(buffer))
                 {
-                    var readStream = await file.OpenReadAsync();
+                    Stream readStream = await file.OpenReadAsync();
                     using (Stream fileStream = readStream)
                     {
                         TestHelper.AssertStreamsAreEqual(wholeFile, fileStream);
@@ -395,7 +395,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var fileStream = await file.OpenReadAsync(null, null, opContext))
+                using (Stream fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
                     Stream fileStreamForRead = fileStream;
                     await fileStreamForRead.ReadAsync(outBuffer, 0, outBuffer.Length);
@@ -408,7 +408,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 opContext = new OperationContext();
-                using (var fileStream = await file.OpenReadAsync(null, null, opContext))
+                using (Stream fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
                     Stream fileStreamForRead = fileStream;
                     long length = fileStreamForRead.Length;
@@ -564,7 +564,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 }
 
                 OperationContext opContext = new OperationContext();
-                using (var fileStream = await file.OpenReadAsync(null, null, opContext))
+                using (Stream fileStream = await file.OpenReadAsync(null, null, opContext))
                 {
                     int attempts = await FileReadStreamSeekTestAsync(fileStream, file.StreamMinimumReadSizeInBytes, buffer);
 

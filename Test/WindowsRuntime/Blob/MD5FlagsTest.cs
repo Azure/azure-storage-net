@@ -146,7 +146,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await blockBlob.DownloadToStreamAsync(stream, null, optionsWithMD5, null);
                     await blockBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
-                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (Stream blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream blobStreamForRead = blobStream;
                         int read;
@@ -157,7 +157,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         while (read > 0);
                     }
 
-                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (Stream blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream;
                         int read;
@@ -179,7 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         HttpStatusCode.OK);
                     await blockBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
-                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (Stream blobStream = await blockBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream blobStreamForRead = blobStream;
                         TestHelper.ExpectedException<IOException>(
@@ -195,7 +195,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             "Downloading a blob with invalid MD5 should fail");
                     }
 
-                    using (var blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (Stream blobStream = await blockBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream;
                         int read;
@@ -218,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     await pageBlob.DownloadToStreamAsync(stream, null, optionsWithMD5, null);
                     await pageBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
-                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (Stream blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
                         Stream blobStreamForRead = blobStream;
                         int read;
@@ -229,7 +229,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         while (read > 0);
                     }
 
-                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (Stream blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream;
                         int read;
@@ -251,7 +251,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                         HttpStatusCode.OK);
                     await pageBlob.DownloadToStreamAsync(stream, null, optionsWithNoMD5, null);
 
-                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
+                    using (Stream blobStream = await pageBlob.OpenReadAsync(null, optionsWithMD5, null))
                     {
 
                         Stream blobStreamForRead = blobStream;
@@ -268,7 +268,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                             "Downloading a blob with invalid MD5 should fail");
                     }
 
-                    using (var blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
+                    using (Stream blobStream = await pageBlob.OpenReadAsync(null, optionsWithNoMD5, null))
                     {
                         Stream blobStreamForRead = blobStream;
                         int read;

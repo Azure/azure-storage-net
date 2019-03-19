@@ -880,7 +880,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
             {
                 await blobContainerWithSAS.CreateAsync();
 
-                var result = await blobContainerWithSAS.GetAccountPropertiesAsync();
+                Shared.Protocol.AccountProperties result = await blobContainerWithSAS.GetAccountPropertiesAsync();
 
                 Assert.IsNotNull(result);
 

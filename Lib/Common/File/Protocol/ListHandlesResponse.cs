@@ -92,7 +92,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
         /// <returns>Range entry</returns> 
         private FileHandle ParseHandle()
         {
-            var handle = new FileHandle();
+            FileHandle handle = new FileHandle();
 
             this.reader.ReadStartElement();
 

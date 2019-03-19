@@ -2439,7 +2439,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
-            var modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             return Executor.ExecuteSync(
@@ -2738,7 +2738,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
-            var modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
             return Executor.ExecuteAsync(
@@ -3209,13 +3209,13 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         /// <returns>A <see cref="RESTCommand"/> that uploads the block.</returns>
         internal RESTCommand<long> AppendBlockImpl(Uri sourceUri, long offset, long count, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
-            var putCmd = new RESTCommand<long>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
+            RESTCommand<long> putCmd = new RESTCommand<long>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AppendBlock(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
-                var appendOffset = -1L;
+                long appendOffset = -1L;
                 if (resp.Headers.Contains(Constants.HeaderConstants.BlobAppendOffset))
                 {
                     appendOffset = long.Parse(resp.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobAppendOffset));

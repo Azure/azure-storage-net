@@ -474,7 +474,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                 pageBlob.StreamWriteSizeInBytes = 1024 * 1024;
                 pageBlob.StreamMinimumReadSizeInBytes = 1024 * 1024;
 
-                using (var bos = await blockBlob.OpenWriteAsync())
+                using (CloudBlobStream bos = await blockBlob.OpenWriteAsync())
                 {
                     DateTime start = DateTime.Now;
                     for (int i = 0; i < 7; i++)
@@ -520,7 +520,7 @@ namespace Microsoft.WindowsAzure.Storage.Blob
                     }
                 }
 
-                using (var bos = await pageBlob.OpenWriteAsync(8 * 1024 * 1024))
+                using (CloudBlobStream bos = await pageBlob.OpenWriteAsync(8 * 1024 * 1024))
                 {
                     DateTime start = DateTime.Now;
                     for (int i = 0; i < 7; i++)
@@ -666,9 +666,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlobClientGetAccountProperties()
         {
-            var client = GenerateCloudBlobClient();
+            CloudBlobClient client = GenerateCloudBlobClient();
 
-            var result = await client.GetAccountPropertiesAsync();
+            Shared.Protocol.AccountProperties result = await client.GetAccountPropertiesAsync();
 
             Assert.IsNotNull(result);
 

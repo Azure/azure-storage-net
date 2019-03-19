@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.Extensions
 
             while (typeInfo != null)
             {
-                foreach (var declaredProperty in typeInfo.DeclaredProperties.Where(declaredProperty => propertyList.All(x => x.Name != declaredProperty.Name)))
+                foreach (PropertyInfo declaredProperty in typeInfo.DeclaredProperties.Where(declaredProperty => propertyList.All(x => x.Name != declaredProperty.Name)))
                 {
                     propertyList.Add(declaredProperty);
                 }

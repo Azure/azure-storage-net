@@ -56,10 +56,10 @@ namespace Microsoft.WindowsAzure.Storage.File
                     opContext,
                     "Opening a file stream with no size should fail on a file that does not exist",
                     HttpStatusCode.NotFound);
-                using (var writeStream = await file.OpenWriteAsync(1024))
+                using (CloudFileStream writeStream = await file.OpenWriteAsync(1024))
                 {
                 }
-                using (var writeStream = await file.OpenWriteAsync(null))
+                using (CloudFileStream writeStream = await file.OpenWriteAsync(null))
                 {
                 }
 
@@ -209,7 +209,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                     {
                         StoreFileContentMD5 = true,
                     };
-                    using (var writeStream = await file.OpenWriteAsync(buffer.Length * 3, null, options, null))
+                    using (CloudFileStream writeStream = await file.OpenWriteAsync(buffer.Length * 3, null, options, null))
                     {
                         Stream fileStream = writeStream;
 
@@ -244,7 +244,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                         async () => await file.OpenWriteAsync(null, null, options, null),
                         "OpenWrite with StoreFileContentMD5 on an existing file should fail");
 
-                    using (var writeStream = await file.OpenWriteAsync(null))
+                    using (CloudFileStream writeStream = await file.OpenWriteAsync(null))
                     {
                         Stream fileStream = writeStream;
                         fileStream.Seek(buffer.Length / 2, SeekOrigin.Begin);
@@ -296,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream wholeFile = new MemoryStream())
                 {
-                    using (var writeStream = await file.OpenWriteAsync(buffer.Length))
+                    using (CloudFileStream writeStream = await file.OpenWriteAsync(buffer.Length))
                     {
                         Stream fileStream = writeStream;
                         await fileStream.WriteAsync(buffer, 0, buffer.Length);
@@ -351,7 +351,7 @@ namespace Microsoft.WindowsAzure.Storage.File
                 {
                     FileRequestOptions options = new FileRequestOptions() { StoreFileContentMD5 = true };
                     OperationContext opContext = new OperationContext();
-                    using (var fileStream = await file.OpenWriteAsync(4 * 512, null, options, opContext))
+                    using (CloudFileStream fileStream = await file.OpenWriteAsync(4 * 512, null, options, opContext))
                     {
                         for (int i = 0; i < 3; i++)
                         {

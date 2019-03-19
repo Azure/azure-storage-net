@@ -138,7 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.File.Protocol
             OperationContext opContext = new OperationContext();
             try
             {
-                using (var ms = new MemoryStream())
+                using (MemoryStream ms = new MemoryStream())
                 {
                     request = FileHttpRequestMessageFactory.PutRange(uri, context.Timeout, range, FileRangeWrite.Update, accessCondition, new StreamContent(ms), opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
                 }
