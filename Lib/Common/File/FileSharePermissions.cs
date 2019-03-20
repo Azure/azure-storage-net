@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     /// <summary>
     /// Represents the permissions for a share.

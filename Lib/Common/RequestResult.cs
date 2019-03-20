@@ -15,11 +15,11 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
@@ -157,7 +157,7 @@ namespace Microsoft.WindowsAzure.Storage
         /// <param name="message">The message to translate.</param>
         /// <returns>The translated <see cref="RequestResult"/>.</returns>
 #if WINDOWS_DESKTOP
-        [Obsolete("This should be available only in Microsoft.WindowsAzure.Storage.WinMD and not in Microsoft.WindowsAzure.Storage.dll. Please use ReadXML to deserialize RequestResult when Microsoft.WindowsAzure.Storage.dll is used.")]
+        [Obsolete("This should be available only in Microsoft.Azure.Storage.WinMD and not in Microsoft.Azure.Storage.dll. Please use ReadXML to deserialize RequestResult when Microsoft.Azure.Storage.dll is used.")]
 #endif
         public static RequestResult TranslateFromExceptionMessage(string message)
         {

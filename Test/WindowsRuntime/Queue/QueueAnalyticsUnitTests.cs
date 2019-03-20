@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Net;

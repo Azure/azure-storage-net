@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     using System;
     using System.Collections.Generic;

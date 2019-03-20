@@ -17,7 +17,7 @@
 
 using System.IO;
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 
     internal sealed class MemoryOutputStream : MemoryStream

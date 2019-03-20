@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     /// <summary>
     /// Represents the status of a copy File operation.

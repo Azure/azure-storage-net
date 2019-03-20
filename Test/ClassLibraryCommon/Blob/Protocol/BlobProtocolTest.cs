@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -24,7 +24,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     [TestClass]
     public class BlobProtocolTest : TestBase

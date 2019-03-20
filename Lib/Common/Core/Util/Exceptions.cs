@@ -15,14 +15,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core.Util
+namespace Microsoft.Azure.Storage.Core.Util
 {
     using System;
     using System.Net;
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
 
     using System.IO;
     using System.Globalization;

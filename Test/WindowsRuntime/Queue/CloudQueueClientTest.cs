@@ -16,15 +16,15 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.Queue.Protocol;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Queue.Protocol;
+using Microsoft.Azure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
     [TestClass]
     public class CloudQueueClientTest : QueueTestBase

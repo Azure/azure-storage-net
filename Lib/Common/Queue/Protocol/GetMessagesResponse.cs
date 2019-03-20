@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
+namespace Microsoft.Azure.Storage.Queue.Protocol
 {
     using Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.IO;

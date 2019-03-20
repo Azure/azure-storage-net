@@ -18,9 +18,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.Azure.Storage.Auth;
     using System;
 
 #if WINDOWS_DESKTOP

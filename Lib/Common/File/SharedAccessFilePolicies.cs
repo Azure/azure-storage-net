@@ -15,9 +15,9 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;

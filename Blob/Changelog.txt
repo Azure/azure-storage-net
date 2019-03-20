@@ -1,6 +1,7 @@
-Changes in 9.4.3:
+Changes in 10.0.0:
 
-- None
+- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*.
+- CloudAppendBlob.AppendBlock and CloudPageBlob.WritePages APIs now have maximal overloads that take a URI to a blob as a source.
 
 Changes in 9.4.2:
 

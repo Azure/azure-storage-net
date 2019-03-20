@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage.RetryPolicies;
     using System;
     using System.Collections.Generic;
         public class AlwaysRetry : IExtendedRetryPolicy

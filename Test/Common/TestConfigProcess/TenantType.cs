@@ -17,7 +17,7 @@
 
 using System;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     [Flags]
     public enum TenantType

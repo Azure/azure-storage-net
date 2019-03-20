@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.WindowsAzure.Storage.Core;
+using Microsoft.Azure.Storage.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -33,7 +33,7 @@ using Windows.Security.Cryptography;
 using Windows.Security.Cryptography.Core;
 #endif
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class CloudFileTest : FileTestBase

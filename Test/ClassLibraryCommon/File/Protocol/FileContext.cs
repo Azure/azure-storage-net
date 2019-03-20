@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.Azure.Storage.Auth;
 using System;
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
     internal class FileContext
     {

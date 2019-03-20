@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.RetryPolicies
+namespace Microsoft.Azure.Storage.RetryPolicies
 {
     /// <summary>
     /// Specifies the location mode to indicate which location should receive the request.

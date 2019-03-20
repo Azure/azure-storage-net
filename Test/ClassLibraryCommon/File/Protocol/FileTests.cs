@@ -16,16 +16,16 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Auth.Protocol;
-using Microsoft.WindowsAzure.Storage.Core.Auth;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Auth.Protocol;
+using Microsoft.Azure.Storage.Core.Auth;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
     internal class FileTests
     {

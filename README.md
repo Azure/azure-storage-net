@@ -1,6 +1,6 @@
-# Microsoft Azure Storage SDK for .NET (9.4.2)
+# Microsoft Azure Storage SDK for .NET (10.0.0)
 
-> Server Version: 2018-03-28
+> Server Version: 2018-11-09
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
@@ -9,7 +9,7 @@ This repository contains the open source subset of the .NET SDK. For documentati
 complete Azure SDK, please see the [Microsoft Azure .NET Developer Center][].
 
 > Note:
-> As of 9.4.0, the Table service is not supported by this library.
+> As of 9.4.0, the Table service is not supported by this library.  
 > Table support is being provided by [CosmosDB][Microsoft.Azure.Cosmos.Table].
 
 ## Features

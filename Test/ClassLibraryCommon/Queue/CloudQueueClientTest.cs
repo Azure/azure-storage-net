@@ -16,10 +16,10 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.Queue.Protocol;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Queue.Protocol;
+using Microsoft.Azure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,7 +31,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
     /// <summary>
     /// Summary description for CloudQueueClientTest

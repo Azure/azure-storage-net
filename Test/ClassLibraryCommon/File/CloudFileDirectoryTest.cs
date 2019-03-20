@@ -15,17 +15,17 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Auth;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Threading;
-    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.Azure.Storage.Core;
     using System.Threading.Tasks;
 
     [TestClass]

@@ -18,10 +18,10 @@
 namespace Microsoft.Azure.Storage.Core
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Auth.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Auth.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Net.Http;
 

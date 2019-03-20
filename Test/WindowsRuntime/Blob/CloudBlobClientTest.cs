@@ -16,9 +16,9 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Core.Util;
-using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.RetryPolicies;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,7 +30,7 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices.WindowsRuntime;
 #endif
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     [TestClass]
     public class CloudBlobClientTest : BlobTestBase

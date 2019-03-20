@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Auth
+namespace Microsoft.Azure.Storage.Auth
 {
     using System;
     using System.Threading;

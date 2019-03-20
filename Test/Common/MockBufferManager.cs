@@ -17,7 +17,7 @@
 
 using System.Threading;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     public class MockBufferManager : IBufferManager
     {

@@ -15,12 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Auth;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Auth;
+    using Microsoft.Azure.Storage.Core.Util;
 
     using System;
     using System.Collections.Generic;
@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage
     using System.Globalization;
     using System.Linq;
     using AccountSetting = System.Collections.Generic.KeyValuePair<string, System.Func<string, bool>>;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using ConnectionStringFilter = System.Func<System.Collections.Generic.IDictionary<string, string>, System.Collections.Generic.IDictionary<string, string>>;
 
     /// <summary>

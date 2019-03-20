@@ -18,7 +18,7 @@
 using System.Threading;
 using System.ServiceModel.Channels;
 
-namespace Microsoft.WindowsAzure.Storage
+namespace Microsoft.Azure.Storage
 {
     public class WCFBufferManagerAdapter : IBufferManager
     {

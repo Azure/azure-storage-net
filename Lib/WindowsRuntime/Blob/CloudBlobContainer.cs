@@ -15,14 +15,14 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Executor;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Blob.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Collections.Generic;
     using System.Linq;

@@ -16,8 +16,8 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Core.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,7 +28,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 #endif
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     [TestClass]
     public class CloudFileClientTest : FileTestBase

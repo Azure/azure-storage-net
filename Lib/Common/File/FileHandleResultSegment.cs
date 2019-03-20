@@ -14,7 +14,7 @@
 //    limitations under the License. 
 // </copyright> 
 //----------------------------------------------------------------------- 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     using System.Collections.Generic;
 

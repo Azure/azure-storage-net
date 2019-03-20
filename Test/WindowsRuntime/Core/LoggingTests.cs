@@ -16,12 +16,12 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob;
 using System;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
     [TestClass]
     public class LoggingTests : TestBase

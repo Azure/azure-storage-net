@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.RetryPolicies
+namespace Microsoft.Azure.Storage.RetryPolicies
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Net;

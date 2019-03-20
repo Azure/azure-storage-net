@@ -1,3 +1,7 @@
+Tracking Breaking Changes since 10.0:
+
+- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*.
+
 Tracking Breaking Changes since 9.0 combined package:
 
 - Removed support for PCL and NetStandard 1.0.

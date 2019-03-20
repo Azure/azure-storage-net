@@ -15,7 +15,7 @@
 // </copyright> 
 //----------------------------------------------------------------------- 
 
-namespace Microsoft.WindowsAzure.Storage.File
+namespace Microsoft.Azure.Storage.File
 {
     /// <summary> 
     /// Represents a close file handles result, with continuation information for pagination scenarios. 

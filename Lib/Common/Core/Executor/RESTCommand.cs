@@ -15,12 +15,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core.Executor
+namespace Microsoft.Azure.Storage.Core.Executor
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.RetryPolicies;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;

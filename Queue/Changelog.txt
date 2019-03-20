@@ -1,6 +1,6 @@
-Changes in 9.4.3:
+Changes in 10.0.0:
 
-- None
+- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*.
 
 Changes in 9.4.2:
 

@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------
 
 using System;
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
     /// <summary>
     /// The tier of the page blob.

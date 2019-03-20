@@ -16,8 +16,8 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Queue.Protocol;
 using System;
 using System.Linq;
 using System.Net;
@@ -28,7 +28,7 @@ using System.Threading.Tasks;
 using Windows.Globalization;
 #endif
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
     [TestClass]
     public class CloudQueueTest : QueueTestBase

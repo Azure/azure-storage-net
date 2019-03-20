@@ -18,10 +18,10 @@
 // </summary>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
-    using Microsoft.WindowsAzure.Storage.Core;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Core;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Globalization;
     using System.IO;

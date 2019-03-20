@@ -15,7 +15,7 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Queue.Protocol
+namespace Microsoft.Azure.Storage.Queue.Protocol
 {
     /// <summary>
     /// Represents the permissions for a queue.

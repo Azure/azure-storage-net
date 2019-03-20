@@ -17,7 +17,7 @@
 
 using System.Linq;
 
-namespace Microsoft.WindowsAzure.Storage.Extensions
+namespace Microsoft.Azure.Storage.Extensions
 {
     using System;
     using System.Collections.Generic;

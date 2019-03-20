@@ -15,12 +15,12 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Core
+namespace Microsoft.Azure.Storage.Core
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
-    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.Azure.Storage.Blob;
     using System.IO;
     using System.Linq;
     using System.Text;

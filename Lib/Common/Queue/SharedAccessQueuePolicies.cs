@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Queue
+namespace Microsoft.Azure.Storage.Queue
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;

@@ -15,11 +15,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
 
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Threading;

@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
     /// <summary>
     /// Describes actions that may be used for writing to a file or clearing a set of ranges.

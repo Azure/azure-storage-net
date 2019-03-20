@@ -15,10 +15,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.File.Protocol
+namespace Microsoft.Azure.Storage.File.Protocol
 {
     using Core.Util;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading;

@@ -15,7 +15,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob
+namespace Microsoft.Azure.Storage.Blob
 {
 #if !WINDOWS_PHONE && !WINDOWS_RT && !WINDOWS_PHONE_RT
     using System;
@@ -27,9 +27,9 @@ namespace Microsoft.WindowsAzure.Storage.Blob
     using System.Threading;
     using System.Threading.Tasks;
     using System.Runtime.CompilerServices;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using Microsoft.WindowsAzure.Storage.Core.Util;
-    using Microsoft.WindowsAzure.Storage.Core;
+    using Microsoft.Azure.Storage.Shared.Protocol;
+    using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core;
     using System.Globalization;
 
     /// <summary>

@@ -15,10 +15,10 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.Azure.Storage.Auth;
 using System;
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     internal class BlobContext
     {

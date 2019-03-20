@@ -18,7 +18,7 @@
 // </summary>
 //-----------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Blob.Protocol
+namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     /// <summary>
     /// Provides error code strings that are specific to the Blob service.

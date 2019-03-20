@@ -16,15 +16,15 @@
 // -----------------------------------------------------------------------------------------
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.File;
-using Microsoft.WindowsAzure.Storage.Queue;
-using Microsoft.WindowsAzure.Storage.Shared.Protocol;
+using Microsoft.Azure.Storage.Auth;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.File;
+using Microsoft.Azure.Storage.Queue;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System;
 using System.Globalization;
 
-namespace Microsoft.WindowsAzure.Storage.Core.Util
+namespace Microsoft.Azure.Storage.Core.Util
 {
     [TestClass]
     public class CloudStorageAccountTests : TestBase

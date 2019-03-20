@@ -15,9 +15,9 @@
 // </copyright>
 // -----------------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.Shared.Protocol
+namespace Microsoft.Azure.Storage.Shared.Protocol
 {
-    using Microsoft.WindowsAzure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Core.Util;
 
     /// <summary>
     /// Represents the listing context for enumeration operations.
