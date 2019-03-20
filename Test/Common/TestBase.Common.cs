@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections.Generic;
 
 #if WINDOWS_DESKTOP || NETCOREAPP2_0
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -168,6 +169,18 @@ namespace Microsoft.Azure.Storage
 #endif
 
             return client;
+        }
+        
+        public class RequestRecordingDelegatingHandler : DelegatingHandler
+        {
+            public List<HttpRequestMessage> Requests { get; } = new List<HttpRequestMessage>();
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                this.Requests.Add(request);
+
+                throw new Exception("Dummy exception");
+            }
         }
 
         public class DelegatingHandlerImpl : DelegatingHandler

@@ -32,6 +32,7 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Text;
     using System.Security.Cryptography;
     using System.Threading;
+    using System.Net.Http;
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
     using Windows.Security.Cryptography;
@@ -422,6 +423,60 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 await container.DeleteIfExistsAsync().ConfigureAwait(false);
             }
+        }
+
+        [TestMethod]
+        [Description("Verify source and destination access conditions set in AppendBlock from url calls")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DataTestMethod]
+        [DynamicData(nameof(CloudAppendBlobAppendBlock_FromUrl_AccessConditions_Data), DynamicDataSourceType.Method)]
+        public async Task CloudAppendBlobAppendBlock_FromUrl_AccessConditions(AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, string expectedHeaderName)
+        {
+            var handler = new RequestRecordingDelegatingHandler();
+
+            CloudBlobContainer container = GetRandomContainerReference(handler);
+
+            CloudAppendBlob dest = container.GetAppendBlobReference("dest");
+
+            CloudAppendBlob source = container.GetAppendBlobReference("source");
+
+            try
+            {
+                await dest.AppendBlockAsync(source.Uri, 0, long.MaxValue, default(string), sourceAccessCondition, destAccessCondition, new BlobRequestOptions { RetryPolicy = new RetryPolicies.NoRetry() }, default(OperationContext), CancellationToken.None);
+            }
+            catch
+            {
+                // exception is expected
+            }
+
+            Assert.AreNotEqual(0, handler.Requests.Count);
+
+            HttpRequestMessage request = handler.Requests.Last();
+
+            Assert.IsTrue(request.Headers.Contains(expectedHeaderName));
+        }
+
+        static IEnumerable<object[]> CloudAppendBlobAppendBlock_FromUrl_AccessConditions_Data()
+        {
+            // source conditions
+
+            yield return new object[] { new AccessCondition { IfMatchETag = "\"0x12345678\"" }, default(AccessCondition), "x-ms-source-if-match" };
+            yield return new object[] { new AccessCondition { IfModifiedSinceTime = DateTimeOffset.Now }, default(AccessCondition), "x-ms-source-if-modified-since" };
+            yield return new object[] { new AccessCondition { IfNoneMatchETag = "\"0x12345678\"" }, default(AccessCondition), "x-ms-source-if-none-match" };
+            yield return new object[] { new AccessCondition { IfNotModifiedSinceTime = DateTimeOffset.Now }, default(AccessCondition), "x-ms-source-if-unmodified-since" };
+
+            // dest conditions
+
+            yield return new object[] { default(AccessCondition), new AccessCondition { IfAppendPositionEqual = 1 }, "x-ms-blob-condition-appendpos" };
+            yield return new object[] { default(AccessCondition), new AccessCondition { IfMatchETag = "\"0x12345678\"" }, "If-Match" };
+            yield return new object[] { default(AccessCondition), new AccessCondition { IfMaxSizeLessThanOrEqual = 1 }, "x-ms-blob-condition-maxsize" };
+            yield return new object[] { default(AccessCondition), new AccessCondition { IfModifiedSinceTime = DateTimeOffset.Now }, "If-Modified-Since" };
+            yield return new object[] { default(AccessCondition), new AccessCondition { IfNoneMatchETag = "\"0x12345678\"" }, "If-None-Match" };
+            yield return new object[] { default(AccessCondition), new AccessCondition { IfNotModifiedSinceTime = DateTimeOffset.Now }, "If-Unmodified-Since" };
+            yield return new object[] { default(AccessCondition), new AccessCondition { LeaseId = Guid.NewGuid().ToString() }, "x-ms-lease-id" };
         }
 
         private async Task CloudAppendBlobUploadFromStreamAsyncInternal(CloudBlobContainer container, int size, AccessCondition accessCondition, OperationContext operationContext, int startOffset)
