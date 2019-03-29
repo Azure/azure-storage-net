@@ -1,6 +1,6 @@
 Tracking Breaking Changes since 10.0:
 
-- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*.
+- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*, required for SxS with pre-9.4 versions of the library.
 
 Tracking Breaking Changes since 9.0 combined package:
 

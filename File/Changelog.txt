@@ -1,6 +1,6 @@
 Changes in 10.0.0:
 
-- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*.
+- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*, required for SxS with pre-9.4 versions of the library.
 - Support for 2018-11-09 REST version. Please see our REST API documentation and blogs for information about the related added features.
 - ShareStats now has a UsageInBytes property. The Usage property is still available, and as a reminder represents usage in GB, rounded up.
 

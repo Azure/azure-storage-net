@@ -1,7 +1,8 @@
 Changes in 10.0.0:
 
-- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*.
+- Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*, required for SxS with pre-9.4 versions of the library.
 - CloudAppendBlob.AppendBlock and CloudPageBlob.WritePages APIs now have maximal overloads that take a URI to a blob as a source.
+- Added support for Snapshot SAS and Delegated SAS.
 
 Changes in 9.4.2:
 
