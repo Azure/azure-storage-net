@@ -17,7 +17,6 @@
 namespace Microsoft.Azure.Storage.Blob
 {
     using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Blob.Protocol;
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Auth;
     using Microsoft.Azure.Storage.Core.Util;
@@ -480,20 +479,37 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new InvalidOperationException(errorMessage);
             }
 
+            string resourceType = this.IsSnapshot ? Constants.QueryConstants.BlobSnapshotResourceType : Constants.QueryConstants.BlobResourceType;
             string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */);
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-#if ALL_SERVICES
-            string signature = SharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
-#else
-            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
-#endif
 
-            // Future resource type changes from "c" => "container"
-#if ALL_SERVICES
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
-#else
-            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, "b", signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
-#endif
+            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, headers, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue, resourceType, this.SnapshotTime);
+            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, headers, groupPolicyIdentifier, resourceType, signature, accountKey.KeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Returns an user-delegation-based shared access signature for the blob, with credentials solely based on the <see cref="UserDelegationKey"/> provided.
+        /// </summary>
+        /// <param name="delegationKey"><see cref="UserDelegationKey"/> for signing this SAS token.</param>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="headers">A <see cref="SharedAccessBlobHeaders"/> object specifying optional header values to set for a blob accessed with this SAS.</param>
+        /// <param name="protocols">The allowed protocols (https only, or http and https). Null if you don't want to restrict protocol.</param>
+        /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
+        /// <returns></returns>
+        public string GetUserDelegationSharedAccessSignature(
+            UserDelegationKey delegationKey,
+            SharedAccessBlobPolicy policy,
+            SharedAccessBlobHeaders headers = default(SharedAccessBlobHeaders),
+            SharedAccessProtocol? protocols = default(SharedAccessProtocol?),
+            IPAddressOrRange ipAddressOrRange = default(IPAddressOrRange))
+        {
+            string resourceName = this.GetCanonicalName(true /* ignoreSnapshotTime */);
+            string resourceType = this.IsSnapshot ? Constants.QueryConstants.BlobSnapshotResourceType : Constants.QueryConstants.BlobResourceType;
+
+            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, headers, resourceName, Constants.HeaderConstants.TargetStorageVersion, resourceType, this.SnapshotTime, protocols, ipAddressOrRange, delegationKey);
+            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, headers, null, resourceType, signature, null, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, delegationKey);
 
             return builder.ToString();
         }

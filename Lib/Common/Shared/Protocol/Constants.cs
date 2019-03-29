@@ -798,6 +798,56 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const string Expiry = "Expiry";
 
         /// <summary>
+        /// XML element for key information data.
+        /// </summary>
+        public const string KeyInfo = "KeyInfo";
+
+        /// <summary>
+        /// XML elenent for user delegation key data.
+        /// </summary>
+        public const string UserDelegationKey = "UserDelegationKey";
+
+        /// <summary>
+        /// XML element for the OID of a user delegation key.
+        /// </summary>
+        public const string SignedOid = "SignedOid";
+
+        /// <summary>
+        /// XML element for the TID of a user delegation key.
+        /// </summary>
+        public const string SignedTid = "SignedTid";
+
+        /// <summary>
+        /// XML element for the start time of a user delegation key.
+        /// </summary>
+        public const string SignedStart = "SignedStart";
+
+        /// <summary>
+        /// XML element for the end of a user delegation key.
+        /// </summary>
+        public const string SignedExpiry = "SignedExpiry";
+
+        /// <summary>
+        /// XML element for the REST API version used to create the delegation key.
+        /// </summary>
+        public const string SignedVersion = "SignedVersion";
+
+        /// <summary>
+        /// XML element for the REST API version used to create the delegation key.
+        /// </summary>
+        public const string SignedService = "SignedService";
+
+        /// <summary>
+        /// XML element for a generic value.
+        /// </summary>
+        public const string Value = "Value";
+
+        /// <summary>
+        /// DateTimeOffset format string for most operations.
+        /// </summary>
+        internal const string DateTimeFormatter = "yyyy-MM-ddTHH:mm:ssK";
+
+        /// <summary>
         /// XML element for the permissions of an access policy.
         /// </summary>
         public const string Permission = "Permission";
@@ -1566,6 +1616,51 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Query component for the signed SAS resource.
             /// </summary>
             public const string SignedResource = "sr";
+
+            /// <summary>
+            /// Specifies a restype value for blobs.
+            /// </summary>
+            public const string BlobResourceType = "b";
+
+            /// <summary>
+            /// Specifies a restype value for blob snapshots.
+            /// </summary>
+            public const string BlobSnapshotResourceType = "bs";
+
+            /// <summary>
+            /// Specifies a restype value for containers.
+            /// </summary>
+            public const string ContainerResourceType = "c";
+
+            /// <summary>
+            /// Query component for the signed object ID.
+            /// </summary>
+            public const string SignedKeyOid = "skoid";
+
+            /// <summary>
+            /// Query component for the signed tenant ID.
+            /// </summary>
+            public const string SignedKeyTid = "sktid";
+
+            /// <summary>
+            /// Query component for the signed key start time.
+            /// </summary>
+            public const string SignedKeyStart = "skt";
+
+            /// <summary>
+            /// Query compnent for the signed key expiration time.
+            /// </summary>
+            public const string SignedKeyExpiry = "ske";
+
+            /// <summary>
+            /// Query compnent for the signed key service type.
+            /// </summary>
+            public const string SignedKeyService = "sks";
+
+            /// <summary>
+            /// Query component for the signed key version string.
+            /// </summary>
+            public const string SignedKeyVersion = "skv";
 
             /// <summary>
             /// Query component for the signed SAS resource types.

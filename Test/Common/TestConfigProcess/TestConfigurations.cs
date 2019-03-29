@@ -43,27 +43,29 @@ namespace Microsoft.Azure.Storage
             List<TenantConfiguration> tenantConfigurationList = new List<TenantConfiguration>();
             foreach (XElement tenantConfigurationElement in testConfigurationsElement.Element("TenantConfigurations").Elements("TenantConfiguration"))
             {
-                TenantConfiguration config = new TenantConfiguration();
-
-                config.TenantName = (string)tenantConfigurationElement.Element("TenantName");
-                config.AccountName = (string)tenantConfigurationElement.Element("AccountName");
-                config.AccountKey = (string)tenantConfigurationElement.Element("AccountKey");
-                config.BlobServiceEndpoint = (string)tenantConfigurationElement.Element("BlobServiceEndpoint");
-                config.FileServiceEndpoint = (string)tenantConfigurationElement.Element("FileServiceEndpoint");
-                config.QueueServiceEndpoint = (string)tenantConfigurationElement.Element("QueueServiceEndpoint");
-                config.TableServiceEndpoint = (string)tenantConfigurationElement.Element("TableServiceEndpoint");
-                config.BlobServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("BlobServiceSecondaryEndpoint");
-                config.FileServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("FileServiceSecondaryEndpoint");
-                config.QueueServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("QueueServiceSecondaryEndpoint");
-                config.TableServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("TableServiceSecondaryEndpoint");
-                config.TenantType = (TenantType)Enum.Parse(typeof(TenantType), (string)tenantConfigurationElement.Element("TenantType"), true);
-                config.BlobSecurePortOverride = (string)tenantConfigurationElement.Element("BlobSecurePortOverride");
-                config.FileSecurePortOverride = (string)tenantConfigurationElement.Element("FileSecurePortOverride");
-                config.QueueSecurePortOverride = (string)tenantConfigurationElement.Element("QueueSecurePortOverride");
-                config.TableSecurePortOverride = (string)tenantConfigurationElement.Element("TableSecurePortOverride");
-                config.ActiveDirectoryApplicationId = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationId");
-                config.ActiveDirectoryApplicationSecret = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationSecret");
-                config.ActiveDirectoryTenantId = (string)tenantConfigurationElement.Element("ActiveDirectoryTenantId");
+                TenantConfiguration config = new TenantConfiguration
+                {
+                    TenantName = (string)tenantConfigurationElement.Element("TenantName"),
+                    AccountName = (string)tenantConfigurationElement.Element("AccountName"),
+                    AccountKey = (string)tenantConfigurationElement.Element("AccountKey"),
+                    BlobServiceEndpoint = (string)tenantConfigurationElement.Element("BlobServiceEndpoint"),
+                    FileServiceEndpoint = (string)tenantConfigurationElement.Element("FileServiceEndpoint"),
+                    QueueServiceEndpoint = (string)tenantConfigurationElement.Element("QueueServiceEndpoint"),
+                    TableServiceEndpoint = (string)tenantConfigurationElement.Element("TableServiceEndpoint"),
+                    BlobServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("BlobServiceSecondaryEndpoint"),
+                    FileServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("FileServiceSecondaryEndpoint"),
+                    QueueServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("QueueServiceSecondaryEndpoint"),
+                    TableServiceSecondaryEndpoint = (string)tenantConfigurationElement.Element("TableServiceSecondaryEndpoint"),
+                    TenantType = (TenantType)Enum.Parse(typeof(TenantType), (string)tenantConfigurationElement.Element("TenantType"), true),
+                    BlobSecurePortOverride = (string)tenantConfigurationElement.Element("BlobSecurePortOverride"),
+                    FileSecurePortOverride = (string)tenantConfigurationElement.Element("FileSecurePortOverride"),
+                    QueueSecurePortOverride = (string)tenantConfigurationElement.Element("QueueSecurePortOverride"),
+                    TableSecurePortOverride = (string)tenantConfigurationElement.Element("TableSecurePortOverride"),
+                    ActiveDirectoryApplicationId = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationId"),
+                    ActiveDirectoryApplicationSecret = (string)tenantConfigurationElement.Element("ActiveDirectoryApplicationSecret"),
+                    ActiveDirectoryTenantId = (string)tenantConfigurationElement.Element("ActiveDirectoryTenantId"),
+                    ActiveDirectoryAuthEndpoint = (string)tenantConfigurationElement.Element("ActiveDirectoryAuthEndpoint")
+                };
 
                 tenantConfigurationList.Add(config);
             }

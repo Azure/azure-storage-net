@@ -211,19 +211,36 @@ namespace Microsoft.Azure.Storage.Blob
             string resourceName = this.GetSharedAccessCanonicalName();
 
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-#if ALL_SERVICES
-            string signature = SharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
-#else
-            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue);
-#endif
+
+            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, null /* headers */, groupPolicyIdentifier, resourceName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, accountKey.KeyValue, Constants.QueryConstants.ContainerResourceType);
+
             string accountKeyName = accountKey.KeyName;
 
-            // Future resource type changes from "c" => "container"
-#if ALL_SERVICES
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "c", signature, accountKeyName, OperationContext.StorageVersion ?? Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
-#else
-            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, "c", signature, accountKeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
-#endif
+            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, null /* headers */, groupPolicyIdentifier, Constants.QueryConstants.ContainerResourceType, signature, accountKeyName, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange);
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Returns an user-delegation-based shared access signature for the container, with credentials solely based on the <see cref="UserDelegationKey"/> provided.
+        /// </summary>
+        /// <param name="delegationKey"><see cref="UserDelegationKey"/> for signing this SAS token.</param>
+        /// <param name="policy">A <see cref="SharedAccessBlobPolicy"/> object specifying the access policy for the shared access signature.</param>
+        /// <param name="headers">A <see cref="SharedAccessBlobHeaders"/> object specifying optional header values to set for a blob container accessed with this SAS.</param>
+        /// <param name="protocols">The allowed protocols (https only, or http and https). Null if you don't want to restrict protocol.</param>
+        /// <param name="ipAddressOrRange">The allowed IP address or IP address range. Null if you don't want to restrict based on IP address.</param>
+        /// <returns></returns>
+        public string GetUserDelegationSharedAccessSignature(
+            UserDelegationKey delegationKey,
+            SharedAccessBlobPolicy policy,
+            SharedAccessBlobHeaders headers = default(SharedAccessBlobHeaders),
+            SharedAccessProtocol? protocols = default(SharedAccessProtocol?),
+            IPAddressOrRange ipAddressOrRange = default(IPAddressOrRange))
+        {
+            string resourceName = this.GetSharedAccessCanonicalName();
+
+            string signature = BlobSharedAccessSignatureHelper.GetHash(policy, headers, resourceName, Constants.HeaderConstants.TargetStorageVersion, Constants.QueryConstants.ContainerResourceType, null /* snapshotTime */, protocols, ipAddressOrRange, delegationKey);
+            UriQueryBuilder builder = BlobSharedAccessSignatureHelper.GetSignature(policy, headers, null, Constants.QueryConstants.ContainerResourceType, signature, null, Constants.HeaderConstants.TargetStorageVersion, protocols, ipAddressOrRange, delegationKey);
 
             return builder.ToString();
         }

@@ -21,17 +21,9 @@ namespace Microsoft.Azure.Storage.Core.Auth
     using Microsoft.Azure.Storage.Auth;
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
-#if ALL_SERVICES
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.File;
-    using Microsoft.Azure.Storage.Queue;
-    using Microsoft.Azure.Storage.Table;
-#endif
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
-    using System.Text;
 
     /// <summary>
     /// Contains helper methods for implementing shared access signatures.

@@ -328,12 +328,9 @@ namespace Microsoft.Azure.Storage.Queue
 
             string resourceName = this.GetCanonicalName();
             StorageAccountKey accountKey = this.ServiceClient.Credentials.Key;
-#if ALL_SERVICES
-            string signature = SharedAccessSignatureHelper.GetHash(
-#else
+
             string signature = QueueSharedAccessSignatureHelper.GetHash(
-#endif
-            policy,
+                policy,
                 accessPolicyIdentifier,
                 resourceName,
                 Constants.HeaderConstants.TargetStorageVersion,
@@ -342,12 +339,9 @@ namespace Microsoft.Azure.Storage.Queue
                 accountKey.KeyValue);
 
             string accountKeyName = accountKey.KeyName;
-#if ALL_SERVICES
-            UriQueryBuilder builder = SharedAccessSignatureHelper.GetSignature(
-#else
+
             UriQueryBuilder builder = QueueSharedAccessSignatureHelper.GetSignature(
-#endif
-            policy,
+                policy,
                 accessPolicyIdentifier,
                 signature,
                 accountKeyName,

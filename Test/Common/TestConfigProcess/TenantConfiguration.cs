@@ -37,6 +37,7 @@ namespace Microsoft.Azure.Storage
         public string ActiveDirectoryApplicationId { get; internal set; }
         public string ActiveDirectoryApplicationSecret { get; internal set; }
         public string ActiveDirectoryTenantId { get; internal set; }
+        public string ActiveDirectoryAuthEndpoint { get; internal set; }
         public TenantType TenantType { get; internal set; }
     }
 }

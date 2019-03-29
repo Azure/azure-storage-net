@@ -17,6 +17,7 @@
 
 namespace Microsoft.Azure.Storage.Blob
 {
+    using Microsoft.Azure.Storage;
     using Microsoft.Azure.Storage.Auth;
     using Microsoft.Azure.Storage.Blob.Protocol;
     using Microsoft.Azure.Storage.Core;
@@ -26,11 +27,13 @@ namespace Microsoft.Azure.Storage.Blob
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
     using System.Linq;
     using System.Net;
-    using System.Net.Http;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Xml;
 
     public partial class CloudBlobClient
     {
@@ -638,6 +641,109 @@ namespace Microsoft.Azure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
             return Executor.ExecuteAsync(
                 this.GetBlobReferenceImpl(blobUri, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Gets a user delegation key for generating user-delegation-based shared access signature tokens.
+        /// </summary>
+        /// <param name="keyStart">Effective start of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="keyEnd">Effective end of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="UserDelegationKey"/> object.</returns>
+        [DoesServiceRequest]
+        public virtual UserDelegationKey GetUserDelegationKey(DateTimeOffset keyStart, DateTimeOffset keyEnd, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
+
+            return Executor.ExecuteSync(
+                this.GetUserDelegationKeyImpl(keyStart, keyEnd, accessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+        /// <summary>
+        /// Begins an asynchronous operation to get a user delegation key for generating user-delegation-based shared access signature tokens.
+        /// </summary>
+        /// <param name="keyStart">Effective start of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="keyEnd">Effective end of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetUserDelegationKey(DateTimeOffset keyStart, DateTimeOffset keyEnd, AsyncCallback callback, object state)
+        {
+            return this.BeginGetUserDelegationKey(keyStart, keyEnd, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+        }
+        /// <summary>
+        /// Begins an asynchronous operation to get a user delegation key for generating user-delegation-based shared access signature tokens.
+        /// </summary>
+        /// <param name="keyStart">Effective start of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="keyEnd">Effective end of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies any additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// 
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginGetUserDelegationKey(DateTimeOffset keyStart, DateTimeOffset keyEnd, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
+
+            return CancellableAsyncResultTaskWrapper.Create(
+                token => this.GetUserDelegationKeyAsync(keyStart, keyEnd, accessCondition, options, operationContext, token),
+                callback,
+                state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous operation to get a user delegation key for generating user-delegation-based shared access signature tokens.
+        /// </summary>
+        /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
+        /// <returns>A <see cref="UserDelegationKey"/> object.</returns>
+        public virtual UserDelegationKey EndGetUserDelegationKey(IAsyncResult asyncResult)
+        {
+            return ((CancellableAsyncResultTaskWrapper<UserDelegationKey>)asyncResult).GetAwaiter().GetResult();
+        }
+
+#if TASK
+        /// <summary>
+        /// Gets a user delegation key for generating user-delegation-based shared access signature tokens asynchronously.
+        /// </summary>
+        /// <param name="keyStart">Effective start of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="keyEnd">Effective end of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="UserDelegationKey"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<UserDelegationKey> GetUserDelegationKeyAsync(DateTimeOffset keyStart, DateTimeOffset keyEnd)
+        {
+            return this.GetUserDelegationKeyAsync(keyStart, keyEnd, null, null, null, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Gets a user delegation key for generating user-delegation-based shared access signature tokens asynchronously.
+        /// </summary>
+        /// <param name="keyStart">Effective start of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="keyEnd">Effective end of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="UserDelegationKey"/> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<UserDelegationKey> GetUserDelegationKeyAsync(DateTimeOffset keyStart, DateTimeOffset keyEnd, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this);
+
+            return Executor.ExecuteAsync(this.GetUserDelegationKeyImpl(keyStart, keyEnd, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -1276,6 +1382,56 @@ namespace Microsoft.Azure.Storage.Blob
             retCmd.PreProcessResponse = (cmd, resp, ex, ctx) => HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
             retCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) => BlobHttpResponseParsers.ReadServiceStatsAsync(cmd.ResponseStream, ct);
             return retCmd;
+        }
+
+        /// <summary>
+        /// Implements the GetUserDelegationKey method.
+        /// </summary>
+        /// <param name="start">Effective start of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="expiry">Effective end of key validity, expressed as a <see cref="DateTimeOffset"/>.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> of type <see cref="UserDelegationKey"/> that fetches the key.</returns>
+        private RESTCommand<UserDelegationKey> GetUserDelegationKeyImpl(DateTimeOffset start, DateTimeOffset expiry, AccessCondition accessCondition, BlobRequestOptions options)
+        {
+            MultiBufferMemoryStream memoryStream = new MultiBufferMemoryStream(null /* bufferManager */, (int)(1 * Constants.KB));
+
+            XmlWriterSettings settings = new XmlWriterSettings
+            {
+                Encoding = Encoding.UTF8,
+                NewLineHandling = NewLineHandling.Entitize
+            };
+
+            using (XmlWriter writer = XmlWriter.Create(memoryStream, settings))
+            {
+                writer.WriteStartElement(Constants.KeyInfo);
+                writer.WriteElementString(Constants.Start, start.UtcDateTime.ToString(Constants.DateTimeFormatter));
+                writer.WriteElementString(Constants.Expiry, expiry.UtcDateTime.ToString(Constants.DateTimeFormatter));
+                writer.WriteEndDocument();
+            }
+
+            memoryStream.Seek(0, SeekOrigin.Begin);
+
+            string contentMD5 = null;
+            if (options.UseTransactionalMD5.HasValue && options.UseTransactionalMD5.Value)
+            {
+                contentMD5 = memoryStream.ComputeMD5Hash();
+            }
+
+            RESTCommand<UserDelegationKey> postCmd = new RESTCommand<UserDelegationKey>(this.Credentials, this.StorageUri, this.HttpClient);
+
+            options.ApplyToStorageCommand(postCmd);
+            postCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
+            postCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetUserDelegationKey(uri, serverTimeout, accessCondition, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
+            postCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, contentMD5, cmd, ctx);
+            postCmd.StreamToDispose = memoryStream;
+            postCmd.RetrieveResponseStream = true;
+            postCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null /* retVal */, cmd, ex);
+            postCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) =>
+                GetUserDelegationKeyResponse.ParseAsync(postCmd.ResponseStream, ct);
+
+            return postCmd;
         }
 
         #endregion

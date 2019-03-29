@@ -29,6 +29,7 @@ using System.IO;
 using System.Xml.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Microsoft.Azure.Storage.Blob
 {
@@ -582,6 +583,45 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Test creation of blob snapshot SAS and whether it can deliver a proper CloudBlob snapshot.")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobSnapshotSAS()
+        {
+            var blob2snap = this.testContainer.GetBlockBlobReference("blob--" + Guid.NewGuid());
+            blob2snap.UploadText("placeholder");
+            var snap = blob2snap.Snapshot();
+
+            SharedAccessBlobPolicy genericSASPolicy = new SharedAccessBlobPolicy()
+            {
+                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(10),
+                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Delete
+            };
+            var uri = snap.SnapshotQualifiedUri + snap.GetSharedAccessSignature(genericSASPolicy).Replace('?', '&');
+
+            var sasSnap = new CloudBlockBlob(new Uri(uri));
+
+            Assert.IsTrue(sasSnap.IsSnapshot, "CloudBlob made from snapshot SAS is not a snapshot.");
+            Assert.IsNotNull(sasSnap.SnapshotTime, "CloudBlob made from snapshot SAS has no snapshot time.");
+            Assert.IsTrue(sasSnap.DownloadText() == "placeholder"); // the actual REST interaction and validating data
+            sasSnap.Delete();
+            Assert.IsFalse(sasSnap.Exists(), "Blob snapshot SAS was unable to delete the snapshot.");
+
+
+            // a URI for a blob but with a snapshot SAS token
+            var badUri = blob2snap.Uri + snap.GetSharedAccessSignature(genericSASPolicy);
+            var badSasSnap = new CloudBlockBlob(new Uri(badUri));
+
+            TestHelper.ExpectedException(
+                () => badSasSnap.DownloadText(),
+                "Attempt to download text without the appropriate SAS.",
+                HttpStatusCode.Forbidden
+                );
+        }
+
+        [TestMethod]
         [Description("Perform a SAS request and ensure that the api-version query param exists and the x-ms-version header does not.")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
@@ -891,6 +931,292 @@ namespace Microsoft.Azure.Storage.Blob
             () => blockBlob.GetSharedAccessSignature(policy, null /* headers */, null /* stored access policy ID */, protocol, null /* IP address or range */),
             "Creating a SAS should throw when using an invalid value for the Protocol enum.",
             String.Format(SR.InvalidProtocolsInSAS, protocol));
+        }
+
+        private CloudBlobClient GetOAuthClient()
+        {
+            TokenCredential tokenCredential = new TokenCredential(GenerateOAuthToken());
+            StorageCredentials storageCredentials = new StorageCredentials(tokenCredential);
+
+            Uri endpoint = new Uri(TargetTenantConfig.BlobServiceEndpoint);
+            return new CloudBlobClient(endpoint, storageCredentials);
+        }
+
+        [TestMethod]
+        [Description("Get a user delegation key")]
+        [TestCategory(ComponentCategory.Auth)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientGetUserDelegationKey()
+        {
+            CloudBlobClient client = GetOAuthClient();
+
+            var start = DateTimeOffset.Now.AddMinutes(-10);
+            var end = DateTimeOffset.Now.AddMinutes(10);
+
+            var options = new BlobRequestOptions();
+            options.UseTransactionalMD5 = true;
+
+            var key = client.GetUserDelegationKey(start, end, options: options);
+
+            Assert.IsNotNull(key);
+            Assert.IsNotNull(key.SignedOid);
+            Assert.IsNotNull(key.SignedTid);
+            Assert.IsNotNull(key.SignedStart);
+            Assert.IsNotNull(key.SignedExpiry);
+            Assert.IsNotNull(key.SignedVersion);
+            Assert.IsNotNull(key.SignedService);
+            Assert.IsNotNull(key.Value);
+        }
+
+        [TestMethod]
+        [Description("Get a user delegation key")]
+        [TestCategory(ComponentCategory.Auth)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobClientGetUserDelegationKeyAPM()
+        {
+            CloudBlobClient client = GetOAuthClient();
+
+            var start = DateTimeOffset.Now.AddMinutes(-10);
+            var end = DateTimeOffset.Now.AddMinutes(10);
+
+            UserDelegationKey key;
+            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            {
+                var result = client.BeginGetUserDelegationKey(start, end, ar => waitHandle.Set(), null);
+                waitHandle.WaitOne();
+                key = client.EndGetUserDelegationKey(result);
+            }
+
+            Assert.IsNotNull(key);
+            Assert.IsNotNull(key.SignedOid);
+            Assert.IsNotNull(key.SignedTid);
+            Assert.IsNotNull(key.SignedStart);
+            Assert.IsNotNull(key.SignedExpiry);
+            Assert.IsNotNull(key.SignedVersion);
+            Assert.IsNotNull(key.SignedService);
+            Assert.IsNotNull(key.Value);
+        }
+
+        [TestMethod]
+        [Description("Get a user delegation key")]
+        [TestCategory(ComponentCategory.Auth)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobClientGetUserDelegationKeyTaskAsync()
+        {
+            CloudBlobClient client = GetOAuthClient();
+
+            var start = DateTimeOffset.Now.AddMinutes(-10);
+            var end = DateTimeOffset.Now.AddMinutes(10);
+
+            var key = await client.GetUserDelegationKeyAsync(start, end);
+
+            Assert.IsNotNull(key);
+            Assert.IsNotNull(key.SignedOid);
+            Assert.IsNotNull(key.SignedTid);
+            Assert.IsNotNull(key.SignedStart);
+            Assert.IsNotNull(key.SignedExpiry);
+            Assert.IsNotNull(key.SignedVersion);
+            Assert.IsNotNull(key.SignedService);
+            Assert.IsNotNull(key.Value);
+        }
+
+        [TestMethod]
+        [Description("Assign various SAS tokens using Active Directory, rather than storage keys.")]
+        [TestCategory(ComponentCategory.Auth)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobUserDelegationSAS()
+        {
+            CloudBlobClient client = GetOAuthClient();
+
+            var start = DateTimeOffset.Now.AddMinutes(-10);
+            var end = DateTimeOffset.Now.AddMinutes(10);
+            var key = client.GetUserDelegationKey(start, end);
+            var key2 = client.GetUserDelegationKey(start, end);
+
+            Assert.AreEqual(key.SignedOid, key2.SignedOid, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedTid, key2.SignedTid, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedStart, key2.SignedStart, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedExpiry, key2.SignedExpiry, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedService, key2.SignedService, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedVersion, key2.SignedVersion, "Failed to request the same key twice.");
+            Assert.AreEqual(key.Value, key2.Value, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedStart.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), start.UtcDateTime.ToString(Constants.DateTimeFormatter),
+                string.Format(CultureInfo.InvariantCulture, "Start times do not equal. {0} != {1}.",
+                    key.SignedStart.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), start.UtcDateTime.ToString(Constants.DateTimeFormatter)));
+            Assert.AreEqual(key.SignedExpiry.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), end.UtcDateTime.ToString(Constants.DateTimeFormatter),
+                string.Format(CultureInfo.InvariantCulture, "End times do not equal. {0} != {1}.",
+                    key.SignedExpiry.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), end.UtcDateTime.ToString(Constants.DateTimeFormatter)));
+
+            const string data = "placeholder";
+            const string newData = "additional placeholder";
+            var blob = testContainer.GetBlockBlobReference("testblob--" + Guid.NewGuid());
+            blob.UploadText(data);
+            var sasBlob = new CloudBlockBlob(new Uri(blob.Uri + blob.GetUserDelegationSharedAccessSignature(key, new SharedAccessBlobPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.Now.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.Now.AddMinutes(5),
+                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write
+            })));
+
+            Assert.AreEqual(sasBlob.DownloadText(), data, "SAS failed to download the correct data.");
+            sasBlob.UploadText(newData);
+            Assert.AreEqual(sasBlob.DownloadText(), newData, "SAS failed to upload new data.");
+        }
+
+        [TestMethod]
+        [Description("Assign various SAS tokens using Active Directory, rather than storage keys.")]
+        [TestCategory(ComponentCategory.Auth)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobUserDelegationSASBadKey()
+        {
+            var oid = Guid.NewGuid();
+            var tid = Guid.NewGuid();
+            var start = DateTimeOffset.Now.AddMinutes(-5);
+            var end = start.AddMinutes(10);
+            var service = "b";
+            var version = Constants.HeaderConstants.TargetStorageVersion;
+            byte[] bytes = new byte[32];
+            new Random().NextBytes(bytes);
+            var value = Convert.ToBase64String(bytes);
+            var keys = new List<UserDelegationKey>()
+            {
+                new UserDelegationKey()
+                { SignedOid = null, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = null, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = null, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = null, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = null, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = null, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = null },
+            };
+
+            var policy = new SharedAccessBlobPolicy()
+            {
+                SharedAccessExpiryTime = end,
+                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write
+            };
+
+            const string data = "placeholder";
+            var blob = testContainer.GetBlockBlobReference("testblob--" + Guid.NewGuid());
+            blob.UploadText(data);
+
+            foreach (var key in keys)
+            {
+                TestHelper.ExpectedException<ArgumentNullException>(() => blob.GetUserDelegationSharedAccessSignature(key, policy), "Create an IDSAS.");
+            }
+        }
+
+        [TestMethod]
+        [Description("Assign various SAS tokens using Active Directory, rather than storage keys.")]
+        [TestCategory(ComponentCategory.Auth)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerUserDelegationSAS()
+        {
+            CloudBlobClient client = GetOAuthClient();
+
+            var start = DateTimeOffset.Now.AddMinutes(-10);
+            var end = DateTimeOffset.Now.AddMinutes(10);
+            var key = client.GetUserDelegationKey(start, end);
+            var key2 = client.GetUserDelegationKey(start, end);
+
+            Assert.AreEqual(key.SignedOid, key2.SignedOid, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedTid, key2.SignedTid, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedStart, key2.SignedStart, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedExpiry, key2.SignedExpiry, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedService, key2.SignedService, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedVersion, key2.SignedVersion, "Failed to request the same key twice.");
+            Assert.AreEqual(key.Value, key2.Value, "Failed to request the same key twice.");
+            Assert.AreEqual(key.SignedStart.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), start.UtcDateTime.ToString(Constants.DateTimeFormatter),
+                string.Format(CultureInfo.InvariantCulture, "Start times do not equal. {0} != {1}.",
+                    key.SignedStart.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), start.UtcDateTime.ToString(Constants.DateTimeFormatter)));
+            Assert.AreEqual(key.SignedExpiry.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), end.UtcDateTime.ToString(Constants.DateTimeFormatter),
+                string.Format(CultureInfo.InvariantCulture, "End times do not equal. {0} != {1}.",
+                    key.SignedExpiry.Value.UtcDateTime.ToString(Constants.DateTimeFormatter), end.UtcDateTime.ToString(Constants.DateTimeFormatter)));
+
+
+            var blobName = "blob--" + Guid.NewGuid().ToString();
+            var blobData = "placeholder";
+            var container = GetRandomContainerReference();
+            container.CreateIfNotExists();
+            container.GetBlockBlobReference(blobName).UploadText(blobData);
+
+            var sasContainer = new CloudBlobContainer(new Uri(container.Uri + container.GetUserDelegationSharedAccessSignature(key, new SharedAccessBlobPolicy()
+            {
+                SharedAccessStartTime = DateTimeOffset.Now.AddMinutes(-5),
+                SharedAccessExpiryTime = DateTimeOffset.Now.AddMinutes(5),
+                Permissions = SharedAccessBlobPermissions.List
+            })));
+
+            // successfully read a list of blobs with the sas
+            Assert.IsTrue(sasContainer.ListBlobs().Where(item => item.Uri.ToString().Contains(blobName)).Count() > 0);
+        }
+
+        [TestMethod]
+        [Description("Assign various SAS tokens using Active Directory, rather than storage keys.")]
+        [TestCategory(ComponentCategory.Auth)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudBlobContainerUserDelegationSASBadKey()
+        {
+            var oid = Guid.NewGuid();
+            var tid = Guid.NewGuid();
+            var start = DateTimeOffset.Now.AddMinutes(-5);
+            var end = start.AddMinutes(10);
+            var service = "b";
+            var version = Constants.HeaderConstants.TargetStorageVersion;
+            byte[] bytes = new byte[32];
+            new Random().NextBytes(bytes);
+            var value = Convert.ToBase64String(bytes);
+            var keys = new List<UserDelegationKey>()
+            {
+                new UserDelegationKey()
+                { SignedOid = null, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = null, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = null, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = null, SignedService = service, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = null, SignedVersion = version, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = null, Value = value },
+                new UserDelegationKey()
+                { SignedOid = oid, SignedTid = tid, SignedStart = start, SignedExpiry = end, SignedService = service, SignedVersion = version, Value = null },
+            };
+
+            var policy = new SharedAccessBlobPolicy()
+            {
+                SharedAccessExpiryTime = end,
+                Permissions = SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write
+            };
+
+            var container = GetRandomContainerReference();
+            container.CreateIfNotExists();
+
+            foreach (var key in keys)
+            {
+                TestHelper.ExpectedException<ArgumentNullException>(() => container.GetUserDelegationSharedAccessSignature(key, policy), "Create an IDSAS.");
+            }
         }
 
         [TestMethod]

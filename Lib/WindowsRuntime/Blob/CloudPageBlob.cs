@@ -26,7 +26,6 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -378,11 +377,8 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
+
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
             if ((length % Constants.PageSize) != 0)
             {
@@ -1019,11 +1015,9 @@ namespace Microsoft.Azure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
             bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
+
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
+
             Stream pageDataAsStream = pageData;
             Stream seekableStream = pageDataAsStream;
             bool seekableStreamCreated = false;

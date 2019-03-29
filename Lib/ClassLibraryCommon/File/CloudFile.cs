@@ -1359,11 +1359,7 @@ namespace Microsoft.Azure.Storage.File
 
             using (CloudFileStream fileStream = this.OpenWrite(length, accessCondition, modifiedOptions, operationContext))
             {
-#if ALL_SERVICES
-                using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
-#else
                 using (ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
-#endif
                 {
                     source.WriteToSync(fileStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
                     fileStream.Commit();
@@ -3434,11 +3430,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 if (!rangeData.CanSeek || requiresContentMD5)
                 {
-#if ALL_SERVICES
-                    ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
                     ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
                     Stream writeToStream;
                     if (rangeData.CanSeek)
@@ -3853,26 +3845,6 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.StartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Begins an operation to start copying a blob's contents, properties, and metadata to this Azure file.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlob"/> of the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the file's ETag, last-modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public virtual string StartCopy(CloudBlob source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
-        {
-            return this.StartCopy(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
-        }
-#endif
 #endif
         /// <summary>
         /// Begins an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -3899,20 +3871,6 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.BeginStartCopy(CloudFile.SourceFileToUri(source), callback, state);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Begins an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlob"/> that is the source blob.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginStartCopy(CloudBlob source, AsyncCallback callback, object state)
-        {
-            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), callback, state);
-        }
-#endif
 
         /// <summary>
         /// Begins an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -3947,25 +3905,6 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.BeginStartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
-
-#if ALL_SERVICES
-        /// <summary>
-        /// Begins an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlob"/> that is the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
-        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
-        [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginStartCopy(CloudBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
-        {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
-        }
-#endif
 
         /// <summary>
         /// Ends an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -4015,18 +3954,6 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), CancellationToken.None);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlob"/> that is the source blob.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlob source)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), CancellationToken.None);
-        }
-#endif
 
         /// <summary>
         /// Initiates an asynchronous operation to start copying another file's contents, properties, and metadata to this file.
@@ -4039,19 +3966,7 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlob"/> that is the source blob.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlob source, CancellationToken cancellationToken)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
-        }
-#endif
+
         /// <summary>
         /// Initiates an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
         /// </summary>
@@ -4103,22 +4018,7 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlob"/> that is the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
-        }
-#endif
+
         /// <summary>
         /// Initiates an asynchronous operation to start copying another file's contents, properties, and metadata to this file.
         /// </summary>
@@ -4134,23 +4034,6 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Initiates an asynchronous operation to start copying a blob's contents, properties, and metadata to this Azure file.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudBlob"/> that is the source blob.</param>
-        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
-        }
-#endif
 #endif
 
 #if SYNC

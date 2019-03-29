@@ -25,12 +25,11 @@ namespace Microsoft.Azure.Storage.File
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Net;
     using System.Net.Http;
     using System.Text;
-    using System.Threading.Tasks;
     using System.Threading;
+    using System.Threading.Tasks;
 #if NETCORE
 #else
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -350,11 +349,8 @@ namespace Microsoft.Azure.Storage.File
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
+
             ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
             using (CloudFileStream fileStream = await this.OpenWriteAsync(length, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false))
             {
@@ -1703,11 +1699,8 @@ namespace Microsoft.Azure.Storage.File
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
+
             ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
             DateTime streamCopyStartTime = DateTime.Now;
 
@@ -1824,22 +1817,6 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.StartCopyAsync(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Begins an operation to start copying an existing blob's contents, properties, and metadata to a new Azure file.
-        /// </summary>
-        /// <param name="source">The source blob.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the file's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlob source)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
-        }
-#endif
 
         /// <summary>
         /// Begins an operation to start copying an existing Azure file's contents, properties, and metadata to a new Azure file.
@@ -1899,26 +1876,6 @@ namespace Microsoft.Azure.Storage.File
                 operationContext,
                 cancellationToken);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Begins an operation to start copying a blob's contents, properties, and metadata to a new Azure file.
-        /// </summary>
-        /// <param name="source">The source blob.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the file's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
-        }
-#endif
 
         /// <summary>
         /// Aborts an ongoing copy operation.

@@ -361,6 +361,28 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         }
 
         /// <summary>
+        /// Constructs a web request to get a user delegation key for user-delegation-based SAS.
+        /// </summary>
+        /// <param name="uri">A <see cref="System.Uri"/> specifying the absolute URI to the blob.</param>
+        /// <param name="timeout">An integer specifying the server timeout interval.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed.</param>
+        /// <param name="content">The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns>A <see cref="StorageRequestMessage"/> object.</returns>
+        public static StorageRequestMessage GetUserDelegationKey(Uri uri, int? timeout, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.ResourceType, "service");
+            builder.Add(Constants.QueryConstants.Component, "userdelegationkey");
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Post, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+            
+            request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
         /// Constructs a web request to resize a page blob.
         /// </summary>
         /// <param name="uri">The absolute URI to the blob.</param>

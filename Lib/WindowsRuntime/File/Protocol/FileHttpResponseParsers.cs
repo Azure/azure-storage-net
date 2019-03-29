@@ -117,17 +117,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         {
             return HttpResponseParsers.GetMetadata(response);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Extracts a <see cref="CopyState"/> object from the headers of a web response.
-        /// </summary>
-        /// <param name="response">The HTTP web response.</param>
-        /// <returns>A <see cref="CopyState"/> object, or null if the web response does not contain a copy status.</returns>
-        public static CopyState GetCopyAttributes(HttpResponseMessage response)
-        {
-            return BlobHttpResponseParsers.GetCopyAttributes(response);
-        }
-#else
+
         /// <summary>
         /// Builds a <see cref="CopyState"/> object from the given strings containing formatted copy information.
         /// </summary>
@@ -226,6 +216,5 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 return null;
             }
         }
-#endif
     }
 }

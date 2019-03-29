@@ -29,7 +29,6 @@ namespace Microsoft.Azure.Storage.Blob
 
     using System.Linq;
     using System.Net;
-    using System.Net.Http;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading;
@@ -334,11 +333,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                         ICryptoTransform transform = modifiedOptions.EncryptionPolicy.CreateAndSetEncryptionContext(this.Metadata, false /* noPadding */);
                         CryptoStream cryptoStream = new CryptoStream(tempStream, transform, CryptoStreamMode.Write);
-#if ALL_SERVICES
-                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(options))
-#else
+
                         using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(options))
-#endif
                         {
                             source.WriteToSync(cryptoStream, length, null, false, true, tempExecutionState, null);
                             cryptoStream.FlushFinalBlock();
@@ -356,11 +352,7 @@ namespace Microsoft.Azure.Storage.Blob
                     string contentMD5 = null;
                     if (modifiedOptions.StoreBlobContentMD5.Value)
                     {
-#if ALL_SERVICES
-                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(options))
-#else
                         using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(options))
-#endif
                         {
                             StreamDescriptor streamCopyState = new StreamDescriptor();
                             long startPosition = sourceStream.Position;
@@ -396,11 +388,7 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     using (CloudBlobStream blobStream = this.OpenWrite(accessCondition, modifiedOptions, operationContext))
                     {
-#if ALL_SERVICES
-                        using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
-#else
                         using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
-#endif
                         {
                             source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
                             blobStream.Commit();
@@ -1565,11 +1553,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 if (!blockData.CanSeek || requiresContentMD5)
                 {
-#if ALL_SERVICES
-                    ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
                     ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
                     Stream writeToStream;
                     if (blockData.CanSeek)
@@ -1760,11 +1744,8 @@ namespace Microsoft.Azure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
             StorageAsyncResult<NullType> storageAsyncResult = new StorageAsyncResult<NullType>(callback, state);
 
-#if ALL_SERVICES
-                    ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
+
             storageAsyncResult.CancelDelegate = tempExecutionState.Cancel;
 
             try

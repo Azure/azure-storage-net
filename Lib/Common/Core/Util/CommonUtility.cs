@@ -17,8 +17,6 @@
 
 namespace Microsoft.Azure.Storage.Core.Util
 {
-    using Microsoft.Azure.Storage.Auth;
-    using Microsoft.Azure.Storage.Core.Executor;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
@@ -68,41 +66,7 @@ namespace Microsoft.Azure.Storage.Core.Util
 
             return CommandLocationMode.PrimaryOrSecondary;
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Create an ExecutionState object that can be used for pre-request operations
-        /// such as buffering user's data.
-        /// </summary>
-        /// <param name="options">Request options</param>
-        /// <returns>Temporary ExecutionState object</returns>
-        internal static ExecutionState<NullType> CreateTemporaryExecutionState(BlobRequestOptions options)
-        {
-            RESTCommand<NullType> cmdWithTimeout = new RESTCommand<NullType>(new StorageCredentials(), null /* Uri */);
-            if (options != null)
-            {
-                options.ApplyToStorageCommand(cmdWithTimeout);
-            }
 
-            return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
-        }
-
-        /// <summary>
-        /// Create an ExecutionState object that can be used for pre-request operations
-        /// such as buffering user's data.
-        /// </summary>
-        /// <param name="options">Request options</param>
-        /// <returns>Temporary ExecutionState object</returns>
-        internal static ExecutionState<NullType> CreateTemporaryExecutionState(FileRequestOptions options)
-        {
-            RESTCommand<NullType> cmdWithTimeout = new RESTCommand<NullType>(new StorageCredentials(), null /* Uri */);
-            if (options != null)
-            {
-                options.ApplyToStorageCommand(cmdWithTimeout);
-            }
-
-            return new ExecutionState<NullType>(cmdWithTimeout, options != null ? options.RetryPolicy : null, new OperationContext());
-        }
-#endif
         /// <summary>
         /// Returns the larger of two time spans.
         /// </summary>

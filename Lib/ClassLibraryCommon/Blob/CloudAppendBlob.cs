@@ -27,7 +27,6 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
-    using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
     using System.Text;
@@ -371,11 +370,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             using (CloudBlobStream blobStream = this.OpenWrite(createNew, accessCondition, modifiedOptions, operationContext))
             {
-#if ALL_SERVICES
-                using (ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions))
-#else
                 using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
-#endif
                 {
                     source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
                     blobStream.Commit();
@@ -2379,11 +2374,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 if (!blockData.CanSeek || requiresContentMD5)
                 {
-#if ALL_SERVICES
-                    ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
                     ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
                     Stream writeToStream;
                     if (blockData.CanSeek)

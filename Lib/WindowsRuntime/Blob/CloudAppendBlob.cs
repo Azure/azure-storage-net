@@ -26,7 +26,6 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-    using System.Net.Http;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -501,12 +500,8 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
-#else
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
             using (CloudBlobStream blobStream = await this.OpenWriteAsync(createNew, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false))
             {
@@ -1352,11 +1347,8 @@ namespace Microsoft.Azure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.AppendBlob, this.ServiceClient);
             bool requiresContentMD5 = string.IsNullOrEmpty(contentMD5) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
+
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
             Stream blockDataAsStream = blockData;
             Stream seekableStream = blockDataAsStream;

@@ -21,6 +21,7 @@
     <ActiveDirectoryApplicationId>[APPLICATION ID HERE]</ActiveDirectoryApplicationId>
     <ActiveDirectoryApplicationSecret>[APPLICATION SECRET HERE]</ActiveDirectoryApplicationSecret>
     <ActiveDirectoryTenantId>[TENANT ID HERE]</ActiveDirectoryTenantId>
+    <ActiveDirectoryAuthEndpoint>https://login.windows.net</ActiveDirectoryAuthEndpoint>
 
     <!-- Endpoints -->
     <BlobServiceEndpoint>http://[ACCOUNT].blob.core.windows.net</BlobServiceEndpoint>

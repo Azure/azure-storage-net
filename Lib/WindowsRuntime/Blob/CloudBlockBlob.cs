@@ -27,10 +27,9 @@ namespace Microsoft.Azure.Storage.Blob
     using System.IO;
     using System.Linq;
     using System.Net;
-    using System.Net.Http;
     using System.Text;
-    using System.Threading.Tasks;
     using System.Threading;
+    using System.Threading.Tasks;
 
 #if NETCORE
 #else
@@ -337,11 +336,8 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
+
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
             bool lessThanSingleBlobThreshold = sourceAsStream.CanSeek
                                                && (length ?? sourceAsStream.Length - sourceAsStream.Position)
@@ -987,11 +983,8 @@ namespace Microsoft.Azure.Storage.Blob
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             bool requiresContentMD5 = string.IsNullOrEmpty(contentMD5) && modifiedOptions.UseTransactionalMD5.Value;
             operationContext = operationContext ?? new OperationContext();
-#if ALL_SERVICES
-            ExecutionState<NullType> tempExecutionState = CommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#else
+
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
-#endif
 
             Stream blockDataAsStream = blockData;
             Stream seekableStream = blockDataAsStream;
@@ -1178,26 +1171,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
-        /// </summary>
-        /// <param name="source">The source file.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudFile source)
-        {
-            return this.StartCopyAsync(CloudFile.SourceFileToUri(source));
-        }
-#endif
+
         /// <summary>
         /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
         /// </summary>
@@ -1277,66 +1251,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
-#if ALL_SERVICES
-        /// <summary>
-        /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
-        /// </summary>
-        /// <param name="source">The source file.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        public virtual Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
-        }
 
-        /// <summary>
-        /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
-        /// </summary>
-        /// <param name="source">The source file.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return this.StartCopyAsync(source, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
-        }
-
-        /// <summary>
-        /// Begins an operation to start copying a file's contents, properties, and metadata to a new blob.
-        /// </summary>
-        /// <param name="source">The source file.</param>
-        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        private Task<string> StartCopyAsync(CloudFile source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(string) /* contentMD5 */, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
-        }
-#endif
         /// <summary>
         /// Sets the tier for a blob.
         /// </summary>

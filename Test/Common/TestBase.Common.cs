@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Storage
 #if WINDOWS_DESKTOP
         public static string GenerateOAuthToken()
         {
-            string authority = string.Format("https://login.microsoftonline.com/{0}/oauth2/token",
+            string authority = string.Format(TestBase.TargetTenantConfig.ActiveDirectoryAuthEndpoint + "/{0}/oauth2/token",
                 TestBase.TargetTenantConfig.ActiveDirectoryTenantId);
 
             ClientCredential credential = new ClientCredential(TestBase.TargetTenantConfig.ActiveDirectoryApplicationId,
