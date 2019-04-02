@@ -293,7 +293,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         public static StorageRequestMessage CloseHandle(Uri uri, int? timeout, string handleId, bool? recursive, FileContinuationToken token, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
-            builder.Add(Constants.QueryConstants.Component, "closehandles");
+            builder.Add(Constants.QueryConstants.Component, "forceclosehandles");
 
             if (token != null && token.NextMarker != null)
             {
