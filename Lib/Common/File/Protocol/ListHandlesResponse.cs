@@ -118,10 +118,18 @@ namespace Microsoft.Azure.Storage.File.Protocol
                             handle.Path = reader.ReadElementContentAsString();
                             break;
                         case Constants.ClientIpElement:
-                            IPAddress clientIp;
-                            if (IPAddress.TryParse(reader.ReadElementContentAsString(), out clientIp))
+                            var split = reader.ReadElementContentAsString().Split(new[] { ':' }, 2);
+                            var addressString = split[0];
+                            var portString = split.Length == 2 ? split[1] : default(string);
+
+                            if (IPAddress.TryParse(addressString, out var address))
                             {
-                                handle.ClientIp = clientIp;
+                                handle.ClientIp = address;
+                            }
+
+                            if (int.TryParse(portString, out var port))
+                            {
+                                handle.ClientPort = port;
                             }
 
                             break;

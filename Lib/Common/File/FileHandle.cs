@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Storage.File
     public sealed class FileHandle
     {
         /// <summary> 
-        /// XSMB service handle ID. 
+        /// SMB service handle ID. 
         /// </summary> 
         public ulong? HandleId { get; internal set; }
 
@@ -44,14 +44,19 @@ namespace Microsoft.Azure.Storage.File
         public IPAddress ClientIp { get; internal set; }
 
         /// <summary> 
+        /// Client port that opened the handle. 
+        /// </summary> 
+        public int ClientPort { get; internal set; }
+
+        /// <summary> 
         /// Time the handle was opened. 
         /// </summary> 
         public DateTimeOffset OpenTime { get; internal set; }
 
         /// <summary> 
-        /// Time the handle was opened. 
+        /// Time the handle was last connected.
         /// </summary> 
-        public DateTimeOffset LastReconnectTime { get; internal set; }
+        public DateTimeOffset? LastReconnectTime { get; internal set; }
 
         /// <summary> 
         /// Unique file ID. 
@@ -64,7 +69,7 @@ namespace Microsoft.Azure.Storage.File
         public ulong ParentId { get; internal set; }
 
         /// <summary> 
-        /// SMB session ID in context of whivh the file handle was opened. 
+        /// SMB session ID in context of which the file handle was opened. 
         /// </summary> 
         public ulong SessionId { get; internal set; }
     }
