@@ -44,14 +44,14 @@ namespace Microsoft.Azure.Storage.Core.Util
             Dictionary<string, ICollection<string>> retVal = new Dictionary<string, ICollection<string>>(StringComparer.OrdinalIgnoreCase);
             if (string.IsNullOrEmpty(query))
             {
-                return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)));
+                return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)), StringComparer.OrdinalIgnoreCase);
             }
 
             if (query.StartsWith("?", StringComparison.Ordinal))
             {
                 if (query.Length == 1)
                 {
-                    return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)));
+                    return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)), StringComparer.OrdinalIgnoreCase);
                 }
 
                 query = query.Substring(1);
@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Storage.Core.Util
                 }
             }
 
-            return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)));
+            return retVal.ToDictionary(kvp => kvp.Key, kvp => string.Join(",", kvp.Value.OrderBy(_ => _)), StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>

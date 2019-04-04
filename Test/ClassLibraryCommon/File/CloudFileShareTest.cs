@@ -2349,6 +2349,7 @@ namespace Microsoft.Azure.Storage.File
 
             CloudFileDirectory snapshotDir1 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
             snapshotDir1.Exists();
+            snapshotDir1.FetchAttributes();
             Assert.IsTrue(snapshotDir1.Metadata.Count == 1 && snapshotDir1.Metadata["key2"].Equals("value2"));
 
             CloudFileDirectory snapshotDir2 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
