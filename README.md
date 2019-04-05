@@ -9,6 +9,10 @@ This repository contains the open source subset of the .NET SDK. For documentati
 complete Azure SDK, please see the [Microsoft Azure .NET Developer Center][].
 
 > Note:
+> As of 10.0.0, the namespace has changed to Microsoft.Azure.Storage.Common, .Blob, .File, and .Queue.
+> This is required for some SxS scenarios.
+
+> Note:
 > As of 9.4.0, the Table service is not supported by this library.  
 > Table support is being provided by [CosmosDB][Microsoft.Azure.Cosmos.Table].
 
