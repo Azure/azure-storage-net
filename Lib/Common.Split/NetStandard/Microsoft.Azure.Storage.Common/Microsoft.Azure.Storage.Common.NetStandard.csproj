@@ -4,7 +4,6 @@
     <AssemblyTitle>Microsoft.Azure.Storage.Common</AssemblyTitle>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <VersionPrefix>10.0.0</VersionPrefix>
     <Authors>Microsoft Corporation</Authors>
     <TargetFramework>netstandard1.3</TargetFramework>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>

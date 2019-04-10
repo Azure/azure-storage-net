@@ -609,9 +609,17 @@ namespace Microsoft.Azure.Storage.File
                 Assert.IsTrue(file2.Exists());
                 Assert.AreEqual(2048, file2.Properties.Length);
 
+                CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
+
+                Assert.IsFalse(dir1.Exists());
+
                 file.Delete();
 
                 Assert.IsFalse(file2.Exists());
+
+                CloudFileDirectory dir2 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
+
+                Assert.IsFalse(dir2.Exists());
             }
             finally
             {
@@ -652,6 +660,13 @@ namespace Microsoft.Azure.Storage.File
                     Assert.IsTrue(file2.EndExists(result));
                     Assert.AreEqual(2048, file2.Properties.Length);
 
+                    CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
+
+                    IAsyncResult dirExistsResult1 = dir1.BeginExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+
+                    Assert.IsFalse(dir1.EndExists(dirExistsResult1));
+
                     file.Delete();
 
                     result = file2.BeginExists(
@@ -659,6 +674,13 @@ namespace Microsoft.Azure.Storage.File
                         null);
                     waitHandle.WaitOne();
                     Assert.IsFalse(file2.EndExists(result));
+
+                    CloudFileDirectory dir2 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
+
+                    IAsyncResult dirExistsResult2 = dir2.BeginExists(ar => waitHandle.Set(), null);
+                    waitHandle.WaitOne();
+
+                    Assert.IsFalse(dir2.EndExists(dirExistsResult2));
                 }
             }
             finally
@@ -674,30 +696,38 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileExistsTask()
+        public async Task CloudFileExistsTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
 
             try
             {
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
 
-                Assert.IsFalse(file2.ExistsAsync().Result);
+                Assert.IsFalse(await file2.ExistsAsync());
 
-                file.CreateAsync(2048).Wait();
+                await file.CreateAsync(2048);
 
-                Assert.IsTrue(file2.ExistsAsync().Result);
+                Assert.IsTrue(await file2.ExistsAsync());
                 Assert.AreEqual(2048, file2.Properties.Length);
 
-                file.DeleteAsync().Wait();
+                CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
 
-                Assert.IsFalse(file2.ExistsAsync().Result);
+                Assert.IsFalse(await dir1.ExistsAsync());
+
+                await file.DeleteAsync();
+
+                Assert.IsFalse(await file2.ExistsAsync());
+
+                CloudFileDirectory dir2 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
+
+                Assert.IsFalse(await dir2.ExistsAsync());
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif

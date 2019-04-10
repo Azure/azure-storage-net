@@ -1,3 +1,6 @@
+Changes in 10.0.1:
+- Fix bug where CloudFileDirectory.ExistsAsync (and sync and APM APIs) were incorrectly returning true due to an incorrectly formed request.
+
 Changes in 10.0.0:
 
 - Namespace change from Microsoft.WindowsAzure.Storage.* to Microsoft.Azure.Storage.*, required for SxS with pre-9.4 versions of the library.

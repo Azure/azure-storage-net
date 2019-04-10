@@ -174,9 +174,17 @@ namespace Microsoft.Azure.Storage.File
                 Assert.IsTrue(await file2.ExistsAsync());
                 Assert.AreEqual(2048, file2.Properties.Length);
 
+                CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
+
+                Assert.IsFalse(await dir1.ExistsAsync());
+
                 await file.DeleteAsync();
 
                 Assert.IsFalse(await file2.ExistsAsync());
+
+                CloudFileDirectory dir2 = share.GetRootDirectoryReference().GetDirectoryReference("file1");
+
+                Assert.IsFalse(await dir2.ExistsAsync());
             }
             finally
             {
