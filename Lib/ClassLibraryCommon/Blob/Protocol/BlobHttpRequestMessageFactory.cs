@@ -901,7 +901,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, null /* pageBlobTier */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, default(PremiumPageBlobTier?) /*premiumPageBlobTier*/, default(StandardBlobTier) /*standardBlockBlobTier*/, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
         }
 
         /// <summary>
@@ -911,7 +911,8 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
-        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set. Only valid on page blobs.</param>
+        /// <param name="standardBlockBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set. Only valid on block blobs.</param>
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
@@ -919,9 +920,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return CopyFrom(uri, timeout, source, default(string) /* contentMD5 */, incrementalCopy, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+            return CopyFrom(uri, timeout, source, default(string) /* contentMD5 */, incrementalCopy, false /* syncCopy */, premiumPageBlobTier, standardBlockBlobTier, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
         }
 
         /// <summary>
@@ -934,6 +935,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="standardBlockBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the source object in order for the request to proceed.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met on the destination blob in order for the request to proceed.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param> 
@@ -941,7 +943,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (!syncCopy && !string.IsNullOrEmpty(sourceContentMd5))
             {
@@ -962,9 +964,17 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             request.ApplyAccessCondition(destAccessCondition);
             request.ApplyAccessConditionToSource(sourceAccessCondition);
 
-            if (premiumPageBlobTier.HasValue)
+            if (premiumPageBlobTier.HasValue && standardBlockBlobTier.HasValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(standardBlockBlobTier), "Cannot specify both page and block tiers at the same time.");
+            }
+            else if (premiumPageBlobTier.HasValue)
             {
                 request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier.Value.ToString());
+            }
+            else if (standardBlockBlobTier.HasValue)
+            {
+                request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, standardBlockBlobTier.Value.ToString());
             }
 
             if (syncCopy)

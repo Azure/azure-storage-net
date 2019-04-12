@@ -2574,7 +2574,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual string StartCopy(CloudPageBlob source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            return this.StartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext);
+            return this.StartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, default(StandardBlobTier?) /* standardBlockBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext);
         }
 
         /// <summary>
@@ -2615,7 +2615,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, default(PremiumPageBlobTier?) /* premiumPageBlobTier */, default(StandardBlobTier?) /* standardBlockBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2681,7 +2681,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(CloudPageBlob source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+            return this.BeginStartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, default(StandardBlobTier?) /* standardBlockBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
         }
 
         /// <summary>
@@ -2741,7 +2741,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudPageBlob source)
         {
-            return this.StartCopyAsync(source, null /*premiumPageBlobTier*/, default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /* destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+            return this.StartCopyAsync(source, default(PremiumPageBlobTier?) /*premiumPageBlobTier*/, default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /* destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2766,7 +2766,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, null /*premiumPageBlobTier*/, default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /* destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
+            return this.StartCopyAsync(source, default(PremiumPageBlobTier?) /*premiumPageBlobTier*/, default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /* destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2795,7 +2795,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.StartCopyAsync(source, null /*premiumPageBlobTier*/, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+            return this.StartCopyAsync(source, default(PremiumPageBlobTier?) /*premiumPageBlobTier*/, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -2812,7 +2812,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, null /* premiumPageBlobTier */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, default(PremiumPageBlobTier?) /*premiumPageBlobTier*/, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -2867,7 +2867,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, default(PremiumPageBlobTier?) /* premiumPageBlobTier */, default(StandardBlobTier?) /* standardBlockBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);

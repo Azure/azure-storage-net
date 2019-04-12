@@ -68,6 +68,16 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// P60 Tier
         /// </summary>
-        P60
+        P60,
+
+        /// <summary>
+        /// P70 Tier
+        /// </summary>
+        P70,
+
+        /// <summary>
+        /// P80 Tier
+        /// </summary>
+        P80
     }
 }

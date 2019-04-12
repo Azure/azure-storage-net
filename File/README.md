@@ -1,4 +1,4 @@
-﻿# Microsoft Azure Storage File SDK for .NET (10.0.3)
+# Microsoft Azure Storage File SDK for .NET (10.0.3)
 
 The Microsoft Azure Storage File SDK for .NET allows you to build Azure applications that take advantage of scalable cloud computing resources.
 

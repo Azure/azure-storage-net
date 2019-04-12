@@ -2371,5 +2371,57 @@ namespace Microsoft.Azure.Storage.Blob
                 blobContainerWithSAS.DeleteIfExistsAsync().Wait();
             }
         }
+
+        [TestMethod]
+        [Description("Set standard blob tier on copy and fetch attributes")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.BlockBlobOnly)]
+        public async Task CloudBlockBlobSetStandardBlobTierOnCopyAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                foreach (StandardBlobTier blobTier in Enum.GetValues(typeof(StandardBlobTier)))
+                {
+                    if (blobTier == StandardBlobTier.Unknown || blobTier == StandardBlobTier.Archive)
+                    {
+                        continue;
+                    }
+
+                    Random rand = new Random();
+                    int randomRangeSize = 500;
+                    int randomRangeCount = 10;
+                    int sourceSize = rand.Next(0, randomRangeSize) + 1024;
+                    int sourceBlockCount = rand.Next(1, randomRangeCount);
+
+                    CloudBlockBlob source = container.GetBlockBlobReference("source");
+                    await CreateForTestAsync(source, sourceBlockCount, sourceSize);
+                    await source.SetStandardBlobTierAsync(blobTier);
+
+                    CloudBlockBlob copy = container.GetBlockBlobReference("copy");
+                    await copy.StartCopyAsync(CloudBlob.SourceBlobToUri(source), null, blobTier, null, null, null, null, CancellationToken.None);
+                    await WaitForCopyAsync(copy);
+                    Assert.AreEqual(blobTier, copy.Properties.StandardBlobTier);
+
+                    Assert.AreEqual(sourceSize * sourceBlockCount, copy.Properties.Length);
+
+                    CloudBlockBlob copyRef = container.GetBlockBlobReference("copy");
+                    await copyRef.FetchAttributesAsync();
+                    Assert.AreEqual(blobTier, copyRef.Properties.StandardBlobTier);
+
+                    Assert.AreEqual(sourceSize * sourceBlockCount, copyRef.Properties.Length);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
     }
 }
+
+

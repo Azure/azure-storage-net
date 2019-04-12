@@ -122,21 +122,21 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobCreateAndDeleteTask()
+        public async Task CloudAppendBlobCreateAndDeleteTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
-                Assert.IsTrue(blob.ExistsAsync().Result);
-                blob.DeleteAsync().Wait();
+                await blob.CreateOrReplaceAsync();
+                Assert.IsTrue(await blob.ExistsAsync());
+                await blob.DeleteAsync();
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif

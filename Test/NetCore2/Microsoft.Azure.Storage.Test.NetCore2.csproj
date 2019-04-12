@@ -67,7 +67,7 @@
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\Blob\Microsoft.Azure.Storage.Blob.NetStandard2.csproj" />
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\File\Microsoft.Azure.Storage.File.NetStandard2.csproj" />
     <ProjectReference Include="..\..\Lib\NetStandard2.Split\Queue\Microsoft.Azure.Storage.Queue.NetStandard2.csproj" />
-	<ProjectReference Include="..\FaultInjection\AzureStorageMangler\AzureStorageMangler.csproj" />
+	  <ProjectReference Include="..\FaultInjection\AzureStorageMangler\AzureStorageMangler.csproj" />
     <ProjectReference Include="..\FaultInjection\HttpMangler\HttpMangler.csproj" />
   </ItemGroup>
   <ItemGroup>

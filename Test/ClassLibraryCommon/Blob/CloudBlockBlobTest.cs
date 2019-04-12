@@ -3825,7 +3825,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.BlockBlobOnly)]
-        public void CloudBlockBlobSetStandardBlobTierTask()
+        public async Task CloudBlockBlobSetStandardBlobTierTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -3842,14 +3842,14 @@ namespace Microsoft.Azure.Storage.Blob
                     CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                     CreateForTest(blob, 0, 0, true);
 
-                    blob.SetStandardBlobTierAsync(blobTier).Wait();
+                    await blob.SetStandardBlobTierAsync(blobTier);
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
                     Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
                     CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
-                    blob2.FetchAttributesAsync().Wait();
+                    await blob2.FetchAttributesAsync();
                     Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
@@ -3862,7 +3862,174 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 #endif
+        [TestMethod]
+        [Description("Set standard blob tier when copying from an existing blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.BlockBlobOnly)]
+        public void CloudBlockBlobSetStandardBlobTierOnCopy()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
 
+            try
+            {
+                container.Create();
+
+                foreach (StandardBlobTier blobTier in Enum.GetValues(typeof(StandardBlobTier)))
+                {
+                    if(blobTier == StandardBlobTier.Unknown || blobTier == StandardBlobTier.Archive)
+                    {
+                        continue;
+                    }
+
+                    //random blob size and count calculation
+                    Random rand = new Random();
+                    int randomRangeSize = 500;
+                    int randomRangeCount = 10;
+                    int sourceSize = rand.Next(0, randomRangeSize) + 1024;
+                    int sourceBlockCount = rand.Next(1, randomRangeCount);
+
+                    CloudBlockBlob source = container.GetBlockBlobReference("source");
+                    CreateForTest(source, sourceBlockCount, sourceSize, true);
+
+                    //copy to another blockblob
+                    CloudBlockBlob copy = container.GetBlockBlobReference("copy");
+                    string copyId = copy.StartCopy(TestHelper.Defiddler(source), blobTier);
+                    copy.FetchAttributes();
+
+                    Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
+                    Assert.AreEqual(blobTier, copy.Properties.StandardBlobTier);
+                    Assert.IsFalse(copy.Properties.PremiumPageBlobTier.HasValue);
+                    WaitForCopy(copy);
+
+                    CloudBlockBlob copyRef = container.GetBlockBlobReference("copy");
+                    copyRef.FetchAttributes();
+                    Assert.IsFalse(copyRef.Properties.PremiumPageBlobTier.HasValue);
+                    Assert.AreEqual(blobTier, copyRef.Properties.StandardBlobTier);
+
+                    Assert.AreEqual(sourceSize * sourceBlockCount, copy.Properties.Length);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Set standard blob tier when copying from an existing blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.BlockBlobOnly)]
+        public void CloudBlockBlobSetStandardBlobTierOnCopyAPM()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.Create();
+
+                IAsyncResult result;
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    foreach (StandardBlobTier blobTier in Enum.GetValues(typeof(StandardBlobTier)))
+                    {
+                        if (blobTier == StandardBlobTier.Unknown || blobTier == StandardBlobTier.Archive)
+                        {
+                            continue;
+                        }
+
+                        //random blob size
+                        Random rand = new Random();
+                        int randomRangeSize = 500;
+                        int randomRangeCount = 10;
+                        int sourceSize = rand.Next(0, randomRangeSize) + 1024;
+                        int sourceBlockCount = rand.Next(1, randomRangeCount);
+
+                        CloudBlockBlob source = container.GetBlockBlobReference("source");
+                        CreateForTest(source, sourceBlockCount, sourceSize, true);
+
+                        //copy to another blockblob
+                        CloudBlockBlob copy = container.GetBlockBlobReference("copy");
+                        result = copy.BeginStartCopy(TestHelper.Defiddler(source), blobTier,null, null, null, null,  ar => waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        copy.EndStartCopy(result);
+
+                        result = copy.BeginFetchAttributes(ar =>waitHandle.Set(), null);
+                        waitHandle.WaitOne();
+                        copy.EndFetchAttributes(result);
+
+                        Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
+                        Assert.AreEqual(blobTier, copy.Properties.StandardBlobTier.Value);
+                        Assert.IsFalse(copy.Properties.PremiumPageBlobTier.HasValue);
+
+                        Assert.AreEqual(sourceSize * sourceBlockCount, copy.Properties.Length);
+                    }
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+#if TASK
+        [TestMethod]
+        [Description("Set standard blob tier when copying from an existing blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.BlockBlobOnly)]
+        public async Task CloudBlockBlobSetStandardBlobTierOnCopyTask()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+
+            try
+            {
+                container.CreateAsync().Wait();
+
+                foreach (StandardBlobTier blobTier in Enum.GetValues(typeof(StandardBlobTier)))
+                {
+                    if (blobTier == StandardBlobTier.Unknown || blobTier == StandardBlobTier.Archive)
+                    {
+                        continue;
+                    }
+
+                    //random blob size
+                    Random rand = new Random();
+                    int randomRangeSize = 500;
+                    int randomRangeCount = 10;
+                    int sourceSize = rand.Next(0, randomRangeSize) + 1024;
+                    int sourceBlockCount = rand.Next(1, randomRangeCount);
+
+                    CloudBlockBlob source = container.GetBlockBlobReference("source");
+                    CreateForTest(source, sourceBlockCount, sourceSize, true);
+
+                    //copy to another blockblob
+                    CloudBlockBlob copy = container.GetBlockBlobReference("copy");
+                    copy.StartCopyAsync(TestHelper.Defiddler(source), blobTier, null, null, null, null, CancellationToken.None).Wait();
+                    await copy.FetchAttributesAsync();
+                    Assert.AreEqual(BlobType.BlockBlob, copy.BlobType);
+                    Assert.AreEqual(blobTier, copy.Properties.StandardBlobTier.Value);
+                    Assert.IsFalse(copy.Properties.PremiumPageBlobTier.HasValue);
+
+                    CloudBlockBlob copy2 = container.GetBlockBlobReference("copy");
+                    await copy2.FetchAttributesAsync();
+                    Assert.AreEqual(BlobType.BlockBlob, copy2.BlobType);
+                    Assert.AreEqual(blobTier, copy2.Properties.StandardBlobTier.Value);
+                    Assert.IsFalse(copy2.Properties.PremiumPageBlobTier.HasValue);
+
+                    Assert.AreEqual(sourceSize * sourceBlockCount, copy.Properties.Length);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+#endif
         [TestMethod]
         [Description("Test conditional access on a blob")]
         [TestCategory(ComponentCategory.Blob)]
