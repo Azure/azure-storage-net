@@ -1445,7 +1445,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
         [DoesServiceRequest]
-        public virtual Task<FileHandleResultSegment> ListHandlesSegmentedAsync(FileContinuationToken token, int? maxResults = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
+        public virtual Task<FileHandleResultSegment> ListHandlesSegmentedAsync(FileContinuationToken token = null, int? maxResults = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsync(
@@ -1465,9 +1465,15 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
         [DoesServiceRequest]
-        public virtual Task<CloseFileHandleResultSegment> CloseAllHandlesSegmentedAsync(FileContinuationToken token, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<CloseFileHandleResultSegment> CloseAllHandlesSegmentedAsync(FileContinuationToken token = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
         {
-            return CloseHandleSegmentedAsync(Constants.HeaderConstants.AllFileHandles, token, accessCondition, options, operationContext, cancellationToken);
+            return CloseHandleSegmentedAsync(
+                Constants.HeaderConstants.AllFileHandles, 
+                token, 
+                accessCondition,
+                options, 
+                operationContext,
+                cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary> 
@@ -1481,14 +1487,14 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
         [DoesServiceRequest]
-        public virtual Task<CloseFileHandleResultSegment> CloseHandleSegmentedAsync(string handleId, FileContinuationToken token, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<CloseFileHandleResultSegment> CloseHandleSegmentedAsync(string handleId, FileContinuationToken token = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsync(
                 this.CloseHandleImpl(token, handleId, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken);
+                cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2171,7 +2177,7 @@ namespace Microsoft.Azure.Storage.File
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.ListHandles(uri, serverTimeout, maxResults, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.ListHandles(uri, serverTimeout, this.share.SnapshotTime, maxResults, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -2209,7 +2215,7 @@ namespace Microsoft.Azure.Storage.File
             putCmd.RetrieveResponseStream = true;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.CloseHandle(uri, serverTimeout, handleId, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.CloseHandle(uri, serverTimeout, this.share.SnapshotTime, handleId, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
 
                 return msg;

@@ -1532,10 +1532,10 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header that specifies whether the specified operation should recurse. 
             /// </summary> 
             public const string Recursive = PrefixForStorageHeader + "recursive";
-            
-            /// <summary> 
+
+            /// <summary>
             /// Header that specifies a continuation token. 
-            /// </summary> 
+            /// </summary>
             public const string Marker = PrefixForStorageHeader + "marker";
 
             /// <summary>
@@ -1797,6 +1797,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Query component for the copy ID.
             /// </summary>
             public const string CopyId = "copyid";
+
+            /// <summary> 
+            /// Query parameter for continuation token.
+            /// </summary> 
+            public const string Marker = "marker";
         }
 
         /// <summary>

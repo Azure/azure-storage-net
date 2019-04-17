@@ -1672,6 +1672,10 @@ namespace Microsoft.Azure.Storage.File
                 CloudFile file = dir.GetFileReference("myfile");
                 file.Create(512);
 
+                share = share.Snapshot();
+
+                file = share.GetRootDirectoryReference().GetDirectoryReference("mydir").GetFileReference("myfile");
+
                 FileContinuationToken token = null;
                 List<FileHandle> handles = new List<FileHandle>();
 
@@ -1756,7 +1760,7 @@ namespace Microsoft.Azure.Storage.File
 
                 do
                 {
-                    FileHandleResultSegment response = await file.ListHandlesSegmentedAsync(token, null, null, null, null, CancellationToken.None);
+                    FileHandleResultSegment response = await file.ListHandlesSegmentedAsync(token);
                     handles.AddRange(response.Results);
                     token = response.ContinuationToken;
                 } while (token != null && token.NextMarker != null);
@@ -1903,8 +1907,12 @@ namespace Microsoft.Azure.Storage.File
             {
                 share.Create();
 
-                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file" + Guid.NewGuid().ToString());
+                var fileName = "file" + Guid.NewGuid().ToString();
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference(fileName);
                 file.Create(512);
+
+                share = share.Snapshot();
+                file = share.GetRootDirectoryReference().GetFileReference(fileName);
 
                 FileContinuationToken token = null;
                 int handlesClosed = 0;

@@ -620,8 +620,11 @@ namespace Microsoft.Azure.Storage.File
             {
                 await share.CreateAsync();
 
-                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file" + Guid.NewGuid().ToString());
+                var fileName = "file" + Guid.NewGuid().ToString();
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference(fileName);
                 await file.CreateAsync(512);
+
+                file = share.GetRootDirectoryReference().GetFileReference(fileName);
 
                 FileContinuationToken token = null;
                 List<FileHandle> handles = new List<FileHandle>();
@@ -635,6 +638,7 @@ namespace Microsoft.Azure.Storage.File
 
                 Assert.AreEqual(0, handles.Count);
             }
+            //TODO: create a disposable share
             finally
             {
                 await share.DeleteIfExistsAsync();
@@ -656,8 +660,12 @@ namespace Microsoft.Azure.Storage.File
             {
                 await share.CreateAsync();
 
-                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file" + Guid.NewGuid().ToString());
+                var fileName = "file" + Guid.NewGuid().ToString();
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference(fileName);
                 await file.CreateAsync(512);
+
+                share = await share.SnapshotAsync();
+                file = share.GetRootDirectoryReference().GetFileReference(fileName);
 
                 FileContinuationToken token = null;
                 int handlesClosed = 0;
