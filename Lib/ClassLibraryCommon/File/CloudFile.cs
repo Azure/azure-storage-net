@@ -2861,7 +2861,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param> 
         /// <returns>An enumerable collection of ranges.</returns> 
         [DoesServiceRequest]
-        public virtual FileHandleResultSegment ListHandlesSegmented(FileContinuationToken token, int? maxResults, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual FileHandleResultSegment ListHandlesSegmented(FileContinuationToken token = null, int? maxResults = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteSync(
@@ -2910,14 +2910,14 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
         [DoesServiceRequest]
-        public virtual Task<FileHandleResultSegment> ListHandlesSegmentedAsync(FileContinuationToken token, int? maxResults, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<FileHandleResultSegment> ListHandlesSegmentedAsync(FileContinuationToken token = null, int? maxResults = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsync(
                 this.ListHandlesImpl(token, maxResults, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken);
+                cancellationToken ?? CancellationToken.None);
         }
 #endif
 
@@ -2998,7 +2998,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param> 
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param> 
         [DoesServiceRequest]
-        public virtual CloseFileHandleResultSegment CloseHandleSegmented(string handleId, FileContinuationToken token, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
+        public virtual CloseFileHandleResultSegment CloseHandleSegmented(string handleId, FileContinuationToken token = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteSync(
@@ -3047,14 +3047,14 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param> 
         /// <returns>A <see cref="Task{T}"/> object that represents the current operation.</returns> 
         [DoesServiceRequest]
-        public virtual Task<CloseFileHandleResultSegment> CloseHandleSegmentedAsync(string handleId, FileContinuationToken token, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<CloseFileHandleResultSegment> CloseHandleSegmentedAsync(string handleId, FileContinuationToken token = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null, CancellationToken? cancellationToken = null)
         {
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsync(
                 this.CloseHandleImpl(token, handleId, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken);
+                cancellationToken ?? CancellationToken.None);
         }
 #endif
 
@@ -4412,7 +4412,7 @@ namespace Microsoft.Azure.Storage.File
             getCmd.RetrieveResponseStream = true;
             getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.ListHandles(uri, serverTimeout, maxResults, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.ListHandles(uri, serverTimeout, this.Share.SnapshotTime, maxResults, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -4450,7 +4450,7 @@ namespace Microsoft.Azure.Storage.File
             putCmd.RetrieveResponseStream = true;
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.CloseHandle(uri, serverTimeout, handleId, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.CloseHandle(uri, serverTimeout, this.Share.SnapshotTime, handleId, false, token, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
 
                 return msg;

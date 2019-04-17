@@ -246,16 +246,18 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// Constructs a web request to return the list of open handles for a file or directory. 
         /// </summary> 
         /// <param name="uri">The absolute URI to the file.</param> 
-        /// <param name="timeout">The server timeout interval.</param> 
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="maxResults">The maximum number of results to be returned by the server.</param> 
         /// <param name="recursive">Whether to recurse through a directory's files and subfolders.</param>
         /// <param name="nextMarker">Marker returned by a previous call to continue fetching results.</param> 
         /// <param name="accessCondition">The access condition to apply to the request.</param> 
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param> 
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns> 
-        public static StorageRequestMessage ListHandles(Uri uri, int? timeout, int? maxResults, bool? recursive, FileContinuationToken nextMarker, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage ListHandles(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, int? maxResults, bool? recursive, FileContinuationToken nextMarker, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
+            FileHttpRequestMessageFactory.AddShareSnapshot(builder, shareSnapshot);
             builder.Add(Constants.QueryConstants.Component, "listhandles");
 
             if (maxResults.HasValue)
@@ -284,15 +286,17 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// </summary> 
         /// <param name="uri">The absolute URI to the file.</param> 
         /// <param name="timeout">The server timeout interval.</param> 
+        /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="handleId">ID of the handle to be closed, "*" if all should be closed.</param> 
         /// <param name="recursive">Whether to recurse through this directory's subfiles and folders.</param> 
         /// <param name="token">Continuation token for closing many handles.</param> 
         /// <param name="accessCondition">The access condition to apply to the request.</param> 
         /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param> 
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns> 
-        public static StorageRequestMessage CloseHandle(Uri uri, int? timeout, string handleId, bool? recursive, FileContinuationToken token, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage CloseHandle(Uri uri, int? timeout, DateTimeOffset? shareSnapshot, string handleId, bool? recursive, FileContinuationToken token, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
+            FileHttpRequestMessageFactory.AddShareSnapshot(builder, shareSnapshot);
             builder.Add(Constants.QueryConstants.Component, "forceclosehandles");
 
             if (token != null && token.NextMarker != null)

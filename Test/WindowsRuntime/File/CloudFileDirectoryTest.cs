@@ -252,6 +252,9 @@ namespace Microsoft.Azure.Storage.File
                 CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
                 await dir.CreateAsync();
 
+                share = await share.SnapshotAsync();
+                dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+
                 FileContinuationToken token = null;
                 List<FileHandle> handles = new List<FileHandle>();
 
@@ -321,6 +324,9 @@ namespace Microsoft.Azure.Storage.File
                 await share.CreateAsync();
                 CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
                 await dir.CreateAsync();
+
+                share = await share.SnapshotAsync();
+                dir = share.GetRootDirectoryReference().GetDirectoryReference("mydir"); ;
 
                 FileContinuationToken token = null;
                 int handlesClosed = 0;
