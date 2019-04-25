@@ -160,7 +160,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>The canonical name.</returns>
         private string GetSharedAccessCanonicalName()
         {
-            string accountName = this.ServiceClient.Credentials.AccountName;
+            string accountName = this.ServiceClient.Credentials.AccountName ?? NavigationHelper.GetAccountNameFromUri(this.ServiceClient.BaseUri, null);
             string containerName = this.Name;
 
             string canonicalNameFormat = "/{0}/{1}/{2}";

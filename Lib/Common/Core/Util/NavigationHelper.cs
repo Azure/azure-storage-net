@@ -868,7 +868,8 @@ namespace Microsoft.Azure.Storage.Core.Util
                 usePathStyleUris = CommonUtility.UsePathStyleAddressing(clientUri);
             }
 
-            string[] parts = clientUri.AbsoluteUri.Split(NavigationHelper.SlashAsSplitOptions, StringSplitOptions.RemoveEmptyEntries);
+            
+            string[] parts = clientUri.AbsoluteUri.Split('?')[0].Split(NavigationHelper.SlashAsSplitOptions, StringSplitOptions.RemoveEmptyEntries);
 
             if (usePathStyleUris.Value)
             {

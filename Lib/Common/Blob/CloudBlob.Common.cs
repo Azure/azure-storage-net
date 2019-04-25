@@ -524,7 +524,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>The canonical name of the blob.</returns>
         private string GetCanonicalName(bool ignoreSnapshotTime)
         {
-            string accountName = this.ServiceClient.Credentials.AccountName;
+            string accountName = this.ServiceClient.Credentials.AccountName ?? NavigationHelper.GetAccountNameFromUri(this.ServiceClient.BaseUri, null);
             string containerName = this.Container.Name;
  
             // Replace \ with / for uri compatibility when running under .net 4.5. 
