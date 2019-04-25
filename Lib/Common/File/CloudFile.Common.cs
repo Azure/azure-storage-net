@@ -429,7 +429,7 @@ namespace Microsoft.Azure.Storage.File
             DateTimeOffset? parsedShareSnapshot;
             this.attributes.StorageUri = NavigationHelper.ParseFileQueryAndVerify(address, out parsedCredentials, out parsedShareSnapshot);
 
-            if (parsedCredentials != null && credentials != null)
+            if (parsedCredentials != null && credentials != null && !credentials.Equals(new StorageCredentials()))
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);

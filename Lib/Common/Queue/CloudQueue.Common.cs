@@ -177,7 +177,7 @@ namespace Microsoft.Azure.Storage.Queue
             StorageCredentials parsedCredentials;
             this.StorageUri = NavigationHelper.ParseQueueTableQueryAndVerify(address, out parsedCredentials);
 
-            if (parsedCredentials != null && credentials != null)
+            if (parsedCredentials != null && credentials != null && !credentials.Equals(new StorageCredentials()))
             {
                 string error = string.Format(CultureInfo.CurrentCulture, SR.MultipleCredentialsProvided);
                 throw new ArgumentException(error);

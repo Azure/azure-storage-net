@@ -373,6 +373,49 @@ namespace Microsoft.Azure.Storage.File
         }
 
         [TestMethod]
+        [Description("List files sas")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileShareListFilesAndDirectoriesSegmentedSasAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                await share.CreateAsync();
+                List<string> fileNames = await CreateFilesAsync(share, 3);
+                string sas = share.GetSharedAccessSignature(new SharedAccessFilePolicy
+                {
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(1),
+                    Permissions = SharedAccessFilePolicy.PermissionsFromString("rcwdl")
+                });
+                CloudFileDirectory rootDirectory = GenerateCloudFileSasClient(sas).GetShareReference(share.Name).GetRootDirectoryReference();
+
+                FileContinuationToken token = null;
+                do
+                {
+                    FileResultSegment results = await rootDirectory.ListFilesAndDirectoriesSegmentedAsync(1, token, null, null);
+                    int count = 0;
+                    foreach (IListFileItem fileItem in results.Results)
+                    {
+                        Assert.IsInstanceOfType(fileItem, typeof(CloudFile));
+                        Assert.IsTrue(fileNames.Remove(((CloudFile)fileItem).Name));
+                        count++;
+                    }
+                    Assert.AreEqual(1, count);
+                    token = results.ContinuationToken;
+                }
+                while (token != null);
+                Assert.AreEqual(0, fileNames.Count);
+            }
+            finally
+            {
+                share.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
         [Description("Set share permissions")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]

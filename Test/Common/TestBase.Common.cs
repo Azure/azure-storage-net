@@ -126,6 +126,31 @@ namespace Microsoft.Azure.Storage
             return client;
         }
 
+        public static CloudBlobClient GenerateCloudBlobSasClient(string sas, DelegatingHandler delegatingHandler = null)
+        {
+            CloudBlobClient client;
+            if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint))
+            {
+                Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint + sas);
+                client = new CloudBlobClient(baseAddressUri, null, delegatingHandler);
+            }
+            else
+            {
+                StorageUri baseAddressUri = new StorageUri(
+                    new Uri(TestBase.TargetTenantConfig.BlobServiceEndpoint + sas),
+                    new Uri(TestBase.TargetTenantConfig.BlobServiceSecondaryEndpoint + sas));
+                client = new CloudBlobClient(baseAddressUri, null, delegatingHandler);
+            }
+
+            client.AuthenticationScheme = DefaultAuthenticationScheme;
+
+#if WINDOWS_DESKTOP
+            client.BufferManager = TableBufferManager;
+#endif
+
+            return client;
+        }
+
         public static CloudFileClient GenerateCloudFileClient(DelegatingHandler delegatingHandler = null)
         {
             CloudFileClient client;
@@ -145,6 +170,27 @@ namespace Microsoft.Azure.Storage
             client.AuthenticationScheme = DefaultAuthenticationScheme;
             return client;
         }
+
+        public static CloudFileClient GenerateCloudFileSasClient(string sas, DelegatingHandler delegatingHandler = null)
+        {
+            CloudFileClient client;
+            if (string.IsNullOrEmpty(TestBase.TargetTenantConfig.FileServiceSecondaryEndpoint))
+            {
+                Uri baseAddressUri = new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint + sas);
+                client = new CloudFileClient(baseAddressUri, null, delegatingHandler);
+            }
+            else
+            {
+                StorageUri baseAddressUri = new StorageUri(
+                    new Uri(TestBase.TargetTenantConfig.FileServiceEndpoint + sas),
+                    new Uri(TestBase.TargetTenantConfig.FileServiceSecondaryEndpoint + sas));
+                client = new CloudFileClient(baseAddressUri, null, delegatingHandler);
+            }
+
+            client.AuthenticationScheme = DefaultAuthenticationScheme;
+            return client;
+        }
+
 
         public static CloudQueueClient GenerateCloudQueueClient(DelegatingHandler delegatingHandler = null)
         {

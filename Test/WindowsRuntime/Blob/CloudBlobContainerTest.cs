@@ -517,6 +517,51 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("List blobs sas")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudBlobContainerListBlobsSegmentedSasAsync()
+        {
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+                List<string> blobNames = await CreateBlobsAsync(container, 3, BlobType.PageBlob);
+
+                string sas = container.GetSharedAccessSignature(new SharedAccessBlobPolicy
+                {
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(1),
+                    Permissions = SharedAccessBlobPolicy.PermissionsFromString("racwdl")
+                });
+
+                CloudBlobContainer sasContainer = GenerateCloudBlobSasClient(sas).GetContainerReference(container.Name);
+
+                BlobContinuationToken token = null;
+                do
+                {
+                    BlobResultSegment results = await sasContainer.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, 1, token, null, null);
+                    int count = 0;
+                    foreach (IListBlobItem blobItem in results.Results)
+                    {
+                        Assert.IsInstanceOfType(blobItem, typeof(CloudPageBlob));
+                        Assert.IsTrue(blobNames.Remove(((CloudPageBlob)blobItem).Name));
+                        count++;
+                    }
+                    Assert.AreEqual(1, count);
+                    token = results.ContinuationToken;
+                }
+                while (token != null);
+                Assert.AreEqual(0, blobNames.Count);
+            }
+            finally
+            {
+                container.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
         [Description("List blobs")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
