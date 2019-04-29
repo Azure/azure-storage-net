@@ -1,3 +1,7 @@
+Changes in 10.0.2:
+
+- None
+
 Changes in 10.0.1:
 
 - None

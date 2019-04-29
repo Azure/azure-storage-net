@@ -1,3 +1,8 @@
+Changes in 10.0.2:
+
+- Fixed GitHub Issue #475: ListBlobsSegmentedAsync throwing an exception when using a SAS url
+- Fixed bug causing CloudBlob.GetUserDelegationSharedAccessSignature to generated invalid SAS signatures
+
 Changes in 10.0.1:
 
 - None

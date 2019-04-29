@@ -1,3 +1,9 @@
+Changes in 10.0.2:
+- Fixed bug causing CloudFile and CloudFileDirectory.List/CloseHandles to not function with snapshots
+- Fixed bug where CloudFile and CloudFileDirectory.List/CloseHandles "marker" URL parameter was being passed to the service as "x-ms-marker"
+- Made CloudFile and CloudFileDirectory.List/CloseHandles parameters optional
+- Added overloads for CloudFile and CloudFileDirectory.CloseHandles to accept handleId as a ulong
+
 Changes in 10.0.1:
 - Fix bug where CloudFileDirectory.ExistsAsync (and sync and APM APIs) were incorrectly returning true due to an incorrectly formed request.
 
