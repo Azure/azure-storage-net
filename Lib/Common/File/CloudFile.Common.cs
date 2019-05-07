@@ -165,7 +165,7 @@ namespace Microsoft.Azure.Storage.File
         /// Gets the file's system properties.
         /// </summary>
         /// <value>A <see cref="FileProperties"/> object.</value>
-        public FileProperties Properties
+        public virtual FileProperties Properties
         {
             get
             {
