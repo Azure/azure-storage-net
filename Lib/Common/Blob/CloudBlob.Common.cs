@@ -342,7 +342,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// Gets the state of the most recent or pending copy operation.
         /// </summary>
         /// <value>A <see cref="CopyState"/> object containing the copy state, or <c>null</c> if there is no copy state for the blob.</value>
-        public CopyState CopyState
+        public virtual CopyState CopyState
         {
             get
             {
