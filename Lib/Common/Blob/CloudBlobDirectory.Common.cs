@@ -26,6 +26,14 @@ namespace Microsoft.Azure.Storage.Blob
     public partial class CloudBlobDirectory : IListBlobItem
     {
         /// <summary>
+        /// Public constructor for mock unit testing.
+        /// </summary>
+        public CloudBlobDirectory()
+        {
+
+        }
+
+        /// <summary>
         /// Stores the parent directory.
         /// </summary>
         private CloudBlobDirectory parent;
