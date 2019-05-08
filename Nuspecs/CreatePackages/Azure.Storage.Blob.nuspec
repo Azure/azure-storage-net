@@ -12,9 +12,11 @@
     <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
     <description>
       This client library enables working with the Microsoft Azure Storage Blob service for storing binary and text data.
-      For this release see notes - https://github.com/Azure/azure-storage-net/blob/master/Blob/README.md and https://github.com/Azure/azure-storage-net/blob/master/Blob/changelog.txt
+      For this release see notes - https://github.com/Azure/azure-storage-net/blob/master/Blob/README.md and https://github.com/Azure/azure-storage-net/blob/master/Blob/Changelog.txt
       in addition to the breaking changes https://github.com/Azure/azure-storage-net/blob/master/Blob/BreakingChanges.txt
-      Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/
+      Microsoft Azure Storage quickstarts and tutorials - https://docs.microsoft.com/en-us/azure/storage/
+      Microsoft Azure Storage REST API Reference - https://docs.microsoft.com/en-us/rest/api/storageservices/
+      REST API Reference for Blob Service - https://docs.microsoft.com/en-us/rest/api/storageservices/blob-service-rest-api
     </description>
     <summary>A client library for working with Microsoft Azure Storage Blob service.</summary>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
