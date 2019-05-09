@@ -144,7 +144,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             if (metadata == null)
             {
-                metadata = new Dictionary<string, string>();
+                metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             }
 
             return new BlobContainerEntry

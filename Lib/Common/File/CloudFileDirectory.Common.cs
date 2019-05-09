@@ -68,7 +68,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         public CloudFileDirectory(StorageUri directoryAbsoluteUri, StorageCredentials credentials)
         {
-            this.Metadata = new Dictionary<string, string>();
+            this.Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             this.Properties = new FileDirectoryProperties();
             this.ParseQueryAndVerify(directoryAbsoluteUri, credentials);
         }
@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Storage.File
             CommonUtility.AssertNotNull("directoryName", directoryName);
             CommonUtility.AssertNotNull("share", share);
 
-            this.Metadata = new Dictionary<string, string>();
+            this.Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             this.Properties = new FileDirectoryProperties();
             this.StorageUri = uri;
             this.ServiceClient = share.ServiceClient;

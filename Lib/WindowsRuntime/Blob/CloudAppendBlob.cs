@@ -1734,7 +1734,7 @@ namespace Microsoft.Azure.Storage.Blob
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
                 DateTimeOffset snapshotTime = NavigationHelper.ParseSnapshotTime(BlobHttpResponseParsers.GetSnapshotTime(resp));
                 CloudAppendBlob snapshot = new CloudAppendBlob(this.Name, snapshotTime, this.Container);
-                snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata);
+                snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata, StringComparer.OrdinalIgnoreCase);
                 snapshot.attributes.Properties = new BlobProperties(this.Properties);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
                 return snapshot;

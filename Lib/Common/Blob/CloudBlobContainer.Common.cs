@@ -61,7 +61,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNull("containerAddress", containerAddress.PrimaryUri);
 
             this.ParseQueryAndVerify(containerAddress, credentials);
-            this.Metadata = new Dictionary<string, string>();
+            this.Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             this.Properties = new BlobContainerProperties();
         }
 
@@ -71,7 +71,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="containerName">A string specifying the container name.</param>
         /// <param name="serviceClient">A <see cref="CloudBlobClient"/> object.</param>
         internal CloudBlobContainer(string containerName, CloudBlobClient serviceClient)
-            : this(new BlobContainerProperties(), new Dictionary<string, string>(), containerName, serviceClient)
+            : this(new BlobContainerProperties(), new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), containerName, serviceClient)
         {
         }
 

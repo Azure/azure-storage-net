@@ -222,6 +222,8 @@ namespace Microsoft.Azure.Storage.File
                 await directory2.FetchAttributesAsync();
                 Assert.AreEqual(1, directory2.Metadata.Count);
                 Assert.AreEqual("value1", directory2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", directory2.Metadata["KEY1"]);
 
                 directory.Metadata.Clear();
                 await directory.SetMetadataAsync(null /* accessConditions */, null /* options */, context);
@@ -879,10 +881,14 @@ namespace Microsoft.Azure.Storage.File
             await snapshotDir.FetchAttributesAsync();
 
             Assert.IsTrue(snapshotDir.Metadata.Count == 1 && snapshotDir.Metadata["key1"].Equals("value1"));
+            // Metadata keys should be case-insensitive
+            Assert.IsTrue(snapshotDir.Metadata["KEY1"].Equals("value1"));
             Assert.IsNotNull(snapshotDir.Properties.ETag);
 
             await dir.FetchAttributesAsync();
             Assert.IsTrue(dir.Metadata.Count == 2 && dir.Metadata["key2"].Equals("value2"));
+            // Metadata keys should be case-insensitive
+            Assert.IsTrue(dir.Metadata["KEY2"].Equals("value2"));
             Assert.IsNotNull(dir.Properties.ETag);
             Assert.AreNotEqual(dir.Properties.ETag, snapshotDir.Properties.ETag);
 

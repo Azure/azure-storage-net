@@ -1874,6 +1874,8 @@ namespace Microsoft.Azure.Storage.Blob
                 container2.FetchAttributes();
                 Assert.AreEqual(1, container2.Metadata.Count);
                 Assert.AreEqual("value1", container2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", container2.Metadata["KEY1"]);
 
                 Assert.IsTrue(container2.Properties.LastModified.Value.AddHours(1) > DateTimeOffset.Now);
                 Assert.IsNotNull(container2.Properties.ETag);
@@ -1903,6 +1905,8 @@ namespace Microsoft.Azure.Storage.Blob
                 container2.FetchAttributesAsync().Wait();
                 Assert.AreEqual(1, container2.Metadata.Count);
                 Assert.AreEqual("value1", container2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", container2.Metadata["KEY1"]);
 
                 Assert.IsTrue(container2.Properties.LastModified.Value.AddHours(1) > DateTimeOffset.Now);
                 Assert.IsNotNull(container2.Properties.ETag);
@@ -1937,10 +1941,13 @@ namespace Microsoft.Azure.Storage.Blob
                 container2.FetchAttributes();
                 Assert.AreEqual(1, container2.Metadata.Count);
                 Assert.AreEqual("value1", container2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", container2.Metadata["KEY1"]);
 
                 CloudBlobContainer container3 = container.ServiceClient.ListContainers(container.Name, ContainerListingDetails.Metadata).First();
                 Assert.AreEqual(1, container3.Metadata.Count);
                 Assert.AreEqual("value1", container3.Metadata["key1"]);
+                Assert.AreEqual("value1", container3.Metadata["KEY1"]);
 
                 container.Metadata.Clear();
                 container.SetMetadata();
@@ -2016,6 +2023,8 @@ namespace Microsoft.Azure.Storage.Blob
                     container2.EndFetchAttributes(result);
                     Assert.AreEqual(1, container2.Metadata.Count);
                     Assert.AreEqual("value1", container2.Metadata["key1"]);
+                    // Metadata keys should be case-insensitive
+                    Assert.AreEqual("value1", container2.Metadata["KEY1"]);
 
                     BlobContinuationToken ct = null;
                     IEnumerable<CloudBlobContainer> results = null;
@@ -2035,6 +2044,7 @@ namespace Microsoft.Azure.Storage.Blob
                     CloudBlobContainer container3 = results.First();
                     Assert.AreEqual(1, container3.Metadata.Count);
                     Assert.AreEqual("value1", container3.Metadata["key1"]);
+                    Assert.AreEqual("value1", container3.Metadata["KEY1"]);
 
                     container.Metadata.Clear();
                     result = container.BeginSetMetadata(
@@ -2081,12 +2091,15 @@ namespace Microsoft.Azure.Storage.Blob
                 container2.FetchAttributesAsync().Wait();
                 Assert.AreEqual(1, container2.Metadata.Count);
                 Assert.AreEqual("value1", container2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", container2.Metadata["KEY1"]);
 
                 CloudBlobContainer container3 =
                     container.ServiceClient.ListContainersSegmentedAsync(
                         container.Name, ContainerListingDetails.Metadata, null, null, null, null).Result.Results.First();
                 Assert.AreEqual(1, container3.Metadata.Count);
                 Assert.AreEqual("value1", container3.Metadata["key1"]);
+                Assert.AreEqual("value1", container3.Metadata["KEY1"]);
 
                 container.Metadata.Clear();
                 container.SetMetadataAsync().Wait();

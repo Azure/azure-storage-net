@@ -435,6 +435,8 @@ namespace Microsoft.Azure.Storage.Blob
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual("value1", blob2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", blob2.Metadata["KEY1"]);
                 Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
                 Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
                 Assert.AreEqual("gzip", blob2.Properties.ContentEncoding);
@@ -494,11 +496,14 @@ namespace Microsoft.Azure.Storage.Blob
                 await blob2.FetchAttributesAsync();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual("value1", blob2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", blob2.Metadata["KEY1"]);
 
                 BlobResultSegment results = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.Metadata, null, null, null, null);
                 CloudBlockBlob blob3 = (CloudBlockBlob)results.Results.First();
                 Assert.AreEqual(1, blob3.Metadata.Count);
                 Assert.AreEqual("value1", blob3.Metadata["key1"]);
+                Assert.AreEqual("value1", blob3.Metadata["KEY1"]);
 
                 blob.Metadata.Clear();
                 await blob.SetMetadataAsync();
@@ -1285,14 +1290,17 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudBlockBlob snapshot = await blob.CreateSnapshotAsync(snapshotMetadata, null, null, null);
 
                 // Test the client view against the expected metadata
+                // Metadata keys should be case-insensitive
                 // None of the original metadata should be present
                 Assert.AreEqual("Dolly", snapshot.Metadata["Hello"]);
+                Assert.AreEqual("Dolly", snapshot.Metadata["HELLO"]);
                 Assert.AreEqual("Ma", snapshot.Metadata["Yoyo"]);
                 Assert.IsFalse(snapshot.Metadata.ContainsKey("Marco"));
 
                 // Test the server view against the expected metadata
                 await snapshot.FetchAttributesAsync();
                 Assert.AreEqual("Dolly", snapshot.Metadata["Hello"]);
+                Assert.AreEqual("Dolly", snapshot.Metadata["HELLO"]);
                 Assert.AreEqual("Ma", snapshot.Metadata["Yoyo"]);
                 Assert.IsFalse(snapshot.Metadata.ContainsKey("Marco"));
             }

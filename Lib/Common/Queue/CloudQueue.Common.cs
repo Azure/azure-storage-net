@@ -62,7 +62,7 @@ namespace Microsoft.Azure.Storage.Queue
         public CloudQueue(StorageUri queueAddress, StorageCredentials credentials)
         {
             this.ParseQueryAndVerify(queueAddress, credentials);
-            this.Metadata = new Dictionary<string, string>();
+            this.Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             this.EncodeMessage = true;
         }
 
@@ -72,7 +72,7 @@ namespace Microsoft.Azure.Storage.Queue
         /// <param name="queueName">The queue name.</param>
         /// <param name="serviceClient">A client object that specifies the endpoint for the Queue service.</param>
         internal CloudQueue(string queueName, CloudQueueClient serviceClient)
-            : this(new Dictionary<string, string>(), queueName, serviceClient)
+            : this(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), queueName, serviceClient)
         {
         }
 

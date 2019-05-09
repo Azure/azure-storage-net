@@ -136,7 +136,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 Properties = shareProperties,
                 Name = name,
                 Uri = NavigationHelper.AppendPathToSingleUri(baseUri, name),
-                Metadata = metadata ?? new Dictionary<string, string>(),
+                Metadata = metadata ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
                 SnapshotTime = snapshotTime,
             };
         }

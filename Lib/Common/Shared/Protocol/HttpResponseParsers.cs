@@ -63,7 +63,8 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// <returns>A <see cref="IDictionary"/> of the headers with the prefix.</returns>
         private static IDictionary<string, string> GetMetadataOrProperties(HttpResponseMessage response, string prefix)
         {
-            IDictionary<string, string> nameValues = new Dictionary<string, string>();
+            IDictionary<string, string> nameValues = prefix == Constants.HeaderConstants.PrefixForStorageMetadata 
+                ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) : new Dictionary<string, string>();
             HttpResponseHeaders headers = response.Headers;
             int prefixLength = prefix.Length;
 

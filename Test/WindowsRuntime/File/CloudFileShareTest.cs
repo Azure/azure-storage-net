@@ -182,6 +182,8 @@ namespace Microsoft.Azure.Storage.File
                 await share2.FetchAttributesAsync();
                 Assert.AreEqual(1, share2.Metadata.Count);
                 Assert.AreEqual("value1", share2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", share2.Metadata["KEY1"]);
 
                 Assert.IsTrue(share2.Properties.LastModified.Value.AddHours(1) > DateTimeOffset.Now);
                 Assert.IsNotNull(share2.Properties.ETag);
@@ -215,11 +217,14 @@ namespace Microsoft.Azure.Storage.File
                 await share2.FetchAttributesAsync();
                 Assert.AreEqual(1, share2.Metadata.Count);
                 Assert.AreEqual("value1", share2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", share2.Metadata["KEY1"]);
 
                 ShareResultSegment results = await share.ServiceClient.ListSharesSegmentedAsync(share.Name, ShareListingDetails.Metadata, null, null, null, null);
                 CloudFileShare share3 = results.Results.First();
                 Assert.AreEqual(1, share3.Metadata.Count);
                 Assert.AreEqual("value1", share3.Metadata["key1"]);
+                Assert.AreEqual("value1", share3.Metadata["KEY1"]);
 
                 share.Metadata.Clear();
                 await share.SetMetadataAsync();
@@ -912,19 +917,25 @@ namespace Microsoft.Azure.Storage.File
             CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
             Assert.IsTrue(await snapshotRef.ExistsAsync());
             Assert.IsTrue(snapshotRef.Metadata.Count == 1 && snapshotRef.Metadata["key1"].Equals("value1"));
+            // Metadata keys should be case-insensitive
+            Assert.IsTrue(snapshotRef.Metadata["KEY1"].Equals("value1"));
 
             CloudFileShare snapshotRef2 = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
             await snapshotRef2.FetchAttributesAsync();
             Assert.IsTrue(snapshotRef2.Metadata.Count == 1 && snapshotRef2.Metadata["key1"].Equals("value1"));
+            Assert.IsTrue(snapshotRef2.Metadata["KEY1"].Equals("value1"));
 
             Assert.IsTrue(snapshot.Metadata.Count == 1 && snapshot.Metadata["key1"].Equals("value1"));
+            Assert.IsTrue(snapshot.Metadata["KEY1"].Equals("value1"));
             CloudFileDirectory snapshotDir1 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
             await snapshotDir1.ExistsAsync();
             Assert.IsTrue(snapshotDir1.Metadata.Count == 1 && snapshotDir1.Metadata["key2"].Equals("value2"));
+            Assert.IsTrue(snapshotDir1.Metadata["KEY2"].Equals("value2"));
 
             CloudFileDirectory snapshotDir2 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
             await snapshotDir2.FetchAttributesAsync();
             Assert.IsTrue(snapshotDir2.Metadata.Count == 1 && snapshotDir2.Metadata["key2"].Equals("value2"));
+            Assert.IsTrue(snapshotDir2.Metadata["KEY2"].Equals("value2"));
 
             // create snapshot with metadata
             IDictionary<string, string> shareMeta2 = new Dictionary<string, string>();
@@ -933,6 +944,7 @@ namespace Microsoft.Azure.Storage.File
             CloudFileShare snapshotRef4 = client.GetShareReference(snapshotRef3.Name, snapshotRef3.SnapshotTime);
             Assert.IsTrue(await snapshotRef4.ExistsAsync());
             Assert.IsTrue(snapshotRef4.Metadata.Count == 1 && snapshotRef4.Metadata["abc"].Equals("def"));
+            Assert.IsTrue(snapshotRef4.Metadata["ABC"].Equals("def"));
         }
 
         [TestMethod]

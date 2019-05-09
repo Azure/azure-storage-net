@@ -177,10 +177,13 @@ namespace Microsoft.Azure.Storage.Queue
             await queueToRetrieve.FetchAttributesAsync();
             Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
             Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
+            // Metadata keys should be case-insensitive
+            Assert.AreEqual("value1", queueToRetrieve.Metadata["KEY1"]);
 
             CloudQueue listedQueue = (await client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null)).Results.First();
             Assert.AreEqual(1, listedQueue.Metadata.Count);
             Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+            Assert.AreEqual("value1", listedQueue.Metadata["KEY1"]);
 
             queue.Metadata.Clear();
             await queue.SetMetadataAsync();
@@ -215,10 +218,13 @@ namespace Microsoft.Azure.Storage.Queue
             await queueToRetrieve.FetchAttributesAsync();
             Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
             Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
+            // Metadata keys should be case-insensitive
+            Assert.AreEqual("value1", queueToRetrieve.Metadata["KEY1"]);
 
             CloudQueue listedQueue = (await client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null)).Results.First();
             Assert.AreEqual(1, listedQueue.Metadata.Count);
             Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
+            Assert.AreEqual("value1", listedQueue.Metadata["KEY1"]);
 
             await queue.SetMetadataAsync(null, null);
             Assert.AreEqual(1, queue.Metadata.Count);

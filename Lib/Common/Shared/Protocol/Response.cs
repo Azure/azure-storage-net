@@ -17,6 +17,7 @@
 
 namespace Microsoft.Azure.Storage.Shared.Protocol
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
@@ -53,7 +54,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// </remarks>
         internal static IDictionary<string, string> ParseMetadata(XmlReader reader)
         {
-            IDictionary<string, string> metadata = new Dictionary<string, string>();
+            IDictionary<string, string> metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             bool needToRead = true;
             while (true)
             {
@@ -98,7 +99,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// </remarks>
         internal static async Task<IDictionary<string, string>> ParseMetadataAsync(XmlReader reader)
         {
-            IDictionary<string, string> metadata = new Dictionary<string, string>();
+            IDictionary<string, string> metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             bool needToRead = true;
             while (true)
             {

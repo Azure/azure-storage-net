@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Storage.Blob
         internal BlobAttributes()
         {
             this.Properties = new BlobProperties();
-            this.Metadata = new Dictionary<string, string>();
+            this.Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>

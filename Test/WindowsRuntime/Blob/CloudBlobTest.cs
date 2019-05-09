@@ -185,14 +185,17 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudBlob snapshot = await blob.SnapshotAsync(snapshotMetadata, null, null, null);
 
                 // Test the client view against the expected metadata
+                // Metadata keys should be case-insensitive
                 // None of the original metadata should be present
                 Assert.AreEqual("Dolly", snapshot.Metadata["Hello"]);
+                Assert.AreEqual("Dolly", snapshot.Metadata["HELLO"]);
                 Assert.AreEqual("Ma", snapshot.Metadata["Yoyo"]);
                 Assert.IsFalse(snapshot.Metadata.ContainsKey("Marco"));
 
                 // Test the server view against the expected metadata
                 await snapshot.FetchAttributesAsync();
                 Assert.AreEqual("Dolly", snapshot.Metadata["Hello"]);
+                Assert.AreEqual("Dolly", snapshot.Metadata["HELLO"]);
                 Assert.AreEqual("Ma", snapshot.Metadata["Yoyo"]);
                 Assert.IsFalse(snapshot.Metadata.ContainsKey("Marco"));
             }

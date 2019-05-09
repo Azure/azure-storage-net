@@ -75,7 +75,7 @@
             return new QueueEntry(
                 name, 
                 NavigationHelper.AppendPathToSingleUri(baseUri, name), 
-                metadata ?? new Dictionary<string, string>()
+                metadata ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 );
         }
 

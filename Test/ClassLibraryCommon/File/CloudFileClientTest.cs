@@ -1207,6 +1207,8 @@ namespace Microsoft.Azure.Storage.File
                     originalFound = true;
                     Assert.AreEqual(2, listShareItem.Metadata.Count);
                     Assert.AreEqual("value2", listShareItem.Metadata["key2"]);
+                    // Metadata keys should be case-insensitive
+                    Assert.AreEqual("value2", listShareItem.Metadata["KEY2"]);
                     Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
                     Assert.AreEqual(share.StorageUri, listShareItem.StorageUri);
                 }
@@ -1275,6 +1277,8 @@ namespace Microsoft.Azure.Storage.File
                         originalFound = true;
                         Assert.AreEqual(2, listShareItem.Metadata.Count);
                         Assert.AreEqual("value2", listShareItem.Metadata["key2"]);
+                        // Metadata keys should be case-insensitive
+                        Assert.AreEqual("value2", listShareItem.Metadata["KEY2"]);
                         Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
                         Assert.AreEqual(share.StorageUri, listShareItem.StorageUri);
                     }
@@ -1340,6 +1344,8 @@ namespace Microsoft.Azure.Storage.File
                     originalFound = true;
                     Assert.AreEqual(2, listShareItem.Metadata.Count);
                     Assert.AreEqual("value2", listShareItem.Metadata["key2"]);
+                    // Metadata keys should be case-insensitive
+                    Assert.AreEqual("value2", listShareItem.Metadata["KEY2"]);
                     Assert.AreEqual("value1", listShareItem.Metadata["key1"]);
                     Assert.AreEqual(share.StorageUri, listShareItem.StorageUri);
                 }

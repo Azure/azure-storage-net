@@ -1119,6 +1119,8 @@ namespace Microsoft.Azure.Storage.File
                 file2.FetchAttributes();
                 Assert.AreEqual(1, file2.Metadata.Count);
                 Assert.AreEqual("value1", file2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", file2.Metadata["KEY1"]);
                 Assert.AreEqual("no-transform", file2.Properties.CacheControl);
                 Assert.AreEqual("attachment", file2.Properties.ContentDisposition);
                 Assert.AreEqual("gzip", file2.Properties.ContentEncoding);
@@ -1130,6 +1132,7 @@ namespace Microsoft.Azure.Storage.File
                 file3.Exists();
                 Assert.AreEqual(1, file3.Metadata.Count);
                 Assert.AreEqual("value1", file3.Metadata["key1"]);
+                Assert.AreEqual("value1", file3.Metadata["KEY1"]);
                 Assert.AreEqual("no-transform", file3.Properties.CacheControl);
                 Assert.AreEqual("attachment", file3.Properties.ContentDisposition);
                 Assert.AreEqual("gzip", file3.Properties.ContentEncoding);
@@ -1181,6 +1184,8 @@ namespace Microsoft.Azure.Storage.File
                 file2.FetchAttributes();
                 Assert.AreEqual(1, file2.Metadata.Count);
                 Assert.AreEqual("value1", file2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", file2.Metadata["KEY1"]);
 
                 file.Metadata.Clear();
                 file.SetMetadata();
@@ -1254,6 +1259,8 @@ namespace Microsoft.Azure.Storage.File
                     file2.EndFetchAttributes(result);
                     Assert.AreEqual(1, file2.Metadata.Count);
                     Assert.AreEqual("value1", file2.Metadata["key1"]);
+                    // Metadata keys should be case-insensitive
+                    Assert.AreEqual("value1", file2.Metadata["KEY1"]);
 
                     file.Metadata.Clear();
                     result = file.BeginSetMetadata(
@@ -1315,6 +1322,8 @@ namespace Microsoft.Azure.Storage.File
                 file2.FetchAttributesAsync().Wait();
                 Assert.AreEqual(1, file2.Metadata.Count);
                 Assert.AreEqual("value1", file2.Metadata["key1"]);
+                // Metadata keys should be case-insensitive
+                Assert.AreEqual("value1", file2.Metadata["KEY1"]);
 
                 file.Metadata.Clear();
                 file.SetMetadataAsync().Wait();

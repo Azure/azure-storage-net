@@ -1647,7 +1647,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null /* retVal */, cmd, ex);
                 DateTimeOffset snapshotTime = NavigationHelper.ParseSnapshotTime(ShareHttpResponseParsers.GetSnapshotTime(resp));
-                CloudFileShare snapshot = new CloudFileShare(this.Properties, new Dictionary<string, string>(metadata ?? this.Metadata), this.Name, snapshotTime, this.ServiceClient);
+                CloudFileShare snapshot = new CloudFileShare(this.Properties, new Dictionary<string, string>(metadata ?? this.Metadata, StringComparer.OrdinalIgnoreCase), this.Name, snapshotTime, this.ServiceClient);
                 this.UpdateETagAndLastModified(resp);
                 return snapshot;
             };

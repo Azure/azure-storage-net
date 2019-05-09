@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Storage.File
 
             this.SnapshotTime = snapshotTime;
             this.ParseQueryAndVerify(shareAddress, credentials);
-            this.Metadata = new Dictionary<string, string>();
+            this.Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             this.Properties = new FileShareProperties();
         }
 
@@ -96,7 +96,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="snapshotTime">A <see cref="DateTimeOffset"/> specifying the snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="serviceClient">A client object that specifies the endpoint for the File service.</param>
         internal CloudFileShare(string shareName, DateTimeOffset? snapshotTime, CloudFileClient serviceClient)
-            : this(new FileShareProperties(), new Dictionary<string, string>(), shareName, snapshotTime, serviceClient)
+            : this(new FileShareProperties(), new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), shareName, snapshotTime, serviceClient)
         {
         }
 

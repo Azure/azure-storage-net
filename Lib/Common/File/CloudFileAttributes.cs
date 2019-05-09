@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Storage.File
         internal CloudFileAttributes()
         {
             this.Properties = new FileProperties();
-            this.Metadata = new Dictionary<string, string>();
+            this.Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
