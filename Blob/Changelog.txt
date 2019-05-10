@@ -1,3 +1,11 @@
+Changes in 10.0.3:
+
+- Add a public constructor to CloudBlobDirectory, resolving GitHub Issue #639 and #709
+- Made CloudBlob.CopyState virtual, resolving GitHub Issue #692
+- Fixed broken links in nuspec file, resolving GitHub Issue #879
+- Updated nuspec .NET framework dependecy, resolving GitHub Issue #829
+- Made metadata case-insensitive, resolving GitHub Issue #647
+
 Changes in 10.0.2:
 
 - Fixed GitHub Issue #475: ListBlobsSegmentedAsync throwing an exception when using a SAS url

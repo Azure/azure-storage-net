@@ -1,3 +1,8 @@
+Changes in 10.0.3:
+
+- Fixed broken links in nuspec file, resolving GitHub Issue #879
+- Updated nuspec .NET framework dependecy, resolving GitHub Issue #829
+
 Changes in 10.0.2:
 
 - None
