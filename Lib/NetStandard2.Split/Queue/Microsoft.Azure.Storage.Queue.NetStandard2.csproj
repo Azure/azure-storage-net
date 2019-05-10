@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <ProjectGuid>155b87ef-5f70-44af-90bf-cf5859ee7b0e</ProjectGuid>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisWindowsDesktop.ruleset</CodeAnalysisRuleSet>

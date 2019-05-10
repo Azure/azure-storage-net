@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion> 
     <ProjectGuid>27d74fe0-4fd0-41a4-be7e-298f9e84feb8</ProjectGuid>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisWindowsDesktop.ruleset</CodeAnalysisRuleSet>
@@ -11,7 +12,7 @@
     <RootNamespace>Microsoft.Azure.Storage.Common</RootNamespace>
     <AssemblyName>Microsoft.Azure.Storage.Common</AssemblyName>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    <Configurations>Debug;Release;Official;Preview</Configurations> 
+    <Configurations>Debug;Release;Official;Preview</Configurations>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Optimize>false</Optimize>

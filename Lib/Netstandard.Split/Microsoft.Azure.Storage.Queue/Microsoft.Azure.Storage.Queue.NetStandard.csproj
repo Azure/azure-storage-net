@@ -5,6 +5,7 @@
     <AssemblyTitle>Microsoft.Azure.Storage.Queue</AssemblyTitle>
     <OutputType>Library</OutputType>
     <TargetFramework>netstandard1.3</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
