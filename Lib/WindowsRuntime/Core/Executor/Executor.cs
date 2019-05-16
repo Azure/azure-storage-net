@@ -133,6 +133,21 @@ namespace Microsoft.Azure.Storage.Core.Executor
                         executionState.Resp = await client.SendAsync(executionState.Req, HttpCompletionOption.ResponseHeadersRead, timeoutTokenSource.Token).ConfigureAwait(false);
                         executionState.CurrentOperation = ExecutorOperation.EndGetResponse;
 
+                        // Check that echoed client ID matches the one we sent
+                        var clientRequestId = HttpRequestParsers.GetHeader(executionState.Req, Constants.HeaderConstants.ClientRequestIdHeader);
+                        var echoedClientRequestId = HttpResponseParsers.GetHeader(executionState.Resp, Constants.HeaderConstants.ClientRequestIdHeader);
+
+                        if (echoedClientRequestId != null && echoedClientRequestId != clientRequestId)
+                        {
+                            var requestId = HttpResponseParsers.GetHeader(executionState.Resp, Constants.HeaderConstants.RequestIdHeader);
+                            var storageEx = new StorageException($"Echoed client request ID: {echoedClientRequestId} does not match sent client request ID: {clientRequestId}.  Service request ID: {requestId}")
+                            {
+                                IsRetryable = false
+                            };
+                            executionState.ExceptionRef = storageEx;
+                            throw storageEx;
+                        }
+
                         // Since HttpClient wont throw for non success, manually check and populate an exception
                         if (!executionState.Resp.IsSuccessStatusCode)
                         {
