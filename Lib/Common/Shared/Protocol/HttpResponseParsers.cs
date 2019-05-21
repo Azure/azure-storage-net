@@ -55,6 +55,17 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             return string.Equals(requestEncrypted, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
 
+        internal static string ParseEncryptionKeySHA256(HttpResponseMessage response)
+        {
+            return response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ClientProvidedEncyptionKeyHash);
+        }
+
+        internal static bool ParseServiceEncrypted(HttpResponseMessage response)
+        {
+            string serviceEncrypted = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
+            return string.Equals(serviceEncrypted, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// Gets the metadata or properties.
         /// </summary>
@@ -167,10 +178,18 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 
         internal static string GetHeader(HttpResponseMessage response, string headerName)
         {
-            return 
-                response.Content.Headers.Contains(headerName) ? response.Content.Headers.GetValues(headerName).First()
-                : response.Headers.Contains(headerName) ? response.Headers.GetValues(headerName).First()
-                : null;
+            if (response.Content != null && response.Content.Headers.Contains(headerName))
+            {
+                return response.Content.Headers.GetValues(headerName).First();
+            }
+            else if (response.Headers.Contains(headerName))
+            {
+                return response.Headers.GetValues(headerName).First();
+            }
+            else
+            {
+                return null;
+            }
         }
 
         internal static List<string> GetAllHeaders(HttpResponseMessage response)

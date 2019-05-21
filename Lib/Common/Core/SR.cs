@@ -56,6 +56,9 @@ namespace Microsoft.Azure.Storage.Core
         public const string CannotTransformNonHttpsUriWithHttpsOnlyCredentials = "Cannot transform a Uri object using a StorageCredentials object that is marked HTTPS only.";
         public const string CannotUpdateKeyWithoutAccountKeyCreds = "Cannot update key unless Account Key credentials are used.";
         public const string CannotUpdateSasWithoutSasCreds = "Cannot update Shared Access Signature unless Sas credentials are used.";
+        public const string ClientProvidedKeyBadHash = "Hash returned from Client-Provided Key request did not match sent key's hash.";
+        public const string ClientProvidedKeyEncryptionFailure = "Error processing request with client provided key.";
+        public const string ClientProvidedKeyRequiresHttps = "Cannot use client-provided key requests without HTTPS.";
         public const string ConcurrentOperationsNotSupported = "Could not acquire exclusive use of the TableServiceContext, Concurrent operations are not supported.";
         public const string Container = "container";
         public const string ContentMD5NotCalculated = "The operation requires a response body but no data was copied to the destination buffer.";

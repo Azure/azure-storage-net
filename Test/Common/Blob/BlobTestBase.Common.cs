@@ -29,6 +29,11 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return string.Concat("testc", Guid.NewGuid().ToString("N"));
         }
+        
+        public static string GetRandomBlobName()
+        {
+            return string.Concat("testb", Guid.NewGuid().ToString("N"));
+        }
 
         public static CloudBlobContainer GetRandomContainerReference(DelegatingHandler delegatingHandler = null, bool oauthTenant = false)
         {
@@ -84,9 +89,14 @@ namespace Microsoft.Azure.Storage.Blob
             List<string> blocks = new List<string>();
             for (int i = 0; i < count; i++)
             {
-                blocks.Add(Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
+                blocks.Add(GetBlockId());
             }
             return blocks;
+        }
+
+        public static string GetBlockId()
+        {
+            return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
         }
 
         public static void AssertAreEqual(CloudBlob expected, CloudBlob actual)

@@ -3134,7 +3134,9 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.AppendBlob, 0, null /* premiumPageBlobTier */, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                BlobRequest.VerifyHttpsCustomerProvidedKey(uri, options);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Put(uri, serverTimeout, this.Properties, BlobType.AppendBlob, 0, 
+                    null /* premiumPageBlobTier */, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
@@ -3143,7 +3145,9 @@ namespace Microsoft.Azure.Storage.Blob
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
                 this.Properties.Length = 0;
+                BlobResponse.ValidateCPKHeaders(resp, options, true);
                 return NullType.Value;
             };
 
@@ -3169,7 +3173,12 @@ namespace Microsoft.Azure.Storage.Blob
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(source, offset, length, contentMD5, cmd, ctx);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AppendBlock(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                BlobRequest.VerifyHttpsCustomerProvidedKey(uri, options);
+                return BlobHttpRequestMessageFactory.AppendBlock(uri, serverTimeout, accessCondition, cnt, ctx,
+                this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 long appendOffset = -1;
@@ -3181,6 +3190,8 @@ namespace Microsoft.Azure.Storage.Blob
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, appendOffset, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                BlobResponse.ValidateCPKHeaders(resp, options, true);
                 return appendOffset;
             };
 
@@ -3201,9 +3212,13 @@ namespace Microsoft.Azure.Storage.Blob
         internal RESTCommand<long> AppendBlockImpl(Uri sourceUri, long offset, long count, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             RESTCommand<long> putCmd = new RESTCommand<long>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
-
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.AppendBlock(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                BlobRequest.VerifyHttpsCustomerProvidedKey(uri, options);
+                return BlobHttpRequestMessageFactory.AppendBlock(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, sourceAccessCondition,
+                    destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
+            };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 long appendOffset = -1L;
@@ -3215,6 +3230,8 @@ namespace Microsoft.Azure.Storage.Blob
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, appendOffset, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(this.attributes, resp, false);
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                BlobResponse.ValidateCPKHeaders(resp, options, true);
                 return appendOffset;
             };
 
@@ -3236,7 +3253,8 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx, 
+                    this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
                 if (metadata != null)
                 {
                     BlobHttpRequestMessageFactory.AddMetadata(msg, metadata);

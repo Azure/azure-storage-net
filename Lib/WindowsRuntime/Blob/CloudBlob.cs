@@ -1346,7 +1346,12 @@ namespace Microsoft.Azure.Storage.Blob
             getCmd.RetrieveResponseStream = true;
             getCmd.DestinationStream = destStream;
             getCmd.CalculateMd5ForResponseStream = !options.DisableContentMD5Validation.Value;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                BlobRequest.VerifyHttpsCustomerProvidedKey(uri, options);
+                return BlobHttpRequestMessageFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value,
+                    accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
+            };
             getCmd.RecoveryAction = (cmd, ex, ctx) =>
             {
                 if ((lockedAccessCondition == null) && !string.IsNullOrEmpty(lockedETag))
@@ -1367,7 +1372,8 @@ namespace Microsoft.Azure.Storage.Blob
                     }
                 }
 
-                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, lockedAccessCondition ?? accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, attributes.SnapshotTime, offset, length, 
+                    options.UseTransactionalMD5.Value && !arePropertiesPopulated, lockedAccessCondition ?? accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
             };
 
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -1405,12 +1411,21 @@ namespace Microsoft.Azure.Storage.Blob
                     arePropertiesPopulated = true;
                 }
 
+                BlobResponse.ValidateCPKHeaders(resp, options, false);
+                cmd.CurrentResult.IsServiceEncrypted = HttpResponseParsers.ParseServiceEncrypted(resp);
+                cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+
                 return NullType.Value;
             };
 
             getCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) =>
             {
                 HttpResponseParsers.ValidateResponseStreamMd5AndLength(validateLength, storedMD5, cmd);
+
+                BlobResponse.ValidateCPKHeaders(resp, options, false);
+                cmd.CurrentResult.IsServiceEncrypted = HttpResponseParsers.ParseServiceEncrypted(resp);
+                cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+
                 return NullType.ValueTask;
             };
 
@@ -1430,11 +1445,21 @@ namespace Microsoft.Azure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                BlobRequest.VerifyHttpsCustomerProvidedKey(uri, options);
+                return BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime,
+                    accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
+            };
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+
                 CloudBlob.UpdateAfterFetchAttributes(attributes, resp);
+                cmd.CurrentResult.IsServiceEncrypted = HttpResponseParsers.ParseServiceEncrypted(resp);
+                cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                BlobResponse.ValidateCPKHeaders(resp, options, false);
+
                 return NullType.Value;
             };
 
@@ -1454,7 +1479,8 @@ namespace Microsoft.Azure.Storage.Blob
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = primaryOnly ? CommandLocationMode.PrimaryOnly : CommandLocationMode.PrimaryOrSecondary;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime, null /* accessCondition */, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetProperties(uri, serverTimeout, attributes.SnapshotTime, 
+                null /* accessCondition */, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 if (resp.StatusCode == HttpStatusCode.NotFound)
@@ -1485,7 +1511,8 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.SetMetadata(uri, serverTimeout, accessCondition, cnt, ctx, 
+                    this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
                 return msg;
             };
@@ -1494,6 +1521,8 @@ namespace Microsoft.Azure.Storage.Blob
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                BlobResponse.ValidateCPKHeaders(resp, options, true);
                 return NullType.Value;
             };
 
@@ -1514,7 +1543,8 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.SetProperties(uri, serverTimeout, attributes.Properties, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.SetProperties(uri, serverTimeout, attributes.Properties, accessCondition, cnt, ctx, 
+                    this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
                 return msg;
             };
@@ -1522,6 +1552,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
+                BlobResponse.ValidateCPKHeaders(resp, options, true);
                 return NullType.Value;
             };
 
@@ -1742,7 +1773,8 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If null, no condition is used.</param>
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that starts to copy the blob.</returns>
-        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, 
+            AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -1754,7 +1786,8 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, standardBlockBlobTier, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, standardBlockBlobTier,
+                    sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
                 return msg;
             };
@@ -1813,7 +1846,9 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                BlobRequest.VerifyHttpsCustomerProvidedKey(uri, options);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.Snapshot(uri, serverTimeout, accessCondition, cnt, ctx, 
+                    this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials, options);
                 if (metadata != null)
                 {
                     BlobHttpRequestMessageFactory.AddMetadata(msg, metadata);
@@ -1830,6 +1865,15 @@ namespace Microsoft.Azure.Storage.Blob
                 snapshot.attributes.Metadata = new Dictionary<string, string>(metadata ?? this.Metadata, StringComparer.OrdinalIgnoreCase);
                 snapshot.attributes.Properties = new BlobProperties(this.Properties);
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(snapshot.attributes, resp, false);
+
+                // we also check if metadata was passed because if it wasn't we won't get the headers back
+                if (metadata != null)
+                {
+                    cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                    cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                    BlobResponse.ValidateCPKHeaders(resp, options, true);
+                }
+
                 return snapshot;
             };
 

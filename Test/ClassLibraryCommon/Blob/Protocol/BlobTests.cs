@@ -45,7 +45,8 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             OperationContext opContext = new OperationContext();
             try
             {
-                request = BlobHttpRequestMessageFactory.Put(uri, context.Timeout, properties, blobType, pageBlobSize, null, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
+                request = BlobHttpRequestMessageFactory.Put(uri, context.Timeout, properties, blobType, pageBlobSize, null, accessCondition, null, opContext, 
+                    SharedKeyCanonicalizer.Instance, context.Credentials, null);
                 if (fatal)
                 {
                     Assert.Fail();
@@ -167,7 +168,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             try
             {
-                request = BlobHttpRequestMessageFactory.Get(uri, context.Timeout, null /* snapshot */, offset, count, false, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
+                request = BlobHttpRequestMessageFactory.Get(uri, context.Timeout, null /* snapshot */, offset, count, false, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials, null);
             }
             catch (InvalidOperationException)
             {
@@ -233,7 +234,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
             HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
-            request = BlobHttpRequestMessageFactory.PutBlock(uri, context.Timeout, blockId, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
+            request = BlobHttpRequestMessageFactory.PutBlock(uri, context.Timeout, blockId, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials, null);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
             Assert.AreEqual(HttpMethod.Put, request.Method);
@@ -265,7 +266,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             Uri uri = BlobTests.ConstructPutUri(context.Address, containerName, blobName);
             HttpRequestMessage request = null;
             OperationContext opContext = new OperationContext();
-            request = BlobHttpRequestMessageFactory.PutBlockList(uri, context.Timeout, blobProperties, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
+            request = BlobHttpRequestMessageFactory.PutBlockList(uri, context.Timeout, blobProperties, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials, null);
             Assert.IsNotNull(request);
             Assert.IsNotNull(request.Method);
             Assert.AreEqual(HttpMethod.Put, request.Method);

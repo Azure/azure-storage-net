@@ -624,7 +624,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             BlobProperties properties = new BlobProperties() { BlobType = BlobType.PageBlob };
             Uri uri = BlobTests.ConstructPutUri(BlobContext.Address, containerName, blobName);
             OperationContext opContext = new OperationContext();
-            HttpRequestMessage webRequest = BlobHttpRequestMessageFactory.Put(uri, BlobContext.Timeout, properties, BlobType.PageBlob, blobSize, null, null, null, opContext, null, null);
+            HttpRequestMessage webRequest = BlobHttpRequestMessageFactory.Put(uri, BlobContext.Timeout, properties, BlobType.PageBlob, blobSize, null, null, null, opContext, null, null, null);
 
 
             using (HttpResponseMessage response = await BlobTestUtils.GetResponse(webRequest, BlobContext))
@@ -640,7 +640,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 
                 PageRange range = new PageRange(startOffset, startOffset + length - 1);
                 opContext = new OperationContext();
-                HttpRequestMessage pageRequest = BlobHttpRequestMessageFactory.PutPage(uri, BlobContext.Timeout, range, PageWrite.Update, null, null, opContext, null, null);
+                HttpRequestMessage pageRequest = BlobHttpRequestMessageFactory.PutPage(uri, BlobContext.Timeout, range, PageWrite.Update, null, null, opContext, null, null, null);
                 HttpRequestHandler.SetContentLength(pageRequest, 512);
 
                 byte[] content = new byte[length];
@@ -674,7 +674,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 }
 
                 opContext = new OperationContext();
-                HttpRequestMessage clearPageRequest = BlobHttpRequestMessageFactory.PutPage(uri, BlobContext.Timeout, pRange, PageWrite.Clear, null, null, opContext, null, null);
+                HttpRequestMessage clearPageRequest = BlobHttpRequestMessageFactory.PutPage(uri, BlobContext.Timeout, pRange, PageWrite.Clear, null, null, opContext, null, null, null);
                 HttpRequestHandler.SetContentLength(clearPageRequest, 0);
                 using (HttpResponseMessage clearResponse = await BlobTestUtils.GetResponse(clearPageRequest, BlobContext))
                 {

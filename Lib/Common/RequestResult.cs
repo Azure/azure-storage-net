@@ -113,6 +113,16 @@ namespace Microsoft.Azure.Storage
         public bool IsRequestServerEncrypted { get; internal set; }
 
         /// <summary>
+        /// Represents whether or not the data for a read operation is encrypted on the server-side.
+        /// </summary>
+        public bool IsServiceEncrypted { get; internal set; }
+
+        /// <summary>
+        /// Represents the hash for the key used to server-side encrypt with client-provided keys.
+        /// </summary>
+        public string EncryptionKeySHA256 { get; internal set; }
+
+        /// <summary>
         /// Gets or sets the exception.
         /// </summary>
         /// <value>An <see cref="System.Exception"/> object.</value>

@@ -17,6 +17,7 @@
 
 namespace Microsoft.Azure.Storage.Blob.Protocol
 {
+    using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Auth;
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
@@ -93,6 +94,35 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 }
 
                 writer.WriteEndDocument();
+            }
+        }
+
+        internal static void ApplyCustomerProvidedKey(StorageRequestMessage request, BlobRequestOptions options, bool isSource)
+        {
+            if(options?.CustomerProvidedKey == null)
+            {
+                return;
+            }
+
+            if(isSource)
+            {
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeySource, options.CustomerProvidedKey.Key);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyHashSource, options.CustomerProvidedKey.KeySHA256);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyAlgorithmSource, options.CustomerProvidedKey.EncryptionAlgorithm);
+            }
+            else
+            {
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKey, options.CustomerProvidedKey.Key);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyHash, options.CustomerProvidedKey.KeySHA256);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionAlgorithm, options.CustomerProvidedKey.EncryptionAlgorithm);
+            }
+        }
+
+        internal static void VerifyHttpsCustomerProvidedKey(Uri uri, BlobRequestOptions options)
+        {
+            if (options?.CustomerProvidedKey != null && !String.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException(SR.ClientProvidedKeyRequiresHttps);
             }
         }
     }

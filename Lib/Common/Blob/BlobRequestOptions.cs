@@ -189,6 +189,8 @@ namespace Microsoft.Azure.Storage.Blob
                 ?? BaseDefaultRequestOptions.UseTransactionalMD5;
 #endif
 
+            modifiedOptions.CustomerProvidedKey = options?.CustomerProvidedKey;
+
             return modifiedOptions;
         }
 
@@ -290,6 +292,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <value>Use <c>true</c> to skip validation; otherwise, <c>false</c>.</value>
         internal bool SkipEncryptionPolicyValidation { get; set; }
 #endif
+
+        /// <summary>
+        /// Gets or sets the blob customer provided key for the request.
+        /// </summary>
+        /// <value>An object of type <see cref="CustomerProvidedKey"/></value>
+        public BlobCustomerProvidedKey CustomerProvidedKey { get; set; }
 
         /// <summary>
         /// Gets or sets a value that indicates whether a conditional failure should be absorbed on a retry attempt

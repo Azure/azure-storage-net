@@ -163,6 +163,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const long GB = 1024 * MB;
 
         /// <summary>
+        /// A constant representing the encryption algorithm for CPK encryption
+        /// </summary>
+        public const string AES256 = "AES256";
+
+        /// <summary>
         /// XML element for committed blocks.
         /// </summary>
         public const string CommittedBlocksElement = "CommittedBlocks";
@@ -1543,6 +1548,41 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header that specifies a continuation token. 
             /// </summary>
             public const string Marker = PrefixForStorageHeader + "marker";
+
+            /// <summary>
+            /// The request server encrypted header for client-provided key encryption.
+            /// </summary>
+            public const string ClientProvidedEncryptionSuccess = PrefixForStorageHeader + "request-server-encrypted";
+
+            /// <summary>
+            /// The key header for client-provided key encryption.
+            /// </summary>
+            public const string ClientProvidedEncyptionKey = PrefixForStorageHeader + "encryption-key";
+
+            /// <summary>
+            /// The key hash header for client-provided key encryption
+            /// </summary>
+            public const string ClientProvidedEncyptionKeyHash = PrefixForStorageHeader + "encryption-key-sha256";
+
+            /// <summary>
+            /// The encryption algorithm header for client-provided key encryption.
+            /// </summary>
+            public const string ClientProvidedEncyptionAlgorithm = PrefixForStorageHeader + "encryption-algorithm";
+
+            /// <summary>
+            /// The key header for client-provided key encryption.
+            /// </summary>
+            public const string ClientProvidedEncyptionKeySource = PrefixForStorageHeader + "source-encryption-key";
+
+            /// <summary>
+            /// The key hash header for client-provided key encryption.
+            /// </summary>
+            public const string ClientProvidedEncyptionKeyHashSource = PrefixForStorageHeader + "source-encryption-key-sha256";
+
+            /// <summary>
+            /// The encryption algorithm header for client-provided key encryption.
+            /// </summary>
+            public const string ClientProvidedEncyptionKeyAlgorithmSource = PrefixForStorageHeader + "source-encryption-algorithm";
 
             /// <summary>
             /// The name of the SKU name header element.
