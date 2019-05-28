@@ -24,6 +24,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using Microsoft.Azure.Storage.Core.Util;
 
 namespace Microsoft.Azure.Storage.Blob
 {
@@ -1169,6 +1170,820 @@ namespace Microsoft.Azure.Storage.Blob
                     }
 
                     Assert.AreEqual(9, checkCount);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalCRC64 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void UseTransactionalCRC64PutTest()
+        {
+            BlobRequestOptions optionsWithNoCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = false }
+            };
+            BlobRequestOptions optionsWithCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = true }
+            };
+
+            byte[] buffer = GetRandomBuffer(1024);
+            Crc64Wrapper hasher = new Crc64Wrapper();
+            hasher.UpdateHash(buffer, 0, buffer.Length);
+            string crc64 = hasher.ComputeHash();
+
+            string lastCheckCRC64 = null;
+            int checkCount = 0;
+            OperationContext opContextWithCRC64Check = new OperationContext();
+            opContextWithCRC64Check.SendingRequest += (_, args) =>
+            {
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpRequestParsers.GetContentCRC64(args.Request);
+                    checkCount++;
+                }
+            };
+
+            OperationContext opContextWithCRC64CheckAndInjectedFailure = new OperationContext();
+            opContextWithCRC64CheckAndInjectedFailure.SendingRequest += (_, args) =>
+            {
+                args.Response.Headers.Remove(Constants.HeaderConstants.ContentCrc64Header);
+                args.Request.Headers.TryAddWithoutValidation(Constants.HeaderConstants.ContentCrc64Header, "dummy");
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpRequestParsers.GetContentCRC64(args.Request);
+                    checkCount++;
+                }
+            };
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
+                List<string> blockIds = GetBlockIdList(3);
+                checkCount = 0;
+                using (Stream blockData = new MemoryStream(buffer))
+                {
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockBlob.PutBlock(blockIds[0], blockData, null, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    blockBlob.PutBlock(blockIds[1], blockData, null, null, optionsWithCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    Assert.ThrowsException<StorageException>(
+                        () => blockBlob.PutBlock(blockIds[1], blockData, null, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure),
+                        "Calculated CRC64 does not match existing property"
+                        );
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    blockBlob.PutBlock(blockIds[2], blockData, new Checksum(crc64: crc64), null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+                }
+
+                Assert.AreEqual(3, checkCount);
+
+                checkCount = 0;
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob2");
+                appendBlob.CreateOrReplace();
+                checkCount = 0;
+                using (Stream blockData = new MemoryStream(buffer))
+                {
+                    lastCheckCRC64 = "invalid_CRC64";
+                    appendBlob.AppendBlock(blockData, null, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    appendBlob.AppendBlock(blockData, null, null, optionsWithCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    Assert.ThrowsException<StorageException>(
+                        () => appendBlob.AppendBlock(blockData, null, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure),
+                        "Calculated CRC64 does not match existing property"
+                        );
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockData.Seek(0, SeekOrigin.Begin);
+                    appendBlob.AppendBlock(blockData, new Checksum(crc64: crc64), null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+                }
+
+                Assert.AreEqual(3, checkCount);
+
+                CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
+                pageBlob.Create(buffer.Length);
+                checkCount = 0;
+                using (Stream pageData = new MemoryStream(buffer))
+                {
+                    lastCheckCRC64 = "invalid_CRC64";
+                    pageBlob.WritePages(pageData, 0, null, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    pageData.Seek(0, SeekOrigin.Begin);
+                    pageBlob.WritePages(pageData, 0, null, null, optionsWithCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+
+                    pageData.Seek(0, SeekOrigin.Begin);
+                    Assert.ThrowsException<StorageException>(
+                        () => pageBlob.WritePages(pageData, 0, null, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure),
+                        "Calculated CRC64 does not match existing property"
+                        );
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    pageData.Seek(0, SeekOrigin.Begin);
+                    pageBlob.WritePages(pageData, 0, new Checksum(crc64: crc64), null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+                }
+
+                Assert.AreEqual(3, checkCount);
+
+                lastCheckCRC64 = null;
+                blockBlob = container.GetBlockBlobReference("blob4");
+                checkCount = 0;
+                using (Stream blobStream = blockBlob.OpenWrite(null, optionsWithCRC64, opContextWithCRC64Check))
+                {
+                    blobStream.Write(buffer, 0, buffer.Length);
+                    blobStream.Write(buffer, 0, buffer.Length);
+                }
+                Assert.IsNotNull(lastCheckCRC64);
+                Assert.AreEqual(1, checkCount);
+
+                lastCheckCRC64 = "invalid_CRC64";
+                blockBlob = container.GetBlockBlobReference("blob5");
+                checkCount = 0;
+                using (Stream blobStream = blockBlob.OpenWrite(null, optionsWithNoCRC64, opContextWithCRC64Check))
+                {
+                    blobStream.Write(buffer, 0, buffer.Length);
+                    blobStream.Write(buffer, 0, buffer.Length);
+                }
+                Assert.IsNull(lastCheckCRC64);
+                Assert.AreEqual(1, checkCount);
+
+                lastCheckCRC64 = null;
+                pageBlob = container.GetPageBlobReference("blob6");
+                checkCount = 0;
+                using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 3, null, optionsWithCRC64, opContextWithCRC64Check))
+                {
+                    blobStream.Write(buffer, 0, buffer.Length);
+                    blobStream.Write(buffer, 0, buffer.Length);
+                }
+                Assert.IsNotNull(lastCheckCRC64);
+                Assert.AreEqual(1, checkCount);
+
+                lastCheckCRC64 = "invalid_CRC64";
+                pageBlob = container.GetPageBlobReference("blob7");
+                checkCount = 0;
+                using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 3, null, optionsWithNoCRC64, opContextWithCRC64Check))
+                {
+                    blobStream.Write(buffer, 0, buffer.Length);
+                    blobStream.Write(buffer, 0, buffer.Length);
+                }
+                Assert.IsNull(lastCheckCRC64);
+                Assert.AreEqual(1, checkCount);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalCRC64 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void UseTransactionalCRC64PutTestAPM()
+        {
+            BlobRequestOptions optionsWithNoCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = false }
+            };
+            BlobRequestOptions optionsWithCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = true }
+            };
+
+            byte[] buffer = GetRandomBuffer(1024);
+            Crc64Wrapper hasher = new Crc64Wrapper();
+            hasher.UpdateHash(buffer, 0, buffer.Length);
+            string crc64 = hasher.ComputeHash();
+
+            string lastCheckCRC64 = null;
+            int checkCount = 0;
+            OperationContext opContextWithCRC64Check = new OperationContext();
+            opContextWithCRC64Check.SendingRequest += (_, args) =>
+            {
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpRequestParsers.GetContentCRC64(args.Request);
+                    checkCount++;
+                }
+            };
+
+            OperationContext opContextWithCRC64CheckAndInjectedFailure = new OperationContext();
+            opContextWithCRC64CheckAndInjectedFailure.SendingRequest += (_, args) =>
+            {
+                args.Response.Headers.Remove(Constants.HeaderConstants.ContentCrc64Header);
+                args.Request.Headers.TryAddWithoutValidation(Constants.HeaderConstants.ContentCrc64Header, "dummy");
+                if (HttpRequestParsers.GetContentLength(args.Request) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpRequestParsers.GetContentCRC64(args.Request);
+                    checkCount++;
+                }
+            };
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
+                    List<string> blockIds = GetBlockIdList(3);
+                    checkCount = 0;
+                    using (Stream blockData = new MemoryStream(buffer))
+                    {
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = blockBlob.BeginPutBlock(blockIds[0], blockData, null, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blockBlob.EndPutBlock(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        blockData.Seek(0, SeekOrigin.Begin);
+                        result = blockBlob.BeginPutBlock(blockIds[1], blockData, null, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blockBlob.EndPutBlock(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+
+                        TestHelper.ExpectedException<StorageException>(
+                            () =>
+                            {
+                                blockData.Seek(0, SeekOrigin.Begin);
+                                result = blockBlob.BeginPutBlock(blockIds[1], blockData, null, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure,
+                                    ar => waitHandle.Set(),
+                                    null);
+                                waitHandle.WaitOne();
+                                blockBlob.EndPutBlock(result);
+                            },
+                            "Calculated CRC64 does not match existing property"
+                            );
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        blockData.Seek(0, SeekOrigin.Begin);
+                        result = blockBlob.BeginPutBlock(blockIds[2], blockData, new Checksum(crc64: crc64), null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blockBlob.EndPutBlock(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+                    }
+
+                    Assert.AreEqual(3, checkCount);
+
+                    CloudAppendBlob appendBlob = container.GetAppendBlobReference("blob2");
+                    appendBlob.CreateOrReplace();
+                    checkCount = 0;
+                    using (Stream blockData = new MemoryStream(buffer))
+                    {
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = appendBlob.BeginAppendBlock(blockData, null, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        appendBlob.EndAppendBlock(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        blockData.Seek(0, SeekOrigin.Begin);
+                        result = appendBlob.BeginAppendBlock(blockData, null, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        appendBlob.EndAppendBlock(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+
+                        TestHelper.ExpectedException<StorageException>(
+                            () =>
+                            {
+                                blockData.Seek(0, SeekOrigin.Begin);
+                                result = appendBlob.BeginAppendBlock(blockData, null, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure,
+                                    ar => waitHandle.Set(),
+                                    null);
+                                waitHandle.WaitOne();
+                                appendBlob.EndAppendBlock(result);
+                            },
+                            "Calculated CRC64 does not match existing property"
+                            );
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        blockData.Seek(0, SeekOrigin.Begin);
+                        result = appendBlob.BeginAppendBlock(blockData, new Checksum(crc64: crc64), null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        appendBlob.EndAppendBlock(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+                    }
+
+                    Assert.AreEqual(3, checkCount);
+
+                    CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
+                    pageBlob.Create(buffer.Length);
+                    checkCount = 0;
+                    using (Stream pageData = new MemoryStream(buffer))
+                    {
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = pageBlob.BeginWritePages(pageData, 0, null, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        pageBlob.EndWritePages(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        pageData.Seek(0, SeekOrigin.Begin);
+                        result = pageBlob.BeginWritePages(pageData, 0, null, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        pageBlob.EndWritePages(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+
+                        TestHelper.ExpectedException<StorageException>(
+                            () =>
+                            {
+                                pageData.Seek(0, SeekOrigin.Begin);
+                                result = pageBlob.BeginWritePages(pageData, 0, null, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure,
+                                    ar => waitHandle.Set(),
+                                    null);
+                                waitHandle.WaitOne();
+                                pageBlob.EndWritePages(result);
+                            },
+                            "Calculated CRC64 does not match existing property"
+                            );
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        pageData.Seek(0, SeekOrigin.Begin);
+                        result = pageBlob.BeginWritePages(pageData, 0, new Checksum(crc64: crc64), null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        pageBlob.EndWritePages(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+                    }
+
+                    Assert.AreEqual(3, checkCount);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalCRC64 flag with DownloadRangeToStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void UseTransactionalCRC64GetTest()
+        {
+            BlobRequestOptions optionsWithNoCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = false }
+            };
+            BlobRequestOptions optionsWithCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = true }
+            };
+
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+            Crc64Wrapper hasher = new Crc64Wrapper();
+            hasher.UpdateHash(buffer, 0, buffer.Length);
+            string crc64 = hasher.ComputeHash();
+
+            string lastCheckCRC64 = null;
+            int checkCount = 0;
+            OperationContext opContextWithCRC64Check = new OperationContext();
+            opContextWithCRC64Check.ResponseReceived += (_, args) =>
+            {
+               if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpResponseParsers.GetContentCRC64(args.Response);
+                    checkCount++;
+                }
+            };
+
+            OperationContext opContextWithCRC64CheckAndInjectedFailure = new OperationContext();
+            opContextWithCRC64CheckAndInjectedFailure.ResponseReceived += (_, args) =>
+            {
+                args.Response.Headers.Remove(Constants.HeaderConstants.ContentCrc64Header);
+                args.Response.Headers.TryAddWithoutValidation(Constants.HeaderConstants.ContentCrc64Header, "dummy");
+                if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpResponseParsers.GetContentCRC64(args.Response);
+                    checkCount++;
+                }
+            };
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
+                using (Stream blobStream = blockBlob.OpenWrite())
+                {
+                    blobStream.Write(buffer, 0, buffer.Length);
+                    blobStream.Write(buffer, 0, buffer.Length);
+                }
+
+                checkCount = 0;
+                using (Stream stream = new MemoryStream())
+                {
+                    //lastCheckCRC64 = null;
+                    //blockBlob.DownloadToStream(stream, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    //Assert.IsNotNull(lastCheckCRC64);
+
+                    //lastCheckCRC64 = null;
+                    //blockBlob.DownloadToStream(stream, null, optionsWithCRC64, opContextWithCRC64Check);
+                    //Assert.IsNotNull(lastCheckCRC64);
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+
+                    Assert.ThrowsException<StorageException>(
+                        () => blockBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure),
+                        "Calculated CRC64 does not match existing property"
+                        );
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    blockBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    StorageException storageEx = TestHelper.ExpectedException<StorageException>(
+                        () => blockBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithCRC64, opContextWithCRC64Check),
+                        "Downloading more than 4MB with transactional CRC64 should not be supported");
+                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
+
+                    lastCheckCRC64 = null;
+                    using (Stream blobStream = blockBlob.OpenRead(null, optionsWithCRC64, opContextWithCRC64Check))
+                    {
+                        blobStream.CopyTo(stream);
+                        Assert.IsNotNull(lastCheckCRC64);
+                    }
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    using (Stream blobStream = blockBlob.OpenRead(null, optionsWithNoCRC64, opContextWithCRC64Check))
+                    {
+                        blobStream.CopyTo(stream);
+                        Assert.IsNull(lastCheckCRC64);
+                    }
+                }
+
+                const int expectedCheckCount = 8;
+                Assert.AreEqual(expectedCheckCount, checkCount);
+
+                CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
+                using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 2))
+                {
+                    blobStream.Write(buffer, 0, buffer.Length);
+                    blobStream.Write(buffer, 0, buffer.Length);
+                }
+
+                checkCount = 0;
+                using (Stream stream = new MemoryStream())
+                {
+                    lastCheckCRC64 = "invalid_CRC64";
+                    pageBlob.DownloadToStream(stream, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    StorageException storageEx = TestHelper.ExpectedException<StorageException>(
+                        () => pageBlob.DownloadToStream(stream, null, optionsWithCRC64, opContextWithCRC64Check),
+                        "Page blob will not have CRC64 set by default; with UseTransactional, download should fail");
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    pageBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    pageBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64Check);
+                    Assert.AreEqual(crc64, lastCheckCRC64);
+
+                    Assert.ThrowsException<StorageException>(
+                        () => pageBlob.DownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure),
+                        "Calculated CRC64 does not match existing property"
+                        );
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    pageBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoCRC64, opContextWithCRC64Check);
+                    Assert.IsNull(lastCheckCRC64);
+
+                    storageEx = TestHelper.ExpectedException<StorageException>(
+                        () => pageBlob.DownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithCRC64, opContextWithCRC64Check),
+                        "Downloading more than 4MB with transactional CRC64 should not be supported");
+                    Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
+
+                    lastCheckCRC64 = null;
+                    using (Stream blobStream = pageBlob.OpenRead(null, optionsWithCRC64, opContextWithCRC64Check))
+                    {
+                        blobStream.CopyTo(stream);
+                        Assert.IsNotNull(lastCheckCRC64);
+                    }
+
+                    lastCheckCRC64 = "invalid_CRC64";
+                    using (Stream blobStream = pageBlob.OpenRead(null, optionsWithNoCRC64, opContextWithCRC64Check))
+                    {
+                        blobStream.CopyTo(stream);
+                        Assert.IsNull(lastCheckCRC64);
+                    }
+                }
+
+                Assert.AreEqual(10, checkCount);
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalCRC64 flag with DownloadRangeToStream")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void UseTransactionalCRC64GetTestAPM()
+        {
+            BlobRequestOptions optionsWithNoCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = false }
+            };
+            BlobRequestOptions optionsWithCRC64 = new BlobRequestOptions()
+            {
+                ChecksumOptions = new ChecksumOptions { UseTransactionalCRC64 = true }
+            };
+
+            byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
+            Crc64Wrapper hasher = new Crc64Wrapper();
+            hasher.UpdateHash(buffer, 0, buffer.Length);
+            string crc64 = hasher.ComputeHash();
+
+            string lastCheckCRC64 = null;
+            int checkCount = 0;
+            OperationContext opContextWithCRC64Check = new OperationContext();
+            opContextWithCRC64Check.ResponseReceived += (_, args) =>
+            {
+                if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpResponseParsers.GetContentCRC64(args.Response);
+                    checkCount++;
+                }
+            };
+
+            OperationContext opContextWithCRC64CheckAndInjectedFailure = new OperationContext();
+            opContextWithCRC64CheckAndInjectedFailure.ResponseReceived += (_, args) =>
+            {
+                args.Response.Headers.Remove(Constants.HeaderConstants.ContentCrc64Header);
+                args.Response.Headers.TryAddWithoutValidation(Constants.HeaderConstants.ContentCrc64Header, "dummy");
+                if (long.Parse(HttpResponseParsers.GetContentLength(args.Response)) >= buffer.Length)
+                {
+                    lastCheckCRC64 = HttpResponseParsers.GetContentCRC64(args.Response);
+                    checkCount++;
+                }
+            };
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+                {
+                    IAsyncResult result;
+                    CloudBlockBlob blockBlob = container.GetBlockBlobReference("blob1");
+                    using (Stream blobStream = blockBlob.OpenWrite())
+                    {
+                        blobStream.Write(buffer, 0, buffer.Length);
+                        blobStream.Write(buffer, 0, buffer.Length);
+                    }
+
+                    checkCount = 0;
+                    using (Stream stream = new MemoryStream())
+                    {
+                        //lastCheckCRC64 = null;
+                        //result = blockBlob.BeginDownloadToStream(stream, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                        //    ar => waitHandle.Set(),
+                        //    null);
+                        //waitHandle.WaitOne();
+                        //blockBlob.EndDownloadRangeToStream(result);
+                        //Assert.IsNotNull(lastCheckCRC64);
+
+                        //lastCheckCRC64 = null;
+                        //result = blockBlob.BeginDownloadToStream(stream, null, optionsWithCRC64, opContextWithCRC64Check,
+                        //    ar => waitHandle.Set(),
+                        //    null);
+                        //waitHandle.WaitOne();
+                        //blockBlob.EndDownloadRangeToStream(result);
+                        //Assert.IsNotNull(lastCheckCRC64);
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = blockBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blockBlob.EndDownloadRangeToStream(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = blockBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blockBlob.EndDownloadRangeToStream(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+
+                        TestHelper.ExpectedException<StorageException>(
+                            () =>
+                            {
+                                result = blockBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure,
+                                    ar => waitHandle.Set(),
+                                    null);
+                                waitHandle.WaitOne();
+                                blockBlob.EndDownloadRangeToStream(result);
+                            },
+                            "Calculated CRC64 does not match existing property"
+                            );
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = blockBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blockBlob.EndDownloadRangeToStream(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        result = blockBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        StorageException storageEx = TestHelper.ExpectedException<StorageException>(
+                            () => blockBlob.EndDownloadRangeToStream(result),
+                            "Downloading more than 4MB with transactional CRC64 should not be supported");
+                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
+
+                        lastCheckCRC64 = null;
+                        result = blockBlob.BeginOpenRead(null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        using (Stream blobStream = blockBlob.EndOpenRead(result))
+                        {
+                            blobStream.CopyTo(stream);
+                            Assert.IsNotNull(lastCheckCRC64);
+                        }
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = blockBlob.BeginOpenRead(null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        using (Stream blobStream = blockBlob.EndOpenRead(result))
+                        {
+                            blobStream.CopyTo(stream);
+                            Assert.IsNull(lastCheckCRC64);
+                        }
+                    }
+
+                    const int expectedCheckCount = 8;
+                    Assert.AreEqual(expectedCheckCount, checkCount);
+
+                    CloudPageBlob pageBlob = container.GetPageBlobReference("blob3");
+                    using (Stream blobStream = pageBlob.OpenWrite(buffer.Length * 2))
+                    {
+                        blobStream.Write(buffer, 0, buffer.Length);
+                        blobStream.Write(buffer, 0, buffer.Length);
+                    }
+
+                    checkCount = 0;
+                    using (Stream stream = new MemoryStream())
+                    {
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = pageBlob.BeginDownloadToStream(stream, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        pageBlob.EndDownloadRangeToStream(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        result = pageBlob.BeginDownloadToStream(stream, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        StorageException storageEx = TestHelper.ExpectedException<StorageException>(
+                            () => pageBlob.EndDownloadRangeToStream(result),
+                            "Page blob will not have CRC64 set by default; with UseTransactional, download should fail");
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = pageBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        pageBlob.EndDownloadRangeToStream(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = pageBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        pageBlob.EndDownloadRangeToStream(result);
+                        Assert.AreEqual(crc64, lastCheckCRC64);
+
+                        TestHelper.ExpectedException<StorageException>(
+                            () =>
+                            {
+                                result = pageBlob.BeginDownloadRangeToStream(stream, buffer.Length, buffer.Length, null, optionsWithCRC64, opContextWithCRC64CheckAndInjectedFailure,
+                                    ar => waitHandle.Set(),
+                                    null);
+                                waitHandle.WaitOne();
+                                blockBlob.EndDownloadRangeToStream(result);
+                            },
+                            "Calculated CRC64 does not match existing property"
+                            );
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = pageBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        pageBlob.EndDownloadRangeToStream(result);
+                        Assert.IsNull(lastCheckCRC64);
+
+                        result = pageBlob.BeginDownloadRangeToStream(stream, 1024, 4 * 1024 * 1024 + 1, null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        storageEx = TestHelper.ExpectedException<StorageException>(
+                            () => pageBlob.EndDownloadRangeToStream(result),
+                            "Downloading more than 4MB with transactional CRC64 should not be supported");
+                        Assert.IsInstanceOfType(storageEx.InnerException, typeof(ArgumentOutOfRangeException));
+
+                        lastCheckCRC64 = null;
+                        result = pageBlob.BeginOpenRead(null, optionsWithCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        using (Stream blobStream = pageBlob.EndOpenRead(result))
+                        {
+                            blobStream.CopyTo(stream);
+                            Assert.IsNotNull(lastCheckCRC64);
+                        }
+
+                        lastCheckCRC64 = "invalid_CRC64";
+                        result = pageBlob.BeginOpenRead(null, optionsWithNoCRC64, opContextWithCRC64Check,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        using (Stream blobStream = pageBlob.EndOpenRead(result))
+                        {
+                            blobStream.CopyTo(stream);
+                            Assert.IsNull(lastCheckCRC64);
+                        }
+                    }
+
+                    Assert.AreEqual(10, checkCount);
                 }
             }
             finally

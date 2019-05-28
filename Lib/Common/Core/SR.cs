@@ -57,11 +57,14 @@ namespace Microsoft.Azure.Storage.Core
         public const string CannotUpdateSasWithoutSasCreds = "Cannot update Shared Access Signature unless Sas credentials are used.";
         public const string ConcurrentOperationsNotSupported = "Could not acquire exclusive use of the TableServiceContext, Concurrent operations are not supported.";
         public const string Container = "container";
-        public const string ContentMD5NotCalculated = "The operation requires a response body but no data was copied to the destination buffer.";
+        public const string ContentChecksumNotCalculated = "The operation requires a response body but no data was copied to the destination buffer.";
         public const string CopyAborted = "The copy operation has been aborted by the user.";
         public const string CopyFailed = "The copy operation failed with the following error message: {0}";
         public const string CryptoError = "Cryptographic error occurred. Please check the inner exception for more details.";
         public const string CryptoFunctionFailed = "Crypto function failed with error code '{0}'";
+        public const string CRC64MismatchError = "Calculated CRC64 does not match existing property";
+        public const string CRC64NotPossible = "CRC64 cannot be calculated for an existing blob because it would require reading the existing data. Please disable StoreBlobContentCRC64.";
+        public const string CRC64NotPresentError = "CRC64 does not exist. If you do not want to force validation, please disable UseTransactionalCRC64.";
         public const string DecryptionLogicError = "Decryption logic threw error. Please check the inner exception for more details.";
         public const string DelegatingHandlerNonNullInnerHandler = "Innermost DelegatingHandler must have a null InnerHandler.";
         public const string DeleteSnapshotsNotValidError = "The option '{0}' must be 'None' to delete a specific snapshot specified by '{1}'";
@@ -184,11 +187,13 @@ namespace Microsoft.Azure.Storage.Core
         public const string PropertyResolverThrewError = "The custom property resolver delegate threw an exception. Check the inner exception for more details.";
         public const string ProtocolsMustBeNullInOldVersion = "SharedAccessProtocol must be null when creating a SAS token with an older service version parameter.";
         public const string PutBlobNeedsStoreBlobContentMD5 = "When uploading a blob in a single request, StoreBlobContentMD5 must be set to true if UseTransactionalMD5 is true, because the MD5 calculated for the transaction will be stored in the blob.";
+        public const string PutBlobNeedsStoreBlobContentCRC64 = "When uploading a blob in a single request, StoreBlobContentCRC64 must be set to true if UseTransactionalCRC64 is true, because the CRC64 calculated for the transaction will be stored in the blob.";
         public const string QueryBuilderKeyNotFound = "'{0}' key not found in the query builder.";
         public const string Queue = "queue";
         public const string QueueEndPointNotConfigured = "No queue endpoint configured.";
         public const string RangeSizeIsInvalid = "The range size of '{0}' is invalid. Please use a size that is greater than or equal to '{1}' MB and is a multiple of 4 KB.";
         public const string RangeSizeIsInvalidMD5 = "The argument '{0}' is invalid when using MD5. When MD5 is enabled the range size must be '{1}' MB.";
+        public const string RangeSizeIsInvalidCRC64 = "The argument '{0}' is invalid when using CRC64. When CRC64 is enabled the range size must be '{1}' MB.";
         public const string RangeDownloadNotPermittedOnPhone = "Windows Phone does not support downloading closed ranges from an encrypted blob. Please download the full blob or an open range (by specifying length as null)";
         public const string RecursiveReferencedObject = "Recursive reference detected. Object Path: {0} Property Type: {1}.";
         public const string RelativeAddressNotPermitted = "Address '{0}' is a relative address. Only absolute addresses are permitted.";
@@ -242,7 +247,7 @@ namespace Microsoft.Azure.Storage.Core
         public const string TracePreProcessError = "Exception thrown while processing response: {0}.";
         public const string TracePostProcess = "Processing response body.";
         public const string TracePostProcessError = "Exception thrown while ending operation: {0}.";
-        public const string TraceResponse = "Response received. Status code = {0}, Request ID = {1}, Content-MD5 = {2}, ETag = {3}.";
+        public const string TraceResponse = "Response received. Status code = {0}, Request ID = {1}, Content-MD5 = {2}, Content-CRC64 = {3}, ETag = {4}.";
         public const string TraceRetry = "Retrying failed operation.";
         public const string TraceRetryCheck = "Checking if the operation should be retried. Retry count = {0}, HTTP status code = {1}, Retryable exception = {2}, Exception = {3}.";
         public const string TraceRetryDecisionPolicy = "Retry policy did not allow for a retry. Failing with {0}.";
@@ -270,9 +275,6 @@ namespace Microsoft.Azure.Storage.Core
         public const string UsingDefaultPropertyResolver = "Using the default property resolver to deserialize the entity.";
         public const string UsingUserProvidedPropertyResolver = "Using the property resolver provided via TableRequestOptions to deserialize the entity.";
 
-#if WINDOWS_PHONE && WINDOWS_DESKTOP
-        public const string WindowsPhoneDoesNotSupportMD5 = "MD5 is not supported on Windows Phone";
-#endif
         // Table IQueryable Exception messages
         public const string ALinqCouldNotConvert = "Could not convert constant {0} expression to string.";
         public const string ALinqMethodNotSupported = "The method '{0}' is not supported.";

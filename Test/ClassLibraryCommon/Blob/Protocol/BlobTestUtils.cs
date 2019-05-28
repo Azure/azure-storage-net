@@ -123,6 +123,15 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
         }
 
+        public static void ContentCrc64Header(HttpRequestMessage request, string expectedValue)
+        {
+            Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetContentCRC64(request) == null));
+            if (HttpRequestParsers.GetContentCRC64(request) != null)
+            {
+                Assert.AreEqual(expectedValue, HttpRequestParsers.GetContentCRC64(request));
+            }
+        }
+
         public static void CacheControlHeader(HttpRequestMessage request, string expectedValue)
         {
             Assert.IsFalse((expectedValue != null) && (HttpRequestParsers.GetCacheControl(request) == null));
@@ -333,10 +342,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
         }
 
-        public static void ContentMd5Header(HttpResponseMessage response)
+        public static void ContentChecksumHeader(HttpResponseMessage response)
         {
             Assert.IsNotNull(response);
-            Assert.IsNotNull(HttpResponseParsers.GetContentMD5(response));
+            Assert.IsFalse(HttpResponseParsers.GetContentMD5(response) == null && HttpResponseParsers.GetContentCRC64(response) == null);
         }
 
         public static void RequestIdHeader(HttpResponseMessage response)

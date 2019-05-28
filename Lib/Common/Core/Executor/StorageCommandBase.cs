@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
         // State- different than async state, this is used for ops to communicate state between invocations, i.e. bytes downloaded etc
         internal object OperationState = null;
 
-        // Used to keep track of Md5 / Length of a stream as it is being copied
+        // Used to keep track of checksum / Length of a stream as it is being copied
         private volatile StreamDescriptor streamCopyState = null;
 
         internal StreamDescriptor StreamCopyState

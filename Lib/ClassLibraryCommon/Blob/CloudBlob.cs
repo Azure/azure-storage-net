@@ -2911,14 +2911,14 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         internal virtual string StartCopy(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.StartCopy(source, default(string) /* contentMD5 */, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext);
+            return this.StartCopy(source, Checksum.None, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext);
         }
 
         /// <summary>
         /// Begins an operation to start copying another blob's contents, properties, and metadata to this blob.
         /// </summary>
         /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
@@ -2931,13 +2931,13 @@ namespace Microsoft.Azure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        internal virtual string StartCopy(Uri source, string contentMD5, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
+        internal virtual string StartCopy(Uri source, Checksum contentChecksum, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             CommonUtility.AssertNotNull("source", source);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, source, contentMD5, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, contentChecksum, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2995,7 +2995,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// Begins an asynchronous operation to start copying another blob's contents, properties, and metadata to this blob.
         /// </summary>
         /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity. May be <c>null</c> or an empty string.</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
@@ -3008,7 +3008,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         internal virtual ICancellableAsyncResult BeginStartCopy(Uri source, string contentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.StartCopyAsync(source, contentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.StartCopyAsync(source, new Checksum(md5: contentMD5), incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
 
         }
 
@@ -3100,7 +3100,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, default(string) /* contentMD5 */, false /* incrementalCopy */, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+            return this.StartCopyAsync(source, Checksum.None, false /* incrementalCopy */, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -3108,7 +3108,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// to this blob.
         /// </summary>
         /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
@@ -3117,13 +3117,13 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private Task<string> StartCopyAsync(Uri source, string contentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private Task<string> StartCopyAsync(Uri source, Checksum contentChecksum, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, source, contentMD5, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, contentChecksum, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -3395,15 +3395,6 @@ namespace Microsoft.Azure.Storage.Blob
 
             if (isRangeGet && options.EncryptionPolicy != null)
             {
-#if WINDOWS_PHONE
-                // Windows phone does not allow setting padding mode to none. Uses PKCS7 by default. So we cannot download closed ranges that do not
-                // cover the last block of data. However, since we cannot know the length unless we do a fetch attributes, we will just throw 
-                // for now if length is specified. Open ranges like x - are still allowed.
-                if (length.HasValue)
-                {
-                    throw new InvalidOperationException(SR.RangeDownloadNotPermittedOnPhone);
-                }
-#endif
                 // Let's say the user requests a download with offset = 39 and length = 54
 
                 // First calculate the endOffset if length has value.
@@ -3447,19 +3438,25 @@ namespace Microsoft.Azure.Storage.Blob
             bool decryptStreamCreated = false;
             ICryptoTransform transform = null;
             string storedMD5 = null;
+            string storedCRC64 = null;
 
             long startingOffset = offset.HasValue ? offset.Value : 0;
             long? startingLength = length;
             long? validateLength = null;
 
             RESTCommand<NullType> getCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, blobAttributes.StorageUri, this.ServiceClient.HttpClient);
+            ChecksumRequested checksumRequested = new ChecksumRequested(md5: options.ChecksumOptions.UseTransactionalMD5.Value, crc64: options.ChecksumOptions.UseTransactionalCRC64.Value);
 
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
             getCmd.DestinationStream = destStream;
-            getCmd.CalculateMd5ForResponseStream = !options.DisableContentMD5Validation.Value;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.ChecksumRequestedForResponseStream 
+                = new ChecksumRequested(
+                    md5: !options.ChecksumOptions.DisableContentMD5Validation.Value,
+                    crc64: !options.ChecksumOptions.DisableContentCRC64Validation.Value
+                    );
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, checksumRequested, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.RecoveryAction = (cmd, ex, ctx) =>
             {
                 if ((lockedAccessCondition == null) && !string.IsNullOrEmpty(lockedETag))
@@ -3480,7 +3477,8 @@ namespace Microsoft.Azure.Storage.Blob
                     }
                 }
 
-                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, lockedAccessCondition ?? accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                ChecksumRequested checksumRequestedAndNotPopulated = new ChecksumRequested(md5: options.ChecksumOptions.UseTransactionalMD5.Value && !arePropertiesPopulated, crc64: options.ChecksumOptions.UseTransactionalCRC64.Value && !arePropertiesPopulated);
+                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => BlobHttpRequestMessageFactory.Get(uri, serverTimeout, blobAttributes.SnapshotTime, offset, length, checksumRequestedAndNotPopulated, lockedAccessCondition ?? accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             };
 
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -3491,6 +3489,7 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     CloudBlob.UpdateAfterFetchAttributes(blobAttributes, resp);
                     storedMD5 = HttpResponseParsers.GetContentMD5(resp);
+                    storedCRC64 = HttpResponseParsers.GetContentCRC64(resp);
 
                     if (options.EncryptionPolicy != null)
                     {
@@ -3498,13 +3497,26 @@ namespace Microsoft.Azure.Storage.Blob
                         decryptStreamCreated = true;
                     }
 
-                    if (!options.DisableContentMD5Validation.Value &&
-                        options.UseTransactionalMD5.Value &&
+                    if (!options.ChecksumOptions.DisableContentMD5Validation.Value &&
+                        options.ChecksumOptions.UseTransactionalMD5.Value &&
                         string.IsNullOrEmpty(storedMD5))
                     {
                         throw new StorageException(
                             cmd.CurrentResult,
                             SR.MD5NotPresentError,
+                            null)
+                        {
+                            IsRetryable = false
+                        };
+                    }
+
+                    if (!options.ChecksumOptions.DisableContentCRC64Validation.Value &&
+                        options.ChecksumOptions.UseTransactionalCRC64.Value &&
+                        string.IsNullOrEmpty(storedCRC64))
+                    {
+                        throw new StorageException(
+                            cmd.CurrentResult,
+                            SR.CRC64NotPresentError,
                             null)
                         {
                             IsRetryable = false
@@ -3525,7 +3537,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             getCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) =>
             {
-                HttpResponseParsers.ValidateResponseStreamMd5AndLength(validateLength, storedMD5, cmd);
+                HttpResponseParsers.ValidateResponseStreamChecksumAndLength(validateLength, storedMD5, storedCRC64, cmd);
                 return NullType.ValueTask;
             };
 
@@ -3889,7 +3901,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="attributes">The attributes.</param>
         /// <param name="source">The URI of the source blob.</param>
-        /// <param name="sourceContentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
+        /// <param name="sourceContentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
@@ -3900,7 +3912,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// A <see cref="RESTCommand{T}"/> that starts to copy.
         /// </returns>
         /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, Checksum sourceContentChecksum, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -3912,7 +3924,7 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentChecksum, incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
                 return msg;
             };

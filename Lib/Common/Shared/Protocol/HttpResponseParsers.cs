@@ -100,13 +100,23 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         }
 
         /// <summary>
-        /// Gets an ETag from a response.
+        /// Gets an ContentMD5 from a response.
         /// </summary>
         /// <param name="response">The web response.</param>
-        /// <returns>A quoted ETag string.</returns>
+        /// <returns>A ContentMD5 string.</returns>
         internal static string GetContentMD5(HttpResponseMessage response)
         {
             return response.Content.Headers.ContentMD5 != null ? Convert.ToBase64String(response.Content.Headers.ContentMD5) : null;
+        }
+
+        /// <summary>
+        /// Gets an ContentCRC64 from a response.
+        /// </summary>
+        /// <param name="response">The web response.</param>
+        /// <returns>A ContentCRC64 string.</returns>
+        internal static string GetContentCRC64(HttpResponseMessage response)
+        {
+            return GetHeader(response, Constants.HeaderConstants.ContentCrc64Header);
         }
 
         /// <summary>

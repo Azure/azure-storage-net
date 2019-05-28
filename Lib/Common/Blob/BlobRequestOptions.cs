@@ -66,16 +66,27 @@ namespace Microsoft.Azure.Storage.Blob
             MaximumExecutionTime = null,
             ParallelOperationThreadCount = 1,
             SingleBlobUploadThresholdInBytes = Constants.MaxSingleUploadBlobSize / 2,
-            
-#if (WINDOWS_PHONE && WINDOWS_DESKTOP)  
-            DisableContentMD5Validation = true,
-            StoreBlobContentMD5 = false,
-            UseTransactionalMD5 = false,
+
+            ChecksumOptions = new ChecksumOptions
+            {
+#if (WINDOWS_PHONE && WINDOWS_DESKTOP)
+                DisableContentMD5Validation = true,
+                StoreContentMD5 = false,
+                UseTransactionalMD5 = false,
+                DisableContentCRC64Validation = true,
+                StoreContentCRC64 = false,
+                UseTransactionalCRC64 = false,
 #else
-            DisableContentMD5Validation = false,
-            //// StoreBlobContentMD5 = (blobType == BlobType.BlockBlob), // must be computed in ApplyDefaults
-            UseTransactionalMD5 = false,
+                DisableContentMD5Validation = false,
+                //// StoreContentMD5 = (blobType == BlobType.BlockBlob), // must be computed in ApplyDefaults
+                UseTransactionalMD5 = false,
+
+                DisableContentCRC64Validation = false,
+                //// StoreContentCRC64 = (blobType == BlobType.BlockBlob), // must be computed in ApplyDefaults
+                UseTransactionalCRC64 = false,
 #endif
+            }
+
         };
 
         /// <summary>
@@ -104,9 +115,7 @@ namespace Microsoft.Azure.Storage.Blob
                 this.ServerTimeout = other.ServerTimeout;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
                 this.OperationExpiryTime = other.OperationExpiryTime;
-                this.UseTransactionalMD5 = other.UseTransactionalMD5;
-                this.StoreBlobContentMD5 = other.StoreBlobContentMD5;
-                this.DisableContentMD5Validation = other.DisableContentMD5Validation;
+                this.ChecksumOptions.CopyFrom(other.ChecksumOptions);
                 this.ParallelOperationThreadCount = other.ParallelOperationThreadCount;
                 this.SingleBlobUploadThresholdInBytes = other.SingleBlobUploadThresholdInBytes;
             }
@@ -169,24 +178,43 @@ namespace Microsoft.Azure.Storage.Blob
             }
 
 #if (WINDOWS_PHONE && WINDOWS_DESKTOP)  
-            modifiedOptions.DisableContentMD5Validation = BaseDefaultRequestOptions.DisableContentMD5Validation;
-            modifiedOptions.StoreBlobContentMD5 = BaseDefaultRequestOptions.StoreBlobContentMD5;
-            modifiedOptions.UseTransactionalMD5 = BaseDefaultRequestOptions.UseTransactionalMD5;
-#else
-            modifiedOptions.DisableContentMD5Validation = 
-                modifiedOptions.DisableContentMD5Validation 
-                ?? serviceClient.DefaultRequestOptions.DisableContentMD5Validation 
-                ?? BaseDefaultRequestOptions.DisableContentMD5Validation;
+            modifiedOptions.ChecksumOptions.DisableContentMD5Validation = BaseDefaultRequestOptions.DisableContentMD5Validation;
+            modifiedOptions.ChecksumOptions.StoreContentMD5 = BaseDefaultRequestOptions.ChecksumOptions.StoreBlobContentMD5;
+            modifiedOptions.ChecksumOptions.UseTransactionalMD5 = BaseDefaultRequestOptions.UseTransactionalMD5;
 
-            modifiedOptions.StoreBlobContentMD5 = 
-                modifiedOptions.StoreBlobContentMD5 
-                ?? serviceClient.DefaultRequestOptions.StoreBlobContentMD5 
+            modifiedOptions.ChecksumOptions.DisableContentCRC64Validation = BaseDefaultRequestOptions.DisableContentCRC64Validation;
+            modifiedOptions.ChecksumOptions.StoreContentCRC64 = BaseDefaultRequestOptions.ChecksumOptions.StoreBlobContentCRC64;
+            modifiedOptions.ChecksumOptions.UseTransactionalCRC64 = BaseDefaultRequestOptions.UseTransactionalCRC64;
+#else
+            modifiedOptions.ChecksumOptions.DisableContentMD5Validation = 
+                modifiedOptions.ChecksumOptions.DisableContentMD5Validation 
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.DisableContentMD5Validation 
+                ?? BaseDefaultRequestOptions.ChecksumOptions.DisableContentMD5Validation;
+
+            modifiedOptions.ChecksumOptions.StoreContentMD5 = 
+                modifiedOptions.ChecksumOptions.StoreContentMD5 
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.StoreContentMD5 
                 ?? (blobType == BlobType.BlockBlob); // must be computed
 
-            modifiedOptions.UseTransactionalMD5 = 
-                modifiedOptions.UseTransactionalMD5 
-                ?? serviceClient.DefaultRequestOptions.UseTransactionalMD5 
-                ?? BaseDefaultRequestOptions.UseTransactionalMD5;
+            modifiedOptions.ChecksumOptions.UseTransactionalMD5 = 
+                modifiedOptions.ChecksumOptions.UseTransactionalMD5 
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.UseTransactionalMD5 
+                ?? BaseDefaultRequestOptions.ChecksumOptions.UseTransactionalMD5;
+
+            modifiedOptions.ChecksumOptions.DisableContentCRC64Validation =
+                modifiedOptions.ChecksumOptions.DisableContentCRC64Validation
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.DisableContentCRC64Validation
+                ?? BaseDefaultRequestOptions.ChecksumOptions.DisableContentCRC64Validation;
+
+            modifiedOptions.ChecksumOptions.StoreContentCRC64 =
+                modifiedOptions.ChecksumOptions.StoreContentCRC64
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.StoreContentCRC64
+                ?? (blobType == BlobType.BlockBlob); // must be computed
+
+            modifiedOptions.ChecksumOptions.UseTransactionalCRC64 =
+                modifiedOptions.ChecksumOptions.UseTransactionalCRC64
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.UseTransactionalCRC64
+                ?? BaseDefaultRequestOptions.ChecksumOptions.UseTransactionalCRC64;
 #endif
 
             return modifiedOptions;
@@ -448,29 +476,14 @@ namespace Microsoft.Azure.Storage.Blob
         ///  ## Examples
         ///  [!code-csharp[Use_Transactional_MD5_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/MD5FlagsTest.cs#sample_BlobRequestOptions_UseTransactionalMD5 "Use Transactional MD5 Sample")] 
         /// </remarks>
-#if  WINDOWS_PHONE && WINDOWS_DESKTOP
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? UseTransactionalMD5
         {
-            get
-            {
-                return this.useTransactionalMD5;
-            }
-
-            set
-            {
-#if  WINDOWS_PHONE && WINDOWS_DESKTOP
-                if (value.HasValue && value.Value)
-                {
-                    throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-                }
-#endif
-                this.useTransactionalMD5 = value;
-            }
+            get => this.ChecksumOptions.UseTransactionalMD5;
+            set => this.ChecksumOptions.UseTransactionalMD5 = value;
         }
-
-        private bool? useTransactionalMD5;
 
         /// <summary>
         /// Gets or sets a value to indicate that an MD5 hash will be calculated and stored when uploading a blob.
@@ -489,29 +502,14 @@ namespace Microsoft.Azure.Storage.Blob
         ///  ## Examples
         ///  [!code-csharp[Store_Blob_Content_MD5_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/MD5FlagsTest.cs#sample_BlobRequestOptions_StoreBlobContentMD5 "Store Blob Content MD5 Sample")] 
         /// </remarks>
-#if  WINDOWS_PHONE && WINDOWS_DESKTOP
+#if WINDOWS_PHONE && WINDOWS_DESKTOP
         /// <remarks>This property is not supported for Windows Phone.</remarks>
 #endif
         public bool? StoreBlobContentMD5
         {
-            get
-            {
-                return this.storeBlobContentMD5;
-            }
-
-            set
-            {
-#if  WINDOWS_PHONE && WINDOWS_DESKTOP
-                if (value.HasValue && value.Value)
-                {
-                    throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-                }
-#endif
-                this.storeBlobContentMD5 = value;
-            }
+            get => this.ChecksumOptions.StoreContentMD5;
+            set => this.ChecksumOptions.StoreContentMD5 = value;
         }
-
-        private bool? storeBlobContentMD5;
 
         /// <summary>
         /// Gets or sets a value to indicate that MD5 validation will be disabled when downloading blobs.
@@ -521,7 +519,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// When downloading a blob, if the value already exists on the blob, the Storage service 
         /// will include the MD5 hash of the entire blob as a header. This option controls 
         /// whether or not the Storage Client will validate that MD5 hash on download.
-        /// See <see cref="BlobRequestOptions.StoreBlobContentMD5"/> for more details.
+        /// See <see cref="BlobRequestOptions.ChecksumOptions.StoreBlobContentMD5"/> for more details.
         /// 
         ///## Examples
         ///[!code-csharp[Disable_Content_MD5_Validation_Sample](~/azure-storage-net/Test/ClassLibraryCommon/Blob/MD5FlagsTest.cs#sample_BlobRequestOptions_DisableContentMD5Validation "Disable Content MD5 Validation Sample")]        
@@ -531,23 +529,10 @@ namespace Microsoft.Azure.Storage.Blob
 #endif
         public bool? DisableContentMD5Validation
         {
-            get
-            {
-                return this.disableContentMD5Validation;
-            }
-
-            set
-            {
-#if  WINDOWS_PHONE && WINDOWS_DESKTOP
-                if (value.HasValue && !value.Value)
-                {
-                    throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-                }
-#endif
-                this.disableContentMD5Validation = value;
-            }
+            get => this.ChecksumOptions.DisableContentMD5Validation;
+            set => this.ChecksumOptions.DisableContentMD5Validation = value;
         }
 
-        private bool? disableContentMD5Validation;
+        public ChecksumOptions ChecksumOptions { get; set; } = new ChecksumOptions();
     }
 }

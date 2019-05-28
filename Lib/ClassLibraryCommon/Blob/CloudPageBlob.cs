@@ -96,11 +96,16 @@ namespace Microsoft.Azure.Storage.Blob
             }
             else
             {
-                if (modifiedOptions.StoreBlobContentMD5.Value)
+                if (modifiedOptions.ChecksumOptions.StoreContentMD5.Value)
                 {
                     throw new ArgumentException(SR.MD5NotPossible);
                 }
-                
+
+                if (modifiedOptions.ChecksumOptions.StoreContentCRC64.Value)
+                {
+                    throw new ArgumentException(SR.CRC64NotPossible);
+                }
+
                 if (modifiedOptions.EncryptionPolicy != null)
                 {
                     throw new ArgumentException(SR.EncryptionNotSupportedForExistingBlobs);
@@ -321,9 +326,14 @@ namespace Microsoft.Azure.Storage.Blob
             }
             else
             {
-                if (modifiedOptions.StoreBlobContentMD5.Value)
+                if (modifiedOptions.ChecksumOptions.StoreContentMD5.Value)
                 {
                     throw new ArgumentException(SR.MD5NotPossible);
+                }
+
+                if (modifiedOptions.ChecksumOptions.StoreContentCRC64.Value)
+                {
+                    throw new ArgumentException(SR.CRC64NotPossible);
                 }
 
                 if (modifiedOptions.EncryptionPolicy != null)
@@ -449,7 +459,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
                 {
-                    source.WriteToSync(blobStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
+                    source.WriteToSync(blobStream, length, null /* maxLength */, ChecksumRequested.None, true, tempExecutionState, null /* streamCopyState */);
                     blobStream.Commit();
                 }
             }
@@ -817,7 +827,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 using (ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
                 {
-                    await source.WriteToAsync(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(blobStream), this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                    await source.WriteToAsync(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(blobStream), this.ServiceClient.BufferManager, length, null /* maxLength */, ChecksumRequested.None, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
                     await blobStream.CommitAsync().ConfigureAwait(false);
                 }
             }
@@ -2032,23 +2042,28 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual void WritePages(Stream pageData, long startOffset, string contentMD5 = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void WritePages(Stream pageData, long startOffset, Checksum contentChecksum = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("pageData", pageData);
 
+            contentChecksum = contentChecksum ?? Checksum.None;
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
+            ChecksumRequested requiresContentChecksum = new ChecksumRequested(
+                md5: (contentChecksum?.MD5 == null) && modifiedOptions.ChecksumOptions.UseTransactionalMD5.Value,
+                crc64: (contentChecksum?.CRC64 == null) && modifiedOptions.ChecksumOptions.UseTransactionalCRC64.Value
+                );
             operationContext = operationContext ?? new OperationContext();
 
             Stream seekableStream = pageData;
@@ -2056,7 +2071,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                if (!pageData.CanSeek || requiresContentMD5)
+                if (!pageData.CanSeek || requiresContentChecksum.HasAny)
                 {
                     ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
@@ -2074,17 +2089,17 @@ namespace Microsoft.Azure.Storage.Blob
 
                     long startPosition = seekableStream.Position;
                     StreamDescriptor streamCopyState = new StreamDescriptor();
-                    pageData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, true, tempExecutionState, streamCopyState);
+                    pageData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentChecksum, true, tempExecutionState, streamCopyState);
                     seekableStream.Position = startPosition;
 
-                    if (requiresContentMD5)
-                    {
-                        contentMD5 = streamCopyState.Md5;
-                    }
+                    contentChecksum = new Checksum(
+                        md5: requiresContentChecksum.MD5 ? streamCopyState.Md5 : default(string),
+                        crc64: requiresContentChecksum.CRC64 ? streamCopyState.Crc64 : default(string)
+                        );
                 }
 
                 Executor.ExecuteSync(
-                    this.PutPageImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+                    this.PutPageImpl(seekableStream, startOffset, contentChecksum, accessCondition, modifiedOptions),
                     modifiedOptions.RetryPolicy,
                     operationContext);
             }
@@ -2110,7 +2125,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        public virtual void WritePages(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5 = null, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void WritePages(Uri sourceUri, long offset, long count, long startOffset, Checksum sourceContentChecksum = null, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -2118,7 +2133,7 @@ namespace Microsoft.Azure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             Executor.ExecuteSync(
-                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentMd5, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentChecksum, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2129,20 +2144,20 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, string contentMD5, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, Checksum contentChecksum, AsyncCallback callback, object state)
         {
-            return this.BeginWritePages(pageData, startOffset, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginWritePages(pageData, startOffset, contentChecksum, null /* accessCondition */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -2150,7 +2165,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -2158,15 +2173,15 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return this.BeginWritePages(pageData, startOffset, contentMD5, accessCondition, options, operationContext, null /*progressHandler*/, callback, state);
+            return this.BeginWritePages(pageData, startOffset, contentChecksum, accessCondition, options, operationContext, null /*progressHandler*/, callback, state);
         }
 
         /// <summary>
@@ -2185,9 +2200,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual ICancellableAsyncResult BeginWritePages(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginWritePages(Uri sourceUri, long offset, long count, long startOffset, Checksum sourceContentChecksum, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.WritePagesAsync(sourceUri, offset, count, startOffset, sourceContentMd5, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WritePagesAsync(sourceUri, offset, count, startOffset, sourceContentChecksum, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2195,7 +2210,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -2204,19 +2219,19 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         [DoesServiceRequest]
-        private ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
+        private ICancellableAsyncResult BeginWritePages(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, progressHandler, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WritePagesAsync(pageData, startOffset, contentChecksum, accessCondition, options, operationContext, progressHandler, token), callback, state);
         }
 
-              /// <summary>
+        /// <summary>
         /// Ends an asynchronous operation to write pages to a page blob.
         /// </summary>
         /// <param name="asyncResult">An <see cref="IAsyncResult"/> that references the pending asynchronous operation.</param>
@@ -2231,18 +2246,18 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5)
+        public virtual Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum)
         {
-            return this.WritePagesAsync(pageData, startOffset, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+            return this.WritePagesAsync(pageData, startOffset, contentChecksum, CancellationToken.None);
         }
 
         /// <summary>
@@ -2250,19 +2265,19 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, CancellationToken cancellationToken)
+        public virtual Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum, CancellationToken cancellationToken)
         {
-            return this.WritePagesAsync(pageData, startOffset, contentMD5, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, cancellationToken);
+            return this.WritePagesAsync(pageData, startOffset, contentChecksum, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), null /*progressHandler*/, cancellationToken);
         }
 
         /// <summary>
@@ -2270,21 +2285,21 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, null /*progressHandler*/, CancellationToken.None);
+            return this.WritePagesAsync(pageData, startOffset, contentChecksum, accessCondition, options, operationContext, null /*progressHandler*/, CancellationToken.None);
         }
 
         /// <summary>
@@ -2292,22 +2307,22 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, null /*progressHandler*/, cancellationToken);
+            return this.WritePagesAsync(pageData, startOffset, contentChecksum, accessCondition, options, operationContext, null /*progressHandler*/, cancellationToken);
         }
 
         /// <summary>
@@ -2315,7 +2330,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A <see cref="System.IO.Stream"/> object providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -2323,18 +2338,23 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         /// <remarks>
-        /// Clients may send the Content-MD5 header for a given Write Pages operation as a means to ensure transactional integrity over the wire. 
-        /// The <paramref name="contentMD5"/> parameter permits clients who already have access to a pre-computed MD5 value for a given byte range to provide it.
-        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> property is set to <c>true</c> and the <paramref name="contentMD5"/> parameter is set 
-        /// to <c>null</c>, then the client library will calculate the MD5 value internally.
+        /// Clients may send the content checksum headers for a given operation as a means to ensure transactional integrity over the wire. 
+        /// The <paramref name="contentChecksum"/> parameter permits clients who already have access to a pre-computed checksum value for a given byte range to provide it.
+        /// If the <see cref="P:BlobRequestOptions.UseTransactionalMd5"/> or <see cref="P:BlobRequestOptions.UseTransactionalCrc64"/> properties are set to <c>true</c> and the corresponding content parameter is set 
+        /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("pageData", pageData);
 
+            contentChecksum = contentChecksum ?? Checksum.None;
+
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
+            ChecksumRequested requiresContentChecksum = new ChecksumRequested(
+                md5: (contentChecksum.MD5 == null) && modifiedOptions.ChecksumOptions.UseTransactionalMD5.Value,
+                crc64: (contentChecksum.CRC64 == null) && modifiedOptions.ChecksumOptions.UseTransactionalCRC64.Value
+                );
             operationContext = operationContext ?? new OperationContext();
 
             Stream seekableStream = pageData;
@@ -2342,7 +2362,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                if (!pageData.CanSeek || requiresContentMD5)
+                if (!pageData.CanSeek || requiresContentChecksum.HasAny)
                 {
                     ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
@@ -2360,17 +2380,17 @@ namespace Microsoft.Azure.Storage.Blob
 
                     long startPosition = seekableStream.Position;
                     StreamDescriptor streamCopyState = new StreamDescriptor();
-                    await pageData.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await pageData.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentChecksum, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     seekableStream.Position = startPosition;
 
-                    if (requiresContentMD5)
-                    {
-                        contentMD5 = streamCopyState.Md5;
-                    }
+                    contentChecksum = new Checksum(
+                        md5: requiresContentChecksum.MD5 ? streamCopyState.Md5 : default(string),
+                        crc64: requiresContentChecksum.CRC64 ? streamCopyState.Crc64 : default(string)
+                        );
                 }
 
                 await Executor.ExecuteAsync(
-                    this.PutPageImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
+                    this.PutPageImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentChecksum, accessCondition, modifiedOptions),
                     modifiedOptions.RetryPolicy,
                     operationContext,
                     cancellationToken);
@@ -2391,7 +2411,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
         /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="sourceContentMd5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="sourceContentMd5">An optional hash value used to ensure transactional integrity. May be <c>null</c> or an empty string.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -2399,7 +2419,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual async Task WritePagesAsync(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task WritePagesAsync(Uri sourceUri, long offset, long count, long startOffset, Checksum sourceContentChecksum, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -2407,7 +2427,7 @@ namespace Microsoft.Azure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             await Executor.ExecuteAsync(
-                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentMd5, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentChecksum, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken).ConfigureAwait(false);
@@ -2615,7 +2635,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, Checksum.None, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2867,7 +2887,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, Checksum.None, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -3141,11 +3161,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">The page data.</param>
         /// <param name="startOffset">The start offset.</param> 
-        /// <param name="contentMD5">The content MD5.</param>
+        /// <param name="contentChecksum">The content checksum.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that writes the pages.</returns>
-        private RESTCommand<NullType> PutPageImpl(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> PutPageImpl(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options)
         {
             options.AssertNoEncryptionPolicyOrStrictMode();
 
@@ -3169,7 +3189,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(pageData, offset, length, contentMD5, cmd, ctx);
+            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(pageData, offset, length, contentChecksum, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, serverTimeout, pageRange, pageWrite, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -3189,12 +3209,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
         /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="startOffset">The offset in the destination to begin writing.</param> 
-        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that writes the pages.</returns>
-        private RESTCommand<NullType> PutPageImpl(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> PutPageImpl(Uri sourceUri, long offset, long count, long startOffset, Checksum sourceContentChecksum, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             options.AssertNoEncryptionPolicyOrStrictMode();
 
@@ -3214,7 +3234,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, pageRange, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, sourceUri, offset, count, sourceContentChecksum, serverTimeout, pageRange, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);

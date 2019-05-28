@@ -25,15 +25,19 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 
     internal static class HttpContentFactory
     {
-        public static HttpContent BuildContentFromStream<T>(Stream stream, long offset, long? length, string md5, RESTCommand<T> cmd, OperationContext operationContext)
+        public static HttpContent BuildContentFromStream<T>(Stream stream, long offset, long? length, Checksum checksum, RESTCommand<T> cmd, OperationContext operationContext)
         {
             stream.Seek(offset, SeekOrigin.Begin);
             
             HttpContent retContent = new StreamContent(new NonCloseableStream(stream));
             retContent.Headers.ContentLength = length;
-            if (md5 != null)
+            if (checksum?.MD5 != null)
             {
-                retContent.Headers.ContentMD5 = Convert.FromBase64String(md5);
+                retContent.Headers.ContentMD5 = Convert.FromBase64String(checksum.MD5);
+            }
+            if (checksum?.CRC64 != null)
+            {
+                retContent.Headers.Add(Constants.HeaderConstants.ContentCrc64Header, checksum.CRC64);
             }
 
             return retContent;

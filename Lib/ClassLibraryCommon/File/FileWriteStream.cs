@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Storage.File
 {
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -54,10 +55,10 @@ namespace Microsoft.Azure.Storage.File
 
             if (oldOffset != newOffset)
             {
-                if (this.fileMD5 != null)
+                if (this.fileChecksum != null)
                 {
-                    this.fileMD5.Dispose();
-                    this.fileMD5 = null;
+                    this.fileChecksum.Dispose();
+                    this.fileChecksum = null;
                 }
 
                 this.Flush();
@@ -144,9 +145,9 @@ namespace Microsoft.Azure.Storage.File
                     int bytesToWrite = Math.Min(count, maxBytesToWrite);
 
                     await this.internalBuffer.WriteAsync(buffer, offset, bytesToWrite, cancellationToken).ConfigureAwait(false);
-                    if (this.rangeMD5 != null)
+                    if (this.rangeChecksum != null)
                     {
-                        this.rangeMD5.UpdateHash(buffer, offset, bytesToWrite);
+                        this.rangeChecksum.UpdateHash(buffer, offset, bytesToWrite);
                     }
 
                     count -= bytesToWrite;
@@ -180,9 +181,9 @@ namespace Microsoft.Azure.Storage.File
             // Update transactional, then update full blob, in that order.
             // This way, if there's any bit corruption that happens in between the two, we detect it at PutBlock on the service, 
             // rather than GetBlob + validate on the client
-            if (this.fileMD5 != null)
+            if (this.fileChecksum != null)
             {
-                this.fileMD5.UpdateHash(buffer, initialOffset, initialCount);
+                this.fileChecksum.UpdateHash(buffer, initialOffset, initialCount);
             }
 
             if (continueTCS == null)
@@ -303,10 +304,22 @@ namespace Microsoft.Azure.Storage.File
 
             try
             {
-                if (this.fileMD5 != null)
+                if (this.fileChecksum != null)
                 {
-                    this.file.Properties.ContentMD5 = this.fileMD5.ComputeHash();
-                    await this.file.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext).ConfigureAwait(false);
+                    if (this.fileChecksum.MD5 != null)
+                    {
+                        this.file.Properties.ContentChecksum.MD5 = this.fileChecksum.MD5.ComputeHash();
+                    }
+
+                    if (this.fileChecksum.CRC64 != null)
+                    {
+                        this.file.Properties.ContentChecksum.CRC64 = this.fileChecksum.CRC64.ComputeHash();
+                    }
+
+                    if (this.fileChecksum.HasAny)
+                    {
+                        await this.file.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext).ConfigureAwait(false);
+                    }
                 }
             }
             catch (Exception e)
@@ -335,17 +348,29 @@ namespace Microsoft.Azure.Storage.File
             this.internalBuffer = new MultiBufferMemoryStream(this.file.ServiceClient.BufferManager);
             bufferToUpload.Seek(0, SeekOrigin.Begin);
 
-            string bufferMD5 = null;
-            if (this.rangeMD5 != null)
+            Checksum bufferChecksum = Checksum.None;
+
+            if (this.rangeChecksum != null)
             {
-                bufferMD5 = this.rangeMD5.ComputeHash();
-                this.rangeMD5.Dispose();
-                this.rangeMD5 = new MD5Wrapper();
+                bool computeCRC64 = false;
+                bool computeMD5 = false;
+                if (this.rangeChecksum.MD5 != null)
+                {
+                    bufferChecksum.MD5 = this.rangeChecksum.MD5.ComputeHash();
+                    computeMD5 = true;
+                }
+                if (this.rangeChecksum.CRC64 != null)
+                {
+                    bufferChecksum.CRC64 = this.rangeChecksum.CRC64.ComputeHash();
+                    computeCRC64 = true;
+                }
+                this.rangeChecksum.Dispose();
+                this.rangeChecksum = new ChecksumWrapper(computeMD5, computeCRC64);
             }
 
             long offset = this.currentFileOffset;
             this.currentFileOffset += bufferToUpload.Length;
-            await this.WriteRangeAsync(continuetcs, bufferToUpload, offset, bufferMD5, token).ConfigureAwait(false);
+            await this.WriteRangeAsync(continuetcs, bufferToUpload, offset, bufferChecksum, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -354,9 +379,9 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <param name="rangeData">Data to be uploaded</param>
         /// <param name="offset">Offset within the file</param>
-        /// <param name="contentMD5"> </param>
+        /// <param name="contentChecksum">The content checksum.</param>
         /// <returns>A task that represents the asynchronous write operation.</returns>
-        private async Task WriteRangeAsync(TaskCompletionSource<bool> continuetcs, Stream rangeData, long offset, string contentMD5, CancellationToken token)
+        private async Task WriteRangeAsync(TaskCompletionSource<bool> continuetcs, Stream rangeData, long offset, Checksum contentChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runingInline, CancellationToken internalToken) =>
@@ -368,7 +393,7 @@ namespace Microsoft.Azure.Storage.File
                         Task.Run(() => continuetcs.TrySetResult(true));
                     }
 
-                    await this.file.WriteRangeAsync(rangeData, offset, contentMD5, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
+                    await this.file.WriteRangeAsync(rangeData, offset, contentChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), internalToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {

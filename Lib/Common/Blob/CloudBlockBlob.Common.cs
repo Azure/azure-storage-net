@@ -263,9 +263,9 @@ namespace Microsoft.Azure.Storage.Blob
                 try
                 {
 #if !WINDOWS_RT
-                    Task uploadTask = this.PutBlockAsync(blockId, block, null, accessCondition, modifiedOptions, operationContext, progressIncrementer, cancellationToken);
+                    Task uploadTask = this.PutBlockAsync(blockId, block, Checksum.None, accessCondition, modifiedOptions, operationContext, progressIncrementer, cancellationToken);
 #else
-                    Task uploadTask = this.PutBlockAsync(blockId, block, null, accessCondition, modifiedOptions, operationContext, cancellationToken);
+                    Task uploadTask = this.PutBlockAsync(blockId, block, Checksum.None, accessCondition, modifiedOptions, operationContext, cancellationToken);
 #endif
                     Task cleanupTask = uploadTask.ContinueWith(finishedUpload =>
                     {

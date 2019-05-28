@@ -82,7 +82,12 @@ namespace Microsoft.Azure.Storage.Blob
                     RetryPolicy = new ExponentialRetry(),
                     LocationMode = BlobRequestOptions.BaseDefaultRequestOptions.LocationMode,
                     SingleBlobUploadThresholdInBytes = BlobRequestOptions.BaseDefaultRequestOptions.SingleBlobUploadThresholdInBytes,
-                    ParallelOperationThreadCount = BlobRequestOptions.BaseDefaultRequestOptions.ParallelOperationThreadCount
+                    ParallelOperationThreadCount = BlobRequestOptions.BaseDefaultRequestOptions.ParallelOperationThreadCount,
+                    ChecksumOptions = 
+                        new ChecksumOptions
+                        {
+                            StoreContentCRC64 = false  // not supported by the server
+                        }
                 };
             this.DefaultDelimiter = NavigationHelper.Slash;
             this.AuthenticationScheme = this.Credentials.IsToken ? AuthenticationScheme.Token : AuthenticationScheme.SharedKey;

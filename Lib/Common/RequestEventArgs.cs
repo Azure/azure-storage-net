@@ -50,9 +50,6 @@ namespace Microsoft.Azure.Storage
         /// <value>The request information associated with this event.</value>
         public RequestResult RequestInformation { get; internal set; }
 
-#if WINDOWS_RT || NETCORE
-        public Uri RequestUri { get; internal set; }
-#else
         /// <summary>
         /// Gets the HTTP request associated with this event.
         /// </summary>
@@ -64,6 +61,9 @@ namespace Microsoft.Azure.Storage
         /// </summary>
         /// <value>The HTTP response associated with this event.</value>
         public HttpResponseMessage Response { get; internal set; }
+
+#if WINDOWS_RT || NETCORE
+        public Uri RequestUri { get; internal set; }
 #endif
     }
 }

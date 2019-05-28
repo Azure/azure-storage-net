@@ -59,9 +59,9 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// <param name="state">An ExecutionState used to coordinate copy operation.</param>
         /// <param name="bufferManager">IBufferManager instance to use.  May be null.</param>
         /// <param name="buffSize">Size of read and write buffers used to move data.  Overrides the default buffer size of bufferManager.</param>
-        /// <param name="calculateMd5">Boolean value indicating whether the MD-5 should be calculated.</param>
+        /// <param name="calculateChecksum">A value indicating whether the checksums should be calculated.</param>
         /// <param name="streamCopyState">An object that represents the state for the current operation.</param>
-        public AsyncStreamCopier(Stream src, Stream dest, ExecutionState<T> state, IBufferManager bufferManager, int? buffSize, bool calculateMd5, StreamDescriptor streamCopyState)
+        public AsyncStreamCopier(Stream src, Stream dest, ExecutionState<T> state, IBufferManager bufferManager, int? buffSize, ChecksumRequested calculateChecksum, StreamDescriptor streamCopyState)
         {
             this.src = src;
             this.dest = dest;
@@ -70,9 +70,9 @@ namespace Microsoft.Azure.Storage.Core.Util
             this.buffSize = buffSize ?? (bufferManager != null ? bufferManager.GetDefaultBufferSize() : Constants.DefaultBufferSize);
             this.streamCopyState = streamCopyState;
 
-            if (streamCopyState != null && calculateMd5 && streamCopyState.Md5HashRef == null)
+            if (streamCopyState != null && calculateChecksum.HasAny && streamCopyState.ChecksumWrapper == null)
             {
-                streamCopyState.Md5HashRef = new MD5Wrapper();
+                streamCopyState.ChecksumWrapper = new ChecksumWrapper(calculateChecksum.MD5, calculateChecksum.CRC64);
             }
         }
         #endregion
@@ -346,11 +346,18 @@ namespace Microsoft.Azure.Storage.Core.Util
 #region Privates
         private void FinalizeStreamCopyState()
         {
-            if (this.streamCopyState != null && this.streamCopyState.Md5HashRef != null)
+            if (this.streamCopyState != null && this.streamCopyState.ChecksumWrapper != null)
             {
                 try
                 {
-                    this.streamCopyState.Md5 = this.streamCopyState.Md5HashRef.ComputeHash();
+                    if (this.streamCopyState.ChecksumWrapper.MD5 != null)
+                    {
+                        this.streamCopyState.Md5 = this.streamCopyState.ChecksumWrapper.MD5.ComputeHash();
+                    }
+                    if (this.streamCopyState.ChecksumWrapper.CRC64 != null)
+                    {
+                        this.streamCopyState.Crc64 = this.streamCopyState.ChecksumWrapper.CRC64.ComputeHash();
+                    }
                 }
                 catch (Exception)
                 {
@@ -358,7 +365,7 @@ namespace Microsoft.Azure.Storage.Core.Util
                 }
                 finally
                 {
-                    this.streamCopyState.Md5HashRef = null;
+                    this.streamCopyState.ChecksumWrapper = null;
                 }
             }
         }
@@ -376,9 +383,9 @@ namespace Microsoft.Azure.Storage.Core.Util
             if (this.streamCopyState != null)
             {
                 this.streamCopyState.Length += bytesCopied;
-                if (this.streamCopyState.Md5HashRef != null)
+                if (this.streamCopyState.ChecksumWrapper != null)
                 {
-                    this.streamCopyState.Md5HashRef.UpdateHash(writeBuff, 0, bytesCopied);
+                    this.streamCopyState.ChecksumWrapper.UpdateHash(writeBuff, 0, bytesCopied);
                 }
             }
         }

@@ -51,14 +51,19 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 properties.ContentDisposition = HttpWebUtility.GetHeaderValues("Content-Disposition", contentHeaders);
                 properties.ContentType = HttpWebUtility.GetHeaderValues("Content-Type", contentHeaders);
 
-
                 if (response.Content.Headers.ContentMD5 != null && response.Content.Headers.ContentRange == null)
                 {
-                    properties.ContentMD5 = HttpResponseParsers.GetContentMD5(response);
+                    properties.ContentChecksum.MD5 = HttpResponseParsers.GetContentMD5(response);
                 }
                 else if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header)))
                 {
-                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
+                    properties.ContentChecksum.MD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
+                }
+
+                // not yet supported and tested
+                if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentCRC64Header)))
+                {
+                    properties.ContentChecksum.CRC64 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentCRC64Header);
                 }
 
                 string created = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.CreationTimeHeader);

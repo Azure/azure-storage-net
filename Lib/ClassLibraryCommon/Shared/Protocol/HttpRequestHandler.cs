@@ -66,6 +66,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             SetHeader(request, Constants.ContentMD5Element, cacheControl);
         }
 
+        internal static void SetContentCrc64(HttpRequestMessage request, string cacheControl)
+        {
+            SetHeader(request, Constants.ContentCRC64Element, cacheControl);
+        }
+
         internal static void SetContentLanguage(HttpRequestMessage request, string cacheControl)
         {
             SetHeader(request, Constants.ContentLanguageElement, cacheControl);

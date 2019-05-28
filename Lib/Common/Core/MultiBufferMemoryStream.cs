@@ -658,6 +658,32 @@ namespace Microsoft.Azure.Storage.Core
                 return md5.ComputeHash();
             }
         }
+
+        /// <summary>
+        /// Computes the hash value for this stream.
+        /// </summary>
+        /// <returns>String representation of the computed hash value.</returns>
+        public string ComputeCRC64Hash()
+        {
+            using (Crc64Wrapper hasher = new Crc64Wrapper())
+            {
+                // Maximum amount you can read is from current spot to the end.
+                long leftToRead = this.Length - this.Position;
+
+                while (leftToRead != 0)
+                {
+                    ArraySegment<byte> currentBlock = this.GetCurrentBlock();
+
+                    // Update hash with the block
+                    int blockReadLength = (int)Math.Min(leftToRead, currentBlock.Count);
+                    hasher.UpdateHash(currentBlock.Array, currentBlock.Offset, blockReadLength);
+
+                    this.AdvancePosition(ref leftToRead, blockReadLength);
+                }
+
+                return hasher.ComputeHash();
+            }
+        }
 #endif
 
         /// <summary>

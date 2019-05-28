@@ -17,10 +17,66 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace Microsoft.Azure.Storage.Core.Util
 {
+    [TestClass]
+    public class CRC64WrapperTests: TestBase
+    {
+        [TestMethod]
+        public void UpdateHashTest()
+        {
+            var random = new Random();
+
+            var minBatchSize = 1 * 1024;
+            var maxBatchSize = 100 * 1024;
+
+            var data = GetRandomBuffer(17 * 1024 * 1024);
+
+            var wrapper = new Crc64Wrapper();
+            var position = 0;
+
+            do
+            {
+                var count = random.Next(minBatchSize, maxBatchSize);
+                count = Math.Min(count, data.Length - position);
+                var segment = new byte[count];
+
+                Array.Copy(data, position, segment, 0, count);
+                position += count;
+
+                wrapper.UpdateHash(segment, 0, count);
+
+            }
+            while (position < data.Length);
+
+            var crc0 = wrapper.ComputeHash();
+
+            wrapper = new Crc64Wrapper();
+            position = 0;
+
+            do
+            {
+                var count = random.Next(minBatchSize, maxBatchSize);
+                count = Math.Min(count, data.Length - position);
+                var segment = new byte[count];
+
+                Array.Copy(data, position, segment, 0, count);
+                position += count;
+
+                wrapper.UpdateHash(segment, 0, count);
+
+            }
+            while (position < data.Length);
+
+            var crc1 = wrapper.ComputeHash();
+
+            Assert.AreEqual(crc0, crc1);
+        }
+    }
+
     [TestClass()]
     public class MD5WrapperTests
     {

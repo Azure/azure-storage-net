@@ -162,11 +162,10 @@ namespace Microsoft.Azure.Storage.Core.Executor
         private static RequestEventArgs GenerateRequestEventArgs<T>(ExecutionState<T> executionState)
         {
             RequestEventArgs args = new RequestEventArgs(executionState.Cmd.CurrentResult);
-#if WINDOWS_RT || NETCORE
-            args.RequestUri = executionState.Req.RequestUri;
-#else
             args.Request = executionState.Req;
             args.Response = executionState.Resp;
+#if WINDOWS_RT || NETCORE
+            args.RequestUri = executionState.Req.RequestUri;
 #endif
             return args;
         }

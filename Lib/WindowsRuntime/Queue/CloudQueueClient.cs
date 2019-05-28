@@ -287,7 +287,7 @@ namespace Microsoft.Azure.Storage.Queue
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri, this.HttpClient);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => QueueHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
-            retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, Checksum.None, cmd, ctx);
             retCmd.StreamToDispose = memoryStream;
             retCmd.PreProcessResponse =
                 (cmd, resp, ex, ctx) =>

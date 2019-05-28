@@ -29,15 +29,6 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Threading;
     using System.Threading.Tasks;
 
-#if NETCORE
-#else
-    using System.Runtime.InteropServices.WindowsRuntime;
-    using Windows.Foundation;
-    using Windows.Foundation.Metadata;
-    using Windows.Storage;
-    using Windows.Storage.Streams;
-#endif
-
     public partial class CloudPageBlob : CloudBlob, ICloudBlob
     {
         /// <summary>
@@ -111,7 +102,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             bool createNew = size.HasValue;
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient, false);
-            if (!createNew && modifiedOptions.StoreBlobContentMD5.Value)
+            if (!createNew && modifiedOptions.ChecksumOptions.StoreContentMD5.Value)
             {
                 throw new ArgumentException(SR.MD5NotPossible);
             }
@@ -202,7 +193,6 @@ namespace Microsoft.Azure.Storage.Blob
             return this.UploadFromStreamAsyncHelper(source, null /*length */, null /* premiumBlobTier */, accessCondition, options, operationContext, cancellationToken);
         }
 
-#if NETCORE
         /// <summary>
         /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -219,7 +209,6 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.UploadFromStreamAsyncHelper(source, null /*length */, premiumBlobTier, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
@@ -253,7 +242,6 @@ namespace Microsoft.Azure.Storage.Blob
             return this.UploadFromStreamAsyncHelper(source, length, null /* premiumBlobTier */, accessCondition, options, operationContext, cancellationToken);
         }
 
-#if NETCORE
         /// <summary>
         /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -271,7 +259,6 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.UploadFromStreamAsyncHelper(source, length, premiumBlobTier, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
         }
-#endif
 
         /// <summary>
         /// Uploads a stream to a page blob. If the blob already exists, it will be overwritten.
@@ -305,7 +292,6 @@ namespace Microsoft.Azure.Storage.Blob
             return UploadFromStreamAsyncHelper(source, length, null /* premiumBlobTier */, accessCondition, options, operationContext, CancellationToken.None);
         }
 
-#if NETCORE
         /// <summary>
         /// Uploads a stream to a page blob. 
         /// </summary>
@@ -322,9 +308,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.UploadFromStreamAsyncHelper(source, length, premiumPageBlobTier, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), cancellationToken);
         }
-#endif
 
-#if NETCORE
         /// <summary>
         /// Uploads a stream to a page blob. 
         /// </summary>
@@ -339,21 +323,6 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         private async Task UploadFromStreamAsyncHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AggregatingProgressIncrementer progressIncrementer, CancellationToken cancellationToken)
-#else
-        /// <summary>
-        /// Uploads a stream to a page blob. 
-        /// </summary>
-        /// <param name="source">The stream providing the blob content.</param>
-        /// <param name="length">The number of bytes to write from the source stream at its current position.</param>
-        /// <param name="premiumBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        internal async Task UploadFromStreamAsyncHelper(Stream source, long? length, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#endif
         {
             CommonUtility.AssertNotNull("source", source);
 
@@ -389,11 +358,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                 // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-#if NETCORE
-                await sourceAsStream.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
-#else
-                await sourceAsStream.WriteToAsync(blobStream, this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
-#endif
+                await sourceAsStream.WriteToAsync(progressIncrementer.CreateProgressIncrementingStream(blobStream), this.ServiceClient.BufferManager, length, null /* maxLength */, ChecksumRequested.None, tempExecutionState, null /* streamCopyState */, cancellationToken).ConfigureAwait(false);
                 await blobStream.CommitAsync().ConfigureAwait(false);
             }
         }
@@ -401,7 +366,6 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
-#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
@@ -409,20 +373,10 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.UploadFromFileAsync(path, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
-#else
-        /// <param name="source">The file providing the blob content.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(StorageFile source)
-        {
-            return this.UploadFromFileAsync(source, null /* accessCondition */, null /* options */, null /* operationContext */);
-        }
-#endif
 
         /// <summary>
         /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
-#if NETCORE
         /// <param name="path">A string containing the file path providing the blob content.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -433,56 +387,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.UploadFromFileAsync(path, accessCondition, options, operationContext, CancellationToken.None);
         }
-#else
-        /// <param name="source">The file providing the blob content.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>An <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
-        {
-            return this.UploadFromFileAsync(source, accessCondition, options, operationContext, CancellationToken.None);
-        }
 
-        /// <summary>
-        /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
-        /// </summary>
-        /// <param name="source">The file providing the blob content.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual Task UploadFromFileAsync(StorageFile source, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return this.UploadFromFileAsync(source, null /* premiumBlobTier */, accessCondition, options, operationContext, cancellationToken);
-        }
-
-        /// <summary>
-        /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
-        /// </summary>
-        /// <param name="source">The file providing the blob content.</param>
-        /// <param name="premiumBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual async Task UploadFromFileAsync(StorageFile source, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            CommonUtility.AssertNotNull("source", source);
-
-            using (IRandomAccessStreamWithContentType stream = await source.OpenReadAsync().AsTask(cancellationToken).ConfigureAwait(false))
-            {
-                await this.UploadFromStreamAsync(stream.AsStream(), premiumBlobTier, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
-            }
-        }
-#endif
-
-#if NETCORE
         /// <summary>
         /// Uploads a file to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -519,7 +424,6 @@ namespace Microsoft.Azure.Storage.Blob
                 await this.UploadFromStreamAsync(stream, premiumBlobTier, accessCondition, options, operationContext, progressHandler, cancellationToken).ConfigureAwait(false);
             }
         }
-#endif
 
         /// <summary>
         /// Uploads the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
@@ -567,7 +471,6 @@ namespace Microsoft.Azure.Storage.Blob
             return this.UploadFromByteArrayAsync(buffer, index, count, null /* premiumBlobTier */, accessCondition, options, operationContext, cancellationToken);
         }
 
-#if NETCORE
         /// <summary>
         /// Uploads the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -585,9 +488,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.UploadFromByteArrayAsync(buffer, index, count, premiumBlobTier, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken);
         }
-#endif
 
-#if NETCORE
         /// <summary>
         /// Uploads the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
         /// </summary>
@@ -603,31 +504,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
         public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
-#else
-        /// <summary>
-        /// Uploads the contents of a byte array to a page blob. If the blob already exists, it will be overwritten.
-        /// </summary>
-        /// <param name="buffer">An array of bytes.</param>
-        /// <param name="index">The zero-based byte offset in buffer at which to begin uploading bytes to the blob.</param>
-        /// <param name="count">The number of bytes to be written to the blob.</param>
-        /// <param name="premiumBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual Task UploadFromByteArrayAsync(byte[] buffer, int index, int count, PremiumPageBlobTier? premiumBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#endif
         {
             CommonUtility.AssertNotNull("buffer", buffer);
 
             SyncMemoryStream stream = new SyncMemoryStream(buffer, index, count);
-#if NETCORE
             return this.UploadFromStreamAsync(stream, premiumBlobTier, accessCondition, options, operationContext, progressHandler, cancellationToken);
-#else
-            return this.UploadFromStreamAsync(stream, premiumBlobTier, accessCondition, options, operationContext, cancellationToken);
-#endif
         }
 
         /// <summary>
@@ -933,13 +814,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A stream providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
-        /// on the blob. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5)
+        public virtual Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum)
         {
-            return this.WritePagesAsync(pageData, startOffset, contentMD5, null /* accessCondition */, null /* options */, null /* operationContext */);
+            return this.WritePagesAsync(pageData, startOffset, contentChecksum, null /* accessCondition */, null /* options */, null /* operationContext */);
         }
 
         /// <summary>
@@ -947,46 +827,40 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">A stream providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
-        /// on the blob. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, CancellationToken.None);
+            return this.WritePagesAsync(pageData, startOffset, contentChecksum, accessCondition, options, operationContext, CancellationToken.None);
         }
 
-#if NETCORE
         /// <summary>
         /// Writes pages to a page blob.
         /// </summary>
         /// <param name="pageData">A stream providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
-        /// on the blob. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            await this.WritePagesAsync(pageData, startOffset, contentMD5, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken).ConfigureAwait(false);
+            await this.WritePagesAsync(pageData, startOffset, contentChecksum, accessCondition, options, operationContext, default(IProgress<StorageProgress>), cancellationToken).ConfigureAwait(false);
         }
-#endif
 
-#if NETCORE
         /// <summary>
         /// Writes pages to a page blob.
         /// </summary>
         /// <param name="pageData">A stream providing the page data.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
-        /// on the blob. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -994,26 +868,13 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
-#else
-        /// <summary>
-        /// Writes pages to a page blob.
-        /// </summary>
-        /// <param name="pageData">A stream providing the page data.</param>
-        /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
-        /// on the blob. May be <c>null</c> or an empty string.</param>
-        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If null, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
-        [DoesServiceRequest]
-        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-#endif
+        public virtual async Task WritePagesAsync(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.PageBlob, this.ServiceClient);
-            bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
+
+            contentChecksum = contentChecksum ?? Checksum.None;
+
+            ChecksumRequested requiresContentChecksum = new ChecksumRequested(md5: (contentChecksum.MD5 == null) && modifiedOptions.ChecksumOptions.UseTransactionalMD5.Value, crc64: (contentChecksum.CRC64 == null) && modifiedOptions.ChecksumOptions.UseTransactionalCRC64.Value);
             operationContext = operationContext ?? new OperationContext();
 
             ExecutionState<NullType> tempExecutionState = BlobCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
@@ -1024,7 +885,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                if (!pageDataAsStream.CanSeek || requiresContentMD5)
+                if (!pageDataAsStream.CanSeek || requiresContentChecksum.HasAny)
                 {
                     Stream writeToStream;
                     if (pageDataAsStream.CanSeek)
@@ -1040,21 +901,17 @@ namespace Microsoft.Azure.Storage.Blob
 
                     StreamDescriptor streamCopyState = new StreamDescriptor();
                     long startPosition = seekableStream.Position;
-                    await pageDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await pageDataAsStream.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentChecksum, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     seekableStream.Position = startPosition;
 
-                    if (requiresContentMD5)
-                    {
-                        contentMD5 = streamCopyState.Md5;
-                    }
+                    contentChecksum = new Checksum(
+                        md5: requiresContentChecksum.MD5 ? streamCopyState.Md5 : default(string),
+                        crc64: requiresContentChecksum.CRC64 ? streamCopyState.Crc64 : default(string)
+                        );
                 }
 
                 await Executor.ExecuteAsyncNullReturn(
-#if NETCORE
-                    this.PutPageImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
-#else
-                    this.PutPageImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
-#endif
+                    this.PutPageImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentChecksum, accessCondition, modifiedOptions),
                     modifiedOptions.RetryPolicy,
                     operationContext,
                     cancellationToken).ConfigureAwait(false);
@@ -1068,6 +925,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
+
         /// <summary>
         /// Initiates an asynchronous operation to write pages to a page blob.
         /// </summary>
@@ -1075,7 +933,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
         /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="startOffset">The offset at which to begin writing, in bytes. The offset must be a multiple of 512.</param>
-        /// <param name="sourceContentMd5">An optional hash value used to ensure transactional integrity for the page. May be <c>null</c> or an empty string.</param>
+        /// <param name="sourceContentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
@@ -1083,7 +941,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task WritePagesAsync(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task WritePagesAsync(Uri sourceUri, long offset, long count, long startOffset, Checksum sourceContentChecksum, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -1091,7 +949,7 @@ namespace Microsoft.Azure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             return Executor.ExecuteAsync(
-                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentMd5, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.PutPageImpl(sourceUri, offset, count, startOffset, sourceContentChecksum, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -1288,7 +1146,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNull("sourceSnapshot", sourceSnapshot);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshot, default(string) /* contentMD5 */, true /*incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshot, Checksum.None, true /*incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -1529,12 +1387,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="pageData">The page data.</param>
         /// <param name="startOffset">The start offset.</param> 
-        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
-        /// on the blob. May be <c>null</c> or an empty string.</param>
+        /// <param name="contentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that writes the pages.</returns>
-        private RESTCommand<NullType> PutPageImpl(Stream pageData, long startOffset, string contentMD5, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> PutPageImpl(Stream pageData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options)
         {
             if (startOffset % Constants.PageSize != 0)
             {
@@ -1556,7 +1413,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(pageData, offset, length, contentMD5, cmd, ctx);
+            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(pageData, offset, length, contentChecksum, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, serverTimeout, pageRange, pageWrite, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
@@ -1576,13 +1433,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="offset">The byte offset in the source at which to begin retrieving content.</param>
         /// <param name="count">The number of bytes from the source to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="startOffset">The offset in the destination to begin writing.</param> 
-        /// <param name="sourceContentMd5">An optional hash value that will be used to set the <see cref="BlobProperties.ContentMD5"/> property
-        /// on the blob. May be <c>null</c> or an empty string.</param>
+        /// <param name="sourceContentChecksum">An optional hash value that will be used to set the checksum property on the blob. May be <c>null</c> or Checksum.None.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that writes the pages.</returns>
-        private RESTCommand<NullType> PutPageImpl(Uri sourceUri, long offset, long count, long startOffset, string sourceContentMd5, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> PutPageImpl(Uri sourceUri, long offset, long count, long startOffset, Checksum sourceContentChecksum, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (startOffset % Constants.PageSize != 0)
             {
@@ -1601,7 +1457,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, sourceUri, offset, count, sourceContentMd5, serverTimeout, pageRange, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.PutPage(uri, sourceUri, offset, count, sourceContentChecksum, serverTimeout, pageRange, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);

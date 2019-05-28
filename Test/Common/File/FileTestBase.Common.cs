@@ -64,7 +64,8 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(prop1.CacheControl, prop2.CacheControl);
                 Assert.AreEqual(prop1.ContentEncoding, prop2.ContentEncoding);
                 Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
-                Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
+                Assert.AreEqual(prop1.ContentChecksum.MD5, prop2.ContentChecksum.MD5);
+                Assert.AreEqual(prop1.ContentChecksum.CRC64, prop2.ContentChecksum.CRC64);
                 Assert.AreEqual(prop1.ContentType, prop2.ContentType);
                 Assert.AreEqual(prop1.ETag, prop2.ETag);
                 Assert.AreEqual(prop1.LastModified, prop2.LastModified);

@@ -172,9 +172,13 @@ namespace Microsoft.Azure.Storage.File
             }
             else
             {
-                if (modifiedOptions.StoreFileContentMD5.Value)
+                if (modifiedOptions.ChecksumOptions.StoreContentMD5.Value)
                 {
                     throw new ArgumentException(SR.MD5NotPossible);
+                }
+                if (modifiedOptions.ChecksumOptions.StoreContentCRC64.Value)
+                {
+                    throw new ArgumentException(SR.CRC64NotPossible);
                 }
 
                 this.FetchAttributes(accessCondition, options, operationContext);
@@ -285,10 +289,16 @@ namespace Microsoft.Azure.Storage.File
             operationContext = operationContext ?? new OperationContext();
             bool createNew = size.HasValue;
 
-            if (!createNew && modifiedOptions.StoreFileContentMD5.Value)
+            if (!createNew && modifiedOptions.ChecksumOptions.StoreContentMD5.Value)
             {
                 throw new ArgumentException(SR.MD5NotPossible);
             }
+
+            if (!createNew && modifiedOptions.ChecksumOptions.StoreContentCRC64.Value)
+            {
+                throw new ArgumentException(SR.CRC64NotPossible);
+            }
+
             if (createNew)
             {
                 await this.CreateAsync(size.Value, accessCondition, options, operationContext, cancellationToken).ConfigureAwait(false);
@@ -1361,7 +1371,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 using (ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions))
                 {
-                    source.WriteToSync(fileStream, length, null /* maxLength */, false, true, tempExecutionState, null /* streamCopyState */);
+                    source.WriteToSync(fileStream, length, null /* maxLength */, ChecksumRequested.None, true, tempExecutionState, null /* streamCopyState */);
                     fileStream.Commit();
                 }
             }
@@ -1407,7 +1417,7 @@ namespace Microsoft.Azure.Storage.File
                 {
                     // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
                     // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-                    await source.WriteToAsync(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(fileStream), this.ServiceClient.BufferManager, length, null /* maxLength */, false, tempExecutionState, default(StreamDescriptor)/* streamCopyState */, cancellationToken).ConfigureAwait(false);
+                    await source.WriteToAsync(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(fileStream), this.ServiceClient.BufferManager, length, null /* maxLength */, ChecksumRequested.None, tempExecutionState, default(StreamDescriptor)/* streamCopyState */, cancellationToken).ConfigureAwait(false);
                     await fileStream.CommitAsync().ConfigureAwait(false);
                 }
             }
@@ -3416,11 +3426,29 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual void WriteRange(Stream rangeData, long startOffset, string contentMD5 = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            this.WriteRange(rangeData, startOffset, new Checksum(md5: contentMD5), accessCondition, options, operationContext);
+        }
+
+        /// <summary>
+        /// Writes range to a file.
+        /// </summary>
+        /// <param name="rangeData">A stream providing the data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
+        /// <param name="contentChecksum">An optional hash value that will be used to set the checksum property on the file. May be <c>null</c>.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        [DoesServiceRequest]
+        private void WriteRange(Stream rangeData, long startOffset, Checksum contentChecksum = null, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
+        {
             CommonUtility.AssertNotNull("rangeData", rangeData);
 
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
+            ChecksumRequested requiresContentChecksum = new ChecksumRequested(
+                md5: (contentChecksum?.MD5 == null) && modifiedOptions.ChecksumOptions.UseTransactionalMD5.Value,
+                crc64: (contentChecksum?.CRC64 == null) && modifiedOptions.ChecksumOptions.UseTransactionalCRC64.Value
+                );
             operationContext = operationContext ?? new OperationContext();
 
             Stream seekableStream = rangeData;
@@ -3428,7 +3456,7 @@ namespace Microsoft.Azure.Storage.File
 
             try
             {
-                if (!rangeData.CanSeek || requiresContentMD5)
+                if (!rangeData.CanSeek || requiresContentChecksum.HasAny)
                 {
                     ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
@@ -3446,17 +3474,17 @@ namespace Microsoft.Azure.Storage.File
 
                     long startPosition = seekableStream.Position;
                     StreamDescriptor streamCopyState = new StreamDescriptor();
-                    rangeData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, true, tempExecutionState, streamCopyState);
+                    rangeData.WriteToSync(writeToStream, null /* copyLength */, Constants.MaxBlockSize, requiresContentChecksum, true, tempExecutionState, streamCopyState);
                     seekableStream.Position = startPosition;
 
-                    if (requiresContentMD5)
-                    {
-                        contentMD5 = streamCopyState.Md5;
-                    }
+                    contentChecksum = new Checksum(
+                       md5: requiresContentChecksum.MD5 ? streamCopyState.Md5 : default(string),
+                       crc64: requiresContentChecksum.CRC64 ? streamCopyState.Crc64 : default(string)
+                       );
                 }
 
                 Executor.ExecuteSync(
-                    this.PutRangeImpl(seekableStream, startOffset, contentMD5, accessCondition, modifiedOptions),
+                    this.PutRangeImpl(seekableStream, startOffset, contentChecksum, accessCondition, modifiedOptions),
                     modifiedOptions.RetryPolicy,
                     operationContext);
             }
@@ -3470,16 +3498,16 @@ namespace Microsoft.Azure.Storage.File
         }
 #endif
 
-                    /// <summary>
-                    /// Begins an asynchronous operation to write a range to a file.
-                    /// </summary>
-                    /// <param name="rangeData">A stream providing the data.</param>
-                    /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
-                    /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
-                    /// on the file. May be <c>null</c> or an empty string.</param>
-                    /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
-                    /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
-                    /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        /// <summary>
+        /// Begins an asynchronous operation to write a range to a file.
+        /// </summary>
+        /// <param name="rangeData">A stream providing the data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
+        /// <param name="contentMD5">An optional hash value that will be used to set the <see cref="FileProperties.ContentMD5"/> property
+        /// on the file. May be <c>null</c> or an empty string.</param>
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginWriteRange(Stream rangeData, long startOffset, string contentMD5, AsyncCallback callback, object state)
         {
@@ -3504,6 +3532,7 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.BeginWriteRange(rangeData, startOffset, contentMD5, accessCondition, options, operationContext, default(IProgress<StorageProgress>), callback, state);
         }
+
         /// <summary>
         /// Begins an asynchronous operation to write a range to a file.
         /// </summary>
@@ -3519,10 +3548,28 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
         /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private ICancellableAsyncResult BeginWriteRange(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
+        public virtual ICancellableAsyncResult BeginWriteRange(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
         {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.WriteRangeAsync(rangeData, startOffset, contentMD5, accessCondition, options, operationContext, progressHandler, token), callback, state);
-        }        
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WriteRangeAsync(rangeData, startOffset, new Checksum(md5: contentMD5), accessCondition, options, operationContext, progressHandler, token), callback, state);
+        }
+        /// <summary>
+        /// Begins an asynchronous operation to write a range to a file.
+        /// </summary>
+        /// <param name="rangeData">A stream providing the data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
+        /// <param name="contentChecksum">A hash value that will be used to set the checksum property on the file. May be <c>null</c> or Checksum.None.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> An <see cref="IProgress<StorageProgress>"/> object to gather progress deltas.</param>
+        /// <param name="callback">The callback delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        private ICancellableAsyncResult BeginWriteRange(Stream rangeData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, AsyncCallback callback, object state)
+        {
+            return CancellableAsyncResultTaskWrapper.Create(token => this.WriteRangeAsync(rangeData, startOffset, contentChecksum, accessCondition, options, operationContext, progressHandler, token), callback, state);
+        }
 
         /// <summary>
         /// Ends an asynchronous operation to write a range to a file.
@@ -3612,13 +3659,36 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
         [DoesServiceRequest]
-        public virtual async Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        public virtual Task WriteRangeAsync(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        {
+            return this.WriteRangeAsync(rangeData, startOffset, new Checksum(md5: contentMD5), accessCondition, options, operationContext, null /*progressHandler*/, cancellationToken);
+        }
+
+        /// <summary>
+        /// Returns a task that performs an asynchronous operation to write a range to a file.
+        /// </summary>
+        /// <param name="rangeData">A stream providing the data.</param>
+        /// <param name="startOffset">The offset at which to begin writing, in bytes.</param>
+        /// <param name="contentChecksum">A hash value that will be used to set the checksum property on the file. May be <c>null</c> or Checksum.None.</param>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="progressHandler"> A <see cref="System.IProgress{StorageProgress}"/> object to handle <see cref="StorageProgress"/> messages.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the current operation.</returns>
+        [DoesServiceRequest]
+        internal async Task WriteRangeAsync(Stream rangeData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("rangeData", rangeData);
 
+            contentChecksum = contentChecksum ?? Checksum.None;
+
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
-            bool requiresContentMD5 = (contentMD5 == null) && modifiedOptions.UseTransactionalMD5.Value;
+            ChecksumRequested requiresContentChecksum = new ChecksumRequested(
+                md5: (contentChecksum.MD5 == null) && modifiedOptions.ChecksumOptions.UseTransactionalMD5.Value,
+                crc64: (contentChecksum.CRC64 == null) && modifiedOptions.ChecksumOptions.UseTransactionalCRC64.Value
+                );
             operationContext = operationContext ?? new OperationContext();
 
             DateTime streamCopyStartTime = DateTime.Now;
@@ -3628,7 +3698,7 @@ namespace Microsoft.Azure.Storage.File
 
             try
             {
-                if (!rangeData.CanSeek || requiresContentMD5)
+                if (!rangeData.CanSeek || requiresContentChecksum.HasAny)
                 {
                     ExecutionState<NullType> tempExecutionState = FileCommonUtility.CreateTemporaryExecutionState(modifiedOptions);
 
@@ -3646,20 +3716,21 @@ namespace Microsoft.Azure.Storage.File
 
                     StreamDescriptor streamCopyState = new StreamDescriptor();
                     long startPosition = seekableStream.Position;
-                    await rangeData.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentMD5, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
+                    await rangeData.WriteToAsync(writeToStream, this.ServiceClient.BufferManager, null /* copyLength */, Constants.MaxBlockSize, requiresContentChecksum, tempExecutionState, streamCopyState, cancellationToken).ConfigureAwait(false);
                     seekableStream.Position = startPosition;
 
-                    if (requiresContentMD5)
-                    {
-                        contentMD5 = streamCopyState.Md5;
-                    }
+                    contentChecksum = new Checksum(
+                        md5: requiresContentChecksum.MD5 ? streamCopyState.Md5 : default(string),
+                        crc64: requiresContentChecksum.CRC64 ? streamCopyState.Crc64 : default(string)
+                        );
+
                     if (modifiedOptions.MaximumExecutionTime.HasValue)
                     {
                         modifiedOptions.MaximumExecutionTime -= DateTime.Now.Subtract(streamCopyStartTime);
                     }
                 }
                 await Executor.ExecuteAsync(
-                this.PutRangeImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentMD5, accessCondition, modifiedOptions),
+                this.PutRangeImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentChecksum, accessCondition, modifiedOptions),
 
                 modifiedOptions.RetryPolicy,
                 operationContext,
@@ -4172,6 +4243,7 @@ namespace Microsoft.Azure.Storage.File
 
             bool arePropertiesPopulated = false;
             string storedMD5 = null;
+            string storedCRC64 = null;
 
             long startingOffset = offset.HasValue ? offset.Value : 0;
             long? startingLength = length;
@@ -4179,12 +4251,18 @@ namespace Microsoft.Azure.Storage.File
 
             RESTCommand<NullType> getCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
 
+            ChecksumRequested checksumRequested = new ChecksumRequested(options.ChecksumOptions.UseTransactionalMD5.Value, options.ChecksumOptions.UseTransactionalCRC64.Value);
+
             options.ApplyToStorageCommand(getCmd);
             getCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             getCmd.RetrieveResponseStream = true;
             getCmd.DestinationStream = destStream;
-            getCmd.CalculateMd5ForResponseStream = !options.DisableContentMD5Validation.Value;
-            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value, this.Share.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            getCmd.ChecksumRequestedForResponseStream
+                = new ChecksumRequested(
+                    md5: !options.ChecksumOptions.DisableContentMD5Validation.Value,
+                    crc64: !options.ChecksumOptions.DisableContentCRC64Validation.Value
+                    );
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, checksumRequested, this.Share.SnapshotTime, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             getCmd.RecoveryAction = (cmd, ex, ctx) =>
             {
                 if ((lockedAccessCondition == null) && !string.IsNullOrEmpty(lockedETag))
@@ -4205,7 +4283,8 @@ namespace Microsoft.Azure.Storage.File
                     }
                 }
 
-                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, options.UseTransactionalMD5.Value && !arePropertiesPopulated, this.Share.SnapshotTime, accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                ChecksumRequested checksumRequestedAndNotPopulated = new ChecksumRequested(md5: options.ChecksumOptions.UseTransactionalMD5.Value && !arePropertiesPopulated, crc64: options.ChecksumOptions.UseTransactionalCRC64.Value && !arePropertiesPopulated);
+                getCmd.BuildRequest = (command, uri, builder, cnt, serverTimeout, context) => FileHttpRequestMessageFactory.Get(uri, serverTimeout, offset, length, checksumRequestedAndNotPopulated, this.Share.SnapshotTime, accessCondition, cnt, context, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             };
 
             getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
@@ -4216,18 +4295,29 @@ namespace Microsoft.Azure.Storage.File
                 {
                     this.UpdateAfterFetchAttributes(resp);
 
-                    if (resp.Content.Headers.ContentMD5 != null)
-                    {
-                        storedMD5 = HttpResponseParsers.GetContentMD5(resp);
-                    }
+                    storedMD5 = HttpResponseParsers.GetContentMD5(resp);
+                    storedCRC64 = HttpResponseParsers.GetContentCRC64(resp);
 
-                    if (!options.DisableContentMD5Validation.Value &&
-                        options.UseTransactionalMD5.Value &&
+                    if (!options.ChecksumOptions.DisableContentMD5Validation.Value &&
+                        options.ChecksumOptions.UseTransactionalMD5.Value &&
                         string.IsNullOrEmpty(storedMD5))
                     {
                         throw new StorageException(
                             cmd.CurrentResult,
                             SR.MD5NotPresentError,
+                            null)
+                        {
+                            IsRetryable = false
+                        };
+                    }
+
+                    if (!options.ChecksumOptions.DisableContentCRC64Validation.Value &&
+                        options.ChecksumOptions.UseTransactionalCRC64.Value &&
+                        string.IsNullOrEmpty(storedCRC64))
+                    {
+                        throw new StorageException(
+                            cmd.CurrentResult,
+                            SR.CRC64NotPresentError,
                             null)
                         {
                             IsRetryable = false
@@ -4259,7 +4349,7 @@ namespace Microsoft.Azure.Storage.File
 
             getCmd.PostProcessResponseAsync = (cmd, resp, ctx, ct) =>
             {
-                HttpResponseParsers.ValidateResponseStreamMd5AndLength(validateLength, storedMD5, cmd);
+                HttpResponseParsers.ValidateResponseStreamChecksumAndLength(validateLength, storedMD5, storedCRC64, cmd);
                 return NullType.ValueTask;
             };
 
@@ -4568,11 +4658,11 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <param name="rangeData">The data.</param>
         /// <param name="startOffset">The start offset.</param> 
-        /// <param name="contentMD5">The content MD5.</param>
+        /// <param name="contentChecksum">The content checksum.</param>
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that writes the range.</returns>
-        private RESTCommand<NullType> PutRangeImpl(Stream rangeData, long startOffset, string contentMD5, AccessCondition accessCondition, FileRequestOptions options)
+        private RESTCommand<NullType> PutRangeImpl(Stream rangeData, long startOffset, Checksum contentChecksum, AccessCondition accessCondition, FileRequestOptions options)
         {
             long offset = rangeData.Position;
             long length = rangeData.Length - offset;
@@ -4588,7 +4678,7 @@ namespace Microsoft.Azure.Storage.File
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(rangeData, offset, length, contentMD5, cmd, ctx);
+            putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(rangeData, offset, length, contentChecksum, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.PutRange(uri, serverTimeout, fileRange, fileRangeWrite, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {

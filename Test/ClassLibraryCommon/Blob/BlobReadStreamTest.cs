@@ -117,49 +117,54 @@ namespace Microsoft.Azure.Storage.Blob
 
         private void BlobReadStreamReadSizeTest(ICloudBlob blob)
         {
-            byte[] buffer = GetRandomBuffer(5 * 1024 * 1024);
-            using (MemoryStream wholeBlob = new MemoryStream(buffer))
+            foreach (var setChecksumMode in new Action<BlobRequestOptions, bool>[] { (o, x) => o.ChecksumOptions.UseTransactionalMD5 = x, (o, x) => o.ChecksumOptions.UseTransactionalCRC64 = x })
             {
-                blob.UploadFromStream(wholeBlob);
-            }
+                byte[] buffer = GetRandomBuffer(5 * 1024 * 1024);
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    blob.UploadFromStream(wholeBlob);
+                }
 
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                () => blob.StreamMinimumReadSizeInBytes = 16 * 1024 - 1,
-                "StreamMinimumReadSizeInBytes should not accept values smaller than 16KB");
+                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                    () => blob.StreamMinimumReadSizeInBytes = 16 * 1024 - 1,
+                    "StreamMinimumReadSizeInBytes should not accept values smaller than 16KB");
 
-            blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024 + 1;
-            BlobRequestOptions options = new BlobRequestOptions() { UseTransactionalMD5 = true };
-            TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                () => blob.OpenRead(null, options, null),
-                "StreamMinimumReadSizeInBytes should be smaller than 4MB if UseTransactionalMD5 is true");
+                blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024 + 1;
+                BlobRequestOptions options = new BlobRequestOptions();
+                setChecksumMode(options, true);
 
-            string range = null;
-            OperationContext context = new OperationContext();
-            context.SendingRequest += (sender, e) => range = range ?? HttpRequestParsers.GetContentRangeHeader(e.Request);
+                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                    () => blob.OpenRead(null, options, null),
+                    "StreamMinimumReadSizeInBytes should be smaller than 4MB if checking hash");
 
-            blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024;
-            using (Stream blobStream = blob.OpenRead(null, options, context))
-            {
-                blobStream.ReadByte();
-                Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
-                range = null;
-            }
+                string range = null;
+                OperationContext context = new OperationContext();
+                context.SendingRequest += (sender, e) => range = range ?? HttpRequestParsers.GetContentRangeHeader(e.Request);
 
-            blob.StreamMinimumReadSizeInBytes = 6 * 1024 * 1024;
-            options.UseTransactionalMD5 = false;
-            using (Stream blobStream = blob.OpenRead(null, options, context))
-            {
-                blobStream.ReadByte();
-                Assert.AreEqual("bytes=0-" + (buffer.Length - 1).ToString(), range);
-                range = null;
-            }
+                blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024;
+                using (Stream blobStream = blob.OpenRead(null, options, context))
+                {
+                    blobStream.ReadByte();
+                    Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
+                    range = null;
+                }
 
-            blob.StreamMinimumReadSizeInBytes = 16 * 1024;
-            using (Stream blobStream = blob.OpenRead(null, options, context))
-            {
-                blobStream.ReadByte();
-                Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
-                range = null;
+                blob.StreamMinimumReadSizeInBytes = 6 * 1024 * 1024;
+                setChecksumMode(options, false);
+                using (Stream blobStream = blob.OpenRead(null, options, context))
+                {
+                    blobStream.ReadByte();
+                    Assert.AreEqual("bytes=0-" + (buffer.Length - 1).ToString(), range);
+                    range = null;
+                }
+
+                blob.StreamMinimumReadSizeInBytes = 16 * 1024;
+                using (Stream blobStream = blob.OpenRead(null, options, context))
+                {
+                    blobStream.ReadByte();
+                    Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
+                    range = null;
+                }
             }
         }
 
@@ -228,73 +233,77 @@ namespace Microsoft.Azure.Storage.Blob
 
         private void BlobReadStreamReadSizeTestAPM(ICloudBlob blob)
         {
-            IAsyncResult result;
-            using (AutoResetEvent waitHandle = new AutoResetEvent(false))
+            foreach (var setChecksumMode in new Action<BlobRequestOptions, bool>[] { (o, x) => o.ChecksumOptions.UseTransactionalMD5 = x, (o, x) => o.ChecksumOptions.UseTransactionalCRC64 = x })
             {
-                byte[] buffer = GetRandomBuffer(5 * 1024 * 1024);
-                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                IAsyncResult result;
+                using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    result = blob.BeginUploadFromStream(wholeBlob,
+                    byte[] buffer = GetRandomBuffer(5 * 1024 * 1024);
+                    using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                    {
+                        result = blob.BeginUploadFromStream(wholeBlob,
+                            ar => waitHandle.Set(),
+                            null);
+                        waitHandle.WaitOne();
+                        blob.EndUploadFromStream(result);
+                    }
+
+                    TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                        () => blob.StreamMinimumReadSizeInBytes = 16 * 1024 - 1,
+                        "StreamMinimumReadSizeInBytes should not accept values smaller than 16KB");
+
+                    blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024 + 1;
+                    BlobRequestOptions options = new BlobRequestOptions();
+                    setChecksumMode(options, true);
+                    result = blob.BeginOpenRead(null, options, null,
                         ar => waitHandle.Set(),
                         null);
                     waitHandle.WaitOne();
-                    blob.EndUploadFromStream(result);
-                }
+                    TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                        () => blob.EndOpenRead(result),
+                        "StreamMinimumReadSizeInBytes should be smaller than 4MB if checking hash");
 
-                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                    () => blob.StreamMinimumReadSizeInBytes = 16 * 1024 - 1,
-                    "StreamMinimumReadSizeInBytes should not accept values smaller than 16KB");
+                    string range = null;
+                    OperationContext context = new OperationContext();
+                    //HttpClient: Cleanup with header fetch
+                    context.SendingRequest += (sender, e) => range = range ?? HttpRequestParsers.GetHeader(e.Request, "x-ms-range");
 
-                blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024 + 1;
-                BlobRequestOptions options = new BlobRequestOptions() { UseTransactionalMD5 = true };
-                result = blob.BeginOpenRead(null, options, null,
-                    ar => waitHandle.Set(),
-                    null);
-                waitHandle.WaitOne();
-                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                    () => blob.EndOpenRead(result),
-                    "StreamMinimumReadSizeInBytes should be smaller than 4MB if UseTransactionalMD5 is true");
+                    blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024;
+                    result = blob.BeginOpenRead(null, options, context,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    using (Stream blobStream = blob.EndOpenRead(result))
+                    {
+                        blobStream.ReadByte();
+                        Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
+                        range = null;
+                    }
 
-                string range = null;
-                OperationContext context = new OperationContext();
-                //HttpClient: Cleanup with header fetch
-                context.SendingRequest += (sender, e) => range = range ?? HttpRequestParsers.GetHeader(e.Request, "x-ms-range");
+                    blob.StreamMinimumReadSizeInBytes = 6 * 1024 * 1024;
+                    setChecksumMode(options, false);
+                    result = blob.BeginOpenRead(null, options, context,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    using (Stream blobStream = blob.EndOpenRead(result))
+                    {
+                        blobStream.ReadByte();
+                        Assert.AreEqual("bytes=0-" + (buffer.Length - 1).ToString(), range);
+                        range = null;
+                    }
 
-                blob.StreamMinimumReadSizeInBytes = 4 * 1024 * 1024;
-                result = blob.BeginOpenRead(null, options, context,
-                    ar => waitHandle.Set(),
-                    null);
-                waitHandle.WaitOne();
-                using (Stream blobStream = blob.EndOpenRead(result))
-                {
-                    blobStream.ReadByte();
-                    Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
-                    range = null;
-                }
-
-                blob.StreamMinimumReadSizeInBytes = 6 * 1024 * 1024;
-                options.UseTransactionalMD5 = false;
-                result = blob.BeginOpenRead(null, options, context,
-                    ar => waitHandle.Set(),
-                    null);
-                waitHandle.WaitOne();
-                using (Stream blobStream = blob.EndOpenRead(result))
-                {
-                    blobStream.ReadByte();
-                    Assert.AreEqual("bytes=0-" + (buffer.Length - 1).ToString(), range);
-                    range = null;
-                }
-
-                blob.StreamMinimumReadSizeInBytes = 16 * 1024;
-                result = blob.BeginOpenRead(null, options, context,
-                    ar => waitHandle.Set(),
-                    null);
-                waitHandle.WaitOne();
-                using (Stream blobStream = blob.EndOpenRead(result))
-                {
-                    blobStream.ReadByte();
-                    Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
-                    range = null;
+                    blob.StreamMinimumReadSizeInBytes = 16 * 1024;
+                    result = blob.BeginOpenRead(null, options, context,
+                        ar => waitHandle.Set(),
+                        null);
+                    waitHandle.WaitOne();
+                    using (Stream blobStream = blob.EndOpenRead(result))
+                    {
+                        blobStream.ReadByte();
+                        Assert.AreEqual("bytes=0-" + (blob.StreamMinimumReadSizeInBytes - 1).ToString(), range);
+                        range = null;
+                    }
                 }
             }
         }

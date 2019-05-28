@@ -135,6 +135,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public static readonly string Md5Mismatch = "Md5Mismatch";
 
         /// <summary>
+        /// The specified CRC64 hash does not match the server value.
+        /// </summary>      
+        [SuppressMessage(
+            "Microsoft.Naming",
+            "CA1709:IdentifiersShouldBeCasedCorrectly",
+            MessageId = "Crc",
+            Justification = "The casing matches the storage constant the identifier represents.")]
+        public static readonly string Crc64Mismatch = "Crc64Mismatch";
+
+        /// <summary>
         /// The specified MD5 hash is invalid.
         /// </summary>
         [SuppressMessage(
@@ -143,6 +153,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             MessageId = "Md",
             Justification = "The casing matches the storage constant the identifier represents.")]
         public static readonly string InvalidMd5 = "InvalidMd5";
+
+        /// <summary>
+        /// The specified CRC64 hash is invalid.
+        /// </summary>
+        [SuppressMessage(
+            "Microsoft.Naming",
+            "CA1709:IdentifiersShouldBeCasedCorrectly",
+            MessageId = "Crc",
+            Justification = "The casing matches the storage constant the identifier represents.")]
+        public static readonly string InvalidCrc64 = "InvalidCrc64";
 
         /// <summary>
         /// The input is out of range.

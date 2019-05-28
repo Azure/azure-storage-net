@@ -22,6 +22,7 @@ namespace Microsoft.Azure.Storage.Core
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.Azure.Storage.Core.Executor;
     using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
 
     [TestClass]
     public class WriteToSyncTests : TestBase
@@ -45,9 +46,9 @@ namespace Microsoft.Azure.Storage.Core
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             // Test basic write
-            stream1.WriteToSync(stream2, null, null, true, false, tempExecutionState, null);
+            stream1.WriteToSync(stream2, null, null, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null);
             stream1.Position = 0;
-            stream1.WriteToSync(stream3, null, null, true, true, tempExecutionState, null);
+            stream1.WriteToSync(stream3, null, null, new ChecksumRequested(md5: true, crc64: true), true, tempExecutionState, null);
             stream1.Position = 0;
 
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -57,7 +58,7 @@ namespace Microsoft.Azure.Storage.Core
             stream2 = new MemoryStream();
 
             TestHelper.ExpectedException<ArgumentException>(
-                () => stream1.WriteToSync(stream2, 1024, 1024, true, false, tempExecutionState, null),
+                () => stream1.WriteToSync(stream2, 1024, 1024, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null),
                 "Parameters copyLength and maxLength cannot be passed simultaneously.");
 
             stream1.Dispose();
@@ -83,9 +84,9 @@ namespace Microsoft.Azure.Storage.Core
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
             
             // Test write with exact number of bytes
-            stream1.WriteToSync(stream2, stream1.Length, null, true, false, tempExecutionState, null);
+            stream1.WriteToSync(stream2, stream1.Length, null, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null);
             stream1.Position = 0;
-            stream1.WriteToSync(stream3, stream1.Length, null, true, true, tempExecutionState, null);
+            stream1.WriteToSync(stream3, stream1.Length, null, new ChecksumRequested(md5: true, crc64: true), true, tempExecutionState, null);
             stream1.Position = 0;
 
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -97,9 +98,9 @@ namespace Microsoft.Azure.Storage.Core
             stream3 = new MemoryStream();
 
             // Test write with one less byte
-            stream1.WriteToSync(stream2, stream1.Length - 1, null, true, false, tempExecutionState, null);
+            stream1.WriteToSync(stream2, stream1.Length - 1, null, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null);
             stream1.Position = 0;
-            stream1.WriteToSync(stream3, stream1.Length - 1, null, true, true, tempExecutionState, null);
+            stream1.WriteToSync(stream3, stream1.Length - 1, null, new ChecksumRequested(md5: true, crc64: true), true, tempExecutionState, null);
             stream1.Position = 0;
 
             Assert.AreEqual(stream1.Length - 1, stream2.Length);
@@ -114,11 +115,11 @@ namespace Microsoft.Azure.Storage.Core
 
             // Test with copyLength greater than length
             TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                () => stream1.WriteToSync(stream2, stream1.Length + 1, null, true, false, tempExecutionState, null),
+                () => stream1.WriteToSync(stream2, stream1.Length + 1, null, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null),
                 "The given stream does not contain the requested number of bytes from its given position.");
             stream1.Position = 0;
             TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                () => stream1.WriteToSync(stream3, stream1.Length + 1, null, true, true, tempExecutionState, null),
+                () => stream1.WriteToSync(stream3, stream1.Length + 1, null, new ChecksumRequested(md5: true, crc64: true), true, tempExecutionState, null),
                 "The given stream does not contain the requested number of bytes from its given position.");
             stream1.Position = 0;
 
@@ -145,9 +146,9 @@ namespace Microsoft.Azure.Storage.Core
             ExecutionState<NullType> tempExecutionState = new ExecutionState<NullType>(cmd, null, tempOperationContext);
 
             // Test write with exact number of bytes
-            stream1.WriteToSync(stream2, null, stream1.Length, true, false, tempExecutionState, null);
+            stream1.WriteToSync(stream2, null, stream1.Length, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null);
             stream1.Position = 0;
-            stream1.WriteToSync(stream3, null, stream1.Length, true, true, tempExecutionState, null);
+            stream1.WriteToSync(stream3, null, stream1.Length, new ChecksumRequested(md5: true, crc64: true), true, tempExecutionState, null);
             stream1.Position = 0;
 
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -160,11 +161,11 @@ namespace Microsoft.Azure.Storage.Core
 
             // Test write with one less byte
             TestHelper.ExpectedException<InvalidOperationException>(
-                () => stream1.WriteToSync(stream2, null, stream1.Length - 1, true, false, tempExecutionState, null),
+                () => stream1.WriteToSync(stream2, null, stream1.Length - 1, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null),
                 "Stream is longer than the allowed length.");
             stream1.Position = 0;
             TestHelper.ExpectedException<InvalidOperationException>(
-                () => stream1.WriteToSync(stream3, null, stream1.Length - 1, true, true, tempExecutionState, null),
+                () => stream1.WriteToSync(stream3, null, stream1.Length - 1, new ChecksumRequested(md5: true, crc64: true), true, tempExecutionState, null),
                 "Stream is longer than the allowed length.");
             stream1.Position = 0;
 
@@ -174,9 +175,9 @@ namespace Microsoft.Azure.Storage.Core
             stream3 = new MemoryStream();
 
             // Test with count greater than length
-            stream1.WriteToSync(stream2, null, stream1.Length + 1, true, false, tempExecutionState, null);
+            stream1.WriteToSync(stream2, null, stream1.Length + 1, new ChecksumRequested(md5: true, crc64: true), false, tempExecutionState, null);
             stream1.Position = 0;
-            stream1.WriteToSync(stream3, null, stream1.Length + 1, true, true, tempExecutionState, null);
+            stream1.WriteToSync(stream3, null, stream1.Length + 1, new ChecksumRequested(md5: true, crc64: true), true, tempExecutionState, null);
             stream1.Position = 0;
 
             // Entire stream should have been copied

@@ -199,7 +199,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
 
             try
             {
-                request = FileHttpRequestMessageFactory.Get(uri, context.Timeout, offset, count, false, null, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
+                request = FileHttpRequestMessageFactory.Get(uri, context.Timeout, offset, count, ChecksumRequested.None, null, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             }
             catch (InvalidOperationException)
             {

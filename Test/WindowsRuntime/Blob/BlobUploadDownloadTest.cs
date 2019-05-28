@@ -24,6 +24,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Storage.Shared.Protocol;
 
 #if !NETCORE
 using Windows.Storage;
@@ -404,7 +405,12 @@ namespace Microsoft.Azure.Storage.Blob
 
             BlobRequestOptions options = new BlobRequestOptions()
             {
-                StoreBlobContentMD5 = false,
+                ChecksumOptions = 
+                    new ChecksumOptions
+                    {
+                        StoreContentMD5 = false,
+                        StoreContentCRC64 = false
+                    },
                 ParallelOperationThreadCount = 1
             };
 
@@ -592,16 +598,23 @@ namespace Microsoft.Azure.Storage.Blob
             byte[] buffer = GetRandomBuffer(2 * 1024);
 
             CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
-            BlobRequestOptions options = new BlobRequestOptions();
-            options.DisableContentMD5Validation = false;
-            options.StoreBlobContentMD5 = false;
+            BlobRequestOptions options =
+                new BlobRequestOptions()
+                {
+                    ChecksumOptions =
+                        new ChecksumOptions
+                        {
+                            StoreContentMD5 = false,
+                            DisableContentMD5Validation = false
+                        }
+                };
             OperationContext context = new OperationContext();
             using (MemoryStream srcStream = new MemoryStream(buffer))
             {
                 await blob.UploadFromStreamAsync(srcStream, null, options, context);
                 await blob.FetchAttributesAsync();
-                string md5 = blob.Properties.ContentMD5;
-                blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
+                string md5 = blob.Properties.ContentChecksum.MD5;
+                blob.Properties.ContentChecksum.MD5 = "MDAwMDAwMDA=";
                 await blob.SetPropertiesAsync(null, options, context);
                 byte[] testBuffer = new byte[2048];
                 MemoryStream dstStream = new MemoryStream(testBuffer);
@@ -610,13 +623,102 @@ namespace Microsoft.Azure.Storage.Blob
                     "Try to Download a stream with a corrupted md5 and DisableMD5Validation set to false",
                     HttpStatusCode.OK);
 
-                options.DisableContentMD5Validation = true;
+                options.ChecksumOptions.DisableContentMD5Validation = true;
                 await blob.SetPropertiesAsync(null, options, context);
                 byte[] testBuffer2 = new byte[2048];
                 MemoryStream dstStream2 = new MemoryStream(testBuffer2);
                 await blob.DownloadRangeToStreamAsync(dstStream2, null, null, null, options, context);
             }
         }
+
+        [TestMethod]
+        [Description("Upload from text to a blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [Ignore("Stored CRC is not supported")]
+        public async Task BlobUploadWithoutCRC64ValidationAndStoreBlobContentTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(2 * 1024);
+
+            CloudPageBlob blob = this.testContainer.GetPageBlobReference("blob1");
+            BlobRequestOptions options =
+                new BlobRequestOptions()
+                {
+                    ChecksumOptions =
+                        new ChecksumOptions
+                        {
+                            StoreContentCRC64 = false,
+                            DisableContentCRC64Validation = false
+                        }
+                };
+            OperationContext context = new OperationContext();
+            using (MemoryStream srcStream = new MemoryStream(buffer))
+            {
+                await blob.UploadFromStreamAsync(srcStream, null, options, context);
+                await blob.FetchAttributesAsync();
+                string crc64 = blob.Properties.ContentChecksum.CRC64;
+                blob.Properties.ContentChecksum.CRC64 = "MDAwMDAwMDA=";
+                await blob.SetPropertiesAsync(null, options, context);
+                byte[] testBuffer = new byte[2048];
+                MemoryStream dstStream = new MemoryStream(testBuffer);
+                await TestHelper.ExpectedExceptionAsync(async () => await blob.DownloadRangeToStreamAsync(dstStream, null, null, null, options, context),
+                    context,
+                    "Try to Download a stream with a corrupted CRC64 and DisableCRC64Validation set to false",
+                    HttpStatusCode.OK);
+
+                options.ChecksumOptions.DisableContentCRC64Validation = true;
+                await blob.SetPropertiesAsync(null, options, context);
+                byte[] testBuffer2 = new byte[2048];
+                MemoryStream dstStream2 = new MemoryStream(testBuffer2);
+                await blob.DownloadRangeToStreamAsync(dstStream2, null, null, null, options, context);
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload from text to an append blob")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobUploadWithChecksumValidationTestAsync()
+        {
+            byte[] buffer = GetRandomBuffer(2 * 1024);
+            ChecksumWrapper checksum = new ChecksumWrapper(calcMd5: true, calcCrc64: true);
+            checksum.UpdateHash(buffer, 0, buffer.Length);
+            Checksum contentChecksum = new Checksum(md5: checksum.MD5.ComputeHash(), crc64: checksum.CRC64.ComputeHash());
+
+            CloudAppendBlob blob = this.testContainer.GetAppendBlobReference("blob1");
+            BlobRequestOptions options = new BlobRequestOptions();
+            options.ChecksumOptions.DisableContentCRC64Validation = false;
+            options.ChecksumOptions.StoreContentMD5 = false;
+            options.ChecksumOptions.StoreContentCRC64 = false;
+            OperationContext context = new OperationContext();
+            using (MemoryStream srcStream = new MemoryStream(buffer))
+            {
+                await blob.CreateOrReplaceAsync();
+                await blob.AppendBlockAsync(srcStream, contentChecksum.MD5 /* TODO when CRC64 supported */, null, options, context);
+
+                blob.Properties.ContentChecksum.MD5 = "MDAwMDAwMDA=";
+                blob.Properties.ContentChecksum.CRC64 = "MDAwMDAwMDA=";
+                await blob.SetPropertiesAsync(null, options, context);
+                byte[] testBuffer = new byte[2048];
+                MemoryStream dstStream = new MemoryStream(testBuffer);
+                await TestHelper.ExpectedExceptionAsync(() => blob.DownloadRangeToStreamAsync(dstStream, null, null, null, options, context),
+                    context,
+                    "Try to Download a stream with a corrupted checksum and no disabling",
+                    HttpStatusCode.OK);
+
+                options.ChecksumOptions.DisableContentMD5Validation = true;
+                options.ChecksumOptions.DisableContentCRC64Validation = true;
+                await blob.SetPropertiesAsync(null, options, context);
+                byte[] testBuffer2 = new byte[2048];
+                MemoryStream dstStream2 = new MemoryStream(testBuffer2);
+                await blob.DownloadRangeToStreamAsync(dstStream2, null, null, null, options, context);
+            }
+        }
+
 #if !FACADE_NETCORE
         [TestMethod]
         [Description("Upload from file to a blob")]
@@ -765,8 +867,14 @@ namespace Microsoft.Azure.Storage.Blob
 
                 BlobRequestOptions options = new BlobRequestOptions()
                 {
-                    UseTransactionalMD5 = false,
-                    StoreBlobContentMD5 = false,
+                    ChecksumOptions =
+                        new ChecksumOptions
+                        {
+                            UseTransactionalMD5 = false,
+                            StoreContentMD5 = false,
+                            UseTransactionalCRC64 = false,
+                            StoreContentCRC64 = false,
+                        },
                     ParallelOperationThreadCount = 1
                 };
 
@@ -845,7 +953,12 @@ namespace Microsoft.Azure.Storage.Blob
                 byte[] buffer = GetRandomBuffer(fileSize);
                 BlobRequestOptions options = new BlobRequestOptions()
                 {
-                    StoreBlobContentMD5 = false,
+                    ChecksumOptions =
+                        new ChecksumOptions
+                        {
+                            StoreContentMD5 = false,
+                            StoreContentCRC64 = false
+                        },
                     ParallelOperationThreadCount = 2
                 };
             
@@ -891,6 +1004,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobRequestOptions options = new BlobRequestOptions()
                 {
                     StoreBlobContentMD5 = false,
+                    StoreBlobContentCRC64 = false,
                     ParallelOperationThreadCount = 2
                 };
 

@@ -80,6 +80,25 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             }
         }
 
+        internal static void ApplySourceContentChecksumHeaders(this StorageRequestMessage request, Checksum sourceContentChecksum)
+        {
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, sourceContentChecksum?.MD5);
+            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentCRC64Header, sourceContentChecksum?.CRC64);
+        }
+
+        internal static void ApplyRangeContentChecksumRequested(this StorageRequestMessage request, long? offset, ChecksumRequested rangeChecksumRequested)
+        {
+            if (offset.HasValue && rangeChecksumRequested.MD5)
+            {
+                request.Headers.Add(Constants.HeaderConstants.RangeContentMD5Header, Constants.HeaderConstants.TrueHeader);
+            }
+
+            if (offset.HasValue && rangeChecksumRequested.CRC64)
+            {
+                request.Headers.Add(Constants.HeaderConstants.RangeContentCRC64Header, Constants.HeaderConstants.TrueHeader);
+            }
+        }
+
         /// <summary>
         /// Applies the lease condition to the web request.
         /// </summary>

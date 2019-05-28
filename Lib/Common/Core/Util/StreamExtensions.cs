@@ -73,14 +73,14 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// <param name="toStream">The destination stream.</param>    
         /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot be passed with a value for maxLength.</param>
         /// <param name="maxLength">Maximum length of the stream to write.</param>        
-        /// <param name="calculateMd5"><c>true</c> to calculate the MD5 hash.</param>
+        /// <param name="calculateChecksum">A value indicating whether the checksums should be calculated.</param>
         /// <param name="syncRead">A boolean indicating whether the write happens synchronously.</param>
         /// <param name="executionState">An object that stores state of the operation.</param>
         /// <param name="streamCopyState">State of the stream copy.</param>
         /// <exception cref="System.ArgumentOutOfRangeException">stream</exception>
         [DebuggerNonUserCode]
         [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Reviewed")]
-        internal static void WriteToSync<T>(this Stream stream, Stream toStream, long? copyLength, long? maxLength, bool calculateMd5, bool syncRead, ExecutionState<T> executionState, StreamDescriptor streamCopyState)
+        internal static void WriteToSync<T>(this Stream stream, Stream toStream, long? copyLength, long? maxLength, ChecksumRequested calculateChecksum, bool syncRead, ExecutionState<T> executionState, StreamDescriptor streamCopyState)
         {
             if (copyLength.HasValue && maxLength.HasValue)
             {
@@ -99,9 +99,9 @@ namespace Microsoft.Azure.Storage.Core.Util
             
             byte[] buffer = new byte[GetBufferSize(stream)];
 
-            if (streamCopyState != null && calculateMd5 && streamCopyState.Md5HashRef == null)
+            if (streamCopyState != null && calculateChecksum.HasAny && streamCopyState.ChecksumWrapper == null)
             {
-                streamCopyState.Md5HashRef = new MD5Wrapper();
+                streamCopyState.ChecksumWrapper = new ChecksumWrapper(calculateChecksum.MD5, calculateChecksum.CRC64);
             }
 
             RegisteredWaitHandle waitHandle = null;
@@ -162,9 +162,9 @@ namespace Microsoft.Azure.Storage.Core.Util
                                 throw new InvalidOperationException(SR.StreamLengthError);
                             }
 
-                            if (streamCopyState.Md5HashRef != null)
+                            if (streamCopyState.ChecksumWrapper != null)
                             {
-                                streamCopyState.Md5HashRef.UpdateHash(buffer, 0, readCount);
+                                streamCopyState.ChecksumWrapper.UpdateHash(buffer, 0, readCount);
                             }
                         }
                     }
@@ -200,10 +200,17 @@ namespace Microsoft.Azure.Storage.Core.Util
                 }
             }
 
-            if (streamCopyState != null && streamCopyState.Md5HashRef != null)
+            if (streamCopyState != null && streamCopyState.ChecksumWrapper != null)
             {
-                streamCopyState.Md5 = streamCopyState.Md5HashRef.ComputeHash();
-                streamCopyState.Md5HashRef = null;
+                if (streamCopyState.ChecksumWrapper.CRC64 != null)
+                {
+                    streamCopyState.Crc64 = streamCopyState.ChecksumWrapper.CRC64.ComputeHash();
+                }
+                if (streamCopyState.ChecksumWrapper.MD5 != null)
+                {
+                    streamCopyState.Md5 = streamCopyState.ChecksumWrapper.MD5.ComputeHash();
+                }
+                streamCopyState.ChecksumWrapper = null;
             }
         }
 
@@ -261,12 +268,12 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// <param name="bufferManager">IBufferManager instance to use. May be null.</param>
         /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot be passed with a value for maxLength.</param>
         /// <param name="maxLength">Maximum length of the source stream. Cannot be passed with a value for copyLength.</param>
-        /// <param name="calculateMd5">Bool value indicating whether the Md5 should be calculated.</param>
+        /// <param name="calculateChecksum">A value indicating whether the checksums should be calculated.</param>
         /// <param name="executionState">An object that stores state of the operation.</param>
         /// <param name="streamCopyState">An object that represents the current state for the copy operation.</param>
         /// <param name="token">A CancellationToken to observe while waiting for the copy to complete.</param>
         /// <returns>The task object representing the asynchronous operation.</returns>
-        internal static async Task WriteToAsync<T>(this Stream stream, Stream toStream, IBufferManager bufferManager, long? copyLength, long? maxLength, bool calculateMd5, ExecutionState<T> executionState, StreamDescriptor streamCopyState, CancellationToken token)
+        internal static async Task WriteToAsync<T>(this Stream stream, Stream toStream, IBufferManager bufferManager, long? copyLength, long? maxLength, ChecksumRequested calculateChecksum, ExecutionState<T> executionState, StreamDescriptor streamCopyState, CancellationToken token)
         {
             if (copyLength.HasValue && maxLength.HasValue)
             {
@@ -283,9 +290,9 @@ namespace Microsoft.Azure.Storage.Core.Util
                 throw new ArgumentOutOfRangeException("copyLength", SR.StreamLengthShortError);
             }
 
-            if (streamCopyState != null && calculateMd5 && streamCopyState.Md5HashRef == null)
+            if (streamCopyState != null && calculateChecksum.HasAny && streamCopyState.ChecksumWrapper == null)
             {
-                streamCopyState.Md5HashRef = new MD5Wrapper();
+                streamCopyState.ChecksumWrapper = new ChecksumWrapper(calculateChecksum.MD5, calculateChecksum.CRC64);
             }
 
             CancellationTokenSource cts = null;
@@ -337,9 +344,9 @@ namespace Microsoft.Azure.Storage.Core.Util
                                 throw new InvalidOperationException(SR.StreamLengthError);
                             }
 
-                            if (streamCopyState.Md5HashRef != null)
+                            if (streamCopyState.ChecksumWrapper != null)
                             {
-                                streamCopyState.Md5HashRef.UpdateHash(buffer, 0, readCount);
+                                streamCopyState.ChecksumWrapper.UpdateHash(buffer, 0, readCount);
                             }
                         }
                     }
@@ -369,10 +376,17 @@ namespace Microsoft.Azure.Storage.Core.Util
             // to write all buffered data to the underlying Windows Runtime stream.
             await toStream.FlushAsync().ConfigureAwait(false);
 
-            if (streamCopyState != null && streamCopyState.Md5HashRef != null)
+            if (streamCopyState != null && streamCopyState.ChecksumWrapper != null)
             {
-                streamCopyState.Md5 = streamCopyState.Md5HashRef.ComputeHash();
-                streamCopyState.Md5HashRef = null;
+                if (streamCopyState.ChecksumWrapper.CRC64 != null)
+                {
+                    streamCopyState.Crc64 = streamCopyState.ChecksumWrapper.CRC64.ComputeHash();
+                }
+                if (streamCopyState.ChecksumWrapper.MD5 != null)
+                {
+                    streamCopyState.Md5 = streamCopyState.ChecksumWrapper.MD5.ComputeHash();
+                }
+                streamCopyState.ChecksumWrapper = null;
             }
         }
 #endif
@@ -387,15 +401,15 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// <param name="bufferManager">IBufferManager instance to use.</param>
         /// <param name="copyLength">Number of bytes to copy from source stream to destination stream. Cannot be passed with a value for maxLength.</param>
         /// <param name="maxLength">Maximum length of the source stream. Cannot be passed with a value for copyLength.</param>
-        /// <param name="calculateMd5">Bool value indicating whether the Md5 should be calculated.</param>
+        /// <param name="calculateChecksum">A value indicating whether the checksums should be calculated.</param>
         /// <param name="executionState">An object that stores state of the operation.</param>
         /// <param name="streamCopyState">State of the stream copy.</param>
         /// <param name="cancellationToken">The cancellation token for the operation.</param>
         /// <param name="completed">The action taken when the execution is completed.</param>
         [DebuggerNonUserCode]
-        internal static Task WriteToAsync<T>(this Stream stream, Stream toStream, IBufferManager bufferManager, long? copyLength, long? maxLength, bool calculateMd5, ExecutionState<T> executionState, StreamDescriptor streamCopyState, CancellationToken cancellationToken, Action<ExecutionState<T>> completed = null)
+        internal static Task WriteToAsync<T>(this Stream stream, Stream toStream, IBufferManager bufferManager, long? copyLength, long? maxLength, ChecksumRequested calculateChecksum, ExecutionState<T> executionState, StreamDescriptor streamCopyState, CancellationToken cancellationToken, Action<ExecutionState<T>> completed = null)
         {
-            AsyncStreamCopier<T> copier = new AsyncStreamCopier<T>(stream, toStream, executionState, bufferManager, GetBufferSize(stream), calculateMd5, streamCopyState);
+            AsyncStreamCopier<T> copier = new AsyncStreamCopier<T>(stream, toStream, executionState, bufferManager, GetBufferSize(stream), calculateChecksum, streamCopyState);
             return copier.StartCopyStream(completed, copyLength, maxLength, cancellationToken);
         }
 #endif

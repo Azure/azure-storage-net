@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
@@ -91,8 +92,8 @@ namespace Microsoft.Azure.Storage.Core.Executor
         // if true, the inStream will be set before processresponse is called.
         public bool RetrieveResponseStream = false;
 
-        // if true the executor will calculate the md5 on retrieved data
-        public bool CalculateMd5ForResponseStream = false;
+        // if true the executor will calculate the checksum on retrieved data based on these flags
+        public ChecksumRequested ChecksumRequestedForResponseStream = ChecksumRequested.None;
 
         public Stream StreamToDispose { get; set; }
 

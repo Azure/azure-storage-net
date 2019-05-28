@@ -18,6 +18,7 @@
 namespace Microsoft.Azure.Storage.Blob
 {
     using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
 
     /// <summary>
@@ -48,7 +49,8 @@ namespace Microsoft.Azure.Storage.Blob
             this.ContentEncoding = other.ContentEncoding;
             this.ContentLanguage = other.ContentLanguage;
             this.CacheControl = other.CacheControl;
-            this.ContentMD5 = other.ContentMD5;
+            this.ContentChecksum.MD5 = other.ContentChecksum.MD5;
+            this.ContentChecksum.CRC64 = other.ContentChecksum.CRC64;
             this.Length = other.Length;
             this.ETag = other.ETag;
             this.Created = other.Created;
@@ -108,7 +110,17 @@ namespace Microsoft.Azure.Storage.Blob
         /// Gets or sets the content-MD5 value stored for the blob.
         /// </summary>
         /// <value>A string containing the blob's content-MD5 hash.</value>
-        public string ContentMD5 { get; set; }
+        public string ContentMD5
+        {
+            get => this.ContentChecksum.MD5;
+            set => this.ContentChecksum.MD5 = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the content checksum value stored for the blob.
+        /// </summary>
+        /// <value>A Checksum instance containing the blob's content checksum values.</value>
+        internal Checksum ContentChecksum { get; set; } = new Checksum(md5: default(string), crc64: default(string));
 
         /// <summary>
         /// Gets or sets the content-type value stored for the blob.

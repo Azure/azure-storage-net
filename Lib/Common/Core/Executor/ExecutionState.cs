@@ -282,6 +282,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
                 {
                     this.Cmd.CurrentResult.ServiceRequestID = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(this.resp.Headers, Constants.HeaderConstants.RequestIdHeader);
                     this.Cmd.CurrentResult.ContentMd5 = this.resp.Content.Headers.ContentMD5 != null ? Convert.ToBase64String(this.resp.Content.Headers.ContentMD5) : null;
+                    this.Cmd.CurrentResult.ContentCrc64 = HttpResponseParsers.GetContentCRC64(this.resp);
                     this.Cmd.CurrentResult.Etag = this.resp.Headers.ETag != null ? this.resp.Headers.ETag.ToString() : null;
                     this.Cmd.CurrentResult.RequestDate = this.resp.Headers.Date.HasValue ? this.resp.Headers.Date.Value.UtcDateTime.ToString("R", CultureInfo.InvariantCulture) : null;
                     this.Cmd.CurrentResult.HttpStatusMessage = this.resp.ReasonPhrase;
@@ -321,6 +322,11 @@ namespace Microsoft.Azure.Storage.Core.Executor
                     if (this.resp.Content != null && this.resp.Content.Headers != null)
                     {
                         this.Cmd.CurrentResult.ContentMd5 = this.resp.Content.Headers.ContentMD5 != null ? Convert.ToBase64String(this.resp.Content.Headers.ContentMD5) : null;
+                    }
+
+                    if (this.resp.Content != null && this.resp.Content.Headers != null)
+                    {
+                        this.Cmd.CurrentResult.ContentCrc64 = HttpResponseParsers.GetContentCRC64(this.resp);
                     }
 
                     this.Cmd.CurrentResult.HttpStatusMessage = this.resp.ReasonPhrase;

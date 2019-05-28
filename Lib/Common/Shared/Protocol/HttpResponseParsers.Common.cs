@@ -77,13 +77,13 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             return retVal;
         }
 
-        internal static void ValidateResponseStreamMd5AndLength<T>(long? length, string md5, StorageCommandBase<T> cmd)
+        internal static void ValidateResponseStreamChecksumAndLength<T>(long? length, string md5, string crc64, StorageCommandBase<T> cmd)
         {
             if (cmd.StreamCopyState == null)
             {
                 throw new StorageException(
                     cmd.CurrentResult,
-                    SR.ContentMD5NotCalculated,
+                    SR.ContentChecksumNotCalculated,
                     null)
                 {
                     IsRetryable = false
@@ -110,6 +110,17 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                     {
                         IsRetryable = false
                     };
+            }
+
+            if ((crc64 != null) && (cmd.StreamCopyState.Crc64 != null) && (cmd.StreamCopyState.Crc64 != crc64))
+            {
+                throw new StorageException(
+                    cmd.CurrentResult,
+                    SR.CRC64MismatchError,
+                    null)
+                {
+                    IsRetryable = false
+                };
             }
         }
 

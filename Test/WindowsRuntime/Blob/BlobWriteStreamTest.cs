@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Shared.Protocol;
 
 #if NETCORE
 using System.Security.Cryptography;
@@ -474,6 +476,68 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
+
+        [TestMethod]
+        [Description("Upload a block blob using blob stream and verify contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task BlockBlobWriteStreamOneByteTestAsync()
+        {
+            byte buffer = 127;
+
+            ChecksumWrapper hasher = new ChecksumWrapper();
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+            try
+            {
+                await container.CreateAsync();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 16 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    BlobRequestOptions options = new BlobRequestOptions()
+                    {
+                        ChecksumOptions =
+                            new ChecksumOptions
+                            {
+                                StoreContentMD5 = true,
+                                StoreContentCRC64 = true
+                            }
+                    };
+                    using (Stream blobStream = await blob.OpenWriteAsync(null, options, default(OperationContext)))
+                    {
+                        for (int i = 0; i < 1 * 1024 * 1024; i++)
+                        {
+                            blobStream.WriteByte(buffer);
+                            wholeBlob.WriteByte(buffer);
+                            Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+                        }
+                    }
+
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    hasher.UpdateHash(wholeBlob.ToArray(), 0, (int)wholeBlob.Length);
+                    string md5 = hasher.MD5.ComputeHash();
+                    string crc64 = hasher.CRC64.ComputeHash();
+                    await blob.FetchAttributesAsync();
+                    Assert.AreEqual(md5, blob.Properties.ContentChecksum.MD5);
+                    //Assert.AreEqual(crc64, blob.Properties.ContentChecksum.CRC64);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        await blob.DownloadToStreamAsync(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                await container.DeleteIfExistsAsync();
+            }
+        }
+
         [TestMethod]
         [Description("Upload a block blob using blob stream and verify contents")]
         [TestCategory(ComponentCategory.Blob)]
@@ -483,11 +547,8 @@ namespace Microsoft.Azure.Storage.Blob
         public async Task BlockBlobWriteStreamBasicTestAsync()
         {
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
-#if NETCORE
-            MD5 hasher = MD5.Create();
-#else
-            CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
-#endif
+
+            ChecksumWrapper hasher = new ChecksumWrapper();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             blobClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
             string name = GetRandomContainerName();
@@ -499,10 +560,16 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
-                    BlobRequestOptions options = new BlobRequestOptions()
-                    {
-                        StoreBlobContentMD5 = true,
-                    };
+                    BlobRequestOptions options =
+                        new BlobRequestOptions()
+                        {
+                            ChecksumOptions =
+                                new ChecksumOptions
+                                {
+                                    StoreContentMD5 = true,
+                                    StoreContentCRC64 = true
+                                }
+                        };
                     using (CloudBlobStream writeStream = await blob.OpenWriteAsync(null, options, null))
                     {
                         Stream blobStream = writeStream;
@@ -512,21 +579,18 @@ namespace Microsoft.Azure.Storage.Blob
                             await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
-#if !NETCORE
-                            hasher.Append(buffer.AsBuffer());
-#endif
                         }
 
                         await blobStream.FlushAsync();
                     }
 
-#if NETCORE
-                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob.ToArray()));
-#else
-                    string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
-#endif
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    hasher.UpdateHash(wholeBlob.ToArray(), 0, (int)wholeBlob.Length);
+                    string md5 = hasher.MD5.ComputeHash();
+                    string crc64 = hasher.CRC64.ComputeHash();
                     await blob.FetchAttributesAsync();
-                    Assert.AreEqual(md5, blob.Properties.ContentMD5);
+                    Assert.AreEqual(md5, blob.Properties.ContentChecksum.MD5);
+                    //Assert.AreEqual(crc64, blob.Properties.ContentChecksum.CRC64);
 
                     using (MemoryOutputStream downloadedBlob = new MemoryOutputStream())
                     {
@@ -652,11 +716,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             byte[] buffer = GetRandomBuffer(6 * 512);
 
-#if NETCORE
-            MD5 hasher = MD5.Create();
-#else
-            CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
-#endif
+            ChecksumWrapper hasher = new ChecksumWrapper();
             CloudBlobContainer container = GetRandomContainerReference();
             container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
 
@@ -671,7 +731,12 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     BlobRequestOptions options = new BlobRequestOptions()
                     {
-                        StoreBlobContentMD5 = true,
+                        ChecksumOptions =
+                            new ChecksumOptions
+                            {
+                                StoreContentMD5 = true,
+                                StoreContentCRC64 = true
+                            }
                     };
 
                     using (CloudBlobStream writeStream = await blob.OpenWriteAsync(buffer.Length * 3, null, options, null))
@@ -683,21 +748,18 @@ namespace Microsoft.Azure.Storage.Blob
                             await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
-#if !NETCORE
-                            hasher.Append(buffer.AsBuffer());
-#endif
                         }
 
                         await blobStream.FlushAsync();
                     }
 
-#if NETCORE
-                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob.ToArray()));
-#else
-                    string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
-#endif
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    hasher.UpdateHash(wholeBlob.ToArray(), 0, (int)wholeBlob.Length);
+                    string md5 = hasher.MD5.ComputeHash();
+                    string crc64 = hasher.CRC64.ComputeHash();
                     await blob.FetchAttributesAsync();
-                    Assert.AreEqual(md5, blob.Properties.ContentMD5);
+                    Assert.AreEqual(md5, blob.Properties.ContentChecksum.MD5);
+                    //Assert.AreEqual(crc64, blob.Properties.ContentChecksum.CRC64);
 
                     using (MemoryOutputStream downloadedBlob = new MemoryOutputStream())
                     {
@@ -727,10 +789,12 @@ namespace Microsoft.Azure.Storage.Blob
 
                     await blob.FetchAttributesAsync();
                     Assert.AreEqual(md5, blob.Properties.ContentMD5);
+                    //Assert.AreEqual(crc64, blob.Properties.ContentCRC64); // not supported
 
                     using (MemoryOutputStream downloadedBlob = new MemoryOutputStream())
                     {
-                        options.DisableContentMD5Validation = true;
+                        options.ChecksumOptions.DisableContentMD5Validation = true;
+                        options.ChecksumOptions.DisableContentCRC64Validation = true;
                         await blob.DownloadToStreamAsync(downloadedBlob, null, options, null);
                         TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob.UnderlyingStream);
                     }
@@ -739,6 +803,70 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.DeleteAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload a page blob using blob stream and verify contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task PageBlobWriteStreamOneByteTestAsync()
+        {
+            byte buffer = 127;
+
+            ChecksumWrapper hasher = new ChecksumWrapper();
+            CloudBlobContainer container = GetRandomContainerReference();
+            container.ServiceClient.DefaultRequestOptions.ParallelOperationThreadCount = 2;
+
+            try
+            {
+                await container.CreateAsync();
+
+                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 16 * 1024;
+
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    BlobRequestOptions options = new BlobRequestOptions()
+                    {
+                        ChecksumOptions =
+                            new ChecksumOptions
+                            {
+                                StoreContentMD5 = true,
+                                StoreContentCRC64 = true
+                            }
+                    };
+
+                    using (Stream blobStream = await blob.OpenWriteAsync(1 * 1024 * 1024, null, options, default(OperationContext)))
+                    {
+                        for (int i = 0; i < 1 * 1024 * 1024; i++)
+                        {
+                            blobStream.WriteByte(buffer);
+                            wholeBlob.WriteByte(buffer);
+                            Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+                        }
+                    }
+
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    hasher.UpdateHash(wholeBlob.ToArray(), 0, (int)wholeBlob.Length);
+                    string md5 = hasher.MD5.ComputeHash();
+                    string crc64 = hasher.CRC64.ComputeHash();
+                    await blob.FetchAttributesAsync();
+                    Assert.AreEqual(md5, blob.Properties.ContentChecksum.MD5);
+                    //Assert.AreEqual(crc64, blob.Properties.ContentChecksum.CRC64);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        await blob.DownloadToStreamAsync(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -782,7 +910,8 @@ namespace Microsoft.Azure.Storage.Blob
                     }
 
                     await blob.FetchAttributesAsync();
-                    Assert.IsNull(blob.Properties.ContentMD5);
+                    Assert.IsNull(blob.Properties.ContentChecksum.MD5);
+                    Assert.IsNull(blob.Properties.ContentChecksum.CRC64);
 
                     using (MemoryOutputStream downloadedBlob = new MemoryOutputStream())
                     {
@@ -817,7 +946,16 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.StreamWriteSizeInBytes = 1024;
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
-                    BlobRequestOptions options = new BlobRequestOptions() { StoreBlobContentMD5 = true };
+                    BlobRequestOptions options =
+                        new BlobRequestOptions()
+                        {
+                            ChecksumOptions =
+                                new ChecksumOptions
+                                {
+                                    StoreContentMD5 = true,
+                                    StoreContentCRC64 = true
+                                }
+                        };
                     OperationContext opContext = new OperationContext();
                     using (CloudBlobStream blobStream = await blob.OpenWriteAsync(4 * 512, null, options, opContext))
                     {
@@ -879,11 +1017,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             byte[] buffer = GetRandomBuffer(3 * 1024 * 1024);
 
-#if NETCORE
-            MD5 hasher = MD5.Create();
-#else
-            CryptographicHash hasher = HashAlgorithmProvider.OpenAlgorithm("MD5").CreateHash();
-#endif
+            ChecksumWrapper hasher = new ChecksumWrapper();
             CloudBlobContainer container = GetRandomContainerReference();
 
             try
@@ -891,13 +1025,18 @@ namespace Microsoft.Azure.Storage.Blob
                 await container.CreateAsync();
 
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
-                    BlobRequestOptions options = new BlobRequestOptions()
-                    {
-                        StoreBlobContentMD5 = true,
-                    };
+                    BlobRequestOptions options =
+                        new BlobRequestOptions()
+                        {
+                            ChecksumOptions =
+                                new ChecksumOptions
+                                {
+                                    StoreContentMD5 = true,
+                                    StoreContentCRC64 = true
+                                }
+                        };
 
                     using (CloudBlobStream writeStream = await blob.OpenWriteAsync(true, null, options, null))
                     {
@@ -908,21 +1047,18 @@ namespace Microsoft.Azure.Storage.Blob
                             await blobStream.WriteAsync(buffer, 0, buffer.Length);
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                             Assert.AreEqual(wholeBlob.Position, blobStream.Position);
-#if !NETCORE
-                            hasher.Append(buffer.AsBuffer());
-#endif
                         }
 
                         await blobStream.FlushAsync();
                     }
 
-#if NETCORE
-                    string md5 = Convert.ToBase64String(hasher.ComputeHash(wholeBlob.ToArray()));
-#else
-                    string md5 = CryptographicBuffer.EncodeToBase64String(hasher.GetValueAndReset());
-#endif
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    hasher.UpdateHash(wholeBlob.ToArray(), 0, (int)wholeBlob.Length);
+                    string md5 = hasher.MD5.ComputeHash();
+                    string crc64 = hasher.CRC64.ComputeHash();
                     await blob.FetchAttributesAsync();
-                    Assert.AreEqual(md5, blob.Properties.ContentMD5);
+                    Assert.AreEqual(md5, blob.Properties.ContentChecksum.MD5);
+                    //Assert.AreEqual(crc64, blob.Properties.ContentChecksum.CRC64);
 
                     using (MemoryOutputStream downloadedBlob = new MemoryOutputStream())
                     {
@@ -938,6 +1074,67 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.DeleteAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Upload an append blob using blob stream and verify contents")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.FuntionalTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task AppendBlobWriteStreamOneByteTest()
+        {
+            byte buffer = 127;
+
+            ChecksumWrapper hasher = new ChecksumWrapper();
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                await container.CreateAsync();
+
+                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                blob.StreamWriteSizeInBytes = 16 * 1024;
+                using (MemoryStream wholeBlob = new MemoryStream())
+                {
+                    BlobRequestOptions options =
+                        new BlobRequestOptions()
+                        {
+                            ChecksumOptions =
+                                new ChecksumOptions
+                                {
+                                    StoreContentMD5 = true,
+                                    StoreContentCRC64 = true
+                                }
+                        };
+                    using (Stream blobStream = await blob.OpenWriteAsync(true, null, options, null))
+                    {
+                        for (int i = 0; i < 1 * 1024 * 1024; i++)
+                        {
+                            blobStream.WriteByte(buffer);
+                            wholeBlob.WriteByte(buffer);
+                            Assert.AreEqual(wholeBlob.Position, blobStream.Position);
+                        }
+                    }
+
+                    wholeBlob.Seek(0, SeekOrigin.Begin);
+                    hasher.UpdateHash(wholeBlob.ToArray(), 0, (int)wholeBlob.Length);
+                    string md5 = hasher.MD5.ComputeHash();
+                    string crc64 = hasher.CRC64.ComputeHash();
+                    await blob.FetchAttributesAsync();
+                    Assert.AreEqual(md5, blob.Properties.ContentChecksum.MD5);
+                    //Assert.AreEqual(crc64, blob.Properties.ContentChecksum.CRC64);
+
+                    using (MemoryStream downloadedBlob = new MemoryStream())
+                    {
+                        await blob.DownloadToStreamAsync(downloadedBlob);
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, downloadedBlob);
+                    }
+                }
+            }
+            finally
+            {
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -990,7 +1187,16 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.StreamWriteSizeInBytes = 1 * 1024 * 1024;
                 using (MemoryStream wholeBlob = new MemoryStream())
                 {
-                    BlobRequestOptions options = new BlobRequestOptions() { StoreBlobContentMD5 = true };
+                    BlobRequestOptions options =
+                        new BlobRequestOptions()
+                        {
+                            ChecksumOptions =
+                                new ChecksumOptions
+                                {
+                                    StoreContentMD5 = true,
+                                    StoreContentCRC64 = true
+                                }
+                        };
                     OperationContext opContext = new OperationContext();
                     using (CloudBlobStream blobStream = await blob.OpenWriteAsync(true, null, options, opContext))
                     {
@@ -1000,12 +1206,8 @@ namespace Microsoft.Azure.Storage.Blob
                             await wholeBlob.WriteAsync(buffer, 0, buffer.Length);
                         }
 
-#if NETCORE
                         // todo: Make some other better logic for this test to be reliable.
                         System.Threading.Thread.Sleep(500);
-#else
-                        await Task.Delay(TimeSpan.FromSeconds(1));
-#endif
 
                         Assert.AreEqual(2, opContext.RequestResults.Count);
 

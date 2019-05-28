@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Storage.File
         protected AccessCondition accessCondition;
         protected FileRequestOptions options;
         protected OperationContext operationContext;
-        protected MD5Wrapper fileMD5;
+        protected ChecksumWrapper fileChecksum;
         protected Exception lastException;
 
         /// <summary>
@@ -48,9 +48,13 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="operationContext">An <see cref="OperationContext"/> object for tracking the current operation.</param>
         protected FileReadStreamBase(CloudFile file, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext)
         {
-            if (options.UseTransactionalMD5.Value)
+            if (options.ChecksumOptions.UseTransactionalMD5.Value)
             {
                 CommonUtility.AssertInBounds("StreamMinimumReadSizeInBytes", file.StreamMinimumReadSizeInBytes, 1, Constants.MaxRangeGetContentMD5Size);
+            }
+            if (options.ChecksumOptions.UseTransactionalCRC64.Value)
+            {
+                CommonUtility.AssertInBounds("StreamMinimumReadSizeInBytes", file.StreamMinimumReadSizeInBytes, 1, Constants.MaxRangeGetContentCRC64Size);
             }
 
             this.file = file;
@@ -61,7 +65,11 @@ namespace Microsoft.Azure.Storage.File
             this.accessCondition = accessCondition;
             this.options = options;
             this.operationContext = operationContext;
-            this.fileMD5 = (this.options.DisableContentMD5Validation.Value || string.IsNullOrEmpty(this.fileProperties.ContentMD5)) ? null : new MD5Wrapper();
+            this.fileChecksum =
+                new ChecksumWrapper(
+                    calcMd5: !(this.options.ChecksumOptions.DisableContentMD5Validation.Value || string.IsNullOrEmpty(this.fileProperties.ContentChecksum.MD5)),
+                    calcCrc64: !(this.options.ChecksumOptions.DisableContentCRC64Validation.Value || string.IsNullOrEmpty(this.fileProperties.ContentChecksum.CRC64))
+                    );
             this.lastException = null;
         }
 
@@ -133,7 +141,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="origin">A value of type <c>SeekOrigin</c> indicating the reference
         /// point used to obtain the new position.</param>
         /// <returns>The new position within the current stream.</returns>
-        /// <remarks>Seeking in a FileReadStream disables MD5 validation.</remarks>
+        /// <remarks>Seeking in a FileReadStream disables checksum validation.</remarks>
         public override long Seek(long offset, SeekOrigin origin)
         {
             if (this.lastException != null)
@@ -175,7 +183,7 @@ namespace Microsoft.Azure.Storage.File
                     this.internalBuffer.SetLength(0);
                 }
 
-                this.fileMD5 = null;
+                this.fileChecksum = null;
                 this.currentOffset = newOffset;
             }
 
@@ -221,7 +229,7 @@ namespace Microsoft.Azure.Storage.File
         {
             int readCount = this.internalBuffer.Read(buffer, offset, count);
             this.currentOffset += readCount;
-            this.VerifyFileMD5(buffer, offset, readCount);
+            this.VerifyFileChecksum(buffer, offset, readCount);
             return readCount;
         }
 
@@ -242,31 +250,50 @@ namespace Microsoft.Azure.Storage.File
         }
 
         /// <summary>
-        /// Updates the file MD5 with newly downloaded content.
+        /// Updates the file checksum with newly downloaded content.
         /// </summary>
         /// <param name="buffer">The buffer to read the data from.</param>
         /// <param name="offset">The byte offset in buffer at which to begin reading data.</param>
         /// <param name="count">The maximum number of bytes to read.</param>
-        protected void VerifyFileMD5(byte[] buffer, int offset, int count)
+        protected void VerifyFileChecksum(byte[] buffer, int offset, int count)
         {
-            if ((this.fileMD5 != null) && (this.lastException == null) && (count > 0))
+            if ((this.fileChecksum != null) && (this.lastException == null) && (count > 0))
             {
-                this.fileMD5.UpdateHash(buffer, offset, count);
+                this.fileChecksum.UpdateHash(buffer, offset, count);
 
                 if ((this.currentOffset == this.Length) &&
-                    !string.IsNullOrEmpty(this.fileProperties.ContentMD5))
+                    !string.IsNullOrEmpty(this.fileProperties.ContentChecksum.MD5)
+                    && this.fileChecksum.MD5 != default(MD5Wrapper))
                 {
-                    string computedMD5 = this.fileMD5.ComputeHash();
-                    this.fileMD5.Dispose();
-                    this.fileMD5 = null;
+                    string computedMD5 = this.fileChecksum.MD5.ComputeHash();
+                    this.fileChecksum.Dispose();
+                    this.fileChecksum = null;
 
-                    if (!computedMD5.Equals(this.fileProperties.ContentMD5))
+                    if (!computedMD5.Equals(this.fileProperties.ContentChecksum.MD5))
                     {
                         this.lastException = new IOException(string.Format(
                             CultureInfo.InvariantCulture,
                             SR.FileDataCorrupted,
-                            this.fileProperties.ContentMD5,
+                            this.fileProperties.ContentChecksum.MD5,
                             computedMD5));
+                    }
+                }
+
+                if ((this.currentOffset == this.Length) &&
+                  !string.IsNullOrEmpty(this.fileProperties.ContentChecksum.CRC64)
+                  && this.fileChecksum.CRC64 != default(Crc64Wrapper))
+                {
+                    string computedCRC64 = this.fileChecksum.CRC64.ComputeHash();
+                    this.fileChecksum.Dispose();
+                    this.fileChecksum = null;
+
+                    if (!computedCRC64.Equals(this.fileProperties.ContentChecksum.CRC64))
+                    {
+                        this.lastException = new IOException(string.Format(
+                            CultureInfo.InvariantCulture,
+                            SR.FileDataCorrupted,
+                            this.fileProperties.ContentChecksum.CRC64,
+                            computedCRC64));
                     }
                 }
             }
@@ -286,10 +313,10 @@ namespace Microsoft.Azure.Storage.File
                     this.internalBuffer = null;
                 }
 
-                if (this.fileMD5 != null)
+                if (this.fileChecksum != null)
                 {
-                    this.fileMD5.Dispose();
-                    this.fileMD5 = null;
+                    this.fileChecksum.Dispose();
+                    this.fileChecksum = null;
                 }
             }
 

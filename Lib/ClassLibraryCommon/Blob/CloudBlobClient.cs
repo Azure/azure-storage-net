@@ -1357,7 +1357,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> retCmd = new RESTCommand<NullType>(this.Credentials, this.StorageUri, this.HttpClient);
             requestOptions.ApplyToStorageCommand(retCmd);
             retCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetServiceProperties(uri, serverTimeout, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
-            retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, null /* md5 */, cmd, ctx);
+            retCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, Checksum.None, cmd, ctx);
             retCmd.StreamToDispose = memoryStream;
             retCmd.RetrieveResponseStream = true;
             retCmd.PreProcessResponse =
@@ -1412,18 +1412,17 @@ namespace Microsoft.Azure.Storage.Blob
 
             memoryStream.Seek(0, SeekOrigin.Begin);
 
-            string contentMD5 = null;
-            if (options.UseTransactionalMD5.HasValue && options.UseTransactionalMD5.Value)
-            {
-                contentMD5 = memoryStream.ComputeMD5Hash();
-            }
+            Checksum contentChecksum = new Checksum(
+                md5: (options.ChecksumOptions.UseTransactionalMD5.HasValue && options.ChecksumOptions.UseTransactionalMD5.Value) ? memoryStream.ComputeMD5Hash() : default(string),
+                crc64: (options.ChecksumOptions.UseTransactionalCRC64.HasValue && options.ChecksumOptions.UseTransactionalCRC64.Value) ? memoryStream.ComputeCRC64Hash() : default(string)
+                );
 
             RESTCommand<UserDelegationKey> postCmd = new RESTCommand<UserDelegationKey>(this.Credentials, this.StorageUri, this.HttpClient);
 
             options.ApplyToStorageCommand(postCmd);
             postCmd.CommandLocationMode = CommandLocationMode.PrimaryOrSecondary;
             postCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.GetUserDelegationKey(uri, serverTimeout, accessCondition, cnt, ctx, this.GetCanonicalizer(), this.Credentials);
-            postCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, contentMD5, cmd, ctx);
+            postCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(memoryStream, 0, memoryStream.Length, contentChecksum, cmd, ctx);
             postCmd.StreamToDispose = memoryStream;
             postCmd.RetrieveResponseStream = true;
             postCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>

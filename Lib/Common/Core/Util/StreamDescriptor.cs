@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Storage.Core.Util
     using System.Threading;
 
     /// <summary>
-    /// Provides properties to keep track of Md5 hash / Length of a stream as it is being copied.
+    /// Provides properties to keep track of checksum hash / Length of a stream as it is being copied.
     /// </summary>
     internal class StreamDescriptor
     {
@@ -40,12 +40,20 @@ namespace Microsoft.Azure.Storage.Core.Util
             set { this.md5 = value; }
         }
 
-        private volatile MD5Wrapper md5HashRef = null;
+        private volatile string crc64 = null;
 
-        public MD5Wrapper Md5HashRef
+        public string Crc64
         {
-            get { return this.md5HashRef; }
-            set { this.md5HashRef = value; }
+            get { return this.crc64; }
+            set { this.crc64 = value; }
+        }
+
+        private volatile ChecksumWrapper checksumWrapper = null;
+
+        public ChecksumWrapper ChecksumWrapper
+        {
+            get { return this.checksumWrapper; }
+            set { this.checksumWrapper = value; }
         }
     }
 }

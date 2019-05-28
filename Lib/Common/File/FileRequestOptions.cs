@@ -56,15 +56,25 @@ namespace Microsoft.Azure.Storage.File
             MaximumExecutionTime = null,
             ParallelOperationThreadCount = 1,
 
+            ChecksumOptions = new ChecksumOptions
+            {
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
-            DisableContentMD5Validation = true,
-            StoreFileContentMD5 = false,
-            UseTransactionalMD5 = false,
+                DisableContentMD5Validation = true,
+                StoreContentMD5 = false,
+                UseTransactionalMD5 = false,
+                DisableContentCRC64Validation = true,
+                StoreContentCRC64 = false,
+                UseTransactionalCRC64 = false,
 #else
-            DisableContentMD5Validation = false,
-            StoreFileContentMD5 = false,
-            UseTransactionalMD5 = false,
+                DisableContentMD5Validation = false,
+                StoreContentMD5 = false,
+                UseTransactionalMD5 = false,
+
+                DisableContentCRC64Validation = false,
+                StoreContentCRC64 = false,
+                UseTransactionalCRC64 = false,
 #endif
+            }
         };
 
         /// <summary>
@@ -92,9 +102,7 @@ namespace Microsoft.Azure.Storage.File
                 this.ServerTimeout = other.ServerTimeout;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
                 this.OperationExpiryTime = other.OperationExpiryTime;
-                this.UseTransactionalMD5 = other.UseTransactionalMD5;
-                this.StoreFileContentMD5 = other.StoreFileContentMD5;
-                this.DisableContentMD5Validation = other.DisableContentMD5Validation;
+                this.ChecksumOptions.CopyFrom(other.ChecksumOptions);
                 this.ParallelOperationThreadCount = other.ParallelOperationThreadCount;
             }
         }
@@ -141,24 +149,43 @@ namespace Microsoft.Azure.Storage.File
             }
 
 #if WINDOWS_PHONE && WINDOWS_DESKTOP
-            modifiedOptions.DisableContentMD5Validation =  BaseDefaultRequestOptions.DisableContentMD5Validation;
-            modifiedOptions.StoreFileContentMD5 = BaseDefaultRequestOptions.StoreFileContentMD5;
-            modifiedOptions.UseTransactionalMD5 = BaseDefaultRequestOptions.UseTransactionalMD5;
+            modifiedOptions.ChecksumOptions.DisableContentMD5Validation =  BaseDefaultRequestOptions.ChecksumOptions.DisableContentMD5Validation;
+            modifiedOptions.ChecksumOptions.StoreContentMD5 = BaseDefaultRequestOptions.ChecksumOptions.StoreFileContentMD5;
+            modifiedOptions.ChecksumOptions.UseTransactionalMD5 = BaseDefaultRequestOptions.ChecksumOptions.UseTransactionalMD5;
+
+            modifiedOptions.ChecksumOptions.DisableContentCRC64Validation =  BaseDefaultRequestOptions.ChecksumOptions.DisableContentCRC64Validation;
+            modifiedOptions.ChecksumOptions.StoreContentCRC64 = BaseDefaultRequestOptions.ChecksumOptions.StoreFileContentCRC64;
+            modifiedOptions.ChecksumOptions.UseTransactionalCRC64 = BaseDefaultRequestOptions.ChecksumOptions.UseTransactionalCRC64;
 #else
-            modifiedOptions.DisableContentMD5Validation = 
-                modifiedOptions.DisableContentMD5Validation 
-                ?? serviceClient.DefaultRequestOptions.DisableContentMD5Validation 
-                ?? BaseDefaultRequestOptions.DisableContentMD5Validation;
+            modifiedOptions.ChecksumOptions.DisableContentMD5Validation = 
+                modifiedOptions.ChecksumOptions.DisableContentMD5Validation 
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.DisableContentMD5Validation 
+                ?? BaseDefaultRequestOptions.ChecksumOptions.DisableContentMD5Validation;
 
-            modifiedOptions.StoreFileContentMD5 = 
-                modifiedOptions.StoreFileContentMD5 
-                ?? serviceClient.DefaultRequestOptions.StoreFileContentMD5 
-                ?? BaseDefaultRequestOptions.StoreFileContentMD5;
+            modifiedOptions.ChecksumOptions.StoreContentMD5 = 
+                modifiedOptions.ChecksumOptions.StoreContentMD5 
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.StoreContentMD5 
+                ?? BaseDefaultRequestOptions.ChecksumOptions.StoreContentMD5;
 
-            modifiedOptions.UseTransactionalMD5 = 
-                modifiedOptions.UseTransactionalMD5 
-                ?? serviceClient.DefaultRequestOptions.UseTransactionalMD5 
-                ?? BaseDefaultRequestOptions.UseTransactionalMD5;
+            modifiedOptions.ChecksumOptions.UseTransactionalMD5 = 
+                modifiedOptions.ChecksumOptions.UseTransactionalMD5 
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.UseTransactionalMD5 
+                ?? BaseDefaultRequestOptions.ChecksumOptions.UseTransactionalMD5;
+
+            modifiedOptions.ChecksumOptions.DisableContentCRC64Validation =
+                modifiedOptions.ChecksumOptions.DisableContentCRC64Validation
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.DisableContentCRC64Validation
+                ?? BaseDefaultRequestOptions.ChecksumOptions.DisableContentCRC64Validation;
+
+            modifiedOptions.ChecksumOptions.StoreContentCRC64 =
+                modifiedOptions.ChecksumOptions.StoreContentCRC64
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.StoreContentCRC64
+                ?? BaseDefaultRequestOptions.ChecksumOptions.StoreContentCRC64;
+
+            modifiedOptions.ChecksumOptions.UseTransactionalCRC64 =
+                modifiedOptions.ChecksumOptions.UseTransactionalCRC64
+                ?? serviceClient.DefaultRequestOptions.ChecksumOptions.UseTransactionalCRC64
+                ?? BaseDefaultRequestOptions.ChecksumOptions.UseTransactionalCRC64;
 #endif
 
             return modifiedOptions;
@@ -298,24 +325,9 @@ namespace Microsoft.Azure.Storage.File
 #endif
         public bool? UseTransactionalMD5
         {
-            get
-            {
-                return this.useTransactionalMD5;
-            }
-
-            set
-            {
-#if WINDOWS_PHONE && WINDOWS_DESKTOP
-                if (value.HasValue && value.Value)
-                {
-                    throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-                }
-#endif
-                this.useTransactionalMD5 = value;
-            }
+            get => this.ChecksumOptions.UseTransactionalMD5;
+            set => this.ChecksumOptions.UseTransactionalMD5 = value;
         }
-
-        private bool? useTransactionalMD5;
 
         /// <summary>
         /// Gets or sets a value to indicate that an MD5 hash will be calculated and stored when uploading a file.
@@ -326,24 +338,9 @@ namespace Microsoft.Azure.Storage.File
 #endif
         public bool? StoreFileContentMD5
         {
-            get
-            {
-                return this.storeFileContentMD5;
-            }
-
-            set
-            {
-#if WINDOWS_PHONE && WINDOWS_DESKTOP
-                if (value.HasValue && value.Value)
-                {
-                    throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-                }
-#endif
-                this.storeFileContentMD5 = value;
-            }
+            get => this.ChecksumOptions.StoreContentMD5;
+            set => this.ChecksumOptions.StoreContentMD5 = value;
         }
-
-        private bool? storeFileContentMD5;
 
         /// <summary>
         /// Gets or sets a value to indicate that MD5 validation will be disabled when downloading files.
@@ -354,23 +351,10 @@ namespace Microsoft.Azure.Storage.File
 #endif
         public bool? DisableContentMD5Validation
         {
-            get
-            {
-                return this.disableContentMD5Validation;
-            }
-
-            set
-            {
-#if WINDOWS_PHONE && WINDOWS_DESKTOP
-                if (value.HasValue && !value.Value)
-                {
-                    throw new NotSupportedException(SR.WindowsPhoneDoesNotSupportMD5);
-                }
-#endif
-                this.disableContentMD5Validation = value;
-            }
+            get => this.ChecksumOptions.DisableContentMD5Validation;
+            set => this.ChecksumOptions.DisableContentMD5Validation = value;
         }
 
-        private bool? disableContentMD5Validation;
+        public ChecksumOptions ChecksumOptions { get; set; } = new ChecksumOptions();
     }
 }

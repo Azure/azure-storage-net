@@ -581,10 +581,10 @@ namespace Microsoft.Azure.Storage.Blob
                 OperationContext context = new OperationContext();
                 await blob.UploadTextAsync(text, null, null, null, context);
 
-                // 3 because of Create and Appendblock.
-                Assert.AreEqual(2, context.RequestResults.Count);
-                await blob.DownloadTextAsync(Encoding.Unicode, null, null, context);
+                // 3 because of Create and Appendblock and Get Properties
                 Assert.AreEqual(3, context.RequestResults.Count);
+                await blob.DownloadTextAsync(Encoding.Unicode, null, null, context);
+                Assert.AreEqual(4, context.RequestResults.Count);
             }
             finally
             {

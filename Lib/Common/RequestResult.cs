@@ -66,6 +66,13 @@ namespace Microsoft.Azure.Storage
         public string ContentMd5 { get; internal set; }
 
         /// <summary>
+        /// Gets the content-CRC64 value for the request. 
+        /// </summary>
+        /// <value>The content-CRC645 value for the request.</value>
+        [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Crc", Justification = "Back compatibility.")]
+        public string ContentCrc64 { get; internal set; }
+
+        /// <summary>
         /// Gets the ETag value of the request.
         /// </summary>
         /// <value>The ETag value of the request.</value>
@@ -226,6 +233,7 @@ namespace Microsoft.Azure.Storage
 
             this.ServiceRequestID = await CommonUtility.ReadElementAsStringAsync("ServiceRequestID", reader).ConfigureAwait(false);
             this.ContentMd5 = await CommonUtility.ReadElementAsStringAsync("ContentMd5", reader).ConfigureAwait(false);
+            this.ContentCrc64 = await CommonUtility.ReadElementAsStringAsync("ContentCrc64", reader).ConfigureAwait(false);
             this.Etag = await CommonUtility.ReadElementAsStringAsync("Etag", reader).ConfigureAwait(false);
             this.RequestDate = await CommonUtility.ReadElementAsStringAsync("RequestDate", reader).ConfigureAwait(false);
             try
@@ -280,6 +288,7 @@ namespace Microsoft.Azure.Storage
             // Headers
             writer.WriteElementString("ServiceRequestID", this.ServiceRequestID);
             writer.WriteElementString("ContentMd5", this.ContentMd5);
+            writer.WriteElementString("ContentCrc64", this.ContentCrc64);
             writer.WriteElementString("Etag", this.Etag);
             writer.WriteElementString("RequestDate", this.RequestDate);
             writer.WriteElementString("ErrorCode", this.ErrorCode);

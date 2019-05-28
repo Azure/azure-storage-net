@@ -678,7 +678,7 @@ namespace Microsoft.Azure.Storage.File
                     async () => await dir2.CreateAsync(null, context),
                     context,
                     "Try to create directory hierarchy by specifying prefix",
-                    HttpStatusCode.NotFound);
+                    HttpStatusCode.BadRequest);
 
                 await dir1.CreateAsync();
                 await dir2.CreateAsync();

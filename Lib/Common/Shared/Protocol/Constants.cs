@@ -82,6 +82,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const int MaxRangeGetContentMD5Size = (int)(4 * Constants.MB);
 
         /// <summary>
+        /// The maximum size of a range get operation that returns content CRC64.
+        /// </summary>
+        public const int MaxRangeGetContentCRC64Size = (int)(4 * Constants.MB);
+
+        /// <summary>
         /// The maximum number of blocks.
         /// </summary>
         public const long MaxBlockNumber = 50000;
@@ -336,6 +341,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// XML element for content MD5 fields.
         /// </summary>
         public const string ContentMD5Element = "Content-MD5";
+
+        /// <summary>
+        /// XML element for content CRC64 fields.
+        /// </summary>
+        internal const string ContentCRC64Element = "Content-CRC64";
 
         /// <summary>
         /// XML element for enumeration results.
@@ -1029,7 +1039,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// <summary>
             /// Specifies the value to use for UserAgent header.
             /// </summary>
-            public const string UserAgentProductVersion = "10.0.3";
+            public const string UserAgentProductVersion = "11.0.0";
 
             /// <summary>
             /// Master Microsoft Azure Storage header prefix.
@@ -1112,6 +1122,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             public const string RangeContentMD5Header = PrefixForStorageHeader + "range-get-content-md5";
 
             /// <summary>
+            /// Header for range content CRC64.
+            /// </summary>
+            public const string RangeContentCRC64Header = PrefixForStorageHeader + "range-get-content-crc64";
+
+            /// <summary>
+            /// Header for content CRC64.
+            /// </summary>
+            public const string ContentCrc64Header = PrefixForStorageHeader + "content-crc64";
+
+            /// <summary>
             /// Header for storage version.
             /// </summary>
             public const string StorageVersionHeader = PrefixForStorageHeader + "version";
@@ -1182,9 +1202,19 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             public const string FileContentMD5Header = PrefixForStorageHeader + "content-md5";
 
             /// <summary>
+            /// Header that specifies file content CRC64.
+            /// </summary>
+            public const string FileContentCRC64Header = PrefixForStorageHeader + "content-crc64";
+
+            /// <summary>
             /// Header that specifies source content MD5.
             /// </summary>
             public const string SourceContentMD5Header = PrefixForStorageHeader + "source-content-md5";
+
+            /// <summary>
+            /// Header that specifies source content CRC64.
+            /// </summary>
+            internal const string SourceContentCRC64Header = PrefixForStorageHeader + "source-content-crc64";
 
             /// <summary>
             /// Header that specifies file content type.
@@ -1260,6 +1290,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header that specifies blob content MD5.
             /// </summary>
             public const string BlobContentMD5Header = PrefixForStorageHeader + "blob-content-md5";
+
+            /// <summary>
+            /// Header that specifies blob content CRC64.
+            /// </summary>
+            internal const string BlobContentCRC64Header = PrefixForStorageHeader + "blob-content-crc64";
 
             /// <summary>
             /// Header that specifies blob content type.
@@ -1370,7 +1405,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2018-11-09";
+            public const string TargetStorageVersion = "2019-02-02";
 
             /// <summary>
             /// Specifies the file type.
@@ -1532,10 +1567,10 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header that specifies whether the specified operation should recurse. 
             /// </summary> 
             public const string Recursive = PrefixForStorageHeader + "recursive";
-
-            /// <summary>
+            
+            /// <summary> 
             /// Header that specifies a continuation token. 
-            /// </summary>
+            /// </summary> 
             public const string Marker = PrefixForStorageHeader + "marker";
 
             /// <summary>
