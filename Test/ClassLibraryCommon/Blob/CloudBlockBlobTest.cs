@@ -3271,6 +3271,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
+                foreach (RehydratePriority? rehydratePriority in new[] { default(RehydratePriority?), RehydratePriority.Standard, RehydratePriority.High })
                 foreach (StandardBlobTier blobTier in Enum.GetValues(typeof(StandardBlobTier)))
                 {
                     if (blobTier == StandardBlobTier.Unknown)
@@ -3290,7 +3291,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsTrue(listBlob.Properties.BlobTierInferred.Value);
 
-                    blob.SetStandardBlobTier(blobTier);
+                    blob.SetStandardBlobTier(blobTier, rehydratePriority: rehydratePriority);
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
@@ -3455,13 +3456,14 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.BlockBlobOnly)]
-        public void CloudBlockBlobSetStandardBlobTierTask()
+        public async Task CloudBlockBlobSetStandardBlobTierTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
+                foreach (RehydratePriority? rehydratePriority in new[] { default(RehydratePriority?), RehydratePriority.Standard, RehydratePriority.High })
                 foreach (StandardBlobTier blobTier in Enum.GetValues(typeof(StandardBlobTier)))
                 {
                     if (blobTier == StandardBlobTier.Unknown)
@@ -3469,17 +3471,18 @@ namespace Microsoft.Azure.Storage.Blob
                         continue;
                     }
 
-                    CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                    string blobName = GetRandomBlobName();
+                    CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
                     CreateForTest(blob, 0, 0, true);
 
-                    blob.SetStandardBlobTierAsync(blobTier).Wait();
+                    await blob.SetStandardBlobTierAsync(blobTier, rehydratePriority, null, null, null, CancellationToken.None);
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
                     Assert.IsFalse(blob.Properties.BlobTierLastModifiedTime.HasValue);
 
-                    CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
-                    blob2.FetchAttributesAsync().Wait();
+                    CloudBlockBlob blob2 = container.GetBlockBlobReference(blobName);
+                    await blob2.FetchAttributesAsync();
                     Assert.AreEqual(blobTier, blob2.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob2.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
@@ -3488,7 +3491,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif

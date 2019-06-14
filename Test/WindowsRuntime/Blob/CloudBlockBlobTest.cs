@@ -1905,6 +1905,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 await container.CreateAsync();
 
+                foreach (RehydratePriority? rehydratePriority in new[] { default(RehydratePriority?), RehydratePriority.Standard, RehydratePriority.High })
                 foreach (StandardBlobTier blobTier in Enum.GetValues(typeof(StandardBlobTier)))
                 {
                     if (blobTier == StandardBlobTier.Unknown)
@@ -1925,7 +1926,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.IsFalse(listBlob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsTrue(listBlob.Properties.BlobTierInferred.Value);
 
-                    await blob.SetStandardBlobTierAsync(blobTier);
+                    await blob.SetStandardBlobTierAsync(blobTier, rehydratePriority, null, null, null, CancellationToken.None);
                     Assert.AreEqual(blobTier, blob.Properties.StandardBlobTier.Value);
                     Assert.IsFalse(blob.Properties.PremiumPageBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);

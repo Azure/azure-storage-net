@@ -94,7 +94,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
         
-        private static async Task CloudBlockBlobCopyImpl(Func<CloudBlockBlob, CloudBlockBlob, Task<string>> copyFunc)
+        private static async Task CloudBlockBlobCopyImplAsync(Func<CloudBlockBlob, CloudBlockBlob, Task<string>> copyFunc)
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -165,7 +165,10 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public async Task CloudBlockBlobCopyTestAsync()
         {
-            await CloudBlockBlobCopyImpl(async (source, copy) => await copy.StartCopyAsync(TestHelper.Defiddler(source)));         
+            foreach (var rehydratePriority in new[] { default(RehydratePriority?), RehydratePriority.Standard, RehydratePriority.High })
+            {
+                await CloudBlockBlobCopyImplAsync(async (source, copy) => await copy.StartCopyAsync(TestHelper.Defiddler(source), rehydratePriority, null, null, null, null, CancellationToken.None));
+            }
         }
 
         [TestMethod]

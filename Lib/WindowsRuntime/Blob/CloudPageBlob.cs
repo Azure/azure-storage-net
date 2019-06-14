@@ -1161,36 +1161,6 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an operation to start an incremental copy of an existing blob's contents, properties, and metadata to a new blob.
-        /// </summary>
-        /// <param name="sourceSnapshot">The source blob which must be a snapshot.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob sourceSnapshot)
-        {
-            return this.StartIncrementalCopyAsync(CloudBlob.SourceBlobToUri(sourceSnapshot));
-        }
-
-        /// <summary>
-        /// Begins an operation to start an incremental copy of an existing blob's contents, properties, and metadata to a new blob.
-        /// </summary>
-        /// <param name="sourceSnapshot">The URI of a source blob which must be a snapshot.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        public virtual Task<string> StartIncrementalCopyAsync(Uri sourceSnapshot)
-        {
-            return this.StartIncrementalCopyAsync(sourceSnapshot, null /* destAccessCondition */, null /* options */, null /* operationContext */, CancellationToken.None);
-        }
-
-        /// <summary>
         /// Begins an operation to start copying a blob's contents, properties, and metadata to a new blob.
         /// </summary>
         /// <param name="source">The source blob.</param>
@@ -1251,6 +1221,36 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         /// <summary>
+        /// Begins an operation to start an incremental copy of an existing blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The source blob which must be a snapshot.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob sourceSnapshot)
+        {
+            return this.StartIncrementalCopyAsync(CloudBlob.SourceBlobToUri(sourceSnapshot));
+        }
+
+        /// <summary>
+        /// Begins an operation to start an incremental copy of an existing blob's contents, properties, and metadata to a new blob.
+        /// </summary>
+        /// <param name="sourceSnapshot">The URI of a source blob which must be a snapshot.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(Uri sourceSnapshot)
+        {
+            return this.StartIncrementalCopyAsync(sourceSnapshot, null /* destAccessCondition */, null /* options */, null /* operationContext */, CancellationToken.None);
+        }
+
+        /// <summary>
         /// Begins an operation to start an incremental copy of another page blob's contents, properties, and metadata to a new blob.
         /// </summary>
         /// <param name="sourceSnapshot">The source blob which must be a snapshot.</param>
@@ -1288,7 +1288,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNull("sourceSnapshot", sourceSnapshot);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshot, default(string) /* contentMD5 */, true /*incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshot, default(string) /* contentMD5 */, true /*incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, default(RehydratePriority?) /* rehydratePriority */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -1663,7 +1663,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, premiumBlobTier.ToString(), cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, premiumBlobTier.ToString(), default(RehydratePriority?), cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);

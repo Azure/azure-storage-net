@@ -852,7 +852,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, null /* pageBlobTier */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, default(PremiumPageBlobTier?) /* premiumPageBlobTier */, default(RehydratePriority?) /* rehydratePriority */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
         }
 
         /// <summary>
@@ -862,7 +862,8 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
-        /// <param name="pageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="rehydratePriority">The priority with which to rehydrate an archived blob.</param>
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
@@ -870,9 +871,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return CopyFrom(uri, timeout, source, default(string) /* contentMD5 */, incrementalCopy, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+            return CopyFrom(uri, timeout, source, default(string) /* contentMD5 */, incrementalCopy, false /* syncCopy */, premiumPageBlobTier, rehydratePriority, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
         }
 
 
@@ -886,6 +887,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="rehydratePriority">The priority with which to rehydrate an archived blob.</param>
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
@@ -893,7 +895,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (!syncCopy && !string.IsNullOrEmpty(sourceContentMd5))
             {
@@ -913,6 +915,11 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             request.ApplyAccessCondition(destAccessCondition);
             request.ApplyAccessConditionToSource(sourceAccessCondition);
+
+            if (rehydratePriority.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.RehydratePriorityHeader, rehydratePriority.Value.ToString());
+            }
 
             if (premiumPageBlobTier.HasValue)
             {
@@ -1087,14 +1094,20 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="blobTier">The blob tier to set.</param>
+        /// <param name="rehydratePriority">The priority with which to rehydrate an archived blob.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string blobTier, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string blobTier, RehydratePriority? rehydratePriority, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "tier");
 
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
+
+            if (rehydratePriority.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.RehydratePriorityHeader, rehydratePriority.Value.ToString());
+            }
 
             return request;
         }

@@ -1158,109 +1158,105 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         /// <summary>
-        /// Begins an operation to start copying an existing block blob's contents, properties, and metadata to a new blob.
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
-        /// <param name="source">The source blob.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudBlockBlob source)
         {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source));
+            return this.StartCopyAsync(source, default(RehydratePriority?), default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
-        /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
-        /// <param name="source">The source blob.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, CancellationToken cancellationToken)
+        {
+            return this.StartCopyAsync(source, default(RehydratePriority?), default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+            return this.StartCopyAsync(source, default(RehydratePriority?), sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
-        /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
-        /// <param name="source">The source blob.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, default(string) /* contentMD5 */, false /* incrementalCopy */, false /* syncCopy */, rehydratePriority, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
-        /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
+        /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
-        /// <param name="source">The source blob.</param>
+        /// <param name="source">A <see cref="CloudBlockBlob"/> object.</param>
+        /// <param name="contentMD5">An optional hash value used to ensure transactional integrity for the operation. May be <c>null</c> or an empty string.</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private Task<string> StartCopyAsync(CloudBlockBlob source, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool incrementalCopy, bool syncCopy, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), default(string) /* contentMD5 */, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            CommonUtility.AssertNotNull("source", source);
+            this.attributes.AssertNoSnapshot();
+            BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.StartCopyImpl(this.attributes, CloudBlob.SourceBlobToUri(source), contentMD5, incrementalCopy, syncCopy, default(PremiumPageBlobTier?), rehydratePriority, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken);
         }
 
         /// <summary>
-        /// Begins an operation to start copying another block blob's contents, properties, and metadata to a new blob.
-        /// </summary>
-        /// <param name="source">The source blob.</param>
-        /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
-        /// <param name="sourceAccessCondition">An object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="destAccessCondition">An object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
-        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
-        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>The copy ID associated with the copy operation.</returns>
-        /// <remarks>
-        /// This method fetches the blob's ETag, last modified time, and part of the copy state.
-        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
-        /// </remarks>
-        [DoesServiceRequest]
-        private Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
-        {
-            return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
-        }
-
-        /// <summary>
-        /// Sets the tier for a blob.
+        /// Initiates an asynchronous operation to set the tier of the blob on a standard storage account.
         /// </summary>
         /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
-        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
         public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier)
         {
-            return this.SetStandardBlobTierAsync(standardBlobTier, null /* accessCondition */, null /* options */, null /* operationContext */);
+            return this.SetStandardBlobTierAsync(standardBlobTier, default(RehydratePriority?), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to set the tier of the blob on a standard storage account.
+        /// </summary>
+        /// <param name="standardBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, CancellationToken cancellationToken)
+        {
+            return this.SetStandardBlobTierAsync(standardBlobTier, default(RehydratePriority?), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1274,7 +1270,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.SetStandardBlobTierAsync(standardBlobTier, accessCondition, options, operationContext, CancellationToken.None);
+            return this.SetStandardBlobTierAsync(standardBlobTier, default(RehydratePriority?), accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -1287,12 +1283,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, RehydratePriority? rehydratePriority, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.SetStandardBlobTierImpl(standardBlobTier, accessCondition, modifiedOptions),
+                this.SetStandardBlobTierImpl(standardBlobTier, rehydratePriority, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -1502,12 +1498,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the blob. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand"/> that sets the blob tier.</returns>
-        private RESTCommand<NullType> SetStandardBlobTierImpl(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> SetStandardBlobTierImpl(StandardBlobTier standardBlobTier, RehydratePriority? rehydratePriority, AccessCondition accessCondition, BlobRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, standardBlobTier.ToString(), cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, standardBlobTier.ToString(), rehydratePriority, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 // OK is returned when the tier on the blob is done immediately while accepted occurs when the process of setting the tier has started but not completed.

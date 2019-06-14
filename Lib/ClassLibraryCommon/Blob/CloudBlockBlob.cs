@@ -2088,12 +2088,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request, or <c>null</c>. If <c>null</c>, default options are applied to the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
-        public virtual void SetStandardBlobTier(StandardBlobTier standardBlobTier, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void SetStandardBlobTier(StandardBlobTier standardBlobTier, RehydratePriority? rehydratePriority = null, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             Executor.ExecuteSync(
-                this.SetStandardBlobTierImpl(standardBlobTier, accessCondition, modifiedOptions),
+                this.SetStandardBlobTierImpl(standardBlobTier, rehydratePriority, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2125,7 +2125,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginSetStandardBlobTier(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.SetStandardBlobTierAsync(standardBlobTier, accessCondition, options, operationContext, token), callback, state);
+            return CancellableAsyncResultTaskWrapper.Create(token => this.SetStandardBlobTierAsync(standardBlobTier, default(RehydratePriority?), accessCondition, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -2146,7 +2146,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier)
         {
-            return this.SetStandardBlobTierAsync(standardBlobTier, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+            return this.SetStandardBlobTierAsync(standardBlobTier, default(RehydratePriority?), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -2158,7 +2158,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, CancellationToken cancellationToken)
         {
-            return this.SetStandardBlobTierAsync(standardBlobTier, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
+            return this.SetStandardBlobTierAsync(standardBlobTier, default(RehydratePriority?), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2172,7 +2172,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.SetStandardBlobTierAsync(standardBlobTier, accessCondition, options, operationContext, CancellationToken.None);
+            return this.SetStandardBlobTierAsync(standardBlobTier, default(RehydratePriority?), accessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -2185,12 +2185,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task SetStandardBlobTierAsync(StandardBlobTier standardBlobTier, RehydratePriority? rehydratePriority, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.SetStandardBlobTierImpl(standardBlobTier, accessCondition, modifiedOptions),
+                this.SetStandardBlobTierImpl(standardBlobTier, rehydratePriority, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -2212,9 +2212,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        public virtual string StartCopy(CloudBlockBlob source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual string StartCopy(CloudBlockBlob source, RehydratePriority? rehydratePriority = null, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            return this.StartCopy(source, default(string) /* contentMD5 */, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext);
+            return this.StartCopy(source, default(string) /* contentMD5 */, false /* syncCopy */, rehydratePriority, sourceAccessCondition, destAccessCondition, options, operationContext);
         }
 
         /// <summary>
@@ -2233,9 +2233,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        private string StartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        private string StartCopy(CloudBlockBlob source, string contentMD5, bool syncCopy, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            return this.StartCopy(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, options, operationContext);
+            return this.StartCopy(CloudBlob.SourceBlobToUri(source), contentMD5, syncCopy, default(PremiumPageBlobTier?), rehydratePriority, sourceAccessCondition, destAccessCondition, options, operationContext);
         }
 #endif
         /// <summary>
@@ -2297,8 +2297,9 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudBlockBlob source)
         {
-            return this.StartCopyAsync(source, default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+            return this.StartCopyAsync(source, default(RehydratePriority?), default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
         }
+
         /// <summary>
         /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2308,8 +2309,9 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudBlockBlob source, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
+            return this.StartCopyAsync(source, default(RehydratePriority?), default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
+
         /// <summary>
         /// Initiates an asynchronous operation to start copying another block blob's contents, properties, and metadata to this block blob.
         /// </summary>
@@ -2322,7 +2324,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+            return this.StartCopyAsync(source, default(RehydratePriority?), sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -2336,9 +2338,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<string> StartCopyAsync(CloudBlockBlob source, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, default(string) /* contentMD5 */, false /* incrementalCopy */, false /* syncCopy */, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyAsync(source, default(string) /* contentMD5 */, false /* incrementalCopy */, false /* syncCopy */, rehydratePriority, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
 
         /// <summary>
@@ -2354,13 +2356,13 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        private Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool incrementalCopy, bool syncCopy, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private Task<string> StartCopyAsync(CloudBlockBlob source, string contentMD5, bool incrementalCopy, bool syncCopy, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, CloudBlob.SourceBlobToUri(source), contentMD5, incrementalCopy, syncCopy, default(PremiumPageBlobTier?), sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, CloudBlob.SourceBlobToUri(source), contentMD5, incrementalCopy, syncCopy, default(PremiumPageBlobTier?), rehydratePriority, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -2938,12 +2940,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the condition that must be met in order for the request to proceed. If <c>null</c>, no condition is used.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>A <see cref="RESTCommand{T}"/> that sets the blob tier.</returns>
-        private RESTCommand<NullType> SetStandardBlobTierImpl(StandardBlobTier standardBlobTier, AccessCondition accessCondition, BlobRequestOptions options)
+        private RESTCommand<NullType> SetStandardBlobTierImpl(StandardBlobTier standardBlobTier, RehydratePriority? rehydratePriority, AccessCondition accessCondition, BlobRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, standardBlobTier.ToString(), cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, standardBlobTier.ToString(), rehydratePriority, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 // OK is returned when the tier on the blob is done immediately while accepted occurs when the process of setting the tier has started but not completed.

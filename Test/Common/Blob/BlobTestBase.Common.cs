@@ -25,6 +25,11 @@ namespace Microsoft.Azure.Storage.Blob
 {
     public partial class BlobTestBase : TestBase
     {
+        public static string GetRandomBlobName()
+        {
+            return string.Concat("testb", Guid.NewGuid().ToString("N"));
+        }
+
         public static string GetRandomContainerName()
         {
             return string.Concat("testc", Guid.NewGuid().ToString("N"));

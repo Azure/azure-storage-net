@@ -2574,7 +2574,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual string StartCopy(CloudPageBlob source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
-            return this.StartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext);
+            return this.StartCopy(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, default(RehydratePriority?), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
 
         /// <summary>
@@ -2615,7 +2615,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, default(RehydratePriority?) /* rehydratePriority */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -2745,18 +2745,6 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         /// <summary>
-        /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
-        /// to this page blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob source)
-        {
-            return this.StartIncrementalCopyAsync(source, default(AccessCondition) /* destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
-        }
-
-        /// <summary>
         /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
         /// to this page blob.
         /// </summary>
@@ -2767,19 +2755,6 @@ namespace Microsoft.Azure.Storage.Blob
         public virtual Task<string> StartCopyAsync(CloudPageBlob source, CancellationToken cancellationToken)
         {
             return this.StartCopyAsync(source, null /*premiumPageBlobTier*/, default(AccessCondition) /*sourceAccessCondition*/, default(AccessCondition) /* destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
-        }
-
-        /// <summary>
-        /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
-        /// to this page blob.
-        /// </summary>
-        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
-        [DoesServiceRequest]
-        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob source, CancellationToken cancellationToken)
-        {
-            return this.StartIncrementalCopyAsync(source, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -2832,6 +2807,30 @@ namespace Microsoft.Azure.Storage.Blob
         {
             return this.StartCopyAsync(CloudBlob.SourceBlobToUri(source), premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
         }
+        /// <summary>
+        /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
+        /// to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob source)
+        {
+            return this.StartIncrementalCopyAsync(source, default(AccessCondition) /* destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
+        /// to this page blob.
+        /// </summary>
+        /// <param name="source">The <see cref="CloudPageBlob"/> that is the source blob which must be a snapshot.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartIncrementalCopyAsync(CloudPageBlob source, CancellationToken cancellationToken)
+        {
+            return this.StartIncrementalCopyAsync(source, default(AccessCondition) /*destAccessCondition*/, default(BlobRequestOptions), default(OperationContext), cancellationToken);
+        }
 
         /// <summary>
         /// Initiates an asynchronous operation to start an incremental copy of another blob's contents, properties, and metadata
@@ -2867,7 +2866,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.attributes.AssertNoSnapshot();
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, sourceSnapshotUri, default(string) /* contentMD5 */, true /* incrementalCopy */, false /* syncCopy */, null /* pageBlobTier */, default(RehydratePriority?) /* rehydratePriority */, null /* sourceAccessCondition */, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -3315,7 +3314,7 @@ namespace Microsoft.Azure.Storage.Blob
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.attributes.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
-            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, premiumPageBlobTier.ToString(), cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => BlobHttpRequestMessageFactory.SetBlobTier(uri, serverTimeout, premiumPageBlobTier.ToString(), default(RehydratePriority?), cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);

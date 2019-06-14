@@ -1182,7 +1182,20 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source)
         {
-            return this.StartCopyAsync(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */);
+            return this.StartCopyAsync(source, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
+        /// to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(Uri source, CancellationToken cancellationToken)
+        {
+            return this.StartCopyAsync(source, null /*premiumPageBlobTier*/, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -1217,7 +1230,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, null /* pageBlobTier*/, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyImplAsync(source, default(string) /* contentMD5 */, false /* incrementalCopy */, false /* syncCopy */, default(PremiumPageBlobTier?), default(RehydratePriority?), sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -1238,7 +1251,24 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         internal virtual Task<string> StartCopyAsync(Uri source, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, default(string) /* contentMD5 */, false /* syncCopy */, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, options, operationContext, cancellationToken);
+            return this.StartCopyImplAsync(source, default(string) /* contentMD5 */, false /* incrementalCopy */, false /* syncCopy */, premiumPageBlobTier, default(RehydratePriority?), sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another blob's contents, properties, and metadata
+        /// to this blob.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination blob. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(Uri source, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.StartCopyImplAsync(source, default(string) /* contentMD5 */, false /* incrementalCopy */, false /* syncCopy */, default(PremiumPageBlobTier?), rehydratePriority, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -1259,12 +1289,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
         /// </remarks>
         [DoesServiceRequest]
-        internal virtual Task<string> StartCopyAsync(Uri source, string contentMD5, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        private Task<string> StartCopyImplAsync(Uri source, string contentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("source", source);
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsync(
-                this.StartCopyImpl(this.attributes, source, contentMD5, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(this.attributes, source, contentMD5, false /* incrementalCopy */, syncCopy, premiumPageBlobTier, rehydratePriority, sourceAccessCondition, destAccessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -1742,7 +1772,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="options">An object that specifies additional options for the request.</param>
         /// <param name="setResult">A delegate for setting the BlobAttributes result.</param>
         /// <returns>A <see cref="RESTCommand"/> that starts to copy the blob.</returns>
-        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
+        internal RESTCommand<string> StartCopyImpl(BlobAttributes attributes, Uri source, string sourceContentMD5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, BlobRequestOptions options)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -1754,7 +1784,7 @@ namespace Microsoft.Azure.Storage.Blob
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = BlobHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceContentMD5, incrementalCopy, syncCopy, premiumPageBlobTier, rehydratePriority, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 BlobHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
                 return msg;
             };
