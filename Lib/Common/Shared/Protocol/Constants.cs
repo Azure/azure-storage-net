@@ -1373,6 +1373,66 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             public const string BlobPublicAccess = PrefixForStorageHeader + "blob-public-access";
 
             /// <summary>
+            /// Header that specifies file permission.
+            /// </summary>
+            public const string FilePermission = PrefixForStorageHeader + "file-permission";
+
+            /// <summary>
+            /// Default header value for file permission.
+            /// </summary>
+            public const string FilePermissionInherit = "Inherit";
+
+            /// <summary>
+            /// Header that specifies file permission key.
+            /// </summary>
+            public const string FilePermissionKey = PrefixForStorageHeader + "file-permission-key";
+
+            /// <summary>
+            /// Header that specifies file attributes.
+            /// </summary>
+            public const string FileAttributes = PrefixForStorageHeader + "file-attributes";
+
+            /// <summary>
+            /// Default file attribute value for files.
+            /// </summary>
+            public const string FileAttributesNone = "None";
+
+            /// <summary>
+            /// Header that specifies file creation time.
+            /// </summary>
+            public const string FileCreationTime = PrefixForStorageHeader + "file-creation-time";
+
+            /// <summary>
+            ///  Header that specifies file last write time.
+            /// </summary>
+            public const string FileLastWriteTime = PrefixForStorageHeader + "file-last-write-time";
+
+            /// <summary>
+            ///  Header that specifies file change time.
+            /// </summary>
+            public const string FileChangeTime = PrefixForStorageHeader + "file-change-time";
+
+            /// <summary>
+            /// Default file creation and file last write time.
+            /// </summary>
+            public const string FileTimeNow = "Now";
+
+            /// <summary>
+            /// Default value for several SMB file headers.
+            /// </summary>
+            public const string Preserve = "Preserve";
+
+            /// <summary>
+            /// Header that specifies file id.
+            /// </summary>
+            public const string FileId = PrefixForStorageHeader + "file-id";
+
+            /// <summary>
+            /// Header that spcifies file parent id.
+            /// </summary>
+            public const string FileParentId = PrefixForStorageHeader + "file-parent-id";
+
+            /// <summary>
             /// Format string for specifying ranges.
             /// </summary>
             public const string RangeHeaderFormat = "bytes={0}-{1}";

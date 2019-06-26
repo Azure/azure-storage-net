@@ -2141,6 +2141,7 @@ namespace Microsoft.Azure.Storage.File
         public virtual void Create(long size, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
+            this.AssertValidFilePermissionOrKey();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
@@ -2238,6 +2239,7 @@ namespace Microsoft.Azure.Storage.File
         public virtual Task CreateAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.Share.AssertNoSnapshot();
+            this.AssertValidFilePermissionOrKey();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsync(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
@@ -3069,6 +3071,7 @@ namespace Microsoft.Azure.Storage.File
         public virtual void SetProperties(AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
             this.AssertNoSnapshot();
+            this.AssertValidFilePermissionOrKey();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             Executor.ExecuteSync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -3160,6 +3163,7 @@ namespace Microsoft.Azure.Storage.File
         public virtual Task SetPropertiesAsync(AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.AssertNoSnapshot();
+            this.AssertValidFilePermissionOrKey();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsync(
                 this.SetPropertiesImpl(accessCondition, modifiedOptions),
@@ -4280,15 +4284,32 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.Create(uri, serverTimeout, this.Properties, sizeInBytes, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.Create(
+                    uri: uri,
+                    timeout: serverTimeout,
+                    properties: this.Properties,
+                    filePermissionToSet: this.filePermission,
+                    fileSize: sizeInBytes,
+                    accessCondition: accessCondition,
+                    content: cnt,
+                    operationContext: ctx,
+                    canonicalizer: this.ServiceClient.GetCanonicalizer(),
+                    credentials: this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                FileHttpResponseParsers.UpdateSmbProperties(resp, this.Properties);
                 this.UpdateETagLMTAndLength(resp, false);
                 this.Properties.Length = sizeInBytes;
+
+                // This is by design.  The service doesn't return filePermission in the File.Create, File.SetProperties, File.Get, or File.GetProperties responses.
+                // Also, the service sometimes modifies the filePermission server-side, so this field may be inaccurate if we maintained it's value.
+                // To retrieve a filePermission, call share.GetFilePermission(filePermissionId).
+                this.filePermission = null;
+
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
@@ -4495,14 +4516,30 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.SetProperties(uri, serverTimeout, this.Properties, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.SetProperties(
+                    uri: uri,
+                    timeout: serverTimeout,
+                    properties: this.Properties,
+                    filePermissionToSet: this.FilePermission,
+                    accessCondition: accessCondition,
+                    content: cnt,
+                    operationContext: ctx,
+                    canonicalizer: this.ServiceClient.GetCanonicalizer(),
+                    credentials: this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                FileHttpResponseParsers.UpdateSmbProperties(resp, this.Properties);
                 this.UpdateETagLMTAndLength(resp, false);
+
+                // This is by design.  The service doesn't return filePermission in the File.Create, File.SetProperties, File.Get, or File.GetProperties responses.
+                // Also, the service sometimes modifies the filePermission server-side, so this field may be inaccurate if we maintained it's value.
+                // To retrieve a filePermission, call share.GetFilePermission(filePermissionId).
+                this.filePermission = null;
+
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
@@ -4720,6 +4757,7 @@ namespace Microsoft.Azure.Storage.File
         private void UpdateAfterFetchAttributes(HttpResponseMessage response)
         {
             FileProperties properties = FileHttpResponseParsers.GetProperties(response);
+            FileHttpResponseParsers.UpdateSmbProperties(response, properties);
             CopyState state = FileHttpResponseParsers.GetCopyAttributes(response);
 
             this.attributes.Properties = properties;

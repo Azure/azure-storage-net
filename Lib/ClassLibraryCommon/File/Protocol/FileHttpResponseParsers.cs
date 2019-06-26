@@ -85,6 +85,27 @@ namespace Microsoft.Azure.Storage.File.Protocol
             return properties;
         }
 
+        /// <summary>
+        /// Sets the SMB related file properties.
+        /// </summary>
+        /// <param name="response">The web response.</param>
+        /// <param name="properties">The properties to modify.</param>
+        public static void UpdateSmbProperties(HttpResponseMessage response, FileProperties properties)
+        {
+            properties.filePermissionKey = HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.FilePermissionKey);
+            properties.ntfsAttributes = CloudFileNtfsAttributesHelper.ToAttributes(HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.FileAttributes));
+            properties.creationTime = DateTimeOffset.Parse(HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.FileCreationTime));
+            properties.lastWriteTime = DateTimeOffset.Parse(HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.FileLastWriteTime));
+            properties.ChangeTime = DateTimeOffset.Parse(HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.FileChangeTime));
+            properties.FileId = HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.FileId);
+            properties.ParentId = HttpResponseParsers.GetHeader(response, Constants.HeaderConstants.FileParentId);
+
+            properties.filePermissionKeyToSet = null;
+            properties.ntfsAttributesToSet = null;
+            properties.creationTimeToSet = null;
+            properties.lastWriteTimeToSet = null;
+        }
+
 
         /// <summary>
         /// Gets the user-defined metadata.

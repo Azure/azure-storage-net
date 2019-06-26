@@ -65,21 +65,152 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task CloudFileCreateAndDeleteAsync()
+        public async Task CloudFileCreateAndDeleteTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
+                // Arrange
                 await share.CreateAsync();
-
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                // Act
                 await file.CreateAsync(0);
-                Assert.IsTrue(await file.ExistsAsync());
+
+                // Assert
+                Assert.IsNotNull(file.Properties.FilePermissionKey);
+                Assert.IsNotNull(file.Properties.NtfsAttributes);
+                Assert.IsNotNull(file.Properties.CreationTime);
+                Assert.IsNotNull(file.Properties.LastWriteTime);
+                Assert.IsNotNull(file.Properties.ChangeTime);
+                Assert.IsNotNull(file.Properties.FileId);
+                Assert.IsNotNull(file.Properties.ParentId);
+
+                Assert.IsNull(file.Properties.filePermissionKeyToSet);
+                Assert.IsNull(file.Properties.ntfsAttributesToSet);
+                Assert.IsNull(file.Properties.creationTimeToSet);
+                Assert.IsNull(file.Properties.lastWriteTimeToSet);
+                Assert.IsNull(file.FilePermission);
+
+                // Cleanup
                 await file.DeleteAsync();
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteIfExistsAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Create a file with a file permission key")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileCreateFilePermissionKeyTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = await share.CreateFilePermissionAsync(permission);
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                file.Properties.FilePermissionKey = permissionKey;
+
+                // Act
+                await file.CreateAsync(0);
+
+                // Assert
+                Assert.IsNotNull(file.Properties.FilePermissionKey);
+                Assert.IsNotNull(file.Properties.NtfsAttributes);
+                Assert.IsNotNull(file.Properties.CreationTime);
+                Assert.IsNotNull(file.Properties.LastWriteTime);
+                Assert.IsNotNull(file.Properties.ChangeTime);
+                Assert.IsNotNull(file.Properties.FileId);
+                Assert.IsNotNull(file.Properties.ParentId);
+
+                Assert.IsNull(file.Properties.filePermissionKeyToSet);
+                Assert.IsNull(file.Properties.ntfsAttributesToSet);
+                Assert.IsNull(file.Properties.creationTimeToSet);
+                Assert.IsNull(file.Properties.lastWriteTimeToSet);
+                Assert.IsNull(file.FilePermission);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Create a file with multiple parameters")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileCreateMultibleParametersAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                string cacheControl = "no-transform";
+                string contentDisposition = "attachment";
+                string contentEncoding = "gzip";
+                string contentLanguage = "tr,en";
+                string contentMD5 = "MDAwMDAwMDA=";
+                string contentType = "text/html";
+
+                string permissions = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                CloudFileNtfsAttributes attributes = CloudFileNtfsAttributes.Archive | CloudFileNtfsAttributes.NoScrubData | CloudFileNtfsAttributes.Offline;
+                DateTimeOffset creationTime = DateTimeOffset.UtcNow.AddDays(-1);
+                DateTimeOffset lastWriteTime = DateTimeOffset.UtcNow;
+
+                file.Properties.CacheControl = cacheControl;
+                file.Properties.ContentDisposition = contentDisposition;
+                file.Properties.ContentEncoding = contentEncoding;
+                file.Properties.ContentLanguage = contentLanguage;
+                file.Properties.ContentMD5 = contentMD5;
+                file.Properties.ContentType = contentType;
+
+                file.FilePermission = permissions;
+                file.Properties.CreationTime = creationTime;
+                file.Properties.LastWriteTime = lastWriteTime;
+                file.Properties.NtfsAttributes = attributes;
+
+                // Act
+                await file.CreateAsync(0);
+
+                // Assert
+                Assert.AreEqual(cacheControl, file.Properties.CacheControl);
+                Assert.AreEqual(contentDisposition, file.Properties.ContentDisposition);
+                Assert.AreEqual(contentEncoding, file.Properties.ContentEncoding);
+                Assert.AreEqual(contentLanguage, file.Properties.ContentLanguage);
+                Assert.AreEqual(contentMD5, file.Properties.ContentMD5);
+                Assert.AreEqual(contentType, file.Properties.ContentType);
+
+                Assert.IsNotNull(file.Properties.FilePermissionKey);
+                Assert.AreEqual(attributes, file.Properties.NtfsAttributes);
+                Assert.AreEqual(creationTime, file.Properties.CreationTime);
+                Assert.AreEqual(lastWriteTime, file.Properties.LastWriteTime);
+
+                Assert.IsNotNull(file.Properties.ChangeTime);
+                Assert.IsNotNull(file.Properties.FileId);
+                Assert.IsNotNull(file.Properties.ParentId);
+
+                Assert.IsNull(file.Properties.filePermissionKeyToSet);
+                Assert.IsNull(file.Properties.ntfsAttributesToSet);
+                Assert.IsNull(file.Properties.creationTimeToSet);
+                Assert.IsNull(file.Properties.lastWriteTimeToSet);
+                Assert.IsNull(file.FilePermission);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
             }
         }
 
@@ -198,49 +329,50 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task CloudFileFetchAttributesAsync()
+        public async Task CloudFileFetchAttributesTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
+                // Arrange
                 await share.CreateAsync();
-
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 await file.CreateAsync(1024);
-                Assert.AreEqual(1024, file.Properties.Length);
-                Assert.IsNotNull(file.Properties.ETag);
-                Assert.IsTrue(file.Properties.LastModified > DateTimeOffset.UtcNow.AddMinutes(-5));
-                Assert.IsNull(file.Properties.CacheControl);
-                Assert.IsNull(file.Properties.ContentEncoding);
-                Assert.IsNull(file.Properties.ContentLanguage);
-                Assert.IsNull(file.Properties.ContentType);
-                Assert.IsNull(file.Properties.ContentMD5);
-
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                // Act
                 await file2.FetchAttributesAsync();
+
+                // Assert
                 Assert.AreEqual(1024, file2.Properties.Length);
                 Assert.AreEqual(file.Properties.ETag, file2.Properties.ETag);
                 Assert.AreEqual(file.Properties.LastModified, file2.Properties.LastModified);
 #if WINDOWS_RT && !WINDOWS_PHONE
                 Assert.IsNull(file2.Properties.CacheControl);
 #endif
+                Assert.IsNull(file2.Properties.ContentDisposition);
                 Assert.IsNull(file2.Properties.ContentEncoding);
                 Assert.IsNull(file2.Properties.ContentLanguage);
                 Assert.AreEqual("application/octet-stream", file2.Properties.ContentType);
                 Assert.IsNull(file2.Properties.ContentMD5);
 
-                CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
-                Assert.IsNull(file3.Properties.ContentMD5);
-                byte[] target = new byte[4];
-                FileRequestOptions options = new FileRequestOptions();
-                options.UseTransactionalMD5 = true;
-                file3.Properties.ContentMD5 = "MDAwMDAwMDA=";
-                await file3.DownloadRangeToByteArrayAsync(target, 0, 0, 4, null, options, null);
-                Assert.IsNull(file3.Properties.ContentMD5);
+                Assert.AreEqual(file.Properties.FilePermissionKey, file2.Properties.FilePermissionKey);
+                Assert.AreEqual(file.Properties.NtfsAttributes, file2.Properties.NtfsAttributes);
+                Assert.AreEqual(file.Properties.CreationTime, file2.Properties.CreationTime);
+                Assert.AreEqual(file.Properties.LastWriteTime, file2.Properties.LastWriteTime);
+                Assert.AreEqual(file.Properties.ChangeTime, file2.Properties.ChangeTime);
+                Assert.AreEqual(file.Properties.FileId, file2.Properties.FileId);
+                Assert.AreEqual(file.Properties.ParentId, file2.Properties.ParentId);
+
+                Assert.IsNull(file2.Properties.filePermissionKeyToSet);
+                Assert.IsNull(file2.Properties.ntfsAttributesToSet);
+                Assert.IsNull(file2.Properties.creationTimeToSet);
+                Assert.IsNull(file2.Properties.lastWriteTimeToSet);
+                Assert.IsNull(file2.FilePermission);
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteIfExistsAsync();
             }
         }
 
@@ -250,7 +382,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task CloudFileSetPropertiesAsync()
+        public async Task CloudFileSetPropertiesTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
@@ -258,29 +390,59 @@ namespace Microsoft.Azure.Storage.File
                 await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                await file.CreateAsync(1024);
+                file.CreateAsync(1024).Wait();
                 string eTag = file.Properties.ETag;
                 DateTimeOffset lastModified = file.Properties.LastModified.Value;
 
-                await Task.Delay(1000);
+                Thread.Sleep(1000);
 
-                file.Properties.CacheControl = "no-transform";
-                file.Properties.ContentEncoding = "gzip";
-                file.Properties.ContentLanguage = "tr,en";
-                file.Properties.ContentMD5 = "MDAwMDAwMDA=";
-                file.Properties.ContentType = "text/html";
+                string cacheControl = "no-transform";
+                string contentDisposition = "attachment";
+                string contentEncoding = "gzip";
+                string contentLanguage = "tr,en";
+                string contentMD5 = "MDAwMDAwMDA=";
+                string contentType = "text/html";
+
+                file.Properties.CacheControl = cacheControl;
+                file.Properties.ContentDisposition = contentDisposition;
+                file.Properties.ContentEncoding = contentEncoding;
+                file.Properties.ContentLanguage = contentLanguage;
+                file.Properties.ContentMD5 = contentMD5;
+                file.Properties.ContentType = contentType;
 
                 await file.SetPropertiesAsync();
+
                 Assert.IsTrue(file.Properties.LastModified > lastModified);
                 Assert.AreNotEqual(eTag, file.Properties.ETag);
+                Assert.AreEqual(cacheControl, file.Properties.CacheControl);
+                Assert.AreEqual(contentDisposition, file.Properties.ContentDisposition);
+                Assert.AreEqual(contentEncoding, file.Properties.ContentEncoding);
+                Assert.AreEqual(contentLanguage, file.Properties.ContentLanguage);
+                Assert.AreEqual(contentMD5, file.Properties.ContentMD5);
+                Assert.AreEqual(contentType, file.Properties.ContentType);
+
+                Assert.IsNull(file.Properties.filePermissionKeyToSet);
+                Assert.IsNull(file.Properties.creationTimeToSet);
+                Assert.IsNull(file.Properties.lastWriteTimeToSet);
+                Assert.IsNull(file.Properties.ntfsAttributesToSet);
+                Assert.IsNull(file.FilePermission);
 
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
+
                 await file2.FetchAttributesAsync();
-                Assert.AreEqual("no-transform", file2.Properties.CacheControl);
-                Assert.AreEqual("gzip", file2.Properties.ContentEncoding);
-                Assert.AreEqual("tr,en", file2.Properties.ContentLanguage);
-                Assert.AreEqual("MDAwMDAwMDA=", file2.Properties.ContentMD5);
-                Assert.AreEqual("text/html", file2.Properties.ContentType);
+
+                Assert.AreEqual(cacheControl, file2.Properties.CacheControl);
+                Assert.AreEqual(contentDisposition, file2.Properties.ContentDisposition);
+                Assert.AreEqual(contentEncoding, file2.Properties.ContentEncoding);
+                Assert.AreEqual(contentLanguage, file2.Properties.ContentLanguage);
+                Assert.AreEqual(contentMD5, file2.Properties.ContentMD5);
+                Assert.AreEqual(contentType, file2.Properties.ContentType);
+
+                Assert.AreEqual(file.Properties.FilePermissionKey, file2.Properties.FilePermissionKey);
+                Assert.AreEqual(file.Properties.NtfsAttributes, file2.Properties.NtfsAttributes);
+                Assert.AreEqual(file.Properties.CreationTime, file2.Properties.CreationTime);
+                Assert.AreEqual(file.Properties.LastWriteTime, file2.Properties.LastWriteTime);
+
                 CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
                 using (MemoryStream stream = new MemoryStream())
                 {
@@ -293,21 +455,79 @@ namespace Microsoft.Azure.Storage.File
                 AssertAreEqual(file2.Properties, file3.Properties);
 
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
-                IEnumerable<IListFileItem> results = await ListFilesAndDirectoriesAsync(rootDirectory, null, null, null, null);
-                CloudFile file4 = (CloudFile)results.First();
+                CloudFile file4 = (CloudFile)rootDirectory.ListFilesAndDirectoriesSegmentedAsync(null).Result.Results.First();
                 Assert.AreEqual(file2.Properties.Length, file4.Properties.Length);
-
-                CloudFile file5 = share.GetRootDirectoryReference().GetFileReference("file1");
-                Assert.IsNull(file5.Properties.ContentMD5);
-                byte[] target = new byte[4];
-                await file5.DownloadRangeToByteArrayAsync(target, 0, 0, 4);
-                Assert.AreEqual("MDAwMDAwMDA=", file5.Properties.ContentMD5);
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteIfExistsAsync();
             }
         }
+
+        [TestMethod]
+        [Description("Verify setting the properties of a file with file permissions key")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileSetPropertiesFilePermissionsKeyTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                await file.CreateAsync(1024);
+
+                Thread.Sleep(1000);
+
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = await share.CreateFilePermissionAsync(permission);
+
+                CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                file2.Properties.FilePermissionKey = permissionKey;
+
+                // Act
+                await file2.SetPropertiesAsync();
+
+                // Assert
+                Assert.IsNotNull(file2.Properties.FilePermissionKey);
+                Assert.IsNull(file2.Properties.filePermissionKeyToSet);
+
+                // Act
+                CloudFile file3 = share.GetRootDirectoryReference().GetFileReference("file1");
+                await file3.FetchAttributesAsync();
+
+                // Assert - also making sure attributes, creation time, and last-write time were preserved
+                Assert.AreEqual(permissionKey, file3.Properties.FilePermissionKey);
+                Assert.AreEqual(file2.Properties.filePermissionKey, file3.Properties.FilePermissionKey);
+                Assert.AreEqual(file.Properties.NtfsAttributes, file3.Properties.NtfsAttributes);
+                Assert.AreEqual(file.Properties.CreationTime, file3.Properties.CreationTime);
+                Assert.AreEqual(file.Properties.LastWriteTime, file3.Properties.LastWriteTime);
+
+                // This block is just for checking that file permission is preserved
+                // Arrange
+                file2 = share.GetRootDirectoryReference().GetFileReference("file1");
+                DateTimeOffset creationTime = DateTime.UtcNow.AddDays(-2);
+                file2.Properties.creationTime = creationTime;
+
+                // Act
+                await file2.SetPropertiesAsync();
+                file3 = share.GetRootDirectoryReference().GetFileReference("file1");
+                await file3.FetchAttributesAsync();
+
+                // Assert
+                Assert.AreEqual(permissionKey, file3.Properties.FilePermissionKey);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
+            }
+        }
+
 #if NETCORE
         [TestMethod]
         [Description("Verify setting the properties of a file with spacial characters such as '<' and getting them")]
@@ -607,6 +827,54 @@ namespace Microsoft.Azure.Storage.File
             finally
             {
                 share.DeleteIfExistsAsync().Wait();
+            }
+        }
+
+        [TestMethod]
+        [Description("Single put file and get file")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDownloadToStreamTask()
+        {
+            byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
+                using (MemoryStream originalFile = new MemoryStream(buffer))
+                {
+                    await file.UploadFromStreamAsync(originalFile);
+
+                    using (MemoryStream downloadedFile = new MemoryStream())
+                    {
+                        CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
+
+                        // Act
+                        await file2.DownloadRangeToStreamAsync(downloadedFile, 0, buffer.Length);
+
+                        // Assert
+                        TestHelper.AssertStreamsAreEqual(originalFile, downloadedFile);
+                        Assert.IsNotNull(file2.Properties.LastModified);
+                        Assert.IsNotNull(file2.Properties.ETag);
+                        Assert.IsTrue(file2.Properties.IsServerEncrypted);
+                        Assert.IsNotNull(file2.Properties.ChangeTime);
+                        Assert.IsNotNull(file2.Properties.LastWriteTime);
+                        Assert.IsNotNull(file2.Properties.CreationTime);
+                        Assert.IsNotNull(file2.Properties.FilePermissionKey);
+                        Assert.AreEqual(CloudFileNtfsAttributes.Archive, file2.Properties.NtfsAttributes);
+                        Assert.IsNotNull(file2.Properties.FileId);
+                        Assert.IsNotNull(file2.Properties.ParentId);
+                    }
+                }
+            }
+            finally
+            {
+                await share.DeleteAsync();
             }
         }
 

@@ -25,6 +25,7 @@ namespace Microsoft.Azure.Storage.File
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Text;
 
     /// <summary>
     /// Represents a Microsoft Azure File.
@@ -40,6 +41,11 @@ namespace Microsoft.Azure.Storage.File
         /// Default is 4 MB.
         /// </summary>
         private int streamMinimumReadSizeInBytes = Constants.DefaultWriteBlockSizeBytes;
+
+        /// <summary>
+        /// Stores the file permission to set on the next File Create or Set Properties call.
+        /// </summary>
+        private string filePermission;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFile"/> class using an absolute URI to the file.
@@ -118,6 +124,23 @@ namespace Microsoft.Azure.Storage.File
         /// Stores the file's attributes.
         /// </summary>
         internal CloudFileAttributes attributes;
+
+        /// <summary>
+        /// The file permission to set on the next File Create or Set Properties call.
+        /// This field will be null after File.Create, File.SetProperties, File.GetProperties, and File.Get calls.
+        /// </summary>
+        public string FilePermission
+        {
+            get
+            {
+                return this.filePermission;
+            }
+            set
+            {
+                CommonUtility.AssertInBounds("FilePermission", Encoding.UTF8.GetBytes(value.ToCharArray()).Length, 0, 8 * Constants.KB);
+                this.filePermission = value;
+            }
+        }
 
         /// <summary>
         /// Gets the <see cref="CloudFileClient"/> object that represents the File service.
@@ -266,6 +289,18 @@ namespace Microsoft.Azure.Storage.File
             {
                 string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.CannotModifyShareSnapshot);
                 throw new InvalidOperationException(errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the files's filePermission and properties.FilePermissionKey are both not set.
+        /// </summary>
+        internal void AssertValidFilePermissionOrKey()
+        {
+            if (this.filePermission != null && this.Properties?.filePermissionKeyToSet != null)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.FilePermissionFilePermissionKeyBothSet);
+                throw new ArgumentException(errorMessage);
             }
         }
 

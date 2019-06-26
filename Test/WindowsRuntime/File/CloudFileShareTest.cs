@@ -1124,9 +1124,43 @@ namespace Microsoft.Azure.Storage.File
             }
 
             Assert.AreEqual(2, count);
-
+             
             await snapshot.DeleteAsync();
             await share.DeleteAsync();
+        }
+
+        [TestMethod]
+        [Description("Create and get file permission")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileShareCreateAndGetFilePermissionTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                // Act
+                await TestHelper.ExpectedExceptionAsync<StorageException>(() => share.CreateFilePermissionAsync("invalidPermission"),
+                    "The specified file permission is not valid.");
+
+                // Arrange
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)S:NO_ACCESS_CONTROL";
+
+                // Act
+                string filePermissionKey = await share.CreateFilePermissionAsync(permission);
+                string retrievedPermission = await share.GetFilePermissionAsync(filePermissionKey);
+
+                // Assert
+                Assert.AreEqual(permission, retrievedPermission);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
+            }
         }
 
         /*

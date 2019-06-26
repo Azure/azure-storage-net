@@ -558,10 +558,32 @@ namespace Microsoft.Azure.Storage.File
         }
 
         /// <summary>
+        /// Updates the directory's properties.
+        /// </summary>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        [DoesServiceRequest]
+        public virtual Task SetPropertiesAsync(
+            FileRequestOptions options = null,
+            OperationContext operationContext = null,
+            CancellationToken? cancellationToken = null)
+        {
+            this.AssertNoSnapshot();
+            this.AssertValidFilePermissionOrKey();
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.SetPropertiesImpl(modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         /// Implementation for the Create method.
         /// </summary>
-        /// <param name="options">An object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="RESTCommand"/> that creates the directory.</returns>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that creates the directory.</returns>
         private RESTCommand<NullType> CreateDirectoryImpl(FileRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
@@ -569,14 +591,29 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = DirectoryHttpRequestMessageFactory.Create(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = DirectoryHttpRequestMessageFactory.Create(
+                    uri: uri,
+                    timeout: serverTimeout,
+                    properties: this.Properties,
+                    filePermissionToSet: this.FilePermission,
+                    content: cnt,
+                    operationContext: ctx,
+                    canonicalizer: this.ServiceClient.GetCanonicalizer(),
+                    credentials: this.ServiceClient.Credentials);
                 DirectoryHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                DirectoryHttpResponseParsers.UpdateSmbProperties(resp, this.Properties);
                 this.UpdateETagAndLastModified(resp);
+
+                // This is by design.  The service doesn't return filePermission in the Directory.Create, Directory.SetProperties, Directory.Get, or Directory.GetProperties responses.
+                // Also, the service sometimes modifies the filePermission server-side, so this field may be inaccurate if we maintained it's value.
+                // To retrieve a filePermission, call share.GetFilePermission(filePermissionId).
+                this.filePermission = null;
+
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
@@ -725,9 +762,9 @@ namespace Microsoft.Azure.Storage.File
         /// <summary>
         /// Implements the FetchAttributes method. The attributes are updated immediately.
         /// </summary>
-        /// <param name="accessCondition">An object that represents the access conditions for the file. If null, no condition is used.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="RESTCommand"/> that fetches the attributes.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that fetches the attributes.</returns>
         private RESTCommand<NullType> FetchAttributesImpl(AccessCondition accessCondition, FileRequestOptions options)
         {
             RESTCommand<NullType> getCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
@@ -738,6 +775,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.Properties = DirectoryHttpResponseParsers.GetProperties(resp);
+                DirectoryHttpResponseParsers.UpdateSmbProperties(resp, this.Properties);
                 this.Metadata = DirectoryHttpResponseParsers.GetMetadata(resp);
                 return NullType.Value;
             };
@@ -813,6 +851,48 @@ namespace Microsoft.Azure.Storage.File
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
                 this.UpdateETagAndLastModified(resp);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the SetProperties method.
+        /// </summary>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that sets the metadata.</returns>
+        private RESTCommand<NullType> SetPropertiesImpl(FileRequestOptions options)
+        {
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = DirectoryHttpRequestMessageFactory.SetProperties(
+                    uri: uri,
+                    timeout: serverTimeout,
+                    properties: this.Properties,
+                    filePermissionToSet: this.FilePermission,
+                    content: cnt,
+                    operationContext: ctx,
+                    canonicalizer: this.ServiceClient.GetCanonicalizer(),
+                    credentials: this.ServiceClient.Credentials);
+                DirectoryHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
+                return msg;
+            };
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                DirectoryHttpResponseParsers.UpdateSmbProperties(resp, this.Properties);
+                this.UpdateETagAndLastModified(resp);
+
+                // This is by design.  The service doesn't return filePermission in the Directory.Create, Directory.SetProperties, Directory.Get, or Directory.GetProperties responses.
+                // Also, the service sometimes modifies the filePermission server-side, so this field may be inaccurate if we maintained it's value.
+                // To retrieve a filePermission, call share.GetFilePermission(filePermissionId).
+                this.filePermission = null;
+
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };

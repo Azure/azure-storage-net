@@ -47,5 +47,120 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <value>A bool representing the directory's server-side encryption state.</value>
         public bool IsServerEncrypted { get; internal set; }
+
+        /// <summary>
+        /// The directory's File Permission Key.
+        /// </summary>
+        internal string filePermissionKey;
+
+        /// <summary>
+        /// The file permission key to set on the next Directory Create or Set Properties call.
+        /// </summary>
+        internal string filePermissionKeyToSet;
+
+        /// <summary>
+        /// Gets or sets the directory's File Permission Key.
+        /// </summary>
+        public string FilePermissionKey
+        {
+            get
+            {
+                return filePermissionKeyToSet ?? filePermissionKey;
+            }
+            set
+            {
+                filePermissionKeyToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// The file system attributes for this directory.
+        /// </summary>
+        internal CloudFileNtfsAttributes? ntfsAttributes;
+
+        /// <summary>
+        /// The file system attributes to set on the next Directory Create or Set Properties call.
+        /// </summary>
+        internal CloudFileNtfsAttributes? ntfsAttributesToSet;
+
+        /// <summary>
+        /// Gets or sets the file system attributes for this directory
+        /// </summary>
+        public CloudFileNtfsAttributes? NtfsAttributes
+        {
+            get
+            {
+                return ntfsAttributesToSet ?? ntfsAttributes;
+            }
+            set
+            {
+                ntfsAttributesToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="DateTimeOffset"/> when the File or Directory was created.  Read only.
+        /// </summary>
+        internal DateTimeOffset? creationTime;
+
+        /// <summary>
+        /// The directory creation time to set on the next Directory Create or Set Properties call.
+        /// </summary>
+        internal DateTimeOffset? creationTimeToSet;
+
+        /// <summary>
+        /// Gets or sets the <see cref="DateTimeOffset"/> when the File or Directory was created.
+        /// </summary>
+        public DateTimeOffset? CreationTime
+        {
+            get
+            {
+                return creationTimeToSet ?? creationTime;
+            }
+            set
+            {
+                creationTimeToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="DateTime"/> when the Directory was last modified.
+        /// </summary>
+        internal DateTimeOffset? lastWriteTime;
+
+        /// <summary>
+        /// The directory last write time to set on the next Directory Create or Set Properties call.
+        /// </summary>
+        internal DateTimeOffset? lastWriteTimeToSet;
+
+        /// <summary>
+        /// Gets or sets the <see cref="DateTimeOffset"/> when the Directory was last modified.
+        /// </summary>
+        public DateTimeOffset? LastWriteTime
+        {
+            get
+            {
+                return lastWriteTimeToSet ?? lastWriteTime;
+            }
+            set
+            {
+                lastWriteTimeToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="DateTimeOffset"/> when the File was last changed.  Ready only.
+        /// </summary>
+        public DateTimeOffset? ChangeTime { get; internal set; }
+
+        /// <summary>
+        /// The Id of this directory.  Ready only.
+        /// </summary>
+        public string DirectoryId { get; internal set; }
+
+        /// <summary>
+        /// The Id of this directory's parent.  Read only.
+        /// </summary>
+        public string ParentId { get; internal set; }
     }
 }

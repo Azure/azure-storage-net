@@ -158,17 +158,272 @@ namespace Microsoft.Azure.Storage.File
 
             try
             {
+                // Arrange
                 CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+
+                // Act
                 directory.Create();
-                Assert.IsTrue(directory.Exists());
+
+                // Assert
+                Assert.IsNotNull(directory.Properties.FilePermissionKey);
+                Assert.IsNotNull(directory.Properties.NtfsAttributes);
+                Assert.IsNotNull(directory.Properties.CreationTime);
+                Assert.IsNotNull(directory.Properties.LastWriteTime);
+                Assert.IsNotNull(directory.Properties.ChangeTime);
+                Assert.IsNotNull(directory.Properties.DirectoryId);
+                Assert.IsNotNull(directory.Properties.ParentId);
+
+                Assert.IsNull(directory.Properties.filePermissionKeyToSet);
+                Assert.IsNull(directory.Properties.ntfsAttributesToSet);
+                Assert.IsNull(directory.Properties.creationTimeToSet);
+                Assert.IsNull(directory.Properties.lastWriteTimeToSet);
+                Assert.IsNull(directory.FilePermission);
+
+                // Act
                 directory.Delete();
-                Assert.IsFalse(directory.Exists());
+
             }
             finally
             {
                 share.Delete();
             }
         }
+
+#if TASK
+        [TestMethod]
+        [Description("Create a directory and then delete it")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryCreateAndDeleteTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            await share.CreateAsync();
+
+            try
+            {
+                // Arrange
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+
+                // Act
+                await directory.CreateAsync();
+
+                // Assert
+                Assert.IsNotNull(directory.Properties.FilePermissionKey);
+                Assert.IsNotNull(directory.Properties.NtfsAttributes);
+                Assert.IsNotNull(directory.Properties.CreationTime);
+                Assert.IsNotNull(directory.Properties.LastWriteTime);
+                Assert.IsNotNull(directory.Properties.ChangeTime);
+                Assert.IsNotNull(directory.Properties.DirectoryId);
+                Assert.IsNotNull(directory.Properties.ParentId);
+
+                Assert.IsNull(directory.Properties.filePermissionKeyToSet);
+                Assert.IsNull(directory.Properties.ntfsAttributesToSet);
+                Assert.IsNull(directory.Properties.creationTimeToSet);
+                Assert.IsNull(directory.Properties.lastWriteTimeToSet);
+                Assert.IsNull(directory.FilePermission);
+
+                // Act
+                await directory.DeleteAsync();
+
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Create a directory with a file permission key")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateFilePermissionKey()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                share.Create();
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = share.CreateFilePermission(permission);
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.Properties.FilePermissionKey = permissionKey;
+
+                // Act
+                directory.Create();
+
+                // Assert
+                Assert.IsNotNull(directory.Properties.FilePermissionKey);
+                Assert.IsNotNull(directory.Properties.NtfsAttributes);
+                Assert.IsNotNull(directory.Properties.CreationTime);
+                Assert.IsNotNull(directory.Properties.LastWriteTime);
+                Assert.IsNotNull(directory.Properties.ChangeTime);
+                Assert.IsNotNull(directory.Properties.DirectoryId);
+                Assert.IsNotNull(directory.Properties.ParentId);
+
+                Assert.IsNull(directory.Properties.filePermissionKeyToSet);
+                Assert.IsNull(directory.Properties.ntfsAttributesToSet);
+                Assert.IsNull(directory.Properties.creationTimeToSet);
+                Assert.IsNull(directory.Properties.lastWriteTimeToSet);
+                Assert.IsNull(directory.FilePermission);
+
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Create a directory with a file permission key")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryCreateFilePermissionKeyTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = await share.CreateFilePermissionAsync(permission);
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.Properties.FilePermissionKey = permissionKey;
+
+                // Act
+                await directory.CreateAsync();
+
+                // Assert
+                Assert.IsNotNull(directory.Properties.FilePermissionKey);
+                Assert.IsNotNull(directory.Properties.NtfsAttributes);
+                Assert.IsNotNull(directory.Properties.CreationTime);
+                Assert.IsNotNull(directory.Properties.LastWriteTime);
+                Assert.IsNotNull(directory.Properties.ChangeTime);
+                Assert.IsNotNull(directory.Properties.DirectoryId);
+                Assert.IsNotNull(directory.Properties.ParentId);
+
+                Assert.IsNull(directory.Properties.filePermissionKeyToSet);
+                Assert.IsNull(directory.Properties.ntfsAttributesToSet);
+                Assert.IsNull(directory.Properties.creationTimeToSet);
+                Assert.IsNull(directory.Properties.lastWriteTimeToSet);
+                Assert.IsNull(directory.FilePermission);
+
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Create a directory with multiple parameters")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryCreateMultibleParameters()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                share.Create();
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+
+                string permissions = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                CloudFileNtfsAttributes attributes = CloudFileNtfsAttributes.Directory | CloudFileNtfsAttributes.Archive | CloudFileNtfsAttributes.NoScrubData | CloudFileNtfsAttributes.Offline;
+                DateTimeOffset creationTime = DateTimeOffset.UtcNow.AddDays(-1);
+                DateTimeOffset lastWriteTime = DateTimeOffset.UtcNow;
+
+                directory.FilePermission = permissions;
+                directory.Properties.CreationTime = creationTime;
+                directory.Properties.LastWriteTime = lastWriteTime;
+                directory.Properties.NtfsAttributes = attributes;
+
+                // Act
+                directory.Create();
+
+                // Assert
+                Assert.IsNotNull(directory.Properties.FilePermissionKey);
+                Assert.AreEqual(attributes, directory.Properties.NtfsAttributes);
+                Assert.AreEqual(creationTime, directory.Properties.CreationTime);
+                Assert.AreEqual(lastWriteTime, directory.Properties.LastWriteTime);
+
+                Assert.IsNotNull(directory.Properties.ChangeTime);
+                Assert.IsNotNull(directory.Properties.DirectoryId);
+                Assert.IsNotNull(directory.Properties.ParentId);
+
+                Assert.IsNull(directory.Properties.filePermissionKeyToSet);
+                Assert.IsNull(directory.Properties.ntfsAttributesToSet);
+                Assert.IsNull(directory.Properties.creationTimeToSet);
+                Assert.IsNull(directory.Properties.lastWriteTimeToSet);
+                Assert.IsNull(directory.FilePermission);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Create a directory with multiple parameters")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryCreateMultibleParametersTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+
+                string permissions = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                CloudFileNtfsAttributes attributes = CloudFileNtfsAttributes.Directory | CloudFileNtfsAttributes.Archive | CloudFileNtfsAttributes.NoScrubData | CloudFileNtfsAttributes.Offline;
+                DateTimeOffset creationTime = DateTimeOffset.UtcNow.AddDays(-1);
+                DateTimeOffset lastWriteTime = DateTimeOffset.UtcNow;
+
+                directory.FilePermission = permissions;
+                directory.Properties.CreationTime = creationTime;
+                directory.Properties.LastWriteTime = lastWriteTime;
+                directory.Properties.NtfsAttributes = attributes;
+
+                // Act
+                await directory.CreateAsync();
+
+                // Assert
+                Assert.IsNotNull(directory.Properties.FilePermissionKey);
+                Assert.AreEqual(attributes, directory.Properties.NtfsAttributes);
+                Assert.AreEqual(creationTime, directory.Properties.CreationTime);
+                Assert.AreEqual(lastWriteTime, directory.Properties.LastWriteTime);
+
+                Assert.IsNotNull(directory.Properties.ChangeTime);
+                Assert.IsNotNull(directory.Properties.DirectoryId);
+                Assert.IsNotNull(directory.Properties.ParentId);
+
+                Assert.IsNull(directory.Properties.filePermissionKeyToSet);
+                Assert.IsNull(directory.Properties.ntfsAttributesToSet);
+                Assert.IsNull(directory.Properties.creationTimeToSet);
+                Assert.IsNull(directory.Properties.lastWriteTimeToSet);
+                Assert.IsNull(directory.FilePermission);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
+            }
+        }
+#endif
 
         [TestMethod]
         [Description("Create a directory and then delete it")]
@@ -588,7 +843,247 @@ namespace Microsoft.Azure.Storage.File
                 share.DeleteIfExistsAsync().Wait();
             }
         }
-#endif 
+#endif
+
+        [TestMethod]
+        [Description("Verify that a file directory's properties can be updated")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectorySetProperties()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                share.Create();
+                CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir1.Create();
+
+                var attributes = CloudFileNtfsAttributes.Directory | CloudFileNtfsAttributes.NotContentIndexed;
+                var creationTime = DateTimeOffset.UtcNow.AddDays(-1);
+                var lastWriteTime = DateTimeOffset.UtcNow;
+
+                dir1.FilePermission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                dir1.Properties.NtfsAttributes = attributes;
+                dir1.Properties.CreationTime = creationTime;
+                dir1.Properties.LastWriteTime = lastWriteTime;
+
+                // Act
+                dir1.SetProperties();
+
+                // Assert
+                Assert.IsNotNull(dir1.Properties.FilePermissionKey);
+                Assert.AreEqual(attributes, dir1.Properties.NtfsAttributes);
+                Assert.AreEqual(creationTime, dir1.Properties.CreationTime);
+                Assert.AreEqual(lastWriteTime, dir1.Properties.LastWriteTime);
+
+                Assert.IsNotNull(dir1.Properties.ChangeTime);
+                Assert.IsNotNull(dir1.Properties.DirectoryId);
+                Assert.IsNotNull(dir1.Properties.ParentId);
+
+                Assert.IsNull(dir1.Properties.filePermissionKeyToSet);
+                Assert.IsNull(dir1.Properties.ntfsAttributesToSet);
+                Assert.IsNull(dir1.Properties.creationTimeToSet);
+                Assert.IsNull(dir1.Properties.lastWriteTimeToSet);
+                Assert.IsNull(dir1.FilePermission);
+
+                // Act
+                CloudFileDirectory dir2 = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                dir2.FetchAttributes();
+
+                // Assert
+                Assert.AreEqual(dir1.Properties.FilePermissionKey, dir2.Properties.FilePermissionKey);
+                Assert.AreEqual(dir1.Properties.NtfsAttributes, dir2.Properties.NtfsAttributes);
+                Assert.AreEqual(dir1.Properties.CreationTime, dir2.Properties.CreationTime);
+                Assert.AreEqual(dir1.Properties.LastWriteTime, dir2.Properties.LastWriteTime);
+            }
+            finally
+            {
+                share.Delete();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Verify that a file directory's properties can be updated")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectorySetPropertiesTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+                CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                await dir1.CreateAsync();
+
+                var attributes = CloudFileNtfsAttributes.Directory | CloudFileNtfsAttributes.NotContentIndexed;
+                var creationTime = DateTimeOffset.UtcNow.AddDays(-1);
+                var lastWriteTime = DateTimeOffset.UtcNow;
+
+                dir1.FilePermission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                dir1.Properties.NtfsAttributes = attributes;
+                dir1.Properties.CreationTime = creationTime;
+                dir1.Properties.LastWriteTime = lastWriteTime;
+
+                // Act
+                await dir1.SetPropertiesAsync();
+
+                // Assert
+                Assert.IsNotNull(dir1.Properties.FilePermissionKey);
+                Assert.AreEqual(attributes, dir1.Properties.NtfsAttributes);
+                Assert.AreEqual(creationTime, dir1.Properties.CreationTime);
+                Assert.AreEqual(lastWriteTime, dir1.Properties.LastWriteTime);
+
+                Assert.IsNotNull(dir1.Properties.ChangeTime);
+                Assert.IsNotNull(dir1.Properties.DirectoryId);
+                Assert.IsNotNull(dir1.Properties.ParentId);
+
+                Assert.IsNull(dir1.Properties.filePermissionKeyToSet);
+                Assert.IsNull(dir1.Properties.ntfsAttributesToSet);
+                Assert.IsNull(dir1.Properties.creationTimeToSet);
+                Assert.IsNull(dir1.Properties.lastWriteTimeToSet);
+                Assert.IsNull(dir1.FilePermission);
+
+                // Act
+                CloudFileDirectory dir2 = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
+                await dir2.FetchAttributesAsync();
+
+                // Assert
+                Assert.AreEqual(dir1.Properties.FilePermissionKey, dir2.Properties.FilePermissionKey);
+                Assert.AreEqual(dir1.Properties.NtfsAttributes, dir2.Properties.NtfsAttributes);
+                Assert.AreEqual(dir1.Properties.CreationTime, dir2.Properties.CreationTime);
+                Assert.AreEqual(dir1.Properties.LastWriteTime, dir2.Properties.LastWriteTime);
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Verify setting the properties of a file with file permissions key")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectorySetPropertiesFilePermissionsKey()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                share.Create();
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                directory.Create();
+
+                Thread.Sleep(1000);
+
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = share.CreateFilePermission(permission);
+
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+
+                directory2.Properties.FilePermissionKey = permissionKey;
+
+                // Act
+                directory2.SetProperties();
+                CloudFileDirectory directory3 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                directory3.FetchAttributes();
+
+                // Assert - also making sure attributes, creation time, and last-write time were preserved
+                Assert.AreEqual(permissionKey, directory3.Properties.FilePermissionKey);
+                Assert.AreEqual(directory2.Properties.FilePermissionKey, directory3.Properties.FilePermissionKey);
+                Assert.AreEqual(directory.Properties.NtfsAttributes, directory3.Properties.NtfsAttributes);
+                Assert.AreEqual(directory.Properties.CreationTime, directory3.Properties.CreationTime);
+                Assert.AreEqual(directory.Properties.LastWriteTime, directory3.Properties.LastWriteTime);
+
+                // This block is just for checking that file permission is preserved
+                // Arrange
+                directory2 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                DateTimeOffset creationTime = DateTime.UtcNow.AddDays(-2);
+                directory2.Properties.CreationTime = creationTime;
+
+                // Act
+                directory2.SetProperties();
+                directory3 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                directory3.FetchAttributes();
+
+                // Assert
+                Assert.AreEqual(permissionKey, directory3.Properties.FilePermissionKey);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Verify setting the properties of a file with file permissions key")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectorySetPropertiesFilePermissionsKeyTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                await directory.CreateAsync();
+
+                Thread.Sleep(1000);
+
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = share.CreateFilePermission(permission);
+
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+
+                directory2.Properties.FilePermissionKey = permissionKey;
+
+                // Act
+                await directory2.SetPropertiesAsync();
+                CloudFileDirectory directory3 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                await directory3.FetchAttributesAsync();
+
+                // Assert - also making sure attributes, creation time, and last-write time were preserved
+                Assert.AreEqual(permissionKey, directory3.Properties.FilePermissionKey);
+                Assert.AreEqual(directory2.Properties.filePermissionKey, directory3.Properties.FilePermissionKey);
+                Assert.AreEqual(directory.Properties.NtfsAttributes, directory3.Properties.NtfsAttributes);
+                Assert.AreEqual(directory.Properties.CreationTime, directory3.Properties.CreationTime);
+                Assert.AreEqual(directory.Properties.LastWriteTime, directory3.Properties.LastWriteTime);
+
+                // This block is just for checking that file permission is preserved
+                // Arrange
+                directory2 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                DateTimeOffset creationTime = DateTime.UtcNow.AddDays(-2);
+                directory2.Properties.creationTime = creationTime;
+
+                // Act
+                await directory2.SetPropertiesAsync();
+                directory3 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
+                await directory3.FetchAttributesAsync();
+
+                // Assert
+                Assert.AreEqual(permissionKey, directory3.Properties.FilePermissionKey);
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+#endif
 
         [TestMethod]
         [Description("Create a directory and verify its SMB handles can be checked.")]
@@ -2114,6 +2609,82 @@ namespace Microsoft.Azure.Storage.File
             finally
             {
                 fileShareWithSAS.DeleteIfExists();
+            }
+        }
+#endif
+
+        [TestMethod]
+        [Description("Verify the attributes of a directory")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileDirectoryFetchAttributes()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                share.Create();
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                directory.Create();
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+
+                // Act
+                directory2.FetchAttributes();
+
+                // Assert
+                Assert.AreEqual(directory.Properties.ETag, directory2.Properties.ETag);
+                Assert.AreEqual(directory.Properties.LastModified, directory2.Properties.LastModified);
+                Assert.AreEqual(directory.Properties.FilePermissionKey, directory2.Properties.FilePermissionKey);
+                Assert.AreEqual(directory.Properties.NtfsAttributes, directory2.Properties.NtfsAttributes);
+                Assert.AreEqual(directory.Properties.CreationTime, directory2.Properties.CreationTime);
+                Assert.AreEqual(directory.Properties.LastWriteTime, directory2.Properties.LastWriteTime);
+                Assert.AreEqual(directory.Properties.ChangeTime, directory2.Properties.ChangeTime);
+                Assert.AreEqual(directory.Properties.DirectoryId, directory2.Properties.DirectoryId);
+                Assert.AreEqual(directory.Properties.ParentId, directory2.Properties.ParentId);
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+#if TASK
+        [TestMethod]
+        [Description("Verify the attributes of a directory")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileDirectoryFetchAttributesTask()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                await directory.CreateAsync();
+                CloudFileDirectory directory2 = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+
+                // Act
+                await directory2.FetchAttributesAsync();
+
+                // Assert
+                Assert.AreEqual(directory.Properties.ETag, directory2.Properties.ETag);
+                Assert.AreEqual(directory.Properties.LastModified, directory2.Properties.LastModified);
+                Assert.AreEqual(directory.Properties.FilePermissionKey, directory2.Properties.FilePermissionKey);
+                Assert.AreEqual(directory.Properties.NtfsAttributes, directory2.Properties.NtfsAttributes);
+                Assert.AreEqual(directory.Properties.CreationTime, directory2.Properties.CreationTime);
+                Assert.AreEqual(directory.Properties.LastWriteTime, directory2.Properties.LastWriteTime);
+                Assert.AreEqual(directory.Properties.ChangeTime, directory2.Properties.ChangeTime);
+                Assert.AreEqual(directory.Properties.DirectoryId, directory2.Properties.DirectoryId);
+                Assert.AreEqual(directory.Properties.ParentId, directory2.Properties.ParentId);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
             }
         }
 #endif

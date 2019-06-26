@@ -316,6 +316,82 @@ namespace Microsoft.Azure.Storage.File.Protocol
         }
 
         /// <summary>
+        /// Generates a web request to create a file permission.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="content">The corresponding Http content.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        public static StorageRequestMessage CreateFilePermission(
+            Uri uri,
+            int? timeout,
+            HttpContent content,
+            OperationContext operationContext,
+            ICanonicalizer canonicalizer,
+            StorageCredentials credentials)
+        {
+
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.ResourceType, "share");
+            builder.Add(Constants.QueryConstants.Component, "filepermission");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(
+                HttpMethod.Put,
+                uri,
+                timeout,
+                builder,
+                content,
+                operationContext,
+                canonicalizer,
+                credentials);
+
+            return request;
+        }
+
+        /// <summary>
+        /// Generates a web request to get a file permission.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="filePermissionKey">The file permission key of the permission to retrieve.</param>
+        /// <param name="content">The corresponding Http content.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns>A web request for performing the operation.</returns>
+        public static StorageRequestMessage GetFilePermission(
+            Uri uri,
+            int? timeout,
+            string filePermissionKey,
+            HttpContent content,
+            OperationContext operationContext,
+            ICanonicalizer canonicalizer,
+            StorageCredentials credentials)
+        {
+
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.ResourceType, "share");
+            builder.Add(Constants.QueryConstants.Component, "filepermission");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(
+                HttpMethod.Get,
+                uri,
+                timeout,
+                builder,
+                content,
+                operationContext,
+                canonicalizer,
+                credentials);
+
+            request.Headers.Add(Constants.HeaderConstants.FilePermissionKey, filePermissionKey);
+
+            return request;
+        }
+
+        /// <summary>
         /// Adds the share snapshot.
         /// </summary>
         /// <param name="builder">An object of type <see cref="UriQueryBuilder"/> that contains additional parameters to add to the URI query string.</param>

@@ -36,19 +36,36 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="uri">The absolute URI to the file.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="properties">The properties to set for the file.</param>
+        /// <param name="filePermissionToSet">The file permission to set for the file.</param>
         /// <param name="fileSize">For a file, the size of the file. This parameter is ignored
         /// for block files.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content">The HttpContent to set on the request</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Create(Uri uri, int? timeout, FileProperties properties, long fileSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage Create(
+            Uri uri,
+            int? timeout,
+            FileProperties properties,
+            string filePermissionToSet,
+            long fileSize,
+            AccessCondition accessCondition,
+            HttpContent content,
+            OperationContext operationContext,
+            ICanonicalizer canonicalizer,
+            StorageCredentials credentials)
         {
+            CommonUtility.AssertNotNull("properties", properties);
+
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
 
             if (properties.CacheControl != null)
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.FileCacheControlHeader, properties.CacheControl);
             }
-            
+
             if (properties.ContentType != null)
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentTypeHeader, properties.ContentType);
@@ -73,6 +90,11 @@ namespace Microsoft.Azure.Storage.File.Protocol
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentDispositionRequestHeader, properties.ContentDisposition);
             }
+
+            AddFilePermissionOrFilePermissionKey(request, filePermissionToSet, properties, Constants.HeaderConstants.FilePermissionInherit);
+            AddNtfsFileAttributes(request, properties, Constants.HeaderConstants.FileAttributesNone);
+            AddCreationTime(request, properties, Constants.HeaderConstants.FileTimeNow);
+            AddLastWriteTime(request, properties, Constants.HeaderConstants.FileTimeNow);
 
             request.Headers.Add(Constants.HeaderConstants.FileType, Constants.HeaderConstants.File);
             request.Headers.Add(Constants.HeaderConstants.FileContentLengthHeader, fileSize.ToString(NumberFormatInfo.InvariantInfo));
@@ -325,10 +347,25 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="uri">The absolute URI to the file.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="properties">The file's properties.</param>
+        /// <param name="filePermissionToSet">The file's file permission</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content">HttpContent for the request</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage SetProperties(Uri uri, int? timeout, FileProperties properties, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage SetProperties(
+            Uri uri,
+            int? timeout,
+            FileProperties properties,
+            string filePermissionToSet,
+            AccessCondition accessCondition,
+            HttpContent content,
+            OperationContext operationContext,
+            ICanonicalizer canonicalizer,
+            StorageCredentials credentials)
         {
+            CommonUtility.AssertNotNull("properties", properties);
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "properties");
 
@@ -343,6 +380,11 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentMD5Header, properties.ContentMD5);
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentTypeHeader, properties.ContentType);
             }
+
+            AddFilePermissionOrFilePermissionKey(request, filePermissionToSet, properties, Constants.HeaderConstants.Preserve);
+            AddNtfsFileAttributes(request, properties, Constants.HeaderConstants.Preserve);
+            AddCreationTime(request, properties, Constants.HeaderConstants.Preserve);
+            AddLastWriteTime(request, properties, Constants.HeaderConstants.Preserve);
 
             request.ApplyAccessCondition(accessCondition);
             return request;
@@ -382,14 +424,26 @@ namespace Microsoft.Azure.Storage.File.Protocol
             return request;
         }
 
-        /// Constructs a web request to set system properties for a file.
-        /// </summary>
+        /// <summary>
         /// <param name="uri">The absolute URI to the file.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="newFileSize">The new file size. Set this parameter to <c>null</c> to keep the existing file size.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
+        /// <param name="content">HttpContent for the request</param>
+        /// <param name="operationContext">An <see cref="OperationContext" /> object for tracking the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Resize(Uri uri, int? timeout, long newFileSize, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        /// </summary>
+        public static StorageRequestMessage Resize(
+            Uri uri,
+            int? timeout,
+            long newFileSize,
+            AccessCondition accessCondition,
+            HttpContent content,
+            OperationContext operationContext,
+            ICanonicalizer canonicalizer,
+            StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "properties");
@@ -397,6 +451,12 @@ namespace Microsoft.Azure.Storage.File.Protocol
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
 
             request.Headers.Add(Constants.HeaderConstants.FileContentLengthHeader, newFileSize.ToString(NumberFormatInfo.InvariantInfo));
+
+            // Required SMB headers.
+            request.AddOptionalHeader(Constants.HeaderConstants.FilePermission, Constants.HeaderConstants.Preserve);
+            request.AddOptionalHeader(Constants.HeaderConstants.FileAttributes, Constants.HeaderConstants.Preserve);
+            request.AddOptionalHeader(Constants.HeaderConstants.FileCreationTime, Constants.HeaderConstants.Preserve);
+            request.AddOptionalHeader(Constants.HeaderConstants.FileLastWriteTime, Constants.HeaderConstants.Preserve);
 
             request.ApplyAccessCondition(accessCondition);
             return request;
@@ -502,6 +562,96 @@ namespace Microsoft.Azure.Storage.File.Protocol
             if (snapshot.HasValue)
             {
                 builder.Add(Constants.QueryConstants.ShareSnapshot, Request.ConvertDateTimeToSnapshotString(snapshot.Value));
+            }
+        }
+
+        /// <summary>
+        /// Adds the File Permission or File Permission Key to a StorageRequest.
+        /// </summary>
+        /// <param name="request">The <see cref="StorageRequestMessage"/></param>
+        /// <param name="filePermissionToSet">The File Permission</param>
+        /// <param name="properties">The <see cref="FileProperties"/></param>
+        /// <param name="defaultValue">The default value to set if fileermissionToSet and properties.filePermissionKeyToSet are null</param>
+        private static void AddFilePermissionOrFilePermissionKey(
+            StorageRequestMessage request,
+            string filePermissionToSet,
+            FileProperties properties,
+            string defaultValue)
+        {
+            if (filePermissionToSet == null && properties?.filePermissionKeyToSet == null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FilePermission, defaultValue);
+            }
+            else if (filePermissionToSet != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FilePermission, filePermissionToSet);
+            }
+            else
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FilePermissionKey, properties.filePermissionKeyToSet);
+            }
+        }
+
+        /// <summary>
+        /// Adds the <see cref="CloudFileNtfsAttributes"/> to the <see cref="StorageRequestMessage"/>
+        /// </summary>
+        /// <param name="request">The <see cref="StorageRequestMessage"/></param>
+        /// <param name="properties">The <see cref="FileProperties"/></param>
+        /// <param name="defaultValue">The default value to set if properties.ntfsAttributesToSet is null</param>
+        private static void AddNtfsFileAttributes(
+            StorageRequestMessage request,
+            FileProperties properties,
+            string defaultValue)
+        {
+            if (properties?.ntfsAttributesToSet != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileAttributes, CloudFileNtfsAttributesHelper.ToString(properties.ntfsAttributesToSet.Value));
+            }
+            else
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileAttributes, defaultValue);
+            }
+        }
+
+        /// <summary>
+        /// Adds the File Creation Time to the <see cref="StorageRequestMessage"/>
+        /// </summary>
+        /// <param name="request">The <see cref="StorageRequestMessage"/></param>
+        /// <param name="properties">The <see cref="FileProperties"/></param>
+        /// <param name="defaultValue">The value to set if properties.creationTimeToSet is null</param>
+        private static void AddCreationTime(
+            StorageRequestMessage request,
+            FileProperties properties,
+            string defaultValue)
+        {
+            if (properties?.creationTimeToSet != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileCreationTime, Request.ConvertDateTimeToSnapshotString(properties.creationTimeToSet.Value));
+            }
+            else
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileCreationTime, defaultValue);
+            }
+        }
+
+        /// <summary>
+        /// Adds the File Last Write Time to the <see cref="StorageRequestMessage"/>
+        /// </summary>
+        /// <param name="request">The <see cref="StorageRequestMessage"/></param>
+        /// <param name="properties">The <see cref="FileProperties"/></param>
+        /// <param name="defaultValue">The default value to set if properties.lastWriteTimeToSet is null</param>
+        private static void AddLastWriteTime(
+            StorageRequestMessage request,
+            FileProperties properties,
+            string defaultValue)
+        {
+            if (properties?.lastWriteTimeToSet != null)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileLastWriteTime, Request.ConvertDateTimeToSnapshotString(properties.lastWriteTimeToSet.Value));
+            }
+            else
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.FileLastWriteTime, defaultValue);
             }
         }
     }

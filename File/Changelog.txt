@@ -1,3 +1,6 @@
+Changes in 11.0.0:
+- Added support for File SMB REST parity
+
 Changes in 10.0.3:
 
 - Made CloudFile.Properties virtual, resolving GitHub Issue #841

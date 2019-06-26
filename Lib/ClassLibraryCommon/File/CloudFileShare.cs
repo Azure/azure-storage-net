@@ -22,8 +22,10 @@ namespace Microsoft.Azure.Storage.File
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.File.Protocol;
     using Microsoft.Azure.Storage.Shared.Protocol;
+    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Net.Http;
     using System.Threading;
@@ -1592,6 +1594,100 @@ namespace Microsoft.Azure.Storage.File
         }
 #endif
 
+#if SYNC
+        /// <summary>
+        /// Creates a File Permission.
+        /// </summary>
+        /// <param name="permission">The file permission to create</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The file permission key</returns>
+        [DoesServiceRequest]
+        public virtual string CreateFilePermission(
+            string permission, 
+            FileRequestOptions options = null, 
+            OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteSync(
+                this.CreateFilePermissionImp(permission, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+#if TASK
+        /// <summary>
+        /// Creates a File Permission.
+        /// </summary>
+        /// <param name="permission">The file permission to create</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The file permission key</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> CreateFilePermissionAsync(
+            string permission,
+            FileRequestOptions options = null,
+            OperationContext operationContext = null,
+            CancellationToken? cancellationToken = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.CreateFilePermissionImp(permission, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken ?? CancellationToken.None);
+        }
+#endif
+
+#if SYNC
+        /// <summary>
+        /// Gets a File Permission.
+        /// </summary>
+        /// <param name="filePermissionKey">Key of the file permission to retrieve.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The file permission key</returns>
+        [DoesServiceRequest]
+        public virtual string GetFilePermission(
+            string filePermissionKey,
+            FileRequestOptions options = null,
+            OperationContext operationContext = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteSync(
+                this.GetFilePermissionImp(filePermissionKey, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext);
+        }
+#endif
+
+#if TASK
+        /// <summary>
+        /// Gets a File Permission.
+        /// </summary>
+        /// <param name="filePermissionKey">Key of the file permission to retrieve.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>The file permission key</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> GetFilePermissionAsync(
+            string filePermissionKey,
+            FileRequestOptions options = null,
+            OperationContext operationContext = null,
+            CancellationToken? cancellationToken = null)
+        {
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            return Executor.ExecuteAsync(
+                this.GetFilePermissionImp(filePermissionKey, modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken ?? CancellationToken.None);
+        }
+#endif
+
         /// <summary>
         /// Implementation for the Create method.
         /// </summary>
@@ -1858,6 +1954,72 @@ namespace Microsoft.Azure.Storage.File
             };
 
             return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the CreatePermissions method.
+        /// </summary>
+        /// <param name="permission">Permission to create</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>File permission key of newly created file permission</returns>
+        private RESTCommand<string> CreateFilePermissionImp(string permission, FileRequestOptions options)
+        {
+            RESTCommand<string> putCmd = new RESTCommand<string>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildContent = (cmd, ctx) =>
+            {
+                Dictionary<string, string> dictionary = new Dictionary<string, string>
+                {
+                    { Constants.Permission, permission }
+                };
+                return new StringContent(JsonConvert.SerializeObject(dictionary, Formatting.Indented));
+            };
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = ShareHttpRequestMessageFactory.CreateFilePermission(uri, serverTimeout, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+
+                return msg;
+            };
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, null, cmd, ex);
+                return HttpResponseParsers.GetHeader(resp, Constants.HeaderConstants.FilePermissionKey);
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation for the GetFilePermission method.
+        /// </summary>
+        /// <param name="filePermissionKey">Key of file permission to retrieve</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>File permission key of newly created file permission</returns>
+        private RESTCommand<string> GetFilePermissionImp(string filePermissionKey, FileRequestOptions options)
+        {
+            RESTCommand<string> getCmd = new RESTCommand<string>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
+
+            options.ApplyToStorageCommand(getCmd);
+            getCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
+            {
+                StorageRequestMessage msg = ShareHttpRequestMessageFactory.GetFilePermission(uri, serverTimeout, filePermissionKey, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                return msg;
+            };
+            getCmd.RetrieveResponseStream = true;
+            getCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                return HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, null, cmd, ex);
+            };
+            getCmd.PostProcessResponseAsync = async (cmd, resp, ex, ctx) =>
+            {
+                StreamReader reader = new StreamReader(cmd.ResponseStream);
+                string json = await reader.ReadToEndAsync();
+                Dictionary<string, string> dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                return dictionary[Constants.Permission.ToLowerInvariant()];
+            };
+
+            return getCmd;
         }
 
         /// <summary>

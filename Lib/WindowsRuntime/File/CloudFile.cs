@@ -1195,6 +1195,7 @@ namespace Microsoft.Azure.Storage.File
         public virtual Task CreateAsync(long size, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             this.Share.AssertNoSnapshot();
+            this.AssertValidFilePermissionOrKey();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsyncNullReturn(
                 this.CreateImpl(size, accessCondition, modifiedOptions),
@@ -2037,9 +2038,9 @@ namespace Microsoft.Azure.Storage.File
         /// Implements the Create method.
         /// </summary>
         /// <param name="sizeInBytes">The size in bytes.</param>
-        /// <param name="accessCondition">An object that represents the access conditions for the file. If null, no condition is used.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="TaskSequence"/> that creates the file.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that creates the file.</returns>
         private RESTCommand<NullType> CreateImpl(long sizeInBytes, AccessCondition accessCondition, FileRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
@@ -2047,15 +2048,32 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.Create(uri, serverTimeout, this.Properties, sizeInBytes, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.Create(
+                    uri: uri,
+                    timeout: serverTimeout,
+                    properties: this.Properties,
+                    filePermissionToSet: this.filePermission,
+                    fileSize: sizeInBytes,
+                    accessCondition: accessCondition,
+                    content: cnt,
+                    operationContext: ctx,
+                    canonicalizer: this.ServiceClient.GetCanonicalizer(),
+                    credentials: this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                FileHttpResponseParsers.UpdateSmbProperties(resp, this.Properties);
                 this.UpdateETagLMTAndLength(resp, false);
                 this.Properties.Length = sizeInBytes;
+
+                // This is by design.  The service doesn't return filePermission in the File.Create, File.SetProperties, File.Get, or File.GetProperties responses.
+                // Also, the service sometimes modifies the filePermission server-side, so this field may be inaccurate if we maintained it's value.
+                // To retrieve a filePermission, call share.GetFilePermission(filePermissionId).
+                this.filePermission = null;
+
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
@@ -2250,9 +2268,9 @@ namespace Microsoft.Azure.Storage.File
         /// <summary>
         /// Implementation for the SetProperties method.
         /// </summary>
-        /// <param name="accessCondition">An object that represents the access conditions for the file. If null, no condition is used.</param>
-        /// <param name="options">An object that specifies additional options for the request.</param>
-        /// <returns>A <see cref="RESTCommand"/> that sets the metadata.</returns>
+        /// <param name="accessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand{T}"/> that sets the metadata.</returns>
         private RESTCommand<NullType> SetPropertiesImpl(AccessCondition accessCondition, FileRequestOptions options)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
@@ -2260,14 +2278,30 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = FileHttpRequestMessageFactory.SetProperties(uri, serverTimeout, this.Properties, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = FileHttpRequestMessageFactory.SetProperties(
+                    uri: uri,
+                    timeout: serverTimeout,
+                    properties: this.Properties,
+                    filePermissionToSet: this.FilePermission,
+                    accessCondition: accessCondition,
+                    content: cnt,
+                    operationContext: ctx,
+                    canonicalizer: this.ServiceClient.GetCanonicalizer(),
+                    credentials: this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.OK, resp, NullType.Value, cmd, ex);
+                FileHttpResponseParsers.UpdateSmbProperties(resp, this.Properties);
                 this.UpdateETagLMTAndLength(resp, false);
+
+                // This is by design.  The service doesn't return filePermission in the File.Create, File.SetProperties, File.Get, or File.GetProperties responses.
+                // Also, the service sometimes modifies the filePermission server-side, so this field may be inaccurate if we maintained it's value.
+                // To retrieve a filePermission, call share.GetFilePermission(filePermissionId).
+                this.filePermission = null;
+
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 return NullType.Value;
             };
@@ -2477,14 +2511,16 @@ namespace Microsoft.Azure.Storage.File
         /// <summary>
         /// Updates this file with the given attributes a the end of a fetch attributes operation.
         /// </summary>
-        /// <param name="response">The response to parse.</param>
+        /// <param name="response">The response.</param>
         private void UpdateAfterFetchAttributes(HttpResponseMessage response)
         {
             FileProperties properties = FileHttpResponseParsers.GetProperties(response);
+            FileHttpResponseParsers.UpdateSmbProperties(response, properties);
+            CopyState state = FileHttpResponseParsers.GetCopyAttributes(response);
 
             this.attributes.Properties = properties;
             this.attributes.Metadata = FileHttpResponseParsers.GetMetadata(response);
-            this.attributes.CopyState = FileHttpResponseParsers.GetCopyAttributes(response);
+            this.attributes.CopyState = state;
         }
 
         /// <summary>

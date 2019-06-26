@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             OperationContext opContext = new OperationContext();
             try
             {
-                request = FileHttpRequestMessageFactory.Create(uri, context.Timeout, properties, fileSize, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
+                request = FileHttpRequestMessageFactory.Create(uri, context.Timeout, properties, null, fileSize, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials);
             }
             catch (InvalidOperationException)
             {

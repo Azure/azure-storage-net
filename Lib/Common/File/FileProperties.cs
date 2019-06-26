@@ -51,6 +51,14 @@ namespace Microsoft.Azure.Storage.File
             this.ETag = other.ETag;
             this.LastModified = other.LastModified;
             this.IsServerEncrypted = other.IsServerEncrypted;
+            this.filePermissionKey = other.filePermissionKey;
+            this.ntfsAttributes = other.ntfsAttributes;
+            this.creationTime = other.creationTime;
+            this.lastWriteTime = other.lastWriteTime;
+            this.filePermissionKeyToSet = other.filePermissionKeyToSet;
+            this.ntfsAttributesToSet = other.ntfsAttributesToSet;
+            this.creationTimeToSet = other.creationTimeToSet;
+            this.lastWriteTimeToSet = other.lastWriteTimeToSet;
         }
 
         /// <summary>
@@ -124,5 +132,121 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <value>A bool representing the file's server-side encryption state.</value>
         public bool IsServerEncrypted { get; internal set; }
+
+        /// <summary>
+        /// The file's File Permission Key.
+        /// </summary>
+        internal string filePermissionKey;
+
+        /// <summary>
+        /// The file permission key to set on the next File Create or Set Properties call.
+        /// </summary>
+        internal string filePermissionKeyToSet;
+
+        /// <summary>
+        /// Gets or sets the file's File Permission Key.
+        /// </summary>
+        public string FilePermissionKey
+        {
+            get
+            {
+                return filePermissionKeyToSet ?? filePermissionKey;
+            }
+            set
+            {
+                filePermissionKeyToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// Get or sets the file system attributes for files and directories.
+        /// If not set, indicates preservation of existing values.
+        /// </summary>
+        internal CloudFileNtfsAttributes? ntfsAttributes;
+
+        /// <summary>
+        /// The NTFS file attributes to set on the new File Create or Set Properties call.
+        /// </summary>
+        internal CloudFileNtfsAttributes? ntfsAttributesToSet;
+
+        /// <summary>
+        /// Get or sets the file system attributes for files and directories.
+        /// </summary>
+        public CloudFileNtfsAttributes? NtfsAttributes
+        {
+            get
+            {
+                return ntfsAttributesToSet ?? ntfsAttributes;
+            }
+            set
+            {
+                ntfsAttributesToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="DateTimeOffset"/> when the File was created.
+        /// </summary>
+        internal DateTimeOffset? creationTime;
+
+        /// <summary>
+        /// The file creation time to set on the next Create File or Set Properties call.
+        /// </summary>
+        internal DateTimeOffset? creationTimeToSet;
+
+        /// <summary>
+        /// Gets or sets the <see cref="DateTimeOffset"/> when the File was created.
+        /// </summary>
+        public DateTimeOffset? CreationTime
+        {
+            get
+            {
+                return creationTimeToSet ?? creationTime;
+            }
+            set
+            {
+                creationTimeToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="DateTimeOffset"/> when the File was last written to.
+        /// </summary>
+        internal DateTimeOffset? lastWriteTime;
+
+        /// <summary>
+        /// The last write time to set on the next Create or Update Properties call.
+        /// </summary>
+        internal DateTimeOffset? lastWriteTimeToSet;
+
+        /// <summary>
+        /// Gets or sets the <see cref="DateTimeOffset"/> when the File was last written to.
+        /// </summary>
+        public DateTimeOffset? LastWriteTime
+        {
+            get
+            {
+                return lastWriteTimeToSet ?? lastWriteTime;
+            }
+            set
+            {
+                lastWriteTimeToSet = value;
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="DateTimeOffset"/> when the File was last changed.  Read only.
+        /// </summary>
+        public DateTimeOffset? ChangeTime { get; internal set; }
+
+        /// <summary>
+        /// The File Id.  Read only.
+        /// </summary>
+        public string FileId { get; internal set; }
+
+        /// <summary>
+        /// The Id of this file's parent.  Ready only.
+        /// </summary>
+        public string ParentId { get; internal set; }
     }
 }

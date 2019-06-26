@@ -185,7 +185,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             FileProperties properties = new FileProperties();
             Uri uri = FileTests.ConstructPutUri(FileContext.Address, shareName, fileName);
             OperationContext opContext = new OperationContext();
-            HttpRequestMessage webRequest = FileHttpRequestMessageFactory.Create(uri, FileContext.Timeout, properties, fileSize, null, null, opContext, null, null);
+            HttpRequestMessage webRequest = FileHttpRequestMessageFactory.Create(uri, FileContext.Timeout, properties, null, fileSize, null, null, opContext, null, null);
 
             using (HttpResponseMessage response = await FileTestUtils.GetResponse(webRequest, FileContext))
             {

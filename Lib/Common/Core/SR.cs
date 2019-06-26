@@ -91,6 +91,7 @@ namespace Microsoft.Azure.Storage.Core
         public const string File = "file";
         public const string FileDataCorrupted = "File data corrupted (integrity check failed), Expected value is '{0}', retrieved '{1}'";
         public const string FileEndPointNotConfigured = "No file endpoint configured.";
+        public const string FilePermissionFilePermissionKeyBothSet = "File permission and file permission key cannot both be set";
         public const string FileStreamAlreadyCommitted = "File stream has already been committed once.";
         public const string FileStreamFlushPending = "File stream has a pending flush operation. Please call EndFlush first.";
         public const string FileStreamReadPending = "File stream has a pending read operation. Please call EndRead first.";

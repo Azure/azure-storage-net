@@ -25,6 +25,7 @@ namespace Microsoft.Azure.Storage.File
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Text;
 
     /// <summary>
     /// Represents a directory of files, designated by a delimiter character.
@@ -41,6 +42,11 @@ namespace Microsoft.Azure.Storage.File
         /// Stores the parent directory.
         /// </summary>
         private CloudFileDirectory parent;
+
+        /// <summary>
+        /// Stores the file permission to set on the next Directory Create or Set Properties call.
+        /// </summary>
+        private string filePermission;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CloudFileDirectory"/> class using an absolute URI to the directory.
@@ -173,6 +179,18 @@ namespace Microsoft.Azure.Storage.File
         }
 
         /// <summary>
+        /// Verifies that the directory's filePermission and properties.FilePermissionKey are both not set.
+        /// </summary>
+        internal void AssertValidFilePermissionOrKey()
+        {
+            if (this.filePermission != null && this.Properties?.filePermissionKeyToSet != null)
+            {
+                string errorMessage = string.Format(CultureInfo.CurrentCulture, SR.FilePermissionFilePermissionKeyBothSet);
+                throw new ArgumentException(errorMessage);
+            }
+        }
+
+        /// <summary>
         /// Gets a <see cref="FileDirectoryProperties"/> object that represents the directory's system properties.
         /// </summary>
         /// <value>A <see cref="FileDirectoryProperties"/> object.</value>
@@ -183,6 +201,23 @@ namespace Microsoft.Azure.Storage.File
         /// </summary>
         /// <value>The directory's metadata, as a collection of name-value pairs.</value>
         public IDictionary<string, string> Metadata { get; internal set; }
+
+        /// <summary>
+        /// Gets or sets the file permission for this directory.
+        /// This field will be null after Directory.Create, Directory.SetProperties, Directory.GetProperties, and Directory.Get calls.
+        /// </summary>
+        public string FilePermission
+        {
+            get
+            {
+                return this.filePermission;
+            }
+            set
+            {
+                CommonUtility.AssertInBounds("FilePermission", Encoding.UTF8.GetBytes(value.ToCharArray()).Length, 0, 8 * Constants.KB);
+                this.filePermission = value;
+            }
+        }
 
         /// <summary>
         /// Gets a <see cref="CloudFileShare"/> object that represents the share for the directory.
