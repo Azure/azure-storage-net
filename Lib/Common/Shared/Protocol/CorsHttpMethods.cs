@@ -73,6 +73,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// <summary>
         /// Represents the MERGE HTTP method in a CORS rule.
         /// </summary>
-        Merge = 0x100
+        Merge = 0x100,
+
+        /// <summary>
+        /// Represents the PATCH HTTP method in a CORS rule.
+        /// </summary>
+        Patch = 0x200
     }
 }

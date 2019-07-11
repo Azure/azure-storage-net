@@ -282,6 +282,26 @@ namespace Microsoft.Azure.Storage.Blob
             props.StaticWebsite.Enabled = true;
             props.StaticWebsite.IndexDocument = "indexdoc";
             props.StaticWebsite.ErrorDocument404Path = "404";
+            props.Cors.CorsRules.Add(new CorsRule
+            {
+                AllowedMethods =
+                  CorsHttpMethods.Connect
+                | CorsHttpMethods.Delete
+                | CorsHttpMethods.Get
+                | CorsHttpMethods.Head
+                | CorsHttpMethods.Merge
+                | CorsHttpMethods.None
+                | CorsHttpMethods.Options
+                | CorsHttpMethods.Patch
+                | CorsHttpMethods.Post
+                | CorsHttpMethods.Put
+                | CorsHttpMethods.Trace,
+                AllowedOrigins = new List<String>()
+                {
+                    "*"
+                }
+
+            });
 
             await client.SetServicePropertiesAsync(props);
 
