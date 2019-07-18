@@ -42,6 +42,9 @@ namespace Microsoft.WindowsAzure.Storage.Table
             }
         }
         
+        /// <summary>
+        /// Gets or sets the switch that will allow additional properties to be ignored when converting back.
+        /// </summary>
         public bool IgnoreAdditionalProperties
         {
             get
