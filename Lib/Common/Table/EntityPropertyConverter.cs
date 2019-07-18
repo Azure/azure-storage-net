@@ -393,8 +393,17 @@ namespace Microsoft.WindowsAzure.Storage.Table
 #else
                 PropertyInfo propertyToSet = parentProperty.GetType().GetProperty(properties.Last());
 #endif
-                propertyToSet.SetValue(parentProperty, ChangeType(propertyValue, propertyToSet.PropertyType), index: null);
-
+                if(entityPropertyConverterOptions.IgnoreAdditionalProperties)
+                {
+                    if(propertyToSet != null){
+                        propertyToSet.SetValue(parentProperty, ChangeType(propertyValue, propertyToSet.PropertyType), index: null);
+                    }
+                }
+                else
+                {
+                    propertyToSet.SetValue(parentProperty, ChangeType(propertyValue, propertyToSet.PropertyType), index: null);
+                }
+                
                 object termValue = parentProperty;
                 while (valueTypePropertyHierarchy.Count != 0)
                 {
