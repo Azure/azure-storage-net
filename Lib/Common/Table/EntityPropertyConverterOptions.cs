@@ -23,6 +23,8 @@ namespace Microsoft.WindowsAzure.Storage.Table
     public class EntityPropertyConverterOptions
     {
         private string propertyNameDelimiter = EntityPropertyConverter.DefaultPropertyNameDelimiter;
+        
+        private bool ignoreAdditionalProperties = false;
 
         /// <summary>
         /// Gets or sets the delimiter that will be used to separate names of nested properties.
@@ -37,6 +39,19 @@ namespace Microsoft.WindowsAzure.Storage.Table
             set
             {
                 propertyNameDelimiter = value;
+            }
+        }
+        
+        public bool IgnoreAdditionalProperties
+        {
+            get
+            {
+                return ignoreAdditionalProperties;
+            }
+            
+            set
+            {
+                ignoreAdditionalProperties = value;
             }
         }
     }
