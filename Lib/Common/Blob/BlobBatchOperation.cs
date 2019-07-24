@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Storage.Blob
             CommonUtility.AssertNotNull("blockBlob", blockBlob);
             CommonUtility.AssertNotNull("standardBlobTier", standardBlobTier);
 
-            this.Operations.Add(blockBlob.SetStandardBlobTierImpl(standardBlobTier, accessCondition, blobRequestOptions ?? BlobRequestOptions.BaseDefaultRequestOptions));
+            this.Operations.Add(blockBlob.SetStandardBlobTierImpl(standardBlobTier, default(RehydratePriority?), accessCondition, blobRequestOptions ?? BlobRequestOptions.BaseDefaultRequestOptions));
         }
 
         /// <summary>

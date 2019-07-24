@@ -906,8 +906,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, 
             AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
         {
-            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, default(PremiumPageBlobTier?) /*premiumPageBlobTier*/, default(StandardBlobTier) /*standardBlockBlobTier*/, 
-                sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, default(PremiumPageBlobTier?) /* premiumPageBlobTier */,  default(StandardBlobTier) /*standardBlockBlobTier*/, default(RehydratePriority?) /* rehydratePriority */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
         }
 
         /// <summary>
@@ -919,6 +918,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set. Only valid on page blobs.</param>
         /// <param name="standardBlockBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set. Only valid on block blobs.</param>
+        /// <param name="rehydratePriority">The priority with which to rehydrate an archived blob.</param>
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
@@ -926,10 +926,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return CopyFrom(uri, timeout, source, default(string) /* contentMD5 */, incrementalCopy, false /* syncCopy */, premiumPageBlobTier, standardBlockBlobTier, 
-                sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
+            return CopyFrom(uri, timeout, source, default(string) /* contentMD5 */, incrementalCopy, false /* syncCopy */, premiumPageBlobTier, standardBlockBlobTier, rehydratePriority, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
         }
 
         /// <summary>
@@ -943,6 +942,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
         /// <param name="standardBlockBlobTier">A <see cref="StandardBlobTier"/> representing the tier to set.</param>
+        /// <param name="rehydratePriority">The priority with which to rehydrate an archived blob.</param>
         /// <param name="sourceAccessCondition">The access condition to apply to the source blob.</param>
         /// <param name="destAccessCondition">The access condition to apply to the destination blob.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
@@ -950,8 +950,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, 
-            AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (!syncCopy && !string.IsNullOrEmpty(sourceContentMd5))
             {
@@ -976,7 +975,13 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             {
                 throw new ArgumentOutOfRangeException(nameof(standardBlockBlobTier), "Cannot specify both page and block tiers at the same time.");
             }
-            else if (premiumPageBlobTier.HasValue)
+
+            if (rehydratePriority.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.RehydratePriorityHeader, rehydratePriority.Value.ToString());
+            }
+
+            if (premiumPageBlobTier.HasValue)
             {
                 request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, premiumPageBlobTier.Value.ToString());
             }
@@ -1162,14 +1167,20 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string blobTier, HttpContent content, OperationContext operationContext,
-            ICanonicalizer canonicalizer, StorageCredentials credentials)
+        /// <param name="rehydratePriority">The priority with which to rehydrate an archived blob.</param>
+        /// <returns>A web request to use to perform the operation.</returns>
+        public static StorageRequestMessage SetBlobTier(Uri uri, int? timeout, string blobTier, RehydratePriority? rehydratePriority, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "tier");
 
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.Headers.Add(Constants.HeaderConstants.AccessTierHeader, blobTier);
+
+            if (rehydratePriority.HasValue)
+            {
+                request.AddOptionalHeader(Constants.HeaderConstants.RehydratePriorityHeader, rehydratePriority.Value.ToString());
+            }
 
             return request;
         }

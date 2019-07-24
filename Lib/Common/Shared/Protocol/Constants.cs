@@ -1432,6 +1432,10 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// </summary>
             public const string FileParentId = PrefixForStorageHeader + "file-parent-id";
 
+            /// Header for the blob rehydration priority.
+            /// </summary>
+            public const string RehydratePriorityHeader = PrefixForStorageHeader + "rehydrate-priority";
+
             /// <summary>
             /// Format string for specifying ranges.
             /// </summary>

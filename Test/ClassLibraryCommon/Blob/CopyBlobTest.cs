@@ -23,6 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.Blob
 {
@@ -94,7 +95,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        private static void CloudBlockBlobCopy(bool sourceIsSas, bool destinationIsSas)
+        private static void CloudBlockBlobCopy(bool sourceIsSas, bool destinationIsSas, RehydratePriority? rehydratePriority)
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
@@ -162,7 +163,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
 
                 // Start copy and wait for completion
-                string copyId = copyDestination.StartCopy(TestHelper.Defiddler(copySource));
+                string copyId = copyDestination.StartCopy(TestHelper.Defiddler(copySource), rehydratePriority: rehydratePriority);
                 Assert.AreEqual(BlobType.BlockBlob, copyDestination.BlobType);
                 WaitForCopy(destination);
                 
@@ -222,7 +223,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobCopySasToSasTest()
         {
-            CloudBlockBlobCopy(true, true);
+            CloudBlockBlobCopy(true, true, default(RehydratePriority));
         }
 
         [TestMethod]
@@ -233,7 +234,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobCopyToSasTest()
         {
-            CloudBlockBlobCopy(false, true);
+            CloudBlockBlobCopy(false, true, default(RehydratePriority));
         }
 
         [TestMethod]
@@ -244,7 +245,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobCopyFromSasTest()
         {
-            CloudBlockBlobCopy(true, false);
+            CloudBlockBlobCopy(true, false, default(RehydratePriority));
         }
 
         [TestMethod]
@@ -255,7 +256,10 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobCopyTest()
         {
-            CloudBlockBlobCopy(false, false);
+            foreach (var rehydratePriority in new[] { default(RehydratePriority?), RehydratePriority.Standard, RehydratePriority.High })
+            {
+                CloudBlockBlobCopy(false, false, rehydratePriority);
+            }
         }
 
         [TestMethod]
@@ -408,7 +412,10 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudBlockBlobCopyTestTask()
         {
-            CloudBlockBlobCopyImpl((source, sourceContentMD5, copy) => copy.StartCopyAsync(TestHelper.Defiddler(source)).Result);
+            foreach (var rehydratePriority in new[] { default(RehydratePriority?), RehydratePriority.Standard, RehydratePriority.High })
+            {
+                CloudBlockBlobCopyImpl((source, sourceContentMD5, copy) => copy.StartCopyAsync(TestHelper.Defiddler(source), default(StandardBlobTier?), rehydratePriority, null, null, null, null, CancellationToken.None).Result);
+            }
         }
 
         [TestMethod]
@@ -1177,13 +1184,13 @@ namespace Microsoft.Azure.Storage.Blob
                 source.FetchAttributes();
                 AccessCondition sourceAccessCondition1 = AccessCondition.GenerateIfNotModifiedSinceCondition(source.Properties.LastModified.Value);
                 CloudBlockBlob copy1 = container.GetBlockBlobReference("copy1");
-                copy1.StartCopy(TestHelper.Defiddler(source), sourceAccessCondition1);
+                copy1.StartCopy(TestHelper.Defiddler(source), sourceAccessCondition: sourceAccessCondition1);
                 WaitForCopy(copy1);
                 Assert.AreEqual(CopyStatus.Success, copy1.CopyState.Status);
 
                 AccessCondition sourceAccessCondition2 = AccessCondition.GenerateLeaseCondition(invalidLeaseId);
                 CloudBlockBlob copy2 = container.GetBlockBlobReference("copy2");
-                TestHelper.ExpectedException<ArgumentException>(() => copy2.StartCopy(TestHelper.Defiddler(source), sourceAccessCondition2), "A lease condition cannot be specified on the source of a copy.");          
+                TestHelper.ExpectedException<ArgumentException>(() => copy2.StartCopy(TestHelper.Defiddler(source), sourceAccessCondition: sourceAccessCondition2), "A lease condition cannot be specified on the source of a copy.");          
             }
             finally
             {
