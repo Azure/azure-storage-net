@@ -1157,6 +1157,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             public const string SourceIfMatchHeader = PrefixForStorageHeader + "source-if-match";
 
             /// <summary>
+            /// Header for the Source If Match CRC64 header.
+            /// </summary>
+            public const string SourceIfMatchCrcHeader = SourceIfMatchHeader + "-crc64";
+
+            /// <summary>
             /// Header for the If-Modified-Since condition.
             /// </summary>
             public const string SourceIfModifiedSinceHeader = PrefixForStorageHeader + "source-if-modified-since";
@@ -1165,6 +1170,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header for the If-None-Match condition.
             /// </summary>
             public const string SourceIfNoneMatchHeader = PrefixForStorageHeader + "source-if-none-match";
+
+            /// <summary>
+            /// Header for the Source If None Match CRC64 header.
+            /// </summary>
+            public const string SourceIfNoneMatchCrcHeader = SourceIfNoneMatchHeader + "-crc64";
 
             /// <summary>
             /// Header for the If-Unmodified-Since condition.

@@ -203,6 +203,16 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                     request.Headers.Add(Constants.HeaderConstants.SourceIfNoneMatchHeader, accessCondition.IfNoneMatchETag);
                 }
 
+                if(!string.IsNullOrEmpty(accessCondition.IfMatchContentCrc))
+                {
+                    request.Headers.Add(Constants.HeaderConstants.SourceIfMatchCrcHeader, accessCondition.IfMatchContentCrc);
+                }
+
+                if(!string.IsNullOrEmpty(accessCondition.IfNoneMatchContentCrc))
+                {
+                    request.Headers.Add(Constants.HeaderConstants.SourceIfNoneMatchCrcHeader, accessCondition.IfNoneMatchContentCrc);
+                }
+
                 if (accessCondition.IfModifiedSinceTime.HasValue)
                 {
                     request.Headers.Add(

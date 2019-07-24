@@ -421,6 +421,50 @@ namespace Microsoft.Azure.Storage.File.Protocol
         }
 
         /// <summary>
+        /// Constructs a web request to write a range of pages in a file from the source file.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source file.</param>
+        /// <param name="sourceFileRange">The beginning and ending source offsets.</param>
+        /// <param name="destFileRange">The beginning and ending destination offsets.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="sourceContentChecksum">The checksum calculated for the range of bytes of the source.</param>
+        /// <param name="sourceAccessCondition">The source access condition to apply to the request</param>
+        /// <param name="content">The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns></returns>
+        public static StorageRequestMessage PutRangeFromUrl(
+            Uri uri, 
+            Uri sourceUri, 
+            FileRange sourceFileRange,
+            FileRange destFileRange,
+            int? timeout,
+            Checksum sourceContentChecksum,
+            AccessCondition sourceAccessCondition, 
+            HttpContent content, 
+            OperationContext operationContext, 
+            ICanonicalizer canonicalizer, 
+            StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "range");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(
+                HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+
+            request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, sourceUri.AbsoluteUri);
+            request.Headers.Add(Constants.HeaderConstants.FileRangeWrite, FileRangeWrite.Update.ToString());
+            request.Headers.Add(Constants.HeaderConstants.RangeHeader, destFileRange.ToString());
+            request.Headers.Add(Constants.HeaderConstants.SourceRangeHeader, sourceFileRange.ToString());
+            request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
+            request.ApplyAccessConditionToSource(sourceAccessCondition);
+
+            return request;
+        }
+
+        /// <summary>
         /// Generates a web request to copy.
         /// </summary>
         /// <param name="uri">The absolute URI to the destination file.</param>

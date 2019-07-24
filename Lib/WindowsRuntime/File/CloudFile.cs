@@ -1625,6 +1625,55 @@ namespace Microsoft.Azure.Storage.File
         }
 
         /// <summary>
+        /// Writes range from a source file to this file.
+        /// </summary>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source file.</param>
+        /// <param name="sourceOffset">The offset at which to begin reading the source, in bytes.</param>
+        /// <param name="count">The number of bytes to write</param>
+        /// <param name="destOffset">The offset at which to begin writing, in bytes.</param>
+        /// <param name="sourceContentChecksum">A hash value used to ensure transactional integrity. May be <c>null</c> or Checksum.None</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="options">An <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        [DoesServiceRequest]
+        public virtual async Task WriteRangeAsync(
+            Uri sourceUri,
+            long sourceOffset,
+            long count,
+            long destOffset,
+            Checksum sourceContentChecksum = null,
+            AccessCondition sourceAccessCondition = null,
+            FileRequestOptions options = null,
+            OperationContext operationContext = null,
+            CancellationToken? cancellationToken = null)
+        {
+            this.AssertNoSnapshot();
+
+            CommonUtility.AssertNotNull("sourceUri", sourceUri);
+            CommonUtility.AssertInBounds("sourceOffset", sourceOffset, 0);
+            CommonUtility.AssertInBounds("count", count, 0, 4 * Constants.MB);
+            CommonUtility.AssertInBounds("destOffset", destOffset, 0);
+
+            FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
+            operationContext = operationContext ?? new OperationContext();
+            cancellationToken = cancellationToken ?? CancellationToken.None;
+
+            await Executor.ExecuteAsync(
+                this.PutRangeFromUriImpl(
+                    sourceUri: sourceUri,
+                    sourceOffset: sourceOffset,
+                    count: count,
+                    destOffset: destOffset,
+                    sourceContentChecksum: sourceContentChecksum,
+                    sourceAccessCondition: sourceAccessCondition,
+                    options: modifiedOptions),
+                modifiedOptions.RetryPolicy,
+                operationContext,
+                cancellationToken.Value);
+        }
+
+        /// <summary>
         /// Writes range to a file.
         /// </summary>
         /// <param name="rangeData">A stream providing the range data.</param>
@@ -2406,6 +2455,57 @@ namespace Microsoft.Azure.Storage.File
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildContent = (cmd, ctx) => HttpContentFactory.BuildContentFromStream(rangeData, offset, length, contentChecksum, cmd, ctx);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.PutRange(uri, serverTimeout, fileRange, fileRangeWrite, accessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+            putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
+            {
+                HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
+                this.UpdateETagLMTAndLength(resp, false);
+                cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
+                return NullType.Value;
+            };
+
+            return putCmd;
+        }
+
+        /// <summary>
+        /// Implementation method for the WriteRange from source file method.
+        /// </summary>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source file.</param>
+        /// <param name="sourceOffset">The beginning source offset</param>
+        /// <param name="count">The number of bytes to write</param>
+        /// <param name="destOffset">The beginning destination offset</param>
+        /// <param name="sourceContentChecksum">The checksum calculated for the range of bytes of the source.</param>
+        /// <param name="sourceAccessCondition">The source access condition to apply to the request</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <returns>A <see cref="RESTCommand"/> that writes the range from the source file.</returns>
+        private RESTCommand<NullType> PutRangeFromUriImpl(
+            Uri sourceUri,
+            long sourceOffset,
+            long count,
+            long destOffset,
+            Checksum sourceContentChecksum,
+            AccessCondition sourceAccessCondition,
+            FileRequestOptions options)
+        {
+
+            FileRange sourceFileRange = new FileRange(sourceOffset, sourceOffset + count - 1);
+            FileRange destFileRange = new FileRange(destOffset, destOffset + count - 1);
+
+            RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
+
+            options.ApplyToStorageCommand(putCmd);
+            putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.PutRangeFromUrl(
+                uri: this.Uri,
+                sourceUri: sourceUri,
+                sourceFileRange: sourceFileRange,
+                destFileRange: destFileRange,
+                timeout: serverTimeout,
+                sourceContentChecksum: sourceContentChecksum,
+                sourceAccessCondition: sourceAccessCondition,
+                content: cnt,
+                operationContext: ctx,
+                canonicalizer: this.ServiceClient.GetCanonicalizer(),
+                credentials: this.ServiceClient.Credentials
+            );
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Created, resp, NullType.Value, cmd, ex);
