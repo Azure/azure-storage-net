@@ -124,7 +124,7 @@ namespace Microsoft.Azure.Storage.Blob
             AssertAreEqual(expected, actual, true);
         }
 
-        public static void AssertAreEqual(BlobProperties expected, BlobProperties actual, bool checkContentMD5)
+        public static void AssertAreEqual(BlobProperties expected, BlobProperties actual, bool checkContentChecksums)
         {
             if (expected == null)
             {
@@ -137,9 +137,10 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(expected.ContentDisposition, actual.ContentDisposition);
                 Assert.AreEqual(expected.ContentEncoding, actual.ContentEncoding);
                 Assert.AreEqual(expected.ContentLanguage, actual.ContentLanguage);
-                if (checkContentMD5)
+                if (checkContentChecksums)
                 {
-                    Assert.AreEqual(expected.ContentMD5, actual.ContentMD5);
+                    Assert.AreEqual(expected.ContentChecksum.MD5, actual.ContentChecksum.MD5);
+                    Assert.AreEqual(expected.ContentChecksum.CRC64, actual.ContentChecksum.CRC64);
                 }
                 Assert.AreEqual(expected.ContentType, actual.ContentType);
                 Assert.AreEqual(expected.ETag, actual.ETag);

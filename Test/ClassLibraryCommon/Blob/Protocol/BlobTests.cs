@@ -70,6 +70,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 BlobTestUtils.ContentEncodingHeader(request, properties.ContentEncoding);
                 BlobTestUtils.ContentLanguageHeader(request, null);
                 BlobTestUtils.ContentMd5Header(request, null);
+                BlobTestUtils.ContentCrc64Header(request, null);
                 BlobTestUtils.CacheControlHeader(request, null);
                 BlobTestUtils.BlobTypeHeader(request, properties.BlobType);
                 BlobTestUtils.BlobSizeHeader(request, (properties.BlobType == BlobType.PageBlob) ? properties.Length : (long?)null);
@@ -85,7 +86,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
                 BlobTestUtils.ETagHeader(response);
                 BlobTestUtils.LastModifiedHeader(response);
-                BlobTestUtils.ContentMd5Header(response);
+                BlobTestUtils.ContentChecksumHeader(response);
                 BlobTestUtils.RequestIdHeader(response);
                 BlobTestUtils.ContentLengthHeader(response, 0);
             }
@@ -168,7 +169,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             try
             {
-                request = BlobHttpRequestMessageFactory.Get(uri, context.Timeout, null /* snapshot */, offset, count, false, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials, null);
+                request = BlobHttpRequestMessageFactory.Get(uri, context.Timeout, null /* snapshot */, offset, count, ChecksumRequested.None, accessCondition, null, opContext, SharedKeyCanonicalizer.Instance, context.Credentials, null);
             }
             catch (InvalidOperationException)
             {
@@ -241,6 +242,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.ContentLanguageHeader(request, null);
             BlobTestUtils.ContentMd5Header(request, null);
+            BlobTestUtils.ContentCrc64Header(request, null);
             return request;
         }
 
@@ -250,7 +252,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             if (expectedError == null)
             {
                 Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
-                BlobTestUtils.ContentMd5Header(response);
+                BlobTestUtils.ContentChecksumHeader(response);
                 BlobTestUtils.RequestIdHeader(response);
                 BlobTestUtils.ContentLengthHeader(response, 0);
             }
@@ -273,6 +275,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             BlobTestUtils.VersionHeader(request, false);
             BlobTestUtils.ContentLanguageHeader(request, null);
             BlobTestUtils.ContentMd5Header(request, null);
+            BlobTestUtils.ContentCrc64Header(request, null);
             return request;
         }
 
@@ -282,7 +285,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             if (expectedError == null)
             {
                 Assert.AreEqual(HttpStatusCode.Created, response.StatusCode, response.ReasonPhrase);
-                BlobTestUtils.ContentMd5Header(response);
+                BlobTestUtils.ContentChecksumHeader(response);
                 BlobTestUtils.RequestIdHeader(response);
                 BlobTestUtils.ContentLengthHeader(response, 0);
             }

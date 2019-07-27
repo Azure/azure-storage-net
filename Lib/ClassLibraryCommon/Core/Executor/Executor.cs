@@ -115,7 +115,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
                             executionState.ExceptionRef = await Exceptions.PopulateStorageExceptionFromHttpResponseMessage(executionState.Resp, executionState.Cmd.CurrentResult, token, executionState.Cmd.ParseErrorAsync).ConfigureAwait(false);
                         }
 
-                        Logger.LogInformational(executionState.OperationContext, SR.TraceResponse, executionState.Cmd.CurrentResult.HttpStatusCode, executionState.Cmd.CurrentResult.ServiceRequestID, executionState.Cmd.CurrentResult.ContentMd5, executionState.Cmd.CurrentResult.Etag);
+                        Logger.LogInformational(executionState.OperationContext, SR.TraceResponse, executionState.Cmd.CurrentResult.HttpStatusCode, executionState.Cmd.CurrentResult.ServiceRequestID, executionState.Cmd.CurrentResult.ContentMd5, executionState.Cmd.CurrentResult.ContentCrc64, executionState.Cmd.CurrentResult.Etag);
                         Executor.FireResponseReceived(executionState);
 
 
@@ -152,7 +152,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
                             try
                             {
                                 cmd.ErrorStream = new MemoryStream();
-                                await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, false, executionState, new StreamDescriptor(), timeoutTokenSource.Token).ConfigureAwait(false);
+                                await cmd.ResponseStream.WriteToAsync(cmd.ErrorStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, ChecksumRequested.None, executionState, new StreamDescriptor(), timeoutTokenSource.Token).ConfigureAwait(false);
                                 cmd.ErrorStream.Seek(0, SeekOrigin.Begin);
                                 executionState.ExceptionRef = StorageException.TranslateExceptionWithPreBufferedStream(executionState.ExceptionRef, executionState.Cmd.CurrentResult, stream => executionState.Cmd.ParseError(stream, executionState.Resp, null), cmd.ErrorStream, executionState.Resp);
                                 throw executionState.ExceptionRef;
@@ -184,7 +184,7 @@ namespace Microsoft.Azure.Storage.Core.Executor
                                 {
                                     executionState.CurrentOperation = ExecutorOperation.BeginDownloadResponse;
                                     Logger.LogInformational(executionState.OperationContext, SR.TraceDownload);
-                                    await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, cmd.CalculateMd5ForResponseStream, executionState, cmd.StreamCopyState, timeoutTokenSource.Token).ConfigureAwait(false);
+                                    await cmd.ResponseStream.WriteToAsync(cmd.DestinationStream, default(IBufferManager), null /* copyLength */, null /* maxLength */, cmd.ChecksumRequestedForResponseStream, executionState, cmd.StreamCopyState, timeoutTokenSource.Token).ConfigureAwait(false);
                                 }
                                 finally
                                 {

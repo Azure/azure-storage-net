@@ -46,8 +46,8 @@ namespace Microsoft.Azure.Storage.Blob
         protected BlobRequestOptions options;
         protected OperationContext operationContext;
         protected CounterEventAsync noPendingWritesEvent;
-        protected MD5Wrapper blobMD5;
-        protected MD5Wrapper blockMD5;
+        protected ChecksumWrapper blobChecksum;
+        protected ChecksumWrapper blockChecksum;
 #if WINDOWS_DESKTOP
         protected AsyncSemaphoreAsync parallelOperationSemaphoreAsync;
 #else
@@ -73,8 +73,8 @@ namespace Microsoft.Azure.Storage.Blob
             this.options = options;
             this.operationContext = operationContext;
             this.noPendingWritesEvent = new CounterEventAsync();
-            this.blobMD5 = this.options.StoreBlobContentMD5.Value ? new MD5Wrapper() : null;
-            this.blockMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
+            this.blobChecksum = new ChecksumWrapper(this.options.ChecksumOptions.StoreContentMD5.Value, this.options.ChecksumOptions.StoreContentCRC64.Value);
+            this.blockChecksum = new ChecksumWrapper(this.options.ChecksumOptions.UseTransactionalMD5.Value, this.options.ChecksumOptions.UseTransactionalCRC64.Value);
 #if WINDOWS_DESKTOP
             this.parallelOperationSemaphoreAsync = new AsyncSemaphoreAsync(options.ParallelOperationThreadCount.Value);
 #else
@@ -302,16 +302,16 @@ namespace Microsoft.Azure.Storage.Blob
         {
             if (disposing)
             {
-                if (this.blobMD5 != null)
+                if (this.blobChecksum != null)
                 {
-                    this.blobMD5.Dispose();
-                    this.blobMD5 = null;
+                    this.blobChecksum.Dispose();
+                    this.blobChecksum = null;
                 }
 
-                if (this.blockMD5 != null)
+                if (this.blockChecksum != null)
                 {
-                    this.blockMD5.Dispose();
-                    this.blockMD5 = null;
+                    this.blockChecksum.Dispose();
+                    this.blockChecksum = null;
                 }
 
                 if (this.internalBuffer != null)

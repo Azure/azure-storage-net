@@ -53,6 +53,11 @@ namespace Microsoft.Azure.Storage.Core.Util
                         currentResult.ContentMd5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
                     }
 
+                    if (response.Content != null && response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ContentCrc64Header) != null)
+                    {
+                        currentResult.ContentCrc64 = HttpResponseParsers.GetContentCRC64(response);
+                    }
+
                     currentResult.ErrorCode = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(response.Headers, Constants.HeaderConstants.StorageErrorCodeHeader);
 
                 }
@@ -107,6 +112,11 @@ namespace Microsoft.Azure.Storage.Core.Util
                     if (response.Content != null && response.Content.Headers.ContentMD5 != null)
                     {
                         currentResult.ContentMd5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
+                    }
+
+                    if (response.Content != null && HttpResponseParsers.GetContentCRC64(response) != null)
+                    {
+                        currentResult.ContentCrc64 = HttpResponseParsers.GetContentCRC64(response);
                     }
 
                     currentResult.ErrorCode = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(response.Headers, Constants.HeaderConstants.StorageErrorCodeHeader);

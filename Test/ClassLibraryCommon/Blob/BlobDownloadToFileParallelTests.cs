@@ -338,8 +338,16 @@ namespace Microsoft.Azure.Storage.Blob
 
                 try
                 {
-                    BlobRequestOptions options = new BlobRequestOptions();
-                    options.UseTransactionalMD5 = true;
+                    BlobRequestOptions options =
+                        new BlobRequestOptions()
+                        {
+                            ChecksumOptions =
+                                new ChecksumOptions
+                                {
+                                    UseTransactionalMD5 = true,
+                                    UseTransactionalCRC64 = true
+                                }
+                        };
                     await blob.DownloadToFileParallelAsync(outputFileName, FileMode.Create, 16, 16 * Constants.MB, 0, null, null, options, null, CancellationToken.None);
                     Assert.Fail("Expected a failure");
                 }

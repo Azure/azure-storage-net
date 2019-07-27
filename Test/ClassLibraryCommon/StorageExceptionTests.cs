@@ -239,6 +239,7 @@ namespace Microsoft.Azure.Storage
             Assert.AreEqual(opContext.LastResult.HttpStatusCode, retrResult.HttpStatusCode);
             Assert.AreEqual(opContext.LastResult.HttpStatusMessage, retrResult.HttpStatusMessage);
             Assert.AreEqual(opContext.LastResult.ContentMd5, retrResult.ContentMd5);
+            Assert.AreEqual(opContext.LastResult.ContentCrc64, retrResult.ContentCrc64);
             Assert.AreEqual(opContext.LastResult.Etag, retrResult.Etag);
 
             // Now test with no indentation
@@ -261,6 +262,7 @@ namespace Microsoft.Azure.Storage
             Assert.AreEqual(opContext.LastResult.HttpStatusCode, retrResult.HttpStatusCode);
             Assert.AreEqual(opContext.LastResult.HttpStatusMessage, retrResult.HttpStatusMessage);
             Assert.AreEqual(opContext.LastResult.ContentMd5, retrResult.ContentMd5);
+            Assert.AreEqual(opContext.LastResult.ContentCrc64, retrResult.ContentCrc64);
             Assert.AreEqual(opContext.LastResult.Etag, retrResult.Etag);
         }
 

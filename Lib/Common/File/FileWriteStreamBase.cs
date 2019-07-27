@@ -38,8 +38,8 @@ namespace Microsoft.Azure.Storage.File
         protected FileRequestOptions options;
         protected OperationContext operationContext;
         protected CounterEventAsync noPendingWritesEvent;
-        protected MD5Wrapper fileMD5;
-        protected MD5Wrapper rangeMD5;
+        protected ChecksumWrapper fileChecksum;
+        protected ChecksumWrapper rangeChecksum;
         protected volatile Exception lastException;
         protected volatile bool committed;
         protected bool disposed;
@@ -66,8 +66,8 @@ namespace Microsoft.Azure.Storage.File
             this.options = options;
             this.operationContext = operationContext;
             this.noPendingWritesEvent = new CounterEventAsync();
-            this.fileMD5 = this.options.StoreFileContentMD5.Value ? new MD5Wrapper() : null;
-            this.rangeMD5 = this.options.UseTransactionalMD5.Value ? new MD5Wrapper() : null;
+            this.fileChecksum = new ChecksumWrapper(this.options.ChecksumOptions.StoreContentMD5.Value, this.options.ChecksumOptions.StoreContentCRC64.Value);
+            this.rangeChecksum = new ChecksumWrapper(this.options.ChecksumOptions.UseTransactionalMD5.Value, this.options.ChecksumOptions.UseTransactionalCRC64.Value);
 #if !(NETCORE || WINDOWS_RT)
             this.parallelOperationSemaphoreAsync = new AsyncSemaphoreAsync(options.ParallelOperationThreadCount.Value);
 #else
@@ -215,16 +215,16 @@ namespace Microsoft.Azure.Storage.File
         {
             if (disposing)
             {
-                if (this.fileMD5 != null)
+                if (this.fileChecksum != null)
                 {
-                    this.fileMD5.Dispose();
-                    this.fileMD5 = null;
+                    this.fileChecksum.Dispose();
+                    this.fileChecksum = null;
                 }
 
-                if (this.rangeMD5 != null)
+                if (this.rangeChecksum != null)
                 {
-                    this.rangeMD5.Dispose();
-                    this.rangeMD5 = null;
+                    this.rangeChecksum.Dispose();
+                    this.rangeChecksum = null;
                 }
 
                 if (this.internalBuffer != null)

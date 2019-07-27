@@ -110,8 +110,9 @@ namespace Microsoft.Azure.Storage.Blob
         private async Task StartAsync(FileMode fileMode, int parallelIOCount, long? rangeSizeInBytes)
         {
             CommonUtility.AssertInBounds("parallelIOCount", parallelIOCount, 1);
-            bool useTransactionalMD5 = this.blobRequestOptions != null && this.blobRequestOptions.UseTransactionalMD5.HasValue && this.blobRequestOptions.UseTransactionalMD5.Value;
-            rangeSizeInBytes = this.ValidateOrGetRangeSize(useTransactionalMD5, rangeSizeInBytes);
+            bool useTransactionalMD5 = this.blobRequestOptions?.ChecksumOptions?.UseTransactionalMD5 == true;
+            bool useTransactionalCRC64 = this.blobRequestOptions?.ChecksumOptions?.UseTransactionalCRC64 == true;
+            rangeSizeInBytes = this.ValidateOrGetRangeSize(useTransactionalMD5, useTransactionalCRC64, rangeSizeInBytes);
 
             // always do a head request to have an ETag to lock-on to.
             // this code is designed for only large blobs so this request should be neglibile on perf
@@ -280,17 +281,33 @@ namespace Microsoft.Azure.Storage.Blob
         /// Otherwise set the rangeSizeInBytes to the appropriate default vlaue.
         /// </summary>
         /// <param name="useTransactionalMD5">Indicates if transactional MD5 validation is to be used.</param>
+        /// <param name="useTransactionalCRC64">Indicates if transactional CRC64 validation is to be used.</param>
         /// <param name="rangeSizeInBytes">The range size in bytes to be used for each download operation
         /// or null to use the default value.</param>
         /// <returns>The rangeSizeInBytes value that was passed in if not null, otherwise the appropriate default value.</returns>
-        private long ValidateOrGetRangeSize(bool useTransactionalMD5, long? rangeSizeInBytes)
+        private long ValidateOrGetRangeSize(bool useTransactionalMD5, bool useTransactionalCRC64, long? rangeSizeInBytes)
         {
             if (rangeSizeInBytes.HasValue)
             {
                 CommonUtility.AssertInBounds("rangeSizeInBytes", rangeSizeInBytes.Value, Constants.MaxRangeGetContentMD5Size);
+
+                //if (useTransactionalMD5)
+                //{
+                //    CommonUtility.AssertInBounds("rangeSizeInBytes", rangeSizeInBytes.Value, Constants.MaxRangeGetContentMD5Size);
+                //}
+
+                //if (useTransactionalCRC64)
+                //{
+                //    CommonUtility.AssertInBounds("rangeSizeInBytes", rangeSizeInBytes.Value, Constants.MaxRangeGetContentCRC64Size);
+                //}
+
                 if (useTransactionalMD5 && rangeSizeInBytes.Value != Constants.MaxRangeGetContentMD5Size)
                 {
                     throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalidMD5, rangeSizeInBytes, Constants.MaxRangeGetContentMD5Size));
+                }
+                else if (useTransactionalCRC64 && rangeSizeInBytes.Value != Constants.MaxRangeGetContentCRC64Size)
+                {
+                    throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, SR.RangeSizeIsInvalidCRC64, rangeSizeInBytes, Constants.MaxRangeGetContentCRC64Size));
                 }
                 else if (rangeSizeInBytes % (4 * Constants.KB) != 0)
                 {
@@ -300,6 +317,10 @@ namespace Microsoft.Azure.Storage.Blob
             else if (useTransactionalMD5)
             {
                 rangeSizeInBytes = Constants.MaxRangeGetContentMD5Size;
+            }
+            else if (useTransactionalCRC64)
+            {
+                rangeSizeInBytes = Constants.MaxRangeGetContentCRC64Size;
             }
             else
             {

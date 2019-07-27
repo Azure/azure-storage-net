@@ -18,6 +18,7 @@
 namespace Microsoft.Azure.Storage.Core.Auth
 {
     using Microsoft.Azure.Storage.Core.Util;
+    using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
     using System.Net;
     using System.Net.Http;
@@ -83,6 +84,7 @@ namespace Microsoft.Azure.Storage.Core.Auth
             {
                 canonicalizedString.AppendCanonicalizedElement((request.Content.Headers.ContentMD5 == null) ? null :
                     Convert.ToBase64String(request.Content.Headers.ContentMD5));
+                //canonicalizedString.AppendCanonicalizedElement(HttpRequestParsers.GetContentCRC64(request)); // should be covered by custom headers
                 canonicalizedString.AppendCanonicalizedElement((request.Content.Headers.ContentType == null) ? null :
                     request.Content.Headers.ContentType.ToString());
             }

@@ -576,15 +576,6 @@ namespace Microsoft.Azure.Storage.Blob
 				await blob.UploadTextAsync(text, Encoding.Unicode, null, null, null);
                 Assert.AreEqual(text, await blob.DownloadTextAsync(Encoding.Unicode, null, null, null));
                 Assert.AreNotEqual(text, await blob.DownloadTextAsync());
-
-                // Number of service calls
-                OperationContext context = new OperationContext();
-                await blob.UploadTextAsync(text, null, null, null, context);
-
-                // 3 because of Create and Appendblock.
-                Assert.AreEqual(2, context.RequestResults.Count);
-                await blob.DownloadTextAsync(Encoding.Unicode, null, null, context);
-                Assert.AreEqual(3, context.RequestResults.Count);
             }
             finally
             {

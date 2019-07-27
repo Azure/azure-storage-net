@@ -3,6 +3,7 @@
   <PropertyGroup>
     <VersionNumber>10.0.3</VersionNumber>
     <VersionNumber>10.1.0</VersionNumber>
+    <VersionNumber>11.0.0</VersionNumber>
     <MasterBranch>origin/master</MasterBranch>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />

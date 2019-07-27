@@ -24,6 +24,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.Azure.Storage.Core.Util;
+using Microsoft.Azure.Storage.Shared.Protocol;
 
 #if NETCORE
 using System.Security.Cryptography;
@@ -870,6 +872,244 @@ namespace Microsoft.Azure.Storage.File
                         Assert.IsNotNull(file2.Properties.FileId);
                         Assert.IsNotNull(file2.Properties.ParentId);
                     }
+                }
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+
+        [Description("Writes range from source file with invalid parameters")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileWriteRangeFromUrlInvalidParametersAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir");
+                await dir.CreateAsync();
+
+                CloudFile destFile = dir.GetFileReference("dest1");
+                await destFile.CreateAsync(1024);
+
+                // Act
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                    () => destFile.WriteRangeAsync(destFile.Uri, sourceOffset: -1, count: 512, destOffset: 0),
+                    "CloudFileWriteRangeFromUrlInvalidParametersAsync");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                    () => destFile.WriteRangeAsync(destFile.Uri, sourceOffset: 512, count: -1, destOffset: 0),
+                    "CloudFileWriteRangeFromUrlInvalidParametersAsync");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                    () => destFile.WriteRangeAsync(destFile.Uri, sourceOffset: 512, count: 5 * Constants.MB, destOffset: 0),
+                    "CloudFileWriteRangeFromUrlInvalidParametersAsync");
+
+                await TestHelper.ExpectedExceptionAsync<ArgumentException>(
+                    () => destFile.WriteRangeAsync(destFile.Uri, sourceOffset: 512, count: 512, destOffset: -1),
+                    "CloudFileWriteRangeFromUrlInvalidParametersAsync");
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Writes range from source file min parameters")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileWriteRangeFromUrlMinAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir");
+                await dir.CreateAsync();
+
+                CloudFile sourceFile = dir.GetFileReference("source");
+
+                byte[] buffer = GetRandomBuffer(1024);
+                using (MemoryStream stream = new MemoryStream(buffer))
+                {
+                    await sourceFile.UploadFromStreamAsync(stream);
+                }
+
+                SharedAccessFilePolicy policy = new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessFilePermissions.Read
+                };
+                string sasToken = sourceFile.GetSharedAccessSignature(policy, null, null);
+                Uri sourceUri = new Uri(sourceFile.Uri.ToString() + sasToken);
+
+                CloudFile destFile = dir.GetFileReference("dest1");
+                await destFile.CreateAsync(1024);
+                FileRange sourceRange = new FileRange(512, 1023);
+
+                // Act
+                await destFile.WriteRangeAsync(sourceUri, sourceOffset: 512, count: 512, destOffset: 0);
+
+                using (MemoryStream sourceStream = new MemoryStream())
+                using (MemoryStream destStream = new MemoryStream())
+                {
+                    // Assert
+                    await sourceFile.DownloadRangeToStreamAsync(sourceStream, offset: 512, length: 512);
+                    await destFile.DownloadRangeToStreamAsync(destStream, offset: 0, length: 512);
+
+                    Assert.IsTrue(sourceStream.ToArray().SequenceEqual(destStream.ToArray()));
+                }
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Writes range from source file with source CRC")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileWriteRangeFromUrlSourceCrcAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir");
+                await dir.CreateAsync();
+
+                CloudFile sourceFile = dir.GetFileReference("source");
+
+                byte[] buffer = GetRandomBuffer(1024);
+                using (MemoryStream stream = new MemoryStream(buffer))
+                {
+                    await sourceFile.UploadFromStreamAsync(stream);
+                }
+
+                SharedAccessFilePolicy policy = new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessFilePermissions.Read
+                };
+                string sasToken = sourceFile.GetSharedAccessSignature(policy, null, null);
+                Uri sourceUri = new Uri(sourceFile.Uri.ToString() + sasToken);
+
+                Crc64Wrapper hasher = new Crc64Wrapper();
+                hasher.UpdateHash(buffer.Skip(512).ToArray(), 0, 512);
+                string crc64 = hasher.ComputeHash();
+
+                CloudFile destFile = dir.GetFileReference("dest1");
+                await destFile.CreateAsync(1024);
+                FileRange sourceRange = new FileRange(512, 1023);
+                Checksum sourceChecksum = new Checksum(crc64: crc64);
+
+                // Act
+                await destFile.WriteRangeAsync(sourceUri, sourceOffset: 512, count: 512, destOffset: 0, sourceContentChecksum: sourceChecksum);
+
+                using (MemoryStream sourceStream = new MemoryStream())
+                using (MemoryStream destStream = new MemoryStream())
+                {
+                    // Assert
+                    await sourceFile.DownloadRangeToStreamAsync(sourceStream, 512, 512);
+                    await destFile.DownloadRangeToStreamAsync(destStream, 0, 512);
+
+                    Assert.IsTrue(sourceStream.ToArray().SequenceEqual(destStream.ToArray()));
+                }
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+
+        [TestMethod]
+        [Description("Writes range from source file with source CRC access conditions")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileWriteRangeFromUrlSourceCrcMatchAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir");
+                await dir.CreateAsync();
+
+                CloudFile sourceFile = dir.GetFileReference("source");
+
+                byte[] buffer = GetRandomBuffer(1024);
+                using (MemoryStream stream = new MemoryStream(buffer))
+                {
+                    await sourceFile.UploadFromStreamAsync(stream);
+                }
+
+                SharedAccessFilePolicy policy = new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessFilePermissions.Read
+                };
+                string sasToken = sourceFile.GetSharedAccessSignature(policy, null, null);
+                Uri sourceUri = new Uri(sourceFile.Uri.ToString() + sasToken);
+
+                Crc64Wrapper hasher = new Crc64Wrapper();
+                hasher.UpdateHash(buffer.Skip(512).ToArray(), 0, 512);
+                string crc64 = hasher.ComputeHash();
+
+                CloudFile destFile = dir.GetFileReference("dest1");
+                await destFile.CreateAsync(1024);
+                AccessCondition sourceAccessCondition = new AccessCondition()
+                {
+                    IfNoneMatchContentCrc = crc64
+                };
+
+                // Act
+                await TestHelper.ExpectedExceptionAsync<StorageException>(
+                    () => destFile.WriteRangeAsync(sourceUri, sourceOffset: 512, count: 512, destOffset: 0, sourceAccessCondition: sourceAccessCondition),
+                    "CloudFileWriteRangeFromUrlSourceCrcMatch");
+
+                // Arrange
+                sourceAccessCondition = new AccessCondition()
+                {
+                    IfMatchContentCrc = crc64
+                };
+
+                // Act
+                await destFile.WriteRangeAsync(sourceUri, sourceOffset: 512, count: 512, destOffset: 0, sourceAccessCondition: sourceAccessCondition);
+
+                using (MemoryStream sourceStream = new MemoryStream())
+                using (MemoryStream destStream = new MemoryStream())
+                {
+                    // Assert
+                    await sourceFile.DownloadRangeToStreamAsync(sourceStream, 512, 512);
+                    await destFile.DownloadRangeToStreamAsync(destStream, 0, 512);
+
+                    Assert.IsTrue(sourceStream.ToArray().SequenceEqual(destStream.ToArray()));
                 }
             }
             finally

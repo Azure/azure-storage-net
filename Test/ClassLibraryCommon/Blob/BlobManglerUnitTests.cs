@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using Microsoft.Azure.Storage.Shared.Protocol;
 
 namespace Microsoft.Azure.Storage.Blob
 {
@@ -241,12 +242,10 @@ namespace Microsoft.Azure.Storage.Blob
 
                     using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                     {
-                        using (MemoryStream downloadedBlob = new MemoryStream())
-                        {
-                            Exception manglerEx = null;
-                            using (HttpMangler proxy = new HttpMangler(false,
-                                new[]
-                                    {
+                        Exception manglerEx = null;
+                        using (HttpMangler proxy = new HttpMangler(false,
+                            new[]
+                                {
                                         TamperBehaviors.TamperNRequestsIf(
                                             session => ThreadPool.QueueUserWorkItem(state =>
                                                 {
@@ -262,25 +261,46 @@ namespace Microsoft.Azure.Storage.Blob
                                                 }),
                                                 2,
                                                 AzureStorageSelectors.BlobTraffic().IfHostNameContains(container.ServiceClient.Credentials.AccountName))
-                                    }))
+                                }))
+                        {
+                            foreach (var options in new[]
                             {
-                                OperationContext operationContext = new OperationContext();
-                                BlobRequestOptions options = new BlobRequestOptions()
+                                new BlobRequestOptions()
                                 {
-                                    UseTransactionalMD5 = true
-                                };
-
-                                ICancellableAsyncResult result = blob.BeginDownloadRangeToStream(downloadedBlob, offset, buffer.Length - offset, null, options, operationContext,
-                                    ar => waitHandle.Set(),
-                                    null);
-                                waitHandle.WaitOne();
-                                blob.EndDownloadToStream(result);
-                                TestHelper.AssertStreamsAreEqual(originalBlob, downloadedBlob);
-                            }
-
-                            if (manglerEx != null)
+                                    ChecksumOptions =
+                                        new ChecksumOptions
+                                        {
+                                            UseTransactionalMD5 = true,
+                                            UseTransactionalCRC64 = false
+                                        }
+                                },
+                                new BlobRequestOptions()
+                                {
+                                    ChecksumOptions =
+                                        new ChecksumOptions
+                                        {
+                                            UseTransactionalMD5 = false,
+                                            UseTransactionalCRC64 = true
+                                        }
+                                }
+                            })
                             {
-                                throw manglerEx;
+                                using (MemoryStream downloadedBlob = new MemoryStream())
+                                {
+                                    OperationContext operationContext = new OperationContext();
+
+                                    ICancellableAsyncResult result = blob.BeginDownloadRangeToStream(downloadedBlob, offset, buffer.Length - offset, null, options, operationContext,
+                                        ar => waitHandle.Set(),
+                                        null);
+                                    waitHandle.WaitOne();
+                                    blob.EndDownloadToStream(result);
+                                    TestHelper.AssertStreamsAreEqual(originalBlob, downloadedBlob);
+
+                                    if (manglerEx != null)
+                                    {
+                                        throw manglerEx;
+                                    }
+                                }
                             }
                         }
                     }

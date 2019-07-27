@@ -63,15 +63,14 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentChecksum">The checksum calculated for the range of bytes of the source.</param>
         /// <param name="timeout">An integer specifying the server timeout interval.</param>
         /// <param name="sourceAccessCondition">The source access condition to apply to the request.</param>
         /// <param name="destAccessCondition">The destination access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="System.Net.HttpWebRequest"/> object.</returns>
-        public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, AccessCondition sourceAccessCondition,
-            AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
+        public static StorageRequestMessage AppendBlock(Uri uri, Uri sourceUri, long? offset, long? count, Checksum sourceContentChecksum, int? timeout, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "appendblock");
@@ -85,15 +84,14 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
 
-            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
             BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
 
             return request;
         }
 
         /// <summary>
         /// Constructs a web request to create a new block blob or page blob, or to update the content 
-        /// of an existing block blob. 
         /// </summary>
         /// <param name="uri">The absolute URI to the blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
@@ -101,7 +99,8 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="blobType">The type of the blob.</param>
         /// <param name="pageBlobSize">For a page blob, the size of the blob. This parameter is ignored
         /// for block blobs.</param>
-        /// <param name="pageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
+        /// <param name="pageBlobTier">A <see cref="PremiumPageBlobTier"/> representing t
+        /// of an existing block blob. he tier to set.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -129,11 +128,6 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentTypeHeader, properties.ContentType);
             }
 
-            if (properties.ContentMD5 != null)
-            {
-                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentMD5Header, properties.ContentMD5);
-            }
-
             if (properties.ContentLanguage != null)
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentLanguageHeader, properties.ContentLanguage);
@@ -148,6 +142,8 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentDispositionRequestHeader, properties.ContentDisposition);
             }
+
+            request.ApplyBlobContentChecksumHeaders(properties.ContentChecksum);
 
             if (blobType == BlobType.PageBlob)
             {
@@ -366,8 +362,8 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentDispositionRequestHeader, properties.ContentDisposition);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentEncodingHeader, properties.ContentEncoding);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentLanguageHeader, properties.ContentLanguage);
-                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentMD5Header, properties.ContentMD5);
-                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentTypeHeader, properties.ContentType); 
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentTypeHeader, properties.ContentType);
+                request.ApplyBlobContentChecksumHeaders(properties.ContentChecksum);
             }
 
             request.ApplyAccessCondition(accessCondition);
@@ -715,7 +711,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentChecksum">The checksum calculated for the range of bytes of the source.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="blockId">The block ID for this block.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
@@ -725,8 +721,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object containing blob request options</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage PutBlock(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, string blockId, 
-            AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
+        public static StorageRequestMessage PutBlock(Uri uri, Uri sourceUri, long? offset, long? count, Checksum sourceContentChecksum, int? timeout, string blockId, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
         {
             if (offset.HasValue && offset.Value < 0)
             {
@@ -743,7 +738,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
 
-            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
+            request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
 
             BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
 
@@ -775,10 +770,10 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobCacheControlHeader, properties.CacheControl);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentTypeHeader, properties.ContentType);
-                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentMD5Header, properties.ContentMD5);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentLanguageHeader, properties.ContentLanguage);
                 request.AddOptionalHeader(Constants.HeaderConstants.BlobContentEncodingHeader, properties.ContentEncoding);
-                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentDispositionRequestHeader, properties.ContentDisposition); 
+                request.AddOptionalHeader(Constants.HeaderConstants.BlobContentDispositionRequestHeader, properties.ContentDisposition);
+                request.ApplyBlobContentChecksumHeaders(properties.ContentChecksum);
             }
 
             request.ApplyAccessCondition(accessCondition);
@@ -852,7 +847,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source blob.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
-        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentChecksum">The checksum calculated for the range of bytes of the source.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="pageRange"></param>
         /// <param name="sourceAccessCondition">The source access condition to apply to the request.</param>
@@ -863,8 +858,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object containing blob request options.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, string sourceContentMd5, int? timeout, PageRange pageRange,
-            AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
+        public static StorageRequestMessage PutPage(Uri uri, Uri sourceUri, long? offset, long? count, Checksum sourceContentChecksum, int? timeout, PageRange pageRange, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
         {
             UriQueryBuilder builder = new UriQueryBuilder();
             builder.Add(Constants.QueryConstants.Component, "page");
@@ -882,7 +876,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             AddCopySource(request, sourceUri);
             AddSourceRange(request, offset, count);
 
-            request.AddOptionalHeader(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
+            request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
 
             BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
 
@@ -906,8 +900,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, bool incrementalCopy, AccessCondition sourceAccessCondition, 
             AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
         {
-            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, incrementalCopy, default(PremiumPageBlobTier?) /* premiumPageBlobTier */,  default(StandardBlobTier) /*standardBlockBlobTier*/, default(RehydratePriority?) /* rehydratePriority */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);
-        }
+            return BlobHttpRequestMessageFactory.CopyFrom(uri, timeout, source, new Checksum(md5: default(string), crc64: default(string)), incrementalCopy, false /* syncCopy */, default(PremiumPageBlobTier?) /* premiumPageBlobTier */,  default(StandardBlobTier) /*standardBlockBlobTier*/, default(RehydratePriority?) /* rehydratePriority */, sourceAccessCondition, destAccessCondition, content, operationContext, canonicalizer, credentials);        }
 
         /// <summary>
         /// Generates a web request to copy a blob.
@@ -937,7 +930,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="uri">The absolute URI to the destination blob.</param>
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="source">The absolute URI to the source blob, including any necessary authentication parameters.</param>
-        /// <param name="sourceContentMd5">The MD5 calculated for the range of bytes of the source.</param>
+        /// <param name="sourceContentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         /// <param name="incrementalCopy">A boolean indicating whether or not this is an incremental copy.</param>
         /// <param name="syncCopy">A boolean to enable synchronous server copy of blobs.</param>
         /// <param name="premiumPageBlobTier">A <see cref="PremiumPageBlobTier"/> representing the tier to set.</param>
@@ -950,9 +943,9 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        internal static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, string sourceContentMd5, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage CopyFrom(Uri uri, int? timeout, Uri source, Checksum sourceContentChecksum, bool incrementalCopy, bool syncCopy, PremiumPageBlobTier? premiumPageBlobTier, StandardBlobTier? standardBlockBlobTier, RehydratePriority? rehydratePriority, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            if (!syncCopy && !string.IsNullOrEmpty(sourceContentMd5))
+            if (!syncCopy && sourceContentChecksum.HasAny)
             {
                 throw new InvalidOperationException();
             }
@@ -995,10 +988,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 request.Headers.Add(Constants.HeaderConstants.RequiresSyncHeader, Constants.HeaderConstants.TrueHeader);
             }
 
-            if (!string.IsNullOrEmpty(sourceContentMd5))
-            {
-                request.Headers.Add(Constants.HeaderConstants.SourceContentMD5Header, sourceContentMd5);
-            }
+            request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
 
             return request;
         }
@@ -1063,6 +1053,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="snapshot">The snapshot version, if the blob is a snapshot.</param>
         /// <param name="offset">The byte offset at which to begin returning content.</param>
         /// <param name="count">The number of bytes to return, or null to return all bytes through the end of the blob.</param>
+        /// <param name="rangeContentChecksumRequested">Indicates which checksum headers are requested for the specified range.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <param name="content"> The HTTP entity body and content headers.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
@@ -1070,27 +1061,19 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
         /// <param name="options">A <see cref="BlobRequestOptions"/> object containing blob request options</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, bool rangeContentMD5, AccessCondition accessCondition, 
-            HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
+        public static StorageRequestMessage Get(Uri uri, int? timeout, DateTimeOffset? snapshot, long? offset, long? count, ChecksumRequested rangeContentChecksumRequested, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials, BlobRequestOptions options)
         {
             if (offset.HasValue && offset.Value < 0)
             {
                 CommonUtility.ArgumentOutOfRange("offset", offset);
             }
 
-            if (offset.HasValue && rangeContentMD5)
-            {
-                CommonUtility.AssertNotNull("count", count);
-                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxBlockSize);
-            }
+            rangeContentChecksumRequested.AssertInBounds(offset, count, Constants.MaxRangeGetContentMD5Size, Constants.MaxRangeGetContentCRC64Size);
 
             StorageRequestMessage request = Get(uri, timeout, snapshot, accessCondition, content, operationContext, canonicalizer, credentials);
             AddRange(request, offset, count);
 
-            if (offset.HasValue && rangeContentMD5)
-            {
-                request.Headers.Add(Constants.HeaderConstants.RangeContentMD5Header, Constants.HeaderConstants.TrueHeader);
-            }
+            request.ApplyRangeContentChecksumRequested(offset, rangeContentChecksumRequested);
 
             BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
 
@@ -1257,6 +1240,15 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
 
             return multipartContent;
+        }
+    }
+
+    internal static class BlobRequestMessageExtensions
+    {
+        internal static void ApplyBlobContentChecksumHeaders(this StorageRequestMessage request, Checksum blobContentChecksum)
+        {
+            request.AddOptionalHeader(Constants.HeaderConstants.BlobContentMD5Header, blobContentChecksum?.MD5);
+            request.AddOptionalHeader(Constants.HeaderConstants.BlobContentCRC64Header, blobContentChecksum?.CRC64);
         }
     }
 }

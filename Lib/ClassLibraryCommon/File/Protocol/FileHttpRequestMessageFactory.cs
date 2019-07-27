@@ -71,11 +71,6 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentTypeHeader, properties.ContentType);
             }
 
-            if (properties.ContentMD5 != null)
-            {
-                request.AddOptionalHeader(Constants.HeaderConstants.FileContentMD5Header, properties.ContentMD5);
-            }
-
             if (properties.ContentLanguage != null)
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentLanguageHeader, properties.ContentLanguage);
@@ -95,6 +90,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
             AddNtfsFileAttributes(request, properties, Constants.HeaderConstants.FileAttributesNone);
             AddCreationTime(request, properties, Constants.HeaderConstants.FileTimeNow);
             AddLastWriteTime(request, properties, Constants.HeaderConstants.FileTimeNow);
+            request.ApplyFileContentChecksumHeaders(properties.ContentChecksum);
 
             request.Headers.Add(Constants.HeaderConstants.FileType, Constants.HeaderConstants.File);
             request.Headers.Add(Constants.HeaderConstants.FileContentLengthHeader, fileSize.ToString(NumberFormatInfo.InvariantInfo));
@@ -377,8 +373,8 @@ namespace Microsoft.Azure.Storage.File.Protocol
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentDispositionRequestHeader, properties.ContentDisposition);
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentEncodingHeader, properties.ContentEncoding);
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentLanguageHeader, properties.ContentLanguage);
-                request.AddOptionalHeader(Constants.HeaderConstants.FileContentMD5Header, properties.ContentMD5);
                 request.AddOptionalHeader(Constants.HeaderConstants.FileContentTypeHeader, properties.ContentType);
+                request.ApplyFileContentChecksumHeaders(properties.ContentChecksum);
             }
 
             AddFilePermissionOrFilePermissionKey(request, filePermissionToSet, properties, Constants.HeaderConstants.Preserve);
@@ -400,26 +396,19 @@ namespace Microsoft.Azure.Storage.File.Protocol
         /// <param name="shareSnapshot">A <see cref="DateTimeOffset"/> specifying the share snapshot timestamp, if the share is a snapshot.</param>
         /// <param name="accessCondition">The access condition to apply to the request.</param>
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Get(Uri uri, int? timeout, long? offset, long? count, bool rangeContentMD5, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage Get(Uri uri, int? timeout, long? offset, long? count, ChecksumRequested rangeContentChecksumRequested, DateTimeOffset? shareSnapshot, AccessCondition accessCondition, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             if (offset.HasValue && offset.Value < 0)
             {
                 CommonUtility.ArgumentOutOfRange("offset", offset);
             }
 
-            if (offset.HasValue && rangeContentMD5)
-            {
-                CommonUtility.AssertNotNull("count", count);
-                CommonUtility.AssertInBounds("count", count.Value, 1, Constants.MaxRangeGetContentMD5Size);
-            }
+            rangeContentChecksumRequested.AssertInBounds(offset, count, Constants.MaxRangeGetContentMD5Size, Constants.MaxRangeGetContentCRC64Size);
 
             StorageRequestMessage request = Get(uri, timeout, shareSnapshot, accessCondition, content, operationContext, canonicalizer, credentials);
             AddRange(request, offset, count);
 
-            if (offset.HasValue && rangeContentMD5)
-            {
-                request.Headers.Add(Constants.HeaderConstants.RangeContentMD5Header, Constants.HeaderConstants.TrueHeader);
-            }
+            request.ApplyRangeContentChecksumRequested(offset, rangeContentChecksumRequested);
 
             return request;
         }
@@ -484,6 +473,50 @@ namespace Microsoft.Azure.Storage.File.Protocol
             request.Headers.Add(Constants.HeaderConstants.FileRangeWrite, fileRangeWrite.ToString());
 
             request.ApplyAccessCondition(accessCondition);
+            return request;
+        }
+
+        /// <summary>
+        /// Constructs a web request to write a range of pages in a file from the source file.
+        /// </summary>
+        /// <param name="uri">The absolute URI to the file.</param>
+        /// <param name="sourceUri">A <see cref="System.Uri"/> specifying the absolute URI to the source file.</param>
+        /// <param name="sourceFileRange">The beginning and ending source offsets.</param>
+        /// <param name="destFileRange">The beginning and ending destination offsets.</param>
+        /// <param name="timeout">The server timeout interval.</param>
+        /// <param name="sourceContentChecksum">The checksum calculated for the range of bytes of the source.</param>
+        /// <param name="sourceAccessCondition">The source access condition to apply to the request</param>
+        /// <param name="content">The HTTP entity body and content headers.</param>
+        /// <param name="operationContext">An object that represents the context for the current operation.</param>
+        /// <param name="canonicalizer">A canonicalizer that converts HTTP request data into a standard form appropriate for signing.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object providing credentials for the request.</param>
+        /// <returns></returns>
+        public static StorageRequestMessage PutRangeFromUrl(
+            Uri uri, 
+            Uri sourceUri, 
+            FileRange sourceFileRange,
+            FileRange destFileRange,
+            int? timeout,
+            Checksum sourceContentChecksum,
+            AccessCondition sourceAccessCondition, 
+            HttpContent content, 
+            OperationContext operationContext, 
+            ICanonicalizer canonicalizer, 
+            StorageCredentials credentials)
+        {
+            UriQueryBuilder builder = new UriQueryBuilder();
+            builder.Add(Constants.QueryConstants.Component, "range");
+
+            StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(
+                HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
+
+            request.Headers.Add(Constants.HeaderConstants.CopySourceHeader, sourceUri.AbsoluteUri);
+            request.Headers.Add(Constants.HeaderConstants.FileRangeWrite, FileRangeWrite.Update.ToString());
+            request.Headers.Add(Constants.HeaderConstants.RangeHeader, destFileRange.ToString());
+            request.Headers.Add(Constants.HeaderConstants.SourceRangeHeader, sourceFileRange.ToString());
+            request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
+            request.ApplyAccessConditionToSource(sourceAccessCondition);
+
             return request;
         }
 
@@ -653,6 +686,15 @@ namespace Microsoft.Azure.Storage.File.Protocol
             {
                 request.AddOptionalHeader(Constants.HeaderConstants.FileLastWriteTime, defaultValue);
             }
+        }
+    }
+
+    internal static class FileRequestMessageExtensions
+    {
+        internal static void ApplyFileContentChecksumHeaders(this StorageRequestMessage request, Checksum fileContentChecksum)
+        {
+            request.AddOptionalHeader(Constants.HeaderConstants.FileContentMD5Header, fileContentChecksum?.MD5);
+            request.AddOptionalHeader(Constants.HeaderConstants.FileContentCRC64Header, fileContentChecksum?.CRC64);
         }
     }
 }

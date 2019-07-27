@@ -66,11 +66,16 @@ namespace Microsoft.Azure.Storage.File.Protocol
 
                 if (response.Content.Headers.ContentMD5 != null && response.Content.Headers.ContentRange == null)
                 {
-                    properties.ContentMD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
+                    properties.ContentChecksum.MD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
                 }
                 else if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentMD5Header)))
                 {
-                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentMD5Header);
+                    properties.ContentChecksum.MD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentMD5Header);
+                }
+
+                if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentCRC64Header)))
+                {
+                    properties.ContentChecksum.CRC64 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.FileContentCRC64Header);
                 }
 
                 string fileEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);

@@ -1940,10 +1940,17 @@ namespace Microsoft.Azure.Storage.Blob
             foreach (bool isAPM in bothBools)
             {
                 foreach (bool calculateMD5 in bothBools)
+                foreach (bool calculateCRC64 in bothBools)
                 {
-                    options.StoreBlobContentMD5 = calculateMD5;
-                    options.UseTransactionalMD5 = calculateMD5;
-                    options.DisableContentMD5Validation = !calculateMD5;
+                    if (calculateMD5 && calculateCRC64) continue;
+
+                    options.ChecksumOptions.StoreContentMD5 = calculateMD5;
+                    options.ChecksumOptions.UseTransactionalMD5 = calculateMD5;
+                    options.ChecksumOptions.DisableContentMD5Validation = !calculateMD5;
+
+                    options.ChecksumOptions.StoreContentCRC64 = calculateCRC64;
+                    options.ChecksumOptions.UseTransactionalCRC64 = calculateCRC64;
+                    options.ChecksumOptions.DisableContentCRC64Validation = !calculateCRC64;
 
                     // We need to make a local copy of the 'isAPM' variable, otherwise the below
                     // lambdas will all use the final value of 'isAPM'

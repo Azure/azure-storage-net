@@ -154,7 +154,11 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                                             break;
 
                                         case Constants.ContentMD5Element:
-                                            blob.Properties.ContentMD5 = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                            blob.Properties.ContentChecksum.MD5 = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                            break;
+
+                                        case Constants.ContentCRC64Element:
+                                            blob.Properties.ContentChecksum.CRC64 = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
                                             break;
 
                                         case Constants.BlobTypeElement:

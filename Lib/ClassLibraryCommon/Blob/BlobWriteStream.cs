@@ -127,10 +127,10 @@ namespace Microsoft.Azure.Storage.Blob
 
             if (oldOffset != newOffset)
             {
-                if (this.blobMD5 != null)
+                if (this.blobChecksum != null)
                 {
-                    this.blobMD5.Dispose();
-                    this.blobMD5 = null;
+                    this.blobChecksum.Dispose();
+                    this.blobChecksum = null;
                 }
 
                 this.Flush();
@@ -192,9 +192,9 @@ namespace Microsoft.Azure.Storage.Blob
                     int bytesToWrite = Math.Min(count, maxBytesToWrite);
 
                     await this.internalBuffer.WriteAsync(buffer, offset, bytesToWrite, token).ConfigureAwait(false);
-                    if (this.blockMD5 != null)
+                    if (this.blockChecksum != null)
                     {
-                        this.blockMD5.UpdateHash(buffer, offset, bytesToWrite);
+                        this.blockChecksum.UpdateHash(buffer, offset, bytesToWrite);
                     }
 
                     count -= bytesToWrite;
@@ -228,9 +228,9 @@ namespace Microsoft.Azure.Storage.Blob
             // Update transactional, then update full blob, in that order.
             // This way, if there's any bit corruption that happens in between the two, we detect it at PutBlock on the service, 
             // rather than GetBlob + validate on the client
-            if (this.blobMD5 != null)
+            if (this.blobChecksum != null)
             {
-                this.blobMD5.UpdateHash(buffer, initialOffset, initialCount);
+                this.blobChecksum.UpdateHash(buffer, initialOffset, initialCount);
             }
 
             if (continueTCS == null)
@@ -380,9 +380,17 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     // This block of code is for block blobs. PutBlockList needs to be called with the list of block IDs uploaded in order
                     // to commit the blocks.
-                    if (this.blobMD5 != null)
+                    if (this.blobChecksum != null)
                     {
-                        this.blockBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+                        if (this.blobChecksum.MD5 != null)
+                        {
+                            this.blockBlob.Properties.ContentChecksum.MD5 = this.blobChecksum.MD5.ComputeHash();
+                        }
+
+                        if (this.blobChecksum.CRC64 != null)
+                        {
+                            this.blockBlob.Properties.ContentChecksum.CRC64 = this.blobChecksum.CRC64.ComputeHash();
+                        }
                     }
 
                     await this.blockBlob.PutBlockListAsync(
@@ -393,16 +401,27 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 else
                 {
-                    // For Page blobs and append blobs, only if StoreBlobContentMD5 is set to true, the stream would have caclculated an MD5
+                    // For Page blobs and append blobs, only if StoreBlobContentMD5/CRC64 is set to true, the stream would have caclculated a checksum
                     // which should be uploaded to the server using SetProperties.
-                    if (this.blobMD5 != null)
+                    if (this.blobChecksum != null)
                     {
-                        this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+                        if (this.blobChecksum.MD5 != null)
+                        {
+                            this.Blob.Properties.ContentChecksum.MD5 = this.blobChecksum.MD5.ComputeHash();
+                        }
 
-                        await this.Blob.SetPropertiesAsync(
-                            this.accessCondition,
-                            this.options,
-                            this.operationContext).ConfigureAwait(false);
+                        if (this.blobChecksum.CRC64 != null)
+                        {
+                            this.Blob.Properties.ContentChecksum.CRC64 = this.blobChecksum.CRC64.ComputeHash();
+                        }
+
+                        if (this.blobChecksum.HasAny)
+                        {
+                            await this.Blob.SetPropertiesAsync(
+                                this.accessCondition,
+                                this.options,
+                                this.operationContext).ConfigureAwait(false);
+                        }
                     }
                 }
             }
@@ -428,19 +447,30 @@ namespace Microsoft.Azure.Storage.Blob
             this.internalBuffer = new MultiBufferMemoryStream(this.Blob.ServiceClient.BufferManager);
             bufferToUpload.Seek(0, SeekOrigin.Begin);
 
-            string bufferMD5 = null;
-            if (this.blockMD5 != null)
+            Checksum bufferChecksum = Checksum.None;
+            if (this.blockChecksum != null)
             {
-                bufferMD5 = this.blockMD5.ComputeHash();
-                this.blockMD5.Dispose();
-                this.blockMD5 = new MD5Wrapper();
+                bool computeCRC64 = false;
+                bool computeMD5 = false;
+                if (this.blockChecksum.MD5 != null)
+                {
+                    bufferChecksum.MD5 = this.blockChecksum.MD5.ComputeHash();
+                    computeMD5 = true;
+                }
+                if (this.blockChecksum.CRC64 != null)
+                {
+                    bufferChecksum.CRC64 = this.blockChecksum.CRC64.ComputeHash();
+                    computeCRC64 = true;
+                }
+                this.blockChecksum.Dispose();
+                this.blockChecksum = new ChecksumWrapper(computeMD5, computeCRC64);
             }
 
             if (this.blockBlob != null)
             {
                 string blockId = this.GetCurrentBlockId();
                 this.blockList.Add(blockId);
-                await this.WriteBlockAsync(continuetcs, bufferToUpload, blockId, bufferMD5, token).ConfigureAwait(false);
+                await this.WriteBlockAsync(continuetcs, bufferToUpload, blockId, bufferChecksum, token).ConfigureAwait(false);
             }
             else if (this.pageBlob != null)
             {
@@ -452,7 +482,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 long offset = this.currentBlobOffset;
                 this.currentBlobOffset += bufferToUpload.Length;
-                await this.WritePagesAsync(continuetcs, bufferToUpload, offset, bufferMD5, token).ConfigureAwait(false);
+                await this.WritePagesAsync(continuetcs, bufferToUpload, offset, bufferChecksum, token).ConfigureAwait(false);
             }
             else
             {
@@ -467,11 +497,11 @@ namespace Microsoft.Azure.Storage.Blob
                     throw this.lastException;
                 }
 
-                await this.WriteAppendBlockAsync(continuetcs, bufferToUpload, offset, bufferMD5, token).ConfigureAwait(false);
+                await this.WriteAppendBlockAsync(continuetcs, bufferToUpload, offset, bufferChecksum, token).ConfigureAwait(false);
             }
         }
 
-        private async Task WriteBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, string blockId, string blockMD5, CancellationToken token)
+        private async Task WriteBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, string blockId, Checksum blockChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
 
@@ -483,7 +513,7 @@ namespace Microsoft.Azure.Storage.Blob
                     {
                         Task.Run(() => continuetcs.TrySetResult(true));
                     }
-                    await this.blockBlob.PutBlockAsync(blockId, blockData, blockMD5, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
+                    await this.blockBlob.PutBlockAsync(blockId, blockData, blockChecksum, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -497,7 +527,7 @@ namespace Microsoft.Azure.Storage.Blob
             }, token).ConfigureAwait(false);
         }
 
-        private async Task WritePagesAsync(TaskCompletionSource<bool> continuetcs, Stream pageData, long offset, string contentMD5, CancellationToken token)
+        private async Task WritePagesAsync(TaskCompletionSource<bool> continuetcs, Stream pageData, long offset, Checksum contentChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
@@ -508,7 +538,7 @@ namespace Microsoft.Azure.Storage.Blob
                     {
                         Task.Run(() => continuetcs.TrySetResult(true));
                     }
-                    await this.pageBlob.WritePagesAsync(pageData, offset, contentMD5, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
+                    await this.pageBlob.WritePagesAsync(pageData, offset, contentChecksum, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -522,7 +552,7 @@ namespace Microsoft.Azure.Storage.Blob
             }, token).ConfigureAwait(false);
         }
 
-        private async Task WriteAppendBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, long offset, string blockMD5, CancellationToken token)
+        private async Task WriteAppendBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, long offset, Checksum blockChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
@@ -535,7 +565,7 @@ namespace Microsoft.Azure.Storage.Blob
                         Task.Run(() => continuetcs.TrySetResult(true));
                     }
                     this.accessCondition.IfAppendPositionEqual = offset;
-                    await this.appendBlob.AppendBlockAsync(blockData, blockMD5, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
+                    await this.appendBlob.AppendBlockAsync(blockData, blockChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), internalToken).ConfigureAwait(false);
                 }
                 catch (StorageException e)
                 {

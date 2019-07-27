@@ -69,11 +69,17 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
                 if (response.Content.Headers.ContentMD5 != null && response.Content.Headers.ContentRange == null)
                 {
-                    properties.ContentMD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
+                    properties.ContentChecksum.MD5 = Convert.ToBase64String(response.Content.Headers.ContentMD5);
                 }
                 else if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header)))
                 {
-                    properties.ContentMD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
+                    properties.ContentChecksum.MD5 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentMD5Header);
+                }
+
+                // not yet supported and tested
+                if (!string.IsNullOrEmpty(response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentCRC64Header)))
+                {
+                    properties.ContentChecksum.CRC64 = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.BlobContentCRC64Header);
                 }
 
                 string blobEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);

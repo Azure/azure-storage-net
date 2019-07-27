@@ -81,10 +81,10 @@ namespace Microsoft.Azure.Storage.Blob
 
             if (oldOffset != newOffset)
             {
-                if (this.blobMD5 != null)
+                if (this.blobChecksum != null)
                 {
-                    this.blobMD5.Dispose();
-                    this.blobMD5 = null;
+                    this.blobChecksum.Dispose();
+                    this.blobChecksum = null;
                 }
 
                 this.Flush();
@@ -136,9 +136,9 @@ namespace Microsoft.Azure.Storage.Blob
                 throw new InvalidOperationException(SR.BlobStreamAlreadyCommitted);
             }
 
-            if (this.blobMD5 != null)
+            if (this.blobChecksum != null)
             {
-                this.blobMD5.UpdateHash(buffer, offset, count);
+                this.blobChecksum.UpdateHash(buffer, offset, count);
             }
 
             this.currentOffset += count;
@@ -148,9 +148,9 @@ namespace Microsoft.Azure.Storage.Blob
                 int bytesToWrite = Math.Min(count, maxBytesToWrite);
 
                 this.internalBuffer.Write(buffer, offset, bytesToWrite);
-                if (this.blockMD5 != null)
+                if (this.blockChecksum != null)
                 {
-                    this.blockMD5.UpdateHash(buffer, offset, bytesToWrite);
+                    this.blockChecksum.UpdateHash(buffer, offset, bytesToWrite);
                 }
 
                 count -= bytesToWrite;
@@ -232,21 +232,44 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 if (this.blockBlob != null)
                 {
-                    if (this.blobMD5 != null)
+                    // This block of code is for block blobs. PutBlockList needs to be called with the list of block IDs uploaded in order
+                    // to commit the blocks.
+                    if (this.blobChecksum != null)
                     {
-                        this.blockBlob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+                        if (this.blobChecksum.MD5 != null)
+                        {
+                            this.blockBlob.Properties.ContentChecksum.MD5 = this.blobChecksum.MD5.ComputeHash();
+                        }
+
+                        if (this.blobChecksum.CRC64 != null)
+                        {
+                            this.blockBlob.Properties.ContentChecksum.CRC64 = this.blobChecksum.CRC64.ComputeHash();
+                        }
                     }
 
-                    await this.blockBlob.PutBlockListAsync(this.blockList, this.accessCondition, this.options, this.operationContext).ConfigureAwait(false);
+                    await this.blockBlob.PutBlockListAsync(
+                        this.blockList,
+                        this.accessCondition,
+                        this.options,
+                        this.operationContext).ConfigureAwait(false);
                 }
                 else
                 {
-                    if (this.blobMD5 != null)
+                    if (this.blobChecksum != null && this.blobChecksum.HasAny)
                     {
-                        this.Blob.Properties.ContentMD5 = this.blobMD5.ComputeHash();
+                        if (this.blobChecksum.MD5 != null)
+                        {
+                            this.Blob.Properties.ContentChecksum.MD5 = this.blobChecksum.MD5.ComputeHash();
+                        }
+
+                        if (this.blobChecksum.CRC64 != null)
+                        {
+                            this.Blob.Properties.ContentChecksum.CRC64 = this.blobChecksum.CRC64.ComputeHash();
+                        }
+
                         await this.Blob.SetPropertiesAsync(this.accessCondition, this.options, this.operationContext).ConfigureAwait(false);
                     }
-                }
+               }
             }
             catch (Exception e)
             {
@@ -270,19 +293,31 @@ namespace Microsoft.Azure.Storage.Blob
             this.internalBuffer = new MultiBufferMemoryStream(this.Blob.ServiceClient.BufferManager);
             bufferToUpload.Seek(0, SeekOrigin.Begin);
 
-            string bufferMD5 = null;
-            if (this.blockMD5 != null)
+            Checksum bufferChecksum = Checksum.None;
+
+            if (this.blockChecksum != null)
             {
-                bufferMD5 = this.blockMD5.ComputeHash();
-                this.blockMD5.Dispose();
-                this.blockMD5 = new MD5Wrapper();
+                bool computeCRC64 = false;
+                bool computeMD5 = false;
+                if (this.blockChecksum.MD5 != null)
+                {
+                    bufferChecksum.MD5 = this.blockChecksum.MD5.ComputeHash();
+                    computeMD5 = true;
+                }
+                if (this.blockChecksum.CRC64 != null)
+                {
+                    bufferChecksum.CRC64 = this.blockChecksum.CRC64.ComputeHash();
+                    computeCRC64 = true;
+                }
+                this.blockChecksum.Dispose();
+                this.blockChecksum = new ChecksumWrapper(computeMD5, computeCRC64);
             }
 
             if (this.blockBlob != null)
             {
                 string blockId = this.GetCurrentBlockId();
                 this.blockList.Add(blockId);
-                await this.WriteBlockAsync(bufferToUpload, blockId, bufferMD5).ConfigureAwait(false);
+                await this.WriteBlockAsync(bufferToUpload, blockId, bufferChecksum).ConfigureAwait(false);
             }
             else if (this.pageBlob != null)
             {
@@ -294,7 +329,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 long offset = this.currentBlobOffset;
                 this.currentBlobOffset += bufferToUpload.Length;
-                await this.WritePagesAsync(bufferToUpload, offset, bufferMD5).ConfigureAwait(false);
+                await this.WritePagesAsync(bufferToUpload, offset, bufferChecksum).ConfigureAwait(false);
             }
             else
             {
@@ -310,7 +345,7 @@ namespace Microsoft.Azure.Storage.Blob
                     throw this.lastException;
                 }
 
-                await this.WriteAppendBlockAsync(bufferToUpload, offset, bufferMD5).ConfigureAwait(false);
+                await this.WriteAppendBlockAsync(bufferToUpload, offset, bufferChecksum).ConfigureAwait(false);
             }
         }
 
@@ -321,11 +356,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="blockData">Data to be uploaded</param>
         /// <param name="blockId">Block ID</param>
         /// <returns>A task that represents the asynchronous write operation.</returns>
-        private async Task WriteBlockAsync(Stream blockData, string blockId, string blockMD5)
+        private async Task WriteBlockAsync(Stream blockData, string blockId, Checksum checksum)
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
-            Task putBlockTask = this.blockBlob.PutBlockAsync(blockId, blockData, blockMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(async task =>
+            Task putBlockTask = this.blockBlob.PutBlockAsync(blockId, blockData, checksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), CancellationToken.None).ContinueWith(async task =>
             {
                 if (task.Exception != null)
                 {
@@ -344,11 +379,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="pageData">Data to be uploaded</param>
         /// <param name="offset">Offset within the page blob</param>
         /// <returns>A task that represents the asynchronous write operation.</returns>
-        private async Task WritePagesAsync(Stream pageData, long offset, string contentMD5)
+        private async Task WritePagesAsync(Stream pageData, long offset, Checksum contentChecksum)
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
-            Task writePagesTask = this.pageBlob.WritePagesAsync(pageData, offset, contentMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(async task =>
+            Task writePagesTask = this.pageBlob.WritePagesAsync(pageData, offset, contentChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), CancellationToken.None).ContinueWith(async task =>
             {
                 if (task.Exception != null)
                 {
@@ -367,9 +402,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="blockData">Data to be uploaded</param>
         /// <param name="offset">Offset within the append blob to be used to set the append offset conditional header.</param>        
-        /// <param name="blockMD5">MD5 hash of the data to be uploaded</param>
+        /// <param name="blockChecksum">A hash of the data to be uploaded</param>        
         /// <returns>A task that represents the asynchronous write operation.</returns>
-        private async Task WriteAppendBlockAsync(Stream blockData, long offset, string blockMD5)
+        private async Task WriteAppendBlockAsync(Stream blockData, long offset, Checksum blockChecksum)
         {
             this.noPendingWritesEvent.Increment();
             await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
@@ -377,7 +412,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.accessCondition.IfAppendPositionEqual = offset;
 
             int previousResultsCount = this.operationContext.RequestResults.Count;
-            Task writeBlockTask = this.appendBlob.AppendBlockAsync(blockData, blockMD5, this.accessCondition, this.options, this.operationContext).ContinueWith(async task =>
+            Task writeBlockTask = this.appendBlob.AppendBlockAsync(blockData, blockChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), CancellationToken.None).ContinueWith(async task =>
             {
                 if (task.Exception != null)
                 {

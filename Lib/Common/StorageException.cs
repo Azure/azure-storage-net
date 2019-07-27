@@ -354,9 +354,10 @@ namespace Microsoft.Azure.Storage
                 reqResult.ErrorCode = HttpResponseMessageUtils.GetHeaderSingleValueOrDefault(response.Headers, Constants.HeaderConstants.StorageErrorCodeHeader);
             }
 
-            if (response.Content != null && response.Content.Headers != null) 
+            if (response.Content != null && response.Content.Headers != null)
             {
                 reqResult.ContentMd5 = response.Content.Headers.ContentMD5 != null ? Convert.ToBase64String(response.Content.Headers.ContentMD5) : null;
+                reqResult.ContentCrc64 = HttpResponseParsers.GetContentCRC64(response);
                 reqResult.IngressBytes += response.Content.Headers.ContentLength.HasValue ? (long)response.Content.Headers.ContentLength : 0;
             }
 #endif

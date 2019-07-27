@@ -561,17 +561,17 @@ namespace Microsoft.Azure.Storage.Queue
                 AllowedOrigins = new List<string>() { "www.xyz.com" },
                 AllowedMethods = CorsHttpMethods.Get,
                 AllowedHeaders =
-                    new List<string>()
-                                                       {
-                                                           "x-ms-meta-target*",
-                                                           "x-ms-meta-other*"
-                                                       },
+                new List<string>()
+                {
+                    "x-ms-meta-target*",
+                    "x-ms-meta-other*"
+                },
                 ExposedHeaders =
                     new List<string>()
-                                                       {
-                                                           "x-ms-meta-data*",
-                                                           "x-ms-meta-source*"
-                                                       }
+                    {
+                        "x-ms-meta-data*",
+                        "x-ms-meta-source*"
+                    }
             };
 
             // Add maximum number of non-prefixed headers

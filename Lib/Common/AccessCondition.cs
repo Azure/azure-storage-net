@@ -56,6 +56,26 @@ namespace Microsoft.Azure.Storage
         }
 
         /// <summary>
+        /// Gets or sets a CRC64 value for a condition speifying that the given CRC64 must match the CRC64 of the specified resource.
+        /// </summary>
+        /// <value>A string containing a CRC64 value.  If <c>null</c>, no condition exists.</value>
+        public string IfMatchContentCrc
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets a CRC64 value for a condition specifying that the given CRC64 must not match the CRC64 of the specified resource.
+        /// </summary>
+        /// <value>A string containing a CRC64 value.  If <c>null</c>, no condition exists.</value>
+        public string IfNoneMatchContentCrc
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Gets or sets a <see cref="DateTimeOffset"/> value for a condition specifying a time since which a resource has been modified.
         /// </summary>
         /// <value>A <see cref="DateTimeOffset"/> value specified in UTC, or <c>null</c> if no condition exists.</value>

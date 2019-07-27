@@ -70,21 +70,31 @@
         }
 
         /// <summary>
-        /// Gets an ETag from a request.
+        /// Gets the ContentMD5 from a request.
         /// </summary>
         /// <param name="request">The web request.</param>
         /// <returns>A ContentMD5 string.</returns>
         internal static string GetContentMD5(HttpRequestMessage request)
-         {
-             return request.Content?.Headers.ContentMD5 != null ? Convert.ToBase64String(request.Content.Headers.ContentMD5) : null;
-         }
- 
-         /// <summary>
-         /// Gets an ETag from a request.
-         /// </summary>
-         /// <param name="request">The web request.</param>
-         /// <returns>A quoted ETag string.</returns>
-         internal static string GetContentLocation(HttpRequestMessage request)
+        {
+            return request.Content?.Headers.ContentMD5 != null ? Convert.ToBase64String(request.Content.Headers.ContentMD5) : null;
+        }
+
+        /// <summary>
+        /// Gets the content CRC64 from a request.
+        /// </summary>
+        /// <param name="request">The web request.</param>
+        /// <returns>A content CRC64 string.</returns>
+        internal static string GetContentCRC64(HttpRequestMessage request)
+        {
+            return GetHeader(request, Constants.HeaderConstants.ContentCrc64Header);
+        }
+
+        /// <summary>
+        /// Gets an ETag from a request.
+        /// </summary>
+        /// <param name="request">The web request.</param>
+        /// <returns>A quoted ETag string.</returns>
+        internal static string GetContentLocation(HttpRequestMessage request)
          {
              return request.Content?.Headers.ContentLocation != null ? request.Content.Headers.ContentLocation.ToString() : null;
          }
@@ -166,11 +176,18 @@
  
          internal static string GetHeader(HttpRequestMessage request, string headerName)
          {
-             return request.Headers.Contains(headerName) ? request.Headers.GetValues(headerName).First() : null;
-         }
-        internal static string GetContentHeader(HttpRequestMessage request, string headerName)
-        {
-            return request.Content.Headers.Contains(headerName) ? request.Content.Headers.GetValues(headerName).First() : null;
+            if (request.Content != null && request.Content.Headers.Contains(headerName))
+            {
+                return request.Content.Headers.GetValues(headerName).First();
+            }
+            else if (request.Headers.Contains(headerName))
+            {
+                return request.Headers.GetValues(headerName).First();
+            }
+            else
+            {
+                return null;
+            }
         }
     }
  }

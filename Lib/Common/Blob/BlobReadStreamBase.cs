@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Storage.Blob
         protected AccessCondition accessCondition;
         protected BlobRequestOptions options;
         protected OperationContext operationContext;
-        protected MD5Wrapper blobMD5;
+        protected ChecksumWrapper blobChecksum;
         protected volatile Exception lastException;
 
         /// <summary>
@@ -48,9 +48,13 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         protected BlobReadStreamBase(CloudBlob blob, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
-            if (options.UseTransactionalMD5.Value)
+            if (options.ChecksumOptions.UseTransactionalMD5.Value)
             {
                 CommonUtility.AssertInBounds("StreamMinimumReadSizeInBytes", blob.StreamMinimumReadSizeInBytes, 1, Constants.MaxRangeGetContentMD5Size);
+            }
+            if (options.ChecksumOptions.UseTransactionalCRC64.Value)
+            {
+                CommonUtility.AssertInBounds("StreamMinimumReadSizeInBytes", blob.StreamMinimumReadSizeInBytes, 1, Constants.MaxRangeGetContentCRC64Size);
             }
 
             this.blob = blob;
@@ -61,7 +65,11 @@ namespace Microsoft.Azure.Storage.Blob
             this.accessCondition = accessCondition;
             this.options = options;
             this.operationContext = operationContext;
-            this.blobMD5 = (this.options.DisableContentMD5Validation.Value || string.IsNullOrEmpty(this.blobProperties.ContentMD5)) ? null : new MD5Wrapper();
+            this.blobChecksum =
+                new ChecksumWrapper(
+                    calcMd5: !(this.options.ChecksumOptions.DisableContentMD5Validation.Value || string.IsNullOrEmpty(this.blobProperties.ContentChecksum.MD5)),
+                    calcCrc64: !(this.options.ChecksumOptions.DisableContentCRC64Validation.Value || string.IsNullOrEmpty(this.blobProperties.ContentChecksum.CRC64))
+                    );
             this.lastException = null;
         }
 
@@ -133,7 +141,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="origin">A value of type <c>SeekOrigin</c> indicating the reference
         /// point used to obtain the new position.</param>
         /// <returns>The new position within the current stream.</returns>
-        /// <remarks>Seeking in a BlobReadStream disables MD5 validation.</remarks>
+        /// <remarks>Seeking in a BlobReadStream disables checksum validation.</remarks>
         public override long Seek(long offset, SeekOrigin origin)
         {
             if (this.lastException != null)
@@ -175,7 +183,7 @@ namespace Microsoft.Azure.Storage.Blob
                     this.internalBuffer.SetLength(0);
                 }
 
-                this.blobMD5 = null;
+                this.blobChecksum = null;
                 this.currentOffset = newOffset;
             }
 
@@ -221,7 +229,7 @@ namespace Microsoft.Azure.Storage.Blob
         {
             int readCount = this.internalBuffer.Read(buffer, offset, count);
             this.currentOffset += readCount;
-            this.VerifyBlobMD5(buffer, offset, readCount);
+            this.VerifyBlobChecksum(buffer, offset, readCount);
             return readCount;
         }
 
@@ -242,32 +250,55 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         /// <summary>
-        /// Updates the blob MD5 with newly downloaded content.
+        /// Updates the blob checksum with newly downloaded content.
         /// </summary>
         /// <param name="buffer">The buffer to read the data from.</param>
         /// <param name="offset">The byte offset in buffer at which to begin reading data.</param>
         /// <param name="count">The maximum number of bytes to read.</param>
-        protected void VerifyBlobMD5(byte[] buffer, int offset, int count)
+        protected void VerifyBlobChecksum(byte[] buffer, int offset, int count)
         {
-            if ((this.blobMD5 != null) && (this.lastException == null) && (count > 0))
+            if ((this.blobChecksum != null) && (this.lastException == null) && (count > 0))
             {
-                this.blobMD5.UpdateHash(buffer, offset, count);
+                this.blobChecksum.UpdateHash(buffer, offset, count);
+
+                bool disposeBlobChecksum = false;
 
                 if ((this.currentOffset == this.Length) &&
-                    !string.IsNullOrEmpty(this.blobProperties.ContentMD5))
+                    !string.IsNullOrEmpty(this.blobProperties.ContentChecksum.MD5)
+                    && this.blobChecksum.MD5 != default(MD5Wrapper))
                 {
-                    string computedMD5 = this.blobMD5.ComputeHash();
-                    this.blobMD5.Dispose();
-                    this.blobMD5 = null;
+                    string computedMD5 = this.blobChecksum.MD5.ComputeHash();
 
-                    if (!computedMD5.Equals(this.blobProperties.ContentMD5))
+                    if (!computedMD5.Equals(this.blobProperties.ContentChecksum.MD5))
                     {
                         this.lastException = new IOException(string.Format(
                             CultureInfo.InvariantCulture,
                             SR.BlobDataCorrupted,
-                            this.blobProperties.ContentMD5,
+                            this.blobProperties.ContentChecksum.MD5,
                             computedMD5));
                     }
+                }
+
+                if ((this.currentOffset == this.Length) &&
+                    !string.IsNullOrEmpty(this.blobProperties.ContentChecksum.CRC64)
+                    && this.blobChecksum.CRC64 != default(Crc64Wrapper))
+                {
+                    string computedCRC64 = this.blobChecksum.CRC64.ComputeHash();
+
+                    if (!computedCRC64.Equals(this.blobProperties.ContentChecksum.CRC64))
+                    {
+                        this.lastException = new IOException(string.Format(
+                            CultureInfo.InvariantCulture,
+                            SR.BlobDataCorrupted,
+                            this.blobProperties.ContentChecksum.CRC64,
+                            computedCRC64));
+                    }
+                }
+
+                if (disposeBlobChecksum)
+                {
+                    this.blobChecksum.Dispose();
+                    this.blobChecksum = null;
                 }
             }
         }
@@ -286,10 +317,10 @@ namespace Microsoft.Azure.Storage.Blob
                     this.internalBuffer = null;
                 }
 
-                if (this.blobMD5 != null)
+                if (this.blobChecksum != null)
                 {
-                    this.blobMD5.Dispose();
-                    this.blobMD5 = null;
+                    this.blobChecksum.Dispose();
+                    this.blobChecksum = null;
                 }
             }
 

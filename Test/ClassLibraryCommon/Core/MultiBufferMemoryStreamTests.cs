@@ -23,6 +23,7 @@ using Microsoft.Azure.Storage.RetryPolicies;
 using System;
 using System.IO;
 using System.Threading;
+using Microsoft.Azure.Storage.Shared.Protocol;
 
 namespace Microsoft.Azure.Storage.Core
 {
@@ -45,7 +46,7 @@ namespace Microsoft.Azure.Storage.Core
             MemoryStream stream1 = new MemoryStream(buffer);
 
             MultiBufferMemoryStream stream2 = new MultiBufferMemoryStream(null /* bufferManager */);
-            stream1.WriteToSync(stream2, null, null, false, true, tempExecutionState, null);
+            stream1.WriteToSync(stream2, null, null, ChecksumRequested.None, true, tempExecutionState, null);
             stream1.Seek(0, SeekOrigin.Begin);
             stream2.Seek(0, SeekOrigin.Begin);
             TestHelper.AssertStreamsAreEqual(stream1, stream2);
@@ -68,7 +69,7 @@ namespace Microsoft.Azure.Storage.Core
             TestHelper.AssertStreamsAreEqual(stream3, stream4);
 
             MemoryStream stream5 = new MemoryStream();
-            stream4.WriteToSync(stream5, null, null, false, true, tempExecutionState, null);
+            stream4.WriteToSync(stream5, null, null, ChecksumRequested.None, true, tempExecutionState, null);
             stream4.Seek(0, SeekOrigin.Begin);
             stream5.Seek(0, SeekOrigin.Begin);
             TestHelper.AssertStreamsAreEqual(stream4, stream5);
@@ -94,7 +95,7 @@ namespace Microsoft.Azure.Storage.Core
                 StreamDescriptor copyState = new StreamDescriptor();
 
                 MultiBufferMemoryStream stream2 = new MultiBufferMemoryStream(null /* bufferManager */);
-                stream1.WriteToAsync(stream2, default(IBufferManager), null, null, false, state, copyState, CancellationToken.None, _ => waitHandle.Set());
+                stream1.WriteToAsync(stream2, default(IBufferManager), null, null, ChecksumRequested.None, state, copyState, CancellationToken.None, _ => waitHandle.Set());
                 waitHandle.WaitOne();
                 if (state.ExceptionRef != null)
                 {
@@ -133,7 +134,7 @@ namespace Microsoft.Azure.Storage.Core
 
                 MemoryStream stream5 = new MemoryStream();
 
-                stream4.WriteToAsync(stream5, default(IBufferManager), null, null, false, state, copyState, CancellationToken.None, _ => waitHandle.Set());
+                stream4.WriteToAsync(stream5, default(IBufferManager), null, null, ChecksumRequested.None, state, copyState, CancellationToken.None, _ => waitHandle.Set());
                 waitHandle.WaitOne();
                 if (state.ExceptionRef != null)
                 {
