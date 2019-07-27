@@ -28,6 +28,7 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Diagnostics;
     using Microsoft.Azure.Storage.Shared.Protocol;
 
     [TestClass]
@@ -55,6 +56,348 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 Assert.AreEqual(0, TestBase.BlobBufferManager.OutstandingBufferCount);
             }
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public void UploadMemPerfTest_Block_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudBlockBlob blob = container.GetBlockBlobReference(Path.GetFileName(path));
+                blob.UploadFromFileAsync(
+                    path
+                    ).Wait();
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                container.DeleteIfExists();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_Block_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await container.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudBlockBlob blob = container.GetBlockBlobReference(Path.GetFileName(path));
+                await blob.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new BlobRequestOptions { ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await container.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_Block_50GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await container.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(50 * Constants.GB);
+                }
+                CloudBlockBlob blob = container.GetBlockBlobReference(Path.GetFileName(path));
+                await blob.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new BlobRequestOptions { UseTransactionalMD5 = true, ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await container.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public void UploadMemPerfTest_Page_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudPageBlob blob = container.GetPageBlobReference(Path.GetFileName(path));
+                blob.UploadFromFileAsync(
+                    path
+                    ).Wait();
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                container.DeleteIfExists();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_Page_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await container.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudPageBlob blob = container.GetPageBlobReference(Path.GetFileName(path));
+                await blob.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new BlobRequestOptions { ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await container.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_Page_50GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await container.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(50 * Constants.GB);
+                }
+                CloudPageBlob blob = container.GetPageBlobReference(Path.GetFileName(path));
+                await blob.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new BlobRequestOptions { UseTransactionalMD5 = true, ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await container.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public void UploadMemPerfTest_Append_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                container.CreateAsync().Wait();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudAppendBlob blob = container.GetAppendBlobReference(Path.GetFileName(path));
+                blob.UploadFromFileAsync(
+                    path
+                    ).Wait();
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                container.DeleteIfExists();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_Append_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await container.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudAppendBlob blob = container.GetAppendBlobReference(Path.GetFileName(path));
+                await blob.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new BlobRequestOptions { ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await container.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_Append_50GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudBlobContainer container = GetRandomContainerReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await container.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(50 * Constants.GB);
+                }
+                CloudAppendBlob blob = container.GetAppendBlobReference(Path.GetFileName(path));
+                await blob.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new BlobRequestOptions { UseTransactionalMD5 = true, ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await container.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
         }
 
         [TestMethod]

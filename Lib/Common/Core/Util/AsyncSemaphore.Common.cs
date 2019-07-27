@@ -59,7 +59,7 @@ namespace Microsoft.Azure.Storage.Core.Util
         private readonly Queue<Func<bool, Task>> pendingWaits =
             new Queue<Func<bool, Task>>();
 
-        public async Task<bool> WaitAsync(Func<bool, CancellationToken, Task> callback, CancellationToken token)
+        public Task<bool> WaitAsync(Func<bool, CancellationToken, Task> callback, CancellationToken token)
         {
             CommonUtility.AssertNotNull("callback", callback);
             bool queued = false;
@@ -78,14 +78,13 @@ namespace Microsoft.Azure.Storage.Core.Util
 
             if (!queued)
             {
-                await callback(true, token).ConfigureAwait(false);
-                return true;
+                return callback(true, token).ContinueWith(t => true);
             }
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public async Task ReleaseAsync(CancellationToken token)
+        public Task ReleaseAsync(CancellationToken token)
         {
             Func<bool, Task> next = null;
             lock (this.pendingWaits)
@@ -102,7 +101,11 @@ namespace Microsoft.Azure.Storage.Core.Util
 
             if (next != null)
             {
-                await next(false).ConfigureAwait(false);
+                return next(false);
+            }
+            else
+            {
+                return Task.Delay(0); // no-op.  Would prefer Task.CompletedTask
             }
         }
     }

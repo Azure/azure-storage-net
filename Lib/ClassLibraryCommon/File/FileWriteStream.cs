@@ -344,6 +344,10 @@ namespace Microsoft.Azure.Storage.File
                 return;
             }
 
+            // bufferToUpload needs to be disposed, or we will leak memory
+            // 
+            // Unfortunately, because of the async nature of the work, we cannot safely
+            // put this in a using block, so the Write*Async methods must handle disposal.
             MultiBufferMemoryStream bufferToUpload = this.internalBuffer;
             this.internalBuffer = new MultiBufferMemoryStream(this.file.ServiceClient.BufferManager);
             bufferToUpload.Seek(0, SeekOrigin.Begin);
@@ -381,10 +385,10 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="offset">Offset within the file</param>
         /// <param name="contentChecksum">The content checksum.</param>
         /// <returns>A task that represents the asynchronous write operation.</returns>
-        private async Task WriteRangeAsync(TaskCompletionSource<bool> continuetcs, Stream rangeData, long offset, Checksum contentChecksum, CancellationToken token)
+        private Task WriteRangeAsync(TaskCompletionSource<bool> continuetcs, Stream rangeData, long offset, Checksum contentChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
-            await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runingInline, CancellationToken internalToken) =>
+            return this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runingInline, CancellationToken internalToken) =>
             {
                 try
                 {
@@ -394,6 +398,8 @@ namespace Microsoft.Azure.Storage.File
                     }
 
                     await this.file.WriteRangeAsync(rangeData, offset, contentChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), internalToken).ConfigureAwait(false);
+                    rangeData.Dispose();
+                    rangeData = null;
                 }
                 catch (Exception e)
                 {
@@ -404,7 +410,7 @@ namespace Microsoft.Azure.Storage.File
                     await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
-            }, token).ConfigureAwait(false);
+            }, token);
         }
     }
 }

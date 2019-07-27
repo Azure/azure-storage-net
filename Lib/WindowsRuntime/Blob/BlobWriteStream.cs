@@ -289,6 +289,10 @@ namespace Microsoft.Azure.Storage.Blob
                 return;
             }
 
+            // bufferToUpload needs to be disposed, or we will leak memory
+            // 
+            // Unfortunately, because of the async nature of the work, we cannot safely
+            // put this in a using block, so the Write*Async methods must handle disposal.
             MultiBufferMemoryStream bufferToUpload = this.internalBuffer;
             this.internalBuffer = new MultiBufferMemoryStream(this.Blob.ServiceClient.BufferManager);
             bufferToUpload.Seek(0, SeekOrigin.Begin);
@@ -362,6 +366,9 @@ namespace Microsoft.Azure.Storage.Blob
             await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
             Task putBlockTask = this.blockBlob.PutBlockAsync(blockId, blockData, checksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), CancellationToken.None).ContinueWith(async task =>
             {
+                blockData.Dispose();
+                blockData = null;
+
                 if (task.Exception != null)
                 {
                     this.lastException = task.Exception;
@@ -385,6 +392,9 @@ namespace Microsoft.Azure.Storage.Blob
             await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
             Task writePagesTask = this.pageBlob.WritePagesAsync(pageData, offset, contentChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), CancellationToken.None).ContinueWith(async task =>
             {
+                pageData.Dispose();
+                pageData = null;
+
                 if (task.Exception != null)
                 {
                     this.lastException = task.Exception;
@@ -414,6 +424,9 @@ namespace Microsoft.Azure.Storage.Blob
             int previousResultsCount = this.operationContext.RequestResults.Count;
             Task writeBlockTask = this.appendBlob.AppendBlockAsync(blockData, blockChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), CancellationToken.None).ContinueWith(async task =>
             {
+                blockData.Dispose();
+                blockData = null;
+
                 if (task.Exception != null)
                 {
                     if (this.options.AbsorbConditionalErrorsOnRetry.Value

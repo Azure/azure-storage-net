@@ -26,6 +26,8 @@ namespace Microsoft.Azure.Storage.File
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Diagnostics;
+    using Microsoft.Azure.Storage.Shared.Protocol;
 
     [TestClass]
     public class FileUploadDownloadTest : FileTestBase
@@ -54,7 +56,124 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(0, TestBase.FileBufferManager.OutstandingBufferCount);
             }
         }
-        
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public void UploadMemPerfTest_File_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudFileShare share = GetRandomShareReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                share.Create();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference(Path.GetFileName(path));
+                file.UploadFromFile(
+                    path,
+                    default(AccessCondition),
+                    new FileRequestOptions { UseTransactionalMD5 = true, ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                share.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_File_5GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudFileShare share = GetRandomShareReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await share.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(5 * Constants.GB);
+                }
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference(Path.GetFileName(path));
+                await file.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new FileRequestOptions { UseTransactionalMD5 = true, ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await share.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
+        [TestMethod]
+        [Description("Test UseTransactionalMD5 flag with PutBlock and WritePages")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
+        [Ignore]
+        public async Task UploadMemPerfTestAsync_File_50GB()
+        {
+            var startMemory = Process.GetCurrentProcess().PeakWorkingSet64;
+
+            CloudFileShare share = GetRandomShareReference();
+            string path = Path.GetTempFileName();
+            try
+            {
+                await share.CreateAsync();
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    fs.SetLength(50 * Constants.GB);
+                }
+                CloudFile file = share.GetRootDirectoryReference().GetFileReference(Path.GetFileName(path));
+                await file.UploadFromFileAsync(
+                    path,
+                    default(AccessCondition),
+                    new FileRequestOptions { UseTransactionalMD5 = true, ParallelOperationThreadCount = 1 },
+                    default(OperationContext)
+                    );
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+                await share.DeleteIfExistsAsync();
+            }
+
+            Assert.IsTrue(Process.GetCurrentProcess().PeakWorkingSet64 - startMemory < 128 * Constants.MB, "Memory usage high");
+        }
+
         [TestMethod]
         [Description("Download a file, with progress")]
         [TestCategory(ComponentCategory.File)]

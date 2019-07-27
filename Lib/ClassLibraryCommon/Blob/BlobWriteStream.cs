@@ -235,7 +235,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             if (continueTCS == null)
             {
-                await continueTask;
+                await continueTask.ConfigureAwait(false);
             }
         }
 
@@ -431,7 +431,7 @@ namespace Microsoft.Azure.Storage.Blob
                 throw;
             }
         }
-        
+
         private async Task DispatchWriteAsync(TaskCompletionSource<bool> continuetcs, CancellationToken token)
         {
             if (this.internalBuffer.Length == 0)
@@ -443,6 +443,10 @@ namespace Microsoft.Azure.Storage.Blob
                 return;
             }
 
+            // bufferToUpload needs to be disposed, or we will leak memory
+            // 
+            // Unfortunately, because of the async nature of the work, we cannot safely
+            // put this in a using block, so the Write*Async methods must handle disposal.
             MultiBufferMemoryStream bufferToUpload = this.internalBuffer;
             this.internalBuffer = new MultiBufferMemoryStream(this.Blob.ServiceClient.BufferManager);
             bufferToUpload.Seek(0, SeekOrigin.Begin);
@@ -501,11 +505,11 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        private async Task WriteBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, string blockId, Checksum blockChecksum, CancellationToken token)
+        private Task WriteBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, string blockId, Checksum blockChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
 
-            await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
+            return this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
             {
                 try
                 {
@@ -514,6 +518,8 @@ namespace Microsoft.Azure.Storage.Blob
                         Task.Run(() => continuetcs.TrySetResult(true));
                     }
                     await this.blockBlob.PutBlockAsync(blockId, blockData, blockChecksum, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
+                    blockData.Dispose();
+                    blockData = null;
                 }
                 catch (Exception e)
                 {
@@ -524,13 +530,13 @@ namespace Microsoft.Azure.Storage.Blob
                     await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
-            }, token).ConfigureAwait(false);
+            }, token);
         }
 
-        private async Task WritePagesAsync(TaskCompletionSource<bool> continuetcs, Stream pageData, long offset, Checksum contentChecksum, CancellationToken token)
+        private Task WritePagesAsync(TaskCompletionSource<bool> continuetcs, Stream pageData, long offset, Checksum contentChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
-            await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
+            return this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
             {
                 try
                 {
@@ -539,6 +545,8 @@ namespace Microsoft.Azure.Storage.Blob
                         Task.Run(() => continuetcs.TrySetResult(true));
                     }
                     await this.pageBlob.WritePagesAsync(pageData, offset, contentChecksum, this.accessCondition, this.options, this.operationContext, internalToken).ConfigureAwait(false);
+                    pageData.Dispose();
+                    pageData = null;
                 }
                 catch (Exception e)
                 {
@@ -549,13 +557,13 @@ namespace Microsoft.Azure.Storage.Blob
                     await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
-            }, token).ConfigureAwait(false);
+            }, token);
         }
 
-        private async Task WriteAppendBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, long offset, Checksum blockChecksum, CancellationToken token)
+        private Task WriteAppendBlockAsync(TaskCompletionSource<bool> continuetcs, Stream blockData, long offset, Checksum blockChecksum, CancellationToken token)
         {
             this.noPendingWritesEvent.Increment();
-            await this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
+            return this.parallelOperationSemaphoreAsync.WaitAsync(async (bool runningInline, CancellationToken internalToken) =>
             {
                 int previousResultsCount = this.operationContext.RequestResults.Count;
                 try
@@ -566,6 +574,8 @@ namespace Microsoft.Azure.Storage.Blob
                     }
                     this.accessCondition.IfAppendPositionEqual = offset;
                     await this.appendBlob.AppendBlockAsync(blockData, blockChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), internalToken).ConfigureAwait(false);
+                    blockData.Dispose();
+                    blockData = null;
                 }
                 catch (StorageException e)
                 {
@@ -594,7 +604,7 @@ namespace Microsoft.Azure.Storage.Blob
                     await this.noPendingWritesEvent.DecrementAsync().ConfigureAwait(false);
                     await this.parallelOperationSemaphoreAsync.ReleaseAsync(internalToken).ConfigureAwait(false);
                 }
-            }, token).ConfigureAwait(false);
+            }, token);
         }
     }
 }

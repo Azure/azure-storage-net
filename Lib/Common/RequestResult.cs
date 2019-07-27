@@ -180,7 +180,14 @@ namespace Microsoft.Azure.Storage
         {
             RequestResult res = new RequestResult();
 
-            using (XmlReader reader = XmlReader.Create(new StringReader(message)))
+            using (XmlReader reader = XmlReader.Create(
+                new StringReader(message),
+                new XmlReaderSettings
+                {
+                    IgnoreWhitespace = true,
+                    Async = true
+                }
+                ))
             {
                 res.ReadXmlAsync(reader).GetAwaiter().GetResult();
             }

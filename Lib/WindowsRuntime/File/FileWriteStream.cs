@@ -239,6 +239,10 @@ namespace Microsoft.Azure.Storage.File
                 return;
             }
 
+            // bufferToUpload needs to be disposed, or we will leak memory
+            // 
+            // Unfortunately, because of the async nature of the work, we cannot safely
+            // put this in a using block, so the Write*Async methods must handle disposal.
             MultiBufferMemoryStream bufferToUpload = this.internalBuffer;
             this.internalBuffer = new MultiBufferMemoryStream(this.file.ServiceClient.BufferManager);
             bufferToUpload.Seek(0, SeekOrigin.Begin);
@@ -281,6 +285,9 @@ namespace Microsoft.Azure.Storage.File
             await this.parallelOperationSemaphore.WaitAsync().ConfigureAwait(false);
             Task writePagesTask = this.file.WriteRangeAsync(rangeData, offset, contentChecksum, this.accessCondition, this.options, this.operationContext, default(IProgress<StorageProgress>), CancellationToken.None).ContinueWith(async task =>
             {
+                rangeData.Dispose();
+                rangeData = null;
+
                 if (task.Exception != null)
                 {
                     this.lastException = task.Exception;
