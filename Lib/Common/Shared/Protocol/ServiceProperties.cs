@@ -610,10 +610,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                     new CorsRule
                     {
                         AllowedOrigins = rule.Element(AllowedOriginsName).Value.Split(',').ToList(),
-                        AllowedMethods =
-                            (CorsHttpMethods)
-                            Enum.Parse(
-                                typeof(CorsHttpMethods), rule.Element(AllowedMethodsName).Value, true),
+                        AllowedMethods = 
+                            rule.Element(AllowedMethodsName)
+                                .Value.Split(',')
+                                .Select(method => (CorsHttpMethods) Enum.Parse( typeof(CorsHttpMethods), method, true))
+                                .Aggregate(CorsHttpMethods.None, (previous, next) => previous | next),
                         AllowedHeaders =
                             rule.Element(AllowedHeadersName)
                                 .Value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
