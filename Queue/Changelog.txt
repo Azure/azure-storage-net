@@ -1,3 +1,9 @@
+Changes in 11.0.0:
+
+- Added support for CRC64
+- Added support for echoed client ID validation.  If the service returns a different client ID than what was sent by the SDK, and exception will be thrown.
+- GitHub Issue #905 - XML documentation missing in NuGet package
+
 Changes in 10.0.3:
 
 - Fixed broken links in nuspec file, resolving GitHub Issue #879

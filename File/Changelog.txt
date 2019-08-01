@@ -1,5 +1,10 @@
 Changes in 11.0.0:
-- Added support for File SMB REST parity
+
+- Added support for CRC64
+- Added support for setting and getting SMB properties.
+- Added file write range override which includes source URI.
+- Added support for echoed client ID validation.  If the service returns a different client ID than what was sent by the SDK, and exception will be thrown.
+- GitHub Issue #905 - XML documentation missing in NuGet package
 
 Changes in 10.0.3:
 

@@ -1,3 +1,14 @@
+Changes in 11.0.0:
+
+- Added support for CRC64
+- Added support for server-side encryption with a client provided key.
+- Added support for rehydrate blob priority.
+- Added support for setting blob tier on block blobs.
+- Added support for batch delete and set blob tier operations.
+- Added support for echoed client ID validation.  If the service returns a different client ID than what was sent by the SDK, and exception will be thrown.
+- Addressed GitHub Issue #894 and 909 - UploadFromStream throws OutOfMemoryException for large streams.  Thanks especially due to @markheath for providing some very useful clues to this and a related stack overflow problem.
+- Addressed GitHub Issue #905 - XML documentation missing in NuGet package
+
 Changes in 10.0.3:
 
 - Add a public constructor to CloudBlobDirectory, resolving GitHub Issue #639 and #709
