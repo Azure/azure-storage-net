@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Storage.Core.Util
             }
             if (setEvent)
             {
-                await this.internalEvent.Set();
+                await this.internalEvent.Set().ConfigureAwait(false);
             }
         }
 

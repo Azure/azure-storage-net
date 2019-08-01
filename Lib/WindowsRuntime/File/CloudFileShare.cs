@@ -1019,7 +1019,7 @@ namespace Microsoft.Azure.Storage.File
             getCmd.PostProcessResponseAsync = async (cmd, resp, ex, ctx) =>
             {
                 StreamReader reader = new StreamReader(cmd.ResponseStream);
-                string json = await reader.ReadToEndAsync();
+                string json = await reader.ReadToEndAsync().ConfigureAwait(false);
                 return json.Split('"')[3];
             };
 

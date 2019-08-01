@@ -2393,7 +2393,7 @@ namespace Microsoft.Azure.Storage.Blob
                     this.PutPageImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(seekableStream), startOffset, contentChecksum, accessCondition, modifiedOptions),
                     modifiedOptions.RetryPolicy,
                     operationContext,
-                    cancellationToken);
+                    cancellationToken).ConfigureAwait(false);
             }
             finally
             {

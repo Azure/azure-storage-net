@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
                     }
                     else
                     {
-                        key = await ParseKey(reader, token);
+                        key = await ParseKey(reader, token).ConfigureAwait(false);
                     }
                 }
             }

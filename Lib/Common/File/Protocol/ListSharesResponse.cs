@@ -195,7 +195,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
 
                                     case Constants.SharesElement:
                                         await reader.ReadStartElementAsync().ConfigureAwait(false);
-                                        while (await reader.IsStartElementAsync(Constants.ShareElement))
+                                        while (await reader.IsStartElementAsync(Constants.ShareElement).ConfigureAwait(false))
                                         {
                                             shares.Add(await ParseShareEntryAsync(reader, baseUri, token).ConfigureAwait(false));
                                         }

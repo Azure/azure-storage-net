@@ -506,7 +506,7 @@ namespace Microsoft.Azure.Storage.Blob
                 this.DeleteContainerImpl(accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
         }
 #endif
 

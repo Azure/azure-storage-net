@@ -412,7 +412,7 @@ namespace Microsoft.Azure.Storage.Blob
             operationContext = operationContext ?? new OperationContext();
 
             return Task.Run(
-                async () => await Executor.ExecuteAsync(
+                () => Executor.ExecuteAsync(
                     this.GetAccountPropertiesImpl(modifiedOptions),
                     modifiedOptions.RetryPolicy,
                     operationContext,

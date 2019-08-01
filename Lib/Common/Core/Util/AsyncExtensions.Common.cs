@@ -238,8 +238,8 @@ namespace Microsoft.Azure.Storage.Core.Util
         {
             TaskCompletionSource<bool> tcs = m_tcs;
             await Task.Factory.StartNew(s => ((TaskCompletionSource<bool>)s).TrySetResult(true),
-                tcs, CancellationToken.None, TaskCreationOptions.PreferFairness, TaskScheduler.Default);
-            await tcs.Task;
+                tcs, CancellationToken.None, TaskCreationOptions.PreferFairness, TaskScheduler.Default).ConfigureAwait(false);
+            await tcs.Task.ConfigureAwait(false);
         }
 
         public void Reset()

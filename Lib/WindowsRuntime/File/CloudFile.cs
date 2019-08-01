@@ -1037,7 +1037,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual async Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
 #else
         /// <summary>
         /// Downloads the contents of a file to a stream.
@@ -1051,7 +1051,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual async Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task DownloadRangeToStreamAsync(Stream target, long? offset, long? length, AccessCondition accessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
 #endif
         {
             CommonUtility.AssertNotNull("target", target);
@@ -1060,7 +1060,7 @@ namespace Microsoft.Azure.Storage.File
 
             // We should always call AsStreamForWrite with bufferSize=0 to prevent buffering. Our
             // stream copier only writes 64K buffers at a time anyway, so no buffering is needed.
-            await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
 #if NETCORE
                 this.GetFileImpl(new AggregatingProgressIncrementer(progressHandler).CreateProgressIncrementingStream(target), offset, length, accessCondition, modifiedOptions),
 #else
@@ -1638,7 +1638,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="operationContext">An object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         [DoesServiceRequest]
-        public virtual async Task WriteRangeAsync(
+        public virtual Task WriteRangeAsync(
             Uri sourceUri,
             long sourceOffset,
             long count,
@@ -1660,7 +1660,7 @@ namespace Microsoft.Azure.Storage.File
             operationContext = operationContext ?? new OperationContext();
             cancellationToken = cancellationToken ?? CancellationToken.None;
 
-            await Executor.ExecuteAsync(
+            return Executor.ExecuteAsync(
                 this.PutRangeFromUriImpl(
                     sourceUri: sourceUri,
                     sourceOffset: sourceOffset,
@@ -1836,7 +1836,7 @@ namespace Microsoft.Azure.Storage.File
 #endif
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             }
             finally
             {

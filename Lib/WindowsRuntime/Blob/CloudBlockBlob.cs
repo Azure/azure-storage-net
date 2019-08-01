@@ -872,7 +872,7 @@ namespace Microsoft.Azure.Storage.Blob
                         this.PutBlockImpl(progressIncrementer.CreateProgressIncrementingStream(seekableStream), blockId, contentChecksum, accessCondition, modifiedOptions),
                         modifiedOptions.RetryPolicy,
                         operationContext,
-                        cancellationToken);
+                        cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -897,12 +897,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
         [DoesServiceRequest]
-        public virtual async Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.BlockBlob, this.ServiceClient);
             operationContext = operationContext ?? new OperationContext();
 
-            await Executor.ExecuteAsyncNullReturn(
+            return Executor.ExecuteAsyncNullReturn(
                 this.PutBlockImpl(sourceUri, offset, count, contentChecksum, blockId, accessCondition, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,

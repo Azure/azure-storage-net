@@ -188,7 +188,7 @@ namespace Microsoft.Azure.Storage.File
 
             if (continueTCS == null)
             {
-                await continueTask;
+                await continueTask.ConfigureAwait(false);
             }
         }
 

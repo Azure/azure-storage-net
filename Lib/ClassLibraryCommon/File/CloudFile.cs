@@ -3840,7 +3840,7 @@ namespace Microsoft.Azure.Storage.File
                     options: modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
-                cancellationToken.Value);
+                cancellationToken.Value).ConfigureAwait(false);
         }
 #endif
 

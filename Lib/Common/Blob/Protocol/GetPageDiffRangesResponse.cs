@@ -68,7 +68,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                             break;
 
                         default:
-                            await reader.SkipAsync();
+                            await reader.SkipAsync().ConfigureAwait(false);
                             break;
                     }
                 }
@@ -106,7 +106,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
                             if (await reader.IsStartElementAsync(Constants.ClearRangeElement).ConfigureAwait(false))
                             {
-                                ranges.Add(await ParsePageDiffRangeAsync(reader, true /* isClear */, token));
+                                ranges.Add(await ParsePageDiffRangeAsync(reader, true /* isClear */, token).ConfigureAwait(false));
                             }
                             else if (await reader.IsStartElementAsync(Constants.PageRangeElement).ConfigureAwait(false))
                             {
