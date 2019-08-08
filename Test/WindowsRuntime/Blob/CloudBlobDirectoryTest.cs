@@ -139,7 +139,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteAsync();
                 }
             }
 
@@ -239,7 +239,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteAsync();
                 }
             }
         }
@@ -250,7 +250,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobDirectoryGetSubdirectoryAndTraverseBackToParentAsync()
+        public async Task CloudBlobDirectoryGetSubdirectoryAndTraverseBackToParentAsync()
         {
             foreach (String delimiter in Delimiters)
             {
@@ -269,7 +269,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteIfExistsAsync();
                 }
             }
         }
@@ -280,7 +280,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobDirectoryGetParentOnRootAsync()
+        public async Task CloudBlobDirectoryGetParentOnRootAsync()
         {
             foreach (String delimiter in Delimiters)
             {
@@ -299,7 +299,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteIfExistsAsync();
                 }
             }
         }
@@ -353,7 +353,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteAsync();
                 }
             }
         }
@@ -364,7 +364,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobDirectoryHierarchicalTraversalAsync()
+        public async Task CloudBlobDirectoryHierarchicalTraversalAsync()
         {
             foreach (String delimiter in Delimiters)
             {
@@ -395,7 +395,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteIfExistsAsync();
                 }
             }
         }
@@ -406,7 +406,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobDirectoryBlobParentValidateAsync()
+        public async Task CloudBlobDirectoryBlobParentValidateAsync()
         {
             foreach (String delimiter in Delimiters)
             {
@@ -424,7 +424,7 @@ namespace Microsoft.Azure.Storage.Blob
                 finally
                 {
 
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteIfExistsAsync();
                 }
             }
         }
@@ -480,7 +480,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobDirectoryDelimitersInARowAsync()
+        public async Task CloudBlobDirectoryDelimitersInARowAsync()
         {
             foreach (String delimiter in Delimiters)
             {
@@ -518,7 +518,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteIfExistsAsync();
                 }
             }
         }

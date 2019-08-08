@@ -25,6 +25,7 @@ namespace Microsoft.Azure.Storage.Blob
     using System.Linq;
     using System.Net;
     using System.Threading;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class CloudBlobDirectoryTest : BlobTestBase
@@ -296,7 +297,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobDirectoryFlatListingTask()
+        public async Task CloudBlobDirectoryFlatListingTask()
         {
             foreach (String delimiter in Delimiters)
             {
@@ -307,7 +308,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 try
                 {
-                    container.CreateAsync().Wait();
+                    await container.CreateAsync();
                     if (CloudBlobDirectorySetupWithDelimiter(container, delimiter))
                     {
                         BlobContinuationToken token = null;
@@ -315,7 +316,7 @@ namespace Microsoft.Azure.Storage.Blob
                         List<IListBlobItem> list1 = new List<IListBlobItem>();
                         do
                         {
-                            BlobResultSegment result1 = directory.ListBlobsSegmentedAsync(token).Result;
+                            BlobResultSegment result1 = await directory.ListBlobsSegmentedAsync(token);
                             list1.AddRange(result1.Results);
                             token = result1.ContinuationToken;
                         }
@@ -337,7 +338,8 @@ namespace Microsoft.Azure.Storage.Blob
                         List<IListBlobItem> list2 = new List<IListBlobItem>();
                         do
                         {
-                            BlobResultSegment result2 = midDir2.ListBlobsSegmentedAsync(true, BlobListingDetails.None, null, token, null, null).Result;
+                            BlobResultSegment result2
+                                = await midDir2.ListBlobsSegmentedAsync(true, BlobListingDetails.None, null, token, null, null);
                             list2.AddRange(result2.Results);
                             token = result2.ContinuationToken;
                         }
@@ -354,7 +356,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 finally
                 {
-                    container.DeleteIfExistsAsync().Wait();
+                    await container.DeleteAsync();
                 }
             }
         }

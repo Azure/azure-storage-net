@@ -605,40 +605,40 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileResizeTask()
+        public async Task CloudFileResizeTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
 
-                file.CreateAsync(1024).Wait();
+                await file.CreateAsync(1024);
                 Assert.AreEqual(1024, file.Properties.Length);
-                file2.FetchAttributesAsync().Wait();
+                await file2.FetchAttributesAsync();
                 Assert.AreEqual(1024, file2.Properties.Length);
                 file2.Properties.ContentType = "text/plain";
-                file2.SetPropertiesAsync().Wait();
-                file.ResizeAsync(2048).Wait();
+                await file2.SetPropertiesAsync();
+                await file.ResizeAsync(2048);
                 Assert.AreEqual(2048, file.Properties.Length);
-                file.FetchAttributesAsync().Wait();
+                await file.FetchAttributesAsync();
                 Assert.AreEqual("text/plain", file.Properties.ContentType);
-                file2.FetchAttributesAsync().Wait();
+                await file2.FetchAttributesAsync();
                 Assert.AreEqual(2048, file2.Properties.Length);
 
                 // Resize to 0 length
-                file.ResizeAsync(0).Wait();
+                await file.ResizeAsync(0);
                 Assert.AreEqual(0, file.Properties.Length);
-                file.FetchAttributesAsync().Wait();
+                await file.FetchAttributesAsync();
                 Assert.AreEqual("text/plain", file.Properties.ContentType);
-                file2.FetchAttributesAsync().Wait();
+                await file2.FetchAttributesAsync();
                 Assert.AreEqual(0, file2.Properties.Length);
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -748,22 +748,22 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileDeleteIfExistsTask()
+        public async Task CloudFileDeleteIfExistsTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                Assert.IsFalse(file.DeleteIfExistsAsync().Result);
-                file.CreateAsync(0).Wait();
-                Assert.IsTrue(file.DeleteIfExistsAsync().Result);
-                Assert.IsFalse(file.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(await file.DeleteIfExistsAsync());
+                await file.CreateAsync(0);
+                Assert.IsTrue(await file.DeleteIfExistsAsync());
+                Assert.IsFalse(await file.DeleteIfExistsAsync());
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -844,22 +844,22 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileDeleteIfExistsWithWriteOnlyPermissionsTask()
+        public async Task CloudFileDeleteIfExistsWithWriteOnlyPermissionsTask()
         {
             CloudFileShare share = GenerateRandomWriteOnlyFileShare();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                Assert.IsFalse(file.DeleteIfExistsAsync().Result);
-                file.CreateAsync(0).Wait();
-                Assert.IsTrue(file.DeleteIfExistsAsync().Result);
-                Assert.IsFalse(file.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(await file.DeleteIfExistsAsync());
+                await file.CreateAsync(0);
+                Assert.IsTrue(await file.DeleteIfExistsAsync());
+                Assert.IsFalse(await file.DeleteIfExistsAsync());
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -1463,7 +1463,7 @@ namespace Microsoft.Azure.Storage.File
                 await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                file.CreateAsync(1024).Wait();
+                await file.CreateAsync(1024);
                 string eTag = file.Properties.ETag;
                 DateTimeOffset lastModified = file.Properties.LastModified.Value;
 
@@ -1793,18 +1793,18 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileSetMetadataTask()
+        public async Task CloudFileSetMetadataTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                file.CreateAsync(1024).Wait();
+                await file.CreateAsync(1024);
 
                 CloudFile file2 = share.GetRootDirectoryReference().GetFileReference("file1");
-                file2.FetchAttributesAsync().Wait();
+                await file2.FetchAttributesAsync();
                 Assert.AreEqual(0, file2.Metadata.Count);
 
                 file.Metadata["key1"] = null;
@@ -1820,23 +1820,23 @@ namespace Microsoft.Azure.Storage.File
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 file.Metadata["key1"] = "value1";
-                file.SetMetadataAsync().Wait();
+                await file.SetMetadataAsync();
 
-                file2.FetchAttributesAsync().Wait();
+                await file2.FetchAttributesAsync();
                 Assert.AreEqual(1, file2.Metadata.Count);
                 Assert.AreEqual("value1", file2.Metadata["key1"]);
                 // Metadata keys should be case-insensitive
                 Assert.AreEqual("value1", file2.Metadata["KEY1"]);
 
                 file.Metadata.Clear();
-                file.SetMetadataAsync().Wait();
+                await file.SetMetadataAsync();
 
-                file2.FetchAttributesAsync().Wait();
+                await file2.FetchAttributesAsync();
                 Assert.AreEqual(0, file2.Metadata.Count);
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -2025,31 +2025,31 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileListRangesTask()
+        public async Task CloudFileListRangesTask()
         {
             byte[] buffer = GetRandomBuffer(1024);
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                file.CreateAsync(4 * 1024).Wait();
+                await file.CreateAsync(4 * 1024);
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
                 {
-                    file.WriteRangeAsync(memoryStream, 512, null).Wait();
+                    await file.WriteRangeAsync(memoryStream, 512, null);
                 }
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
                 {
-                    file.WriteRangeAsync(memoryStream, 3 * 1024, null).Wait();
+                    await file.WriteRangeAsync(memoryStream, 3 * 1024, null);
                 }
 
-                file.ClearRangeAsync(1024, 1024).Wait();
-                file.ClearRangeAsync(0, 512).Wait();
+                await file.ClearRangeAsync(1024, 1024);
+                await file.ClearRangeAsync(0, 512);
 
-                IEnumerable<FileRange> ranges = file.ListRangesAsync().Result;
+                IEnumerable<FileRange> ranges = await file.ListRangesAsync();
                 List<string> expectedFileRanges = new List<string>()
                 {
                     new FileRange(512, 1023).ToString(),
@@ -2061,10 +2061,10 @@ namespace Microsoft.Azure.Storage.File
                 }
                 Assert.AreEqual(0, expectedFileRanges.Count);
 
-                ranges = file.ListRangesAsync(1024, 1024, null, null, null).Result;
+                ranges = await file.ListRangesAsync(1024, 1024, null, null, null);
                 Assert.AreEqual(0, ranges.Count());
 
-                ranges = file.ListRangesAsync(512, 3 * 1024, null, null, null).Result;
+                ranges = await file.ListRangesAsync(512, 3 * 1024, null, null, null);
                 expectedFileRanges = new List<string>()
                 {
                     new FileRange(512, 1023).ToString(),
@@ -2083,7 +2083,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -3227,7 +3227,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileWriteRangeTask()
+        public async Task CloudFileWriteRangeTask()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
             MD5 md5 = MD5.Create();
@@ -3236,15 +3236,15 @@ namespace Microsoft.Azure.Storage.File
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                file.CreateAsync(4 * 1024 * 1024).Wait();
+                await file.CreateAsync(4 * 1024 * 1024);
 
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    TestHelper.ExpectedException<ArgumentOutOfRangeException>(
-                        () => file.WriteRangeAsync(memoryStream, 0, null).GetAwaiter().GetResult(),
+                    await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
+                        () => file.WriteRangeAsync(memoryStream, 0, null),
                         "Zero-length WriteRange should fail");
                 }
 
@@ -3259,7 +3259,7 @@ namespace Microsoft.Azure.Storage.File
                             "InvalidRange");
 
                         memoryStream.Seek(0, SeekOrigin.Begin);
-                        file.WriteRangeAsync(memoryStream, 0, contentMD5).Wait();
+                        await file.WriteRangeAsync(memoryStream, 0, contentMD5);
                         resultingData.Write(buffer, 0, buffer.Length);
 
                         int offset = buffer.Length - 1024;
@@ -3271,20 +3271,20 @@ namespace Microsoft.Azure.Storage.File
                             "Md5Mismatch");
 
                         memoryStream.Seek(offset, SeekOrigin.Begin);
-                        file.WriteRangeAsync(memoryStream, 0, null).Wait();
+                        await file.WriteRangeAsync(memoryStream, 0, null);
                         resultingData.Seek(0, SeekOrigin.Begin);
                         resultingData.Write(buffer, offset, buffer.Length - offset);
 
                         offset = buffer.Length - 2048;
                         memoryStream.Seek(offset, SeekOrigin.Begin);
-                        file.WriteRangeAsync(memoryStream, 1024, null).Wait();
+                        await file.WriteRangeAsync(memoryStream, 1024, null);
                         resultingData.Seek(1024, SeekOrigin.Begin);
                         resultingData.Write(buffer, offset, buffer.Length - offset);
                     }
 
                     using (MemoryStream fileData = new MemoryStream())
                     {
-                        file.DownloadToStreamAsync(fileData).Wait();
+                        await file.DownloadToStreamAsync(fileData);
                         Assert.AreEqual(resultingData.Length, fileData.Length);
 
                         Assert.IsTrue(fileData.ToArray().SequenceEqual(resultingData.ToArray()));
@@ -3293,7 +3293,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -3474,18 +3474,18 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileUploadFromStreamTask()
+        public async Task CloudFileUploadFromStreamTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             try
             {
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, null, null, 0, true);
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, null, null, 1024, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, null, null, 0, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, null, null, 1024, true);
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -3557,27 +3557,27 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileUploadFromStreamLengthTask()
+        public async Task CloudFileUploadFromStreamLengthTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             try
             {
                 // Upload half of the stream
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, 3 * 512, null, 0, true);
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, 3 * 512, null, 1024, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, 3 * 512, null, 0, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, 3 * 512, null, 1024, true);
 
                 // Upload full stream
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, 6 * 512, null, 0, true);
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, 4 * 512, null, 1024, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, 6 * 512, null, 0, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, 4 * 512, null, 1024, true);
 
                 // Exclude last range
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, 5 * 512, null, 0, true);
-                this.CloudFileUploadFromStreamTask(share, 6 * 512, 3 * 512, null, 1024, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, 5 * 512, null, 0, true);
+                await this.CloudFileUploadFromStreamTask(share, 6 * 512, 3 * 512, null, 1024, true);
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -3641,23 +3641,23 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileUploadFromStreamLengthInvalidTask()
+        public async Task CloudFileUploadFromStreamLengthInvalidTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             try
             {
-                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
                     () => this.CloudFileUploadFromStreamTask(share, 3 * 512, 3 * 512 + 1, null, 0, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
-                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
                     () => this.CloudFileUploadFromStreamTask(share, 3 * 512, 3 * 512 + 1025, null, 1024, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -3755,7 +3755,7 @@ namespace Microsoft.Azure.Storage.File
         }
 
 #if TASK
-        private void CloudFileUploadFromStreamTask(CloudFileShare share, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool testMd5)
+        private async Task CloudFileUploadFromStreamTask(CloudFileShare share, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool testMd5)
         {
             try
             {
@@ -3773,7 +3773,7 @@ namespace Microsoft.Azure.Storage.File
 
                 using (MemoryStream originalFile = new MemoryStream())
                 {
-                    originalFile.Write(buffer, startOffset, buffer.Length - startOffset);
+                    await originalFile.WriteAsync(buffer, startOffset, buffer.Length - startOffset);
 
                     using (MemoryStream sourceStream = new MemoryStream(buffer))
                     {
@@ -3785,15 +3785,15 @@ namespace Microsoft.Azure.Storage.File
 
                         if (copyLength.HasValue)
                         {
-                            file.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, null).Wait();
+                            await file.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, null);
                         }
                         else
                         {
-                            file.UploadFromStreamAsync(sourceStream, accessCondition, options, null).Wait();
+                            await file.UploadFromStreamAsync(sourceStream, accessCondition, options, null);
                         }
                     }
 
-                    file.FetchAttributesAsync().Wait();
+                    await file.FetchAttributesAsync();
                     if (testMd5)
                     {
                         Assert.AreEqual(md5, file.Properties.ContentMD5);
@@ -3801,7 +3801,7 @@ namespace Microsoft.Azure.Storage.File
 
                     using (MemoryStream downloadedFile = new MemoryStream())
                     {
-                        file.DownloadToStreamAsync(downloadedFile).Wait();
+                        await file.DownloadToStreamAsync(downloadedFile);
 
                         TestHelper.AssertStreamsAreEqualAtIndex(
                             originalFile,
@@ -4199,39 +4199,39 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileApisInShareSnapshotTask()
+        public async Task CloudFileApisInShareSnapshotTask()
         {
             CloudFileClient client = GenerateCloudFileClient();
             string name = GetRandomShareName();
             CloudFileShare share = client.GetShareReference(name);
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
-            dir.CreateAsync().Wait();
+            await dir.CreateAsync();
 
             CloudFile file = dir.GetFileReference("file");
-            file.CreateAsync(1024).Wait();
+            await file.CreateAsync(1024);
             file.Metadata["key1"] = "value1";
-            file.SetMetadataAsync().Wait();
+            await file.SetMetadataAsync();
             CloudFileShare snapshot = share.SnapshotAsync().Result;
             CloudFile snapshotFile = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1").GetFileReference("file");
             file.Metadata["key2"] = "value2";
-            file.SetMetadataAsync().Wait();
-            snapshotFile.FetchAttributesAsync().Wait();
+            await file.SetMetadataAsync();
+            await snapshotFile.FetchAttributesAsync();
 
             Assert.IsTrue(snapshotFile.Metadata.Count == 1 && snapshotFile.Metadata["key1"].Equals("value1"));
             Assert.IsNotNull(snapshotFile.Properties.ETag);
 
-            file.FetchAttributesAsync().Wait();
+            await file.FetchAttributesAsync();
             Assert.IsTrue(file.Metadata.Count == 2 && file.Metadata["key2"].Equals("value2"));
             Assert.IsNotNull(file.Properties.ETag);
             Assert.AreNotEqual(file.Properties.ETag, snapshotFile.Properties.ETag);
 
             CloudFile snapshotFile2 = new CloudFile(snapshotFile.SnapshotQualifiedStorageUri, client.Credentials);
-            Assert.IsTrue(snapshotFile2.ExistsAsync().Result);
+            Assert.IsTrue(await snapshotFile2.ExistsAsync());
             Assert.IsTrue(snapshotFile2.Share.SnapshotTime.HasValue);
 
-            snapshot.DeleteAsync().Wait();
-            share.DeleteAsync().Wait();
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 #endif
 
@@ -4431,18 +4431,18 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileInvalidApisInShareSnapshotTask()
+        public async Task CloudFileInvalidApisInShareSnapshotTask()
         {
             CloudFileClient client = GenerateCloudFileClient();
             string name = GetRandomShareName();
             CloudFileShare share = client.GetShareReference(name);
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
 
-            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFileShare snapshot = await share.SnapshotAsync();
             CloudFile file = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1").GetFileReference("file");
             try
             {
-                file.CreateAsync(1024).Wait();
+                await file.CreateAsync(1024);
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -4451,7 +4451,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                file.DeleteAsync().Wait();
+                await file.DeleteAsync();
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -4460,7 +4460,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                file.SetMetadataAsync().Wait();
+                await file.SetMetadataAsync();
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -4469,7 +4469,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                file.AbortCopyAsync(null).Wait();
+                await file.AbortCopyAsync(null);
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -4478,7 +4478,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                file.ClearRangeAsync(0, 1024).Wait();
+                await file.ClearRangeAsync(0, 1024);
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -4487,7 +4487,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                file.StartCopyAsync(file).Wait();
+                await file.StartCopyAsync(file);
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -4496,7 +4496,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                file.UploadFromByteArrayAsync(new byte[1024], 0, 1024).GetAwaiter().GetResult();
+                await file.UploadFromByteArrayAsync(new byte[1024], 0, 1024);
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -4504,8 +4504,8 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
             }
 
-            snapshot.DeleteAsync().Wait();
-            share.DeleteAsync().Wait();
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 #endif
 

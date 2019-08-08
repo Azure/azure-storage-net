@@ -160,6 +160,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestAnalyticsDisableAsync()
         {
             // These are set to defaults in the test initialization
@@ -175,6 +176,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestAnalyticsDefaultServiceVersionThrowsAsync()
         {
             OperationContext ctx = new OperationContext();
@@ -202,6 +204,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestAnalyticsLoggingOperationsAsync()
         {
             // None
@@ -226,6 +229,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestAnalyticsMetricsLevelAsync()
         {
             // None
@@ -233,19 +237,16 @@ namespace Microsoft.Azure.Storage.Queue
             props.HourMetrics.RetentionDays = null;
             props.HourMetrics.Version = "1.0";
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Service
             props.HourMetrics.MetricsLevel = MetricsLevel.Service;
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // ServiceAndAPI
             props.HourMetrics.MetricsLevel = MetricsLevel.ServiceAndApi;
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
@@ -255,6 +256,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestAnalyticsMinuteMetricsLevelAsync()
         {
             // None
@@ -262,19 +264,16 @@ namespace Microsoft.Azure.Storage.Queue
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.Version = "1.0";
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Service
             props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // ServiceAndAPI
             props.MinuteMetrics.MetricsLevel = MetricsLevel.ServiceAndApi;
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
@@ -284,6 +283,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestAnalyticsRetentionPoliciesAsync()
         {
             // Set retention policy null with metrics disabled.
@@ -348,6 +348,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestValidCorsRulesAsync()
         {
             CorsRule ruleMinRequired = new CorsRule()
@@ -522,6 +523,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestCorsMaxOriginsAsync()
         {
             CorsRule ruleManyOrigins = new CorsRule() { AllowedMethods = CorsHttpMethods.Get, };
@@ -554,6 +556,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudQueueTestCorsMaxHeadersAsync()
         {
             CorsRule ruleManyHeaders = new CorsRule()
@@ -647,6 +650,9 @@ namespace Microsoft.Azure.Storage.Queue
             }
 
             await client.SetServicePropertiesAsync(props, null, context);
+
+            await Task.Delay(500);
+
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 

@@ -58,6 +58,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void QueueSetACLCancellation()
         {
             CloudQueueClient client = GenerateCloudQueueClient();

@@ -255,7 +255,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -280,7 +280,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -321,7 +321,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -392,7 +392,7 @@ namespace Microsoft.Azure.Storage.File
                 await share.CreateAsync();
 
                 CloudFile file = share.GetRootDirectoryReference().GetFileReference("file1");
-                file.CreateAsync(1024).Wait();
+                await file.CreateAsync(1024);
                 string eTag = file.Properties.ETag;
                 DateTimeOffset lastModified = file.Properties.LastModified.Value;
 
@@ -574,7 +574,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -617,7 +617,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -672,7 +672,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -743,7 +743,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -828,7 +828,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1275,7 +1275,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
         */
@@ -1297,7 +1297,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1327,7 +1327,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1353,7 +1353,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1521,7 +1521,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
         */
@@ -1565,7 +1565,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1604,7 +1604,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1645,7 +1645,7 @@ namespace Microsoft.Azure.Storage.File
             Assert.AreNotEqual(file.Properties.ETag, snapshotFile.Properties.ETag);
 
             CloudFile snapshotFile2 = new CloudFile(snapshotFile.SnapshotQualifiedStorageUri, client.Credentials);
-            Assert.IsTrue(snapshotFile2.ExistsAsync().Result);
+            Assert.IsTrue(await snapshotFile2.ExistsAsync());
             Assert.IsTrue(snapshotFile2.Share.SnapshotTime.HasValue);
 
             await snapshot.DeleteAsync();
@@ -1665,7 +1665,7 @@ namespace Microsoft.Azure.Storage.File
             CloudFileShare share = client.GetShareReference(name);
             await share.CreateAsync();
 
-            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFileShare snapshot = await share.SnapshotAsync();
             CloudFile file = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1").GetFileReference("file");
             try
             {

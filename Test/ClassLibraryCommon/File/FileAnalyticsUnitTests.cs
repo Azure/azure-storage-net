@@ -103,6 +103,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudFileTestAnalyticsRoundTripSync()
         {
             props.Cors.CorsRules.Add(
@@ -150,6 +151,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudFileTestAnalyticsRoundTripAPM()
         {
             props.Cors.CorsRules.Add(
@@ -224,6 +226,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudFileTestAnalyticsDisable()
         {
             // These are set to defaults in the test initialization
@@ -239,6 +242,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudFileTestValidCorsRules()
         {
             CorsRule ruleMinRequired = new CorsRule()
@@ -410,6 +414,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudFileTestCorsMaxOrigins()
         {
             CorsRule ruleManyOrigins = new CorsRule() { AllowedMethods = CorsHttpMethods.Get, };
@@ -440,6 +445,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudFileTestCorsMaxHeaders()
         {
             CorsRule ruleManyHeaders = new CorsRule()

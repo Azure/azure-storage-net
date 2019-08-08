@@ -215,7 +215,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -251,7 +251,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -329,7 +329,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -360,7 +360,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -459,6 +459,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudFileUploadDownloadFile()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
@@ -560,6 +561,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudFileUploadDownloadFileTask()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
@@ -841,16 +843,16 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileUploadFromByteArrayTask()
+        public async Task CloudFileUploadFromByteArrayTask()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
-            this.DoUploadFromByteArrayTestTask(file, 4 * 512, 0, 4 * 512);
-            this.DoUploadFromByteArrayTestTask(file, 4 * 512, 0, 2 * 512);
-            this.DoUploadFromByteArrayTestTask(file, 4 * 512, 1 * 512, 2 * 512);
-            this.DoUploadFromByteArrayTestTask(file, 4 * 512, 2 * 512, 2 * 512);
+            await this.DoUploadFromByteArrayTestTask(file, 4 * 512, 0, 4 * 512);
+            await this.DoUploadFromByteArrayTestTask(file, 4 * 512, 0, 2 * 512);
+            await this.DoUploadFromByteArrayTestTask(file, 4 * 512, 1 * 512, 2 * 512);
+            await this.DoUploadFromByteArrayTestTask(file, 4 * 512, 2 * 512, 2 * 512);
         }
 
-        private void DoUploadFromByteArrayTestTask(CloudFile file, int bufferSize, int bufferOffset, int count)
+        private async Task DoUploadFromByteArrayTestTask(CloudFile file, int bufferSize, int bufferOffset, int count)
         {
             byte[] buffer = GetRandomBuffer(bufferSize);
             byte[] downloadedBuffer = new byte[bufferSize];
@@ -858,8 +860,8 @@ namespace Microsoft.Azure.Storage.File
 
             try
             {
-                file.UploadFromByteArrayAsync(buffer, bufferOffset, count).Wait();
-                downloadLength = file.DownloadToByteArrayAsync(downloadedBuffer, 0).Result;
+                await file.UploadFromByteArrayAsync(buffer, bufferOffset, count);
+                downloadLength = await file.DownloadToByteArrayAsync(downloadedBuffer, 0);
             }
             catch (AggregateException ex)
             {
@@ -967,12 +969,12 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileDownloadToByteArrayTask()
+        public async Task CloudFileDownloadToByteArrayTask()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
-            this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 0, false);
-            this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 1 * 512, false);
-            this.DoDownloadToByteArrayTestTask(file, 2 * 512, 4 * 512, 1 * 512, false);
+            await this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 0, false);
+            await this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 1 * 512, false);
+            await this.DoDownloadToByteArrayTestTask(file, 2 * 512, 4 * 512, 1 * 512, false);
         }
 
         [TestMethod]
@@ -981,12 +983,12 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileDownloadToByteArrayOverloadTask()
+        public async Task CloudFileDownloadToByteArrayOverloadTask()
         {
             CloudFile file = this.testShare.GetRootDirectoryReference().GetFileReference("file1");
-            this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 0, true);
-            this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 1 * 512, true);
-            this.DoDownloadToByteArrayTestTask(file, 2 * 512, 4 * 512, 1 * 512, true);
+            await this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 0, true);
+            await this.DoDownloadToByteArrayTestTask(file, 1 * 512, 2 * 512, 1 * 512, true);
+            await this.DoDownloadToByteArrayTestTask(file, 2 * 512, 4 * 512, 1 * 512, true);
         }
 #endif
 
@@ -1081,7 +1083,7 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="fileSize">The file size.</param>
         /// <param name="bufferOffset">The file offset.</param>
         /// <param name="option">Run with overloaded parameters.</param>
-        private void DoDownloadToByteArrayTestTask(CloudFile file, int fileSize, int bufferSize, int bufferOffset, bool overload)
+        private async Task DoDownloadToByteArrayTestTask(CloudFile file, int fileSize, int bufferSize, int bufferOffset, bool overload)
         {
             int downloadLength;
             byte[] buffer = GetRandomBuffer(fileSize);
@@ -1090,21 +1092,20 @@ namespace Microsoft.Azure.Storage.File
 
             using (MemoryStream originalFile = new MemoryStream(buffer))
             {
-                file.UploadFromStreamAsync(originalFile).Wait();
+                await file.UploadFromStreamAsync(originalFile);
 
                 if (overload)
                 {
-                    downloadLength = file.DownloadToByteArrayAsync(
+                    downloadLength = await file.DownloadToByteArrayAsync(
                         resultBuffer,
                         bufferOffset,
                         null,
                         null,
-                        new OperationContext())
-                            .Result;
+                        new OperationContext());
                 }
                 else
                 {
-                    downloadLength = file.DownloadToByteArrayAsync(resultBuffer, bufferOffset).Result;
+                    downloadLength = await file.DownloadToByteArrayAsync(resultBuffer, bufferOffset);
                 }
 
                 int downloadSize = Math.Min(fileSize, bufferSize - bufferOffset);

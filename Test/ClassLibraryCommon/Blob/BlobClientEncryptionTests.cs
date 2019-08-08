@@ -787,6 +787,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.FuntionalTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void BlobEncryptedWriteStreamTest()
         {
             DoBlobEncryptedWriteStreamTest(BlobType.BlockBlob);

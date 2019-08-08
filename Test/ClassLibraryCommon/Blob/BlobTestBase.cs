@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
 #if TASK
-        public static List<string> CreateBlobsTask(CloudBlobContainer container, int count, BlobType type)
+        public static async Task<List<string>> CreateBlobsTask(CloudBlobContainer container, int count, BlobType type)
         {
             string name;
             List<string> blobs = new List<string>();
@@ -116,21 +116,21 @@ namespace Microsoft.Azure.Storage.Blob
                     case BlobType.BlockBlob:
                         name = "bb" + Guid.NewGuid().ToString();
                         CloudBlockBlob blockBlob = container.GetBlockBlobReference(name);
-                        blockBlob.PutBlockListAsync(new string[] { }).Wait();
+                        await blockBlob.PutBlockListAsync(new string[] { });
                         blobs.Add(name);
                         break;
 
                     case BlobType.PageBlob:
                         name = "pb" + Guid.NewGuid().ToString();
                         CloudPageBlob pageBlob = container.GetPageBlobReference(name);
-                        pageBlob.CreateAsync(0).Wait();
+                        await pageBlob.CreateAsync(0);
                         blobs.Add(name);
                         break;
 
                     case BlobType.AppendBlob:
                         name = "ab" + Guid.NewGuid().ToString();
                         CloudAppendBlob appendBlob = container.GetAppendBlobReference(name);
-                        appendBlob.CreateOrReplaceAsync().Wait();
+                        await appendBlob.CreateOrReplaceAsync();
                         blobs.Add(name);
                         break;
                 }

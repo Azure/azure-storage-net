@@ -104,6 +104,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsRoundTripAsync()
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
@@ -160,6 +161,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsStaticWebsite()
         {
             // Disabled
@@ -186,12 +188,14 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsStaticWebsiteMissingParameters()
         {
             props.StaticWebsite.Enabled = true;
             props.StaticWebsite.IndexDocument = null;
             props.StaticWebsite.ErrorDocument404Path = null;
             await client.SetServicePropertiesAsync(props);
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
 
@@ -199,6 +203,7 @@ namespace Microsoft.Azure.Storage.Blob
             props.StaticWebsite.IndexDocument = "index";
             props.StaticWebsite.ErrorDocument404Path = null;
             await client.SetServicePropertiesAsync(props);
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
 
@@ -206,6 +211,7 @@ namespace Microsoft.Azure.Storage.Blob
             props.StaticWebsite.IndexDocument = null;
             props.StaticWebsite.ErrorDocument404Path = "404";
             await client.SetServicePropertiesAsync(props);
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             props.StaticWebsite.Enabled = false;
@@ -216,6 +222,7 @@ namespace Microsoft.Azure.Storage.Blob
             await client.SetServicePropertiesAsync(props);
             props.StaticWebsite.IndexDocument = null;
             props.StaticWebsite.ErrorDocument404Path = null;
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
         #endregion
@@ -228,8 +235,10 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsDisableAsync()
-        {            // These are set to defaults in the test initialization
+        {            
+            // These are set to defaults in the test initialization
             await client.SetServicePropertiesAsync(props);
 
             // Check that the default service properties set in the Test Initialization were uploaded correctly
@@ -242,26 +251,27 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsDefaultServiceVersionAsync()
         {
             props.DefaultServiceVersion = "2009-09-19";
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             props.DefaultServiceVersion = "2011-08-18";
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             props.DefaultServiceVersion = "2012-02-12";
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             props.DefaultServiceVersion = "2013-08-15";
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
@@ -271,6 +281,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsLoggingOperationsAsync()
         {
             // None
@@ -279,7 +290,6 @@ namespace Microsoft.Azure.Storage.Blob
             props.Logging.Version = "1.0";
 
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // All
@@ -294,6 +304,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsMetricsLevelAsync()
         {
             // None
@@ -323,6 +334,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsMinuteMetricsLevelAsync()
         {
             // None
@@ -330,19 +342,17 @@ namespace Microsoft.Azure.Storage.Blob
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.Version = "1.0";
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Service
             props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
-            await client.SetServicePropertiesAsync(props);
 
+            await client.SetServicePropertiesAsync(props);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // ServiceAndAPI
             props.MinuteMetrics.MetricsLevel = MetricsLevel.ServiceAndApi;
             await client.SetServicePropertiesAsync(props);
-
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
@@ -352,6 +362,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestAnalyticsRetentionPoliciesAsync()
         {
             // Set retention policy null with metrics disabled.
@@ -360,7 +371,7 @@ namespace Microsoft.Azure.Storage.Blob
             props.MinuteMetrics.RetentionDays = null;
             props.MinuteMetrics.MetricsLevel = MetricsLevel.None;
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Set retention policy not null with metrics disabled.
@@ -369,7 +380,7 @@ namespace Microsoft.Azure.Storage.Blob
             props.MinuteMetrics.RetentionDays = 1;
             props.MinuteMetrics.MetricsLevel = MetricsLevel.Service;
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Set retention policy not null with metrics enabled.
@@ -378,35 +389,35 @@ namespace Microsoft.Azure.Storage.Blob
             props.MinuteMetrics.MetricsLevel = MetricsLevel.ServiceAndApi;
             props.MinuteMetrics.RetentionDays = 2;
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Set retention policy null with logging disabled.
             props.Logging.RetentionDays = null;
             props.Logging.LoggingOperations = LoggingOperations.None;
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Set retention policy not null with logging disabled.
             props.Logging.RetentionDays = 3;
             props.Logging.LoggingOperations = LoggingOperations.None;
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Set retention policy null with logging enabled.
             props.Logging.RetentionDays = null;
             props.Logging.LoggingOperations = LoggingOperations.All;
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
 
             // Set retention policy not null with logging enabled.
             props.Logging.RetentionDays = 4;
             props.Logging.LoggingOperations = LoggingOperations.All;
             await client.SetServicePropertiesAsync(props);
-
+            await Task.Delay(250);
             TestHelper.AssertServicePropertiesAreEqual(props, await client.GetServicePropertiesAsync());
         }
 
@@ -416,6 +427,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestValidCorsRulesAsync()
         {
             CorsRule ruleMinRequired = new CorsRule()
@@ -563,6 +575,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestCorsExpectedExceptionsAsync()
         {
             CorsRule ruleEmpty = new CorsRule();
@@ -590,6 +603,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task CloudBlobTestCorsMaxOriginsAsync()
         {
             CorsRule ruleManyOrigins = new CorsRule() { AllowedMethods = CorsHttpMethods.Get, };
