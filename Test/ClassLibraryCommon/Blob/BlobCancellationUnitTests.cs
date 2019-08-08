@@ -57,6 +57,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlockBlobDownloadToStreamAPMCancel()
         {
             byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
@@ -91,7 +92,7 @@ namespace Microsoft.Azure.Storage.Blob
                             }
                             catch (StorageException ex)
                             {
-                                Assert.AreEqual("A task was canceled.", ex.Message);
+                                Assert.AreEqual("The operation was canceled.", ex.Message);
                                 Assert.AreEqual(ex.RequestInformation.HttpStatusCode, 306);
                                 Assert.AreEqual(ex.RequestInformation.HttpStatusMessage, null);
                             }

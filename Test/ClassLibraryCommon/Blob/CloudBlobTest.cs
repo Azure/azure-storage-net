@@ -29,8 +29,6 @@ namespace Microsoft.Azure.Storage.Blob
     [TestClass]
     public class CloudBlobTest : BlobTestBase
     {
-        const string BlobName = "blob1";
-
         //
         // Use TestInitialize to run code before running each test 
         [TestInitialize()]
@@ -66,12 +64,13 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 // Upload some data to the blob.
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 appendBlob.CreateOrReplace();
                 appendBlob.AppendBlock(originalData, null);
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
                 blob.FetchAttributes();
                 Assert.IsFalse(blob.IsSnapshot);
                 Assert.IsNull(blob.SnapshotTime, "Root blob has SnapshotTime set");
@@ -153,13 +152,13 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 container.Create();
-
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 appendBlob.CreateOrReplace();
                 appendBlob.AppendBlock(originalData, null);
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
                 blob.FetchAttributes();
                 IAsyncResult result;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
@@ -243,13 +242,13 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 await container.CreateAsync();
-
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 await appendBlob.CreateOrReplaceAsync();
                 await appendBlob.AppendBlockAsync(originalData, null);
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
                 await blob.FetchAttributesAsync();
                 CloudBlob snapshot1 = await blob.SnapshotAsync();
                 Assert.AreEqual(blob.Properties.ETag, snapshot1.Properties.ETag);
@@ -296,11 +295,13 @@ namespace Microsoft.Azure.Storage.Blob
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
+                await Task.Delay(500);
+
                 List<IListBlobItem> blobs =
                     (await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null))
                              .Results
                              .ToList();
-                Assert.AreEqual(5, blobs.Count);
+                Assert.AreEqual(4, blobs.Count);
                 AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
                 AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
                 Assert.IsTrue(((CloudBlob)blobs[2]).IsDeleted);
@@ -326,11 +327,11 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 container.Create();
-
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 appendBlob.CreateOrReplace();
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
                 blob.Metadata["Hello"] = "World";
                 blob.Metadata["Marco"] = "Polo";
                 blob.SetMetadata();
@@ -374,11 +375,11 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 container.Create();
-
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 appendBlob.CreateOrReplace();
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
                 blob.Metadata["Hello"] = "World";
                 blob.Metadata["Marco"] = "Polo";
                 blob.SetMetadata();
@@ -424,26 +425,26 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobSnapshotMetadataTask()
+        public async Task CloudBlobSnapshotMetadataTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
+                await appendBlob.CreateOrReplaceAsync(null, null, new OperationContext());
 
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
-                appendBlob.CreateOrReplaceAsync(null, null, new OperationContext()).Wait();
-
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
                 blob.Metadata["Hello"] = "World";
                 blob.Metadata["Marco"] = "Polo";
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
 
                 IDictionary<string, string> snapshotMetadata = new Dictionary<string, string>();
                 snapshotMetadata["Hello"] = "Dolly";
                 snapshotMetadata["Yoyo"] = "Ma";
 
-                CloudBlob snapshot = blob.SnapshotAsync(snapshotMetadata, null, null, null).Result;
+                CloudBlob snapshot = await blob.SnapshotAsync(snapshotMetadata, null, null, null);
 
                 // Test the client view against the expected metadata
                 // Metadata keys should be case-insensitive
@@ -454,7 +455,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.IsFalse(snapshot.Metadata.ContainsKey("Marco"));
 
                 // Test the server view against the expected metadata
-                snapshot.FetchAttributesAsync().Wait();
+                await snapshot.FetchAttributesAsync();
                 Assert.AreEqual("Dolly", snapshot.Metadata["Hello"]);
                 Assert.AreEqual("Dolly", snapshot.Metadata["HELLO"]);
                 Assert.AreEqual("Ma", snapshot.Metadata["Yoyo"]);
@@ -462,7 +463,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -509,6 +510,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobSoftDeleteNoSnapshot()
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -518,14 +520,16 @@ namespace Microsoft.Azure.Storage.Blob
                  container.ServiceClient.EnableSoftDelete();
                 Shared.Protocol.ServiceProperties props = container.ServiceClient.GetServiceProperties();
                 container.Create();
-                                // Upload some data to the blob.
+
+                // Upload some data to the blob.
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 appendBlob.CreateOrReplace();
                 appendBlob.AppendBlock(originalData, null);
                 
                 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
 
                 Assert.IsTrue(blob.Exists());
                 Assert.IsFalse(blob.IsDeleted);
@@ -537,7 +541,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach(IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.Snapshots | BlobListingDetails.Deleted))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     Assert.IsTrue(blobItem.IsDeleted);
                     Assert.IsNotNull(blobItem.Properties.DeletedTime);
                     Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
@@ -557,7 +561,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     Assert.IsFalse(blobItem.IsDeleted);
                     Assert.IsNull(blobItem.Properties.DeletedTime);
                     Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
@@ -580,6 +584,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobSoftDeleteSnapshot()
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -590,11 +595,12 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 // Upload some data to the blob.
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 appendBlob.UploadFromStream(originalData);
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
 
                 //create snapshot via api
                 CloudBlob snapshot = blob.Snapshot();
@@ -608,7 +614,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.Snapshots | BlobListingDetails.Deleted))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     if (blobItem.IsSnapshot)
                         snapShotCount++;
                     if (blobItem.IsDeleted)
@@ -627,7 +633,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.Snapshots))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     Assert.IsFalse(blobItem.IsDeleted);
                     Assert.IsNull(blobItem.Properties.DeletedTime);
                     Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
@@ -645,7 +651,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     Assert.IsTrue(blobItem.IsDeleted);
                     Assert.IsNotNull(blobItem.Properties.DeletedTime);
                     Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
@@ -665,7 +671,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     Assert.IsFalse(blobItem.IsDeleted);
                     Assert.IsNull(blobItem.Properties.DeletedTime);
                     Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
@@ -690,6 +696,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobSoftDeleteNoSnapshotAPM()
         {         
             CloudBlobContainer container = GetRandomContainerReference();
@@ -700,13 +707,14 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 // Upload some data to the blob.
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
                 appendBlob.CreateOrReplace();
                 appendBlob.AppendBlock(originalData, null);
                 
                 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
                 Assert.IsFalse(blob.IsDeleted);
 
                 IAsyncResult result;
@@ -723,7 +731,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach(IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     Assert.IsTrue(blobItem.IsDeleted);
                     Assert.IsNotNull(blobItem.Properties.DeletedTime);
                     Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
@@ -748,7 +756,7 @@ namespace Microsoft.Azure.Storage.Blob
                 foreach (IListBlobItem item in container.ListBlobs(null, true, BlobListingDetails.All))
                 {
                     CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                    Assert.AreEqual(blobItem.Name, BlobName);
+                    Assert.AreEqual(blobItem.Name, blobName);
                     Assert.IsFalse(blobItem.IsDeleted);
                     Assert.IsNull(blobItem.Properties.DeletedTime);
                     Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
@@ -774,41 +782,42 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobSoftDeleteNoSnapshotTask()
+        [DoNotParallelize]
+        public async Task CloudBlobSoftDeleteNoSnapshotTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 //Enables a delete retention policy on the blob with 1 day of default retention days
                 container.ServiceClient.EnableSoftDelete();
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 // Upload some data to the blob.
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
-                appendBlob.CreateOrReplaceAsync().Wait();
-                appendBlob.AppendBlockAsync(originalData, null).Wait();
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
+                await appendBlob.CreateOrReplaceAsync();
+                await appendBlob.AppendBlockAsync(originalData, null);
 
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
-                Assert.IsTrue(blob.ExistsAsync().Result);
+                CloudBlob blob = container.GetBlobReference(blobName);
+                Assert.IsTrue(await blob.ExistsAsync());
                 Assert.IsFalse(blob.IsDeleted);
 
-                blob.DeleteAsync().Wait();
-                Assert.IsFalse(blob.ExistsAsync().Result);
+                await blob.DeleteAsync();
+                Assert.IsFalse(await blob.ExistsAsync());
 
                 int blobCount = 0;
                 BlobContinuationToken ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
                         CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.AreEqual(blobItem.Name, blobName);
                         Assert.IsTrue(blobItem.IsDeleted);
                         Assert.IsNotNull(blobItem.Properties.DeletedTime);
                         Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
@@ -818,9 +827,9 @@ namespace Microsoft.Azure.Storage.Blob
 
                 Assert.AreEqual(blobCount, 1);
 
-                blob.UndeleteAsync().Wait();
+                await blob.UndeleteAsync();
 
-                blob.FetchAttributes();
+                await blob.FetchAttributesAsync();
                 Assert.IsFalse(blob.IsDeleted);
                 Assert.IsNull(blob.Properties.DeletedTime);
                 Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
@@ -829,14 +838,13 @@ namespace Microsoft.Azure.Storage.Blob
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
                         CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.AreEqual(blobItem.Name, blobName);
                         Assert.IsFalse(blobItem.IsDeleted);
                         Assert.IsNull(blobItem.Properties.DeletedTime);
                         Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
@@ -849,7 +857,7 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.ServiceClient.DisableSoftDelete();
-                container.DeleteIfExists();
+                await container.DeleteAsync();
             }
         }
 
@@ -859,26 +867,28 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobSoftDeleteSnapshotTask()
+        [DoNotParallelize]
+        public async Task CloudBlobSoftDeleteSnapshotTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 //Enables a delete retention policy on the blob with 1 day of default retention days
                 container.ServiceClient.EnableSoftDelete();
-                container.Create();
+                await container.CreateAsync();
 
                 // Upload some data to the blob.
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
-                appendBlob.UploadFromStream(originalData);
+                CloudAppendBlob appendBlob = container.GetAppendBlobReference(blobName);
+                await appendBlob.UploadFromStreamAsync(originalData);
 
-                CloudBlob blob = container.GetBlobReference(BlobName);
+                CloudBlob blob = container.GetBlobReference(blobName);
 
                 //create snapshot via api
                 CloudBlob snapshot = blob.Snapshot();
                 //create snapshot via write protection
-                appendBlob.UploadFromStream(originalData);
+                await appendBlob.UploadFromStreamAsync(originalData);
 
                 //we should have 2 snapshots 1 regular and 1 deleted: there is no way to get only the deleted snapshots but the below listing will get both snapshot types
                 int blobCount = 0;
@@ -898,7 +908,7 @@ namespace Microsoft.Azure.Storage.Blob
                     foreach (IListBlobItem item in blobs)
                     {
                         CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.AreEqual(blobItem.Name, blobName);
                         if (blobItem.IsSnapshot)
                             snapShotCount++;
                         if (blobItem.IsDeleted)
@@ -919,14 +929,13 @@ namespace Microsoft.Azure.Storage.Blob
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.Snapshots, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.Snapshots, null, ct, null, null))
                         .Results
                         .ToList())
                     {
                         CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.AreEqual(blobItem.Name, blobName);
                         Assert.IsFalse(blobItem.IsDeleted);
                         Assert.IsNull(blobItem.Properties.DeletedTime);
                         Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
@@ -945,14 +954,13 @@ namespace Microsoft.Azure.Storage.Blob
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
                         CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.AreEqual(blobItem.Name, blobName);
                         Assert.IsTrue(blobItem.IsDeleted);
                         Assert.IsNotNull(blobItem.Properties.DeletedTime);
                         Assert.AreEqual(blobItem.Properties.RemainingDaysBeforePermanentDelete, 0);
@@ -973,14 +981,13 @@ namespace Microsoft.Azure.Storage.Blob
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
                         CloudAppendBlob blobItem = (CloudAppendBlob)item;
-                        Assert.AreEqual(blobItem.Name, BlobName);
+                        Assert.AreEqual(blobItem.Name, blobName);
                         Assert.IsFalse(blobItem.IsDeleted);
                         Assert.IsNull(blobItem.Properties.DeletedTime);
                         Assert.IsNull(blobItem.Properties.RemainingDaysBeforePermanentDelete);
@@ -994,7 +1001,7 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.ServiceClient.DisableSoftDelete();
-                container.DeleteIfExists();
+                await container.DeleteAsync();
             }
         }
         #endregion

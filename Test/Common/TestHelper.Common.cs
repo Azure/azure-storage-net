@@ -115,7 +115,14 @@ namespace Microsoft.Azure.Storage
         }
 
 #if TASK
-        internal static void AssertCancellation(OperationContext ctx)
+        internal static void AssertCancellationOperation(OperationContext ctx)
+        {
+            TestHelper.AssertNAttempts(ctx, 1);
+            Assert.IsInstanceOfType(ctx.LastResult.Exception.InnerException, typeof(OperationCanceledException));
+            Assert.AreEqual("The operation was canceled.", ctx.LastResult.Exception.InnerException.Message);
+        }
+
+        internal static void AssertCancellationTask(OperationContext ctx)
         {
             TestHelper.AssertNAttempts(ctx, 1);
             Assert.IsInstanceOfType(ctx.LastResult.Exception.InnerException, typeof(OperationCanceledException));

@@ -343,7 +343,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileClientListSharesWithPrefixSegmentedTask()
+        public async Task CloudFileClientListSharesWithPrefixSegmentedTask()
         {
             string name = GetRandomShareName();
             List<string> shareNames = new List<string>();
@@ -353,7 +353,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 string shareName = name + i.ToString();
                 shareNames.Add(shareName);
-                fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                await fileClient.GetShareReference(shareName).CreateAsync();
             }
 
             List<string> listedShareNames = new List<string>();
@@ -361,7 +361,7 @@ namespace Microsoft.Azure.Storage.File
 
             do
             {
-                ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(name, token).Result;
+                ShareResultSegment resultSegment = await fileClient.ListSharesSegmentedAsync(name, token);
                 token = resultSegment.ContinuationToken;
 
                 int count = 0;
@@ -377,7 +377,7 @@ namespace Microsoft.Azure.Storage.File
             foreach (string shareName in listedShareNames)
             {
                 Assert.IsTrue(shareNames.Remove(shareName));
-                fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                await fileClient.GetShareReference(shareName).DeleteAsync();
             }
             Assert.AreEqual(0, shareNames.Count);
         }
@@ -565,7 +565,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileClientListSharesSegmentedTask()
+        public async Task CloudFileClientListSharesSegmentedTask()
         {
             string name = GetRandomShareName();
             List<string> shareNames = new List<string>();
@@ -575,14 +575,14 @@ namespace Microsoft.Azure.Storage.File
             {
                 string shareName = name + i.ToString();
                 shareNames.Add(shareName);
-                fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                await fileClient.GetShareReference(shareName).CreateAsync();
             }
 
             List<string> listedShareNames = new List<string>();
             FileContinuationToken token = null;
             do
             {
-                ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(token).Result;
+                ShareResultSegment resultSegment = await fileClient.ListSharesSegmentedAsync(token);
                 token = resultSegment.ContinuationToken;
 
                 foreach (CloudFileShare share in resultSegment.Results)
@@ -596,7 +596,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 if (shareNames.Remove(shareName))
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    await fileClient.GetShareReference(shareName).DeleteAsync();
                 }
             }
 
@@ -609,7 +609,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileClientListSharesSegmentedContinuationTokenTask()
+        public async Task CloudFileClientListSharesSegmentedContinuationTokenTask()
         {
             int shareCount = 3;
             string shareNamePrefix = GetRandomShareName();
@@ -624,13 +624,13 @@ namespace Microsoft.Azure.Storage.File
                 {
                     string shareName = shareNamePrefix + i.ToString();
                     shareNames.Add(shareName);
-                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                    await fileClient.GetShareReference(shareName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(continuationToken).Result;
+                    ShareResultSegment resultSegment = await fileClient.ListSharesSegmentedAsync(continuationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudFileShare share in resultSegment.Results)
@@ -649,7 +649,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 foreach (string shareName in shareNames)
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    await fileClient.GetShareReference(shareName).DeleteAsync();
                 }
             }
         }
@@ -674,14 +674,14 @@ namespace Microsoft.Azure.Storage.File
                 {
                     string shareName = shareNamePrefix + i.ToString();
                     shareNames.Add(shareName);
-                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                    fileClient.GetShareReference(shareName).Create();
                 }
 
                 int totalCount = 0;
                 int tokenCount = 0;
                 do
                 {
-                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(shareNamePrefix, ShareListingDetails.All, 1, continuationToken, null, null).Result;
+                    ShareResultSegment resultSegment = fileClient.ListSharesSegmented(shareNamePrefix, ShareListingDetails.All, 1, continuationToken, null, null);
                     tokenCount++;
                     continuationToken = resultSegment.ContinuationToken;
                     if (tokenCount < shareCount)
@@ -707,7 +707,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 foreach (string shareName in shareNames)
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    fileClient.GetShareReference(shareName).Delete();
                 }
             }
         }
@@ -718,7 +718,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileClientListSharesSegmentedContinuationTokenCancellationTokenTask()
+        public async Task CloudFileClientListSharesSegmentedContinuationTokenCancellationTokenTask()
         {
             int shareCount = 3;
             string shareNamePrefix = GetRandomShareName();
@@ -734,13 +734,13 @@ namespace Microsoft.Azure.Storage.File
                 {
                     string shareName = shareNamePrefix + i.ToString();
                     shareNames.Add(shareName);
-                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                    await fileClient.GetShareReference(shareName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(continuationToken, cancellationToken).Result;
+                    ShareResultSegment resultSegment = await fileClient.ListSharesSegmentedAsync(continuationToken, cancellationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudFileShare share in resultSegment.Results)
@@ -759,7 +759,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 foreach (string shareName in shareNames)
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    await fileClient.GetShareReference(shareName).DeleteAsync();
                 }
             }
         }
@@ -786,13 +786,13 @@ namespace Microsoft.Azure.Storage.File
                 {
                     string shareName = shareNamePrefix + i.ToString();
                     shareNames.Add(shareName);
-                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                    fileClient.GetShareReference(shareName).Create();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(prefix, continuationToken).Result;
+                    ShareResultSegment resultSegment = fileClient.ListSharesSegmented(prefix, continuationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudFileShare share in resultSegment.Results)
@@ -811,7 +811,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 foreach (string shareName in shareNames)
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    fileClient.GetShareReference(shareName).Delete();
                 }
             }
         }
@@ -822,7 +822,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileClientListSharesSegmentedPrefixContinuationTokenCancellationTokenTask()
+        public async Task CloudFileClientListSharesSegmentedPrefixContinuationTokenCancellationTokenTask()
         {
             int shareCount = 3;
             string shareNamePrefix = GetRandomShareName();
@@ -839,13 +839,14 @@ namespace Microsoft.Azure.Storage.File
                 {
                     string shareName = shareNamePrefix + i.ToString();
                     shareNames.Add(shareName);
-                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                    await fileClient.GetShareReference(shareName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(prefix, continuationToken, cancellationToken).Result;
+                    ShareResultSegment resultSegment 
+                        = await fileClient.ListSharesSegmentedAsync(prefix, continuationToken, cancellationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudFileShare share in resultSegment.Results)
@@ -864,7 +865,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 foreach (string shareName in shareNames)
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    await fileClient.GetShareReference(shareName).DeleteAsync();
                 }
             }
         }
@@ -875,7 +876,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileClientListSharesSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextTask()
+        public async Task CloudFileClientListSharesSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextTask()
         {
             int shareCount = 3;
             string shareNamePrefix = GetRandomShareName();
@@ -895,13 +896,14 @@ namespace Microsoft.Azure.Storage.File
                 {
                     string shareName = shareNamePrefix + i.ToString();
                     shareNames.Add(shareName);
-                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                    await fileClient.GetShareReference(shareName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext).Result;
+                    ShareResultSegment resultSegment 
+                        = await fileClient.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext);
                     continuationToken = resultSegment.ContinuationToken;
 
                     int count = 0;
@@ -924,7 +926,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 foreach (string shareName in shareNames)
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    await fileClient.GetShareReference(shareName).DeleteAsync();
                 }
             }
         }
@@ -935,7 +937,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileClientListSharesSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextCancellationTokenTask()
+        public async Task CloudFileClientListSharesSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextCancellationTokenTask()
         {
             int shareCount = 3;
             string shareNamePrefix = GetRandomShareName();
@@ -956,13 +958,14 @@ namespace Microsoft.Azure.Storage.File
                 {
                     string shareName = shareNamePrefix + i.ToString();
                     shareNames.Add(shareName);
-                    fileClient.GetShareReference(shareName).CreateAsync().Wait();
+                    await fileClient.GetShareReference(shareName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ShareResultSegment resultSegment = fileClient.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext, cancellationToken).Result;
+                    ShareResultSegment resultSegment 
+                        = await fileClient.ListSharesSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext, cancellationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     int count = 0;
@@ -985,7 +988,7 @@ namespace Microsoft.Azure.Storage.File
             {
                 foreach (string shareName in shareNames)
                 {
-                    fileClient.GetShareReference(shareName).DeleteAsync().Wait();
+                    await fileClient.GetShareReference(shareName).DeleteAsync();
                 }
             }
         }
@@ -1307,23 +1310,24 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileListSharesWithSnapshotTask()
+        public async Task CloudFileListSharesWithSnapshotTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             share.Metadata["key1"] = "value1";
-            share.SetMetadataAsync().Wait();
+            await share.SetMetadataAsync();
 
             CloudFileShare snapshot = share.Snapshot();
             share.Metadata["key2"] = "value2";
-            share.SetMetadataAsync().Wait();
+            await share.SetMetadataAsync();
 
             CloudFileClient client = GenerateCloudFileClient();
             List<CloudFileShare> listedShares = new List<CloudFileShare>();
             FileContinuationToken token = null;
             do
             {
-                ShareResultSegment resultSegment = client.ListSharesSegmentedAsync(share.Name, ShareListingDetails.All, null, token, null, null).Result;
+                ShareResultSegment resultSegment 
+                    = await client.ListSharesSegmentedAsync(share.Name, ShareListingDetails.All, null, token, null, null);
                 token = resultSegment.ContinuationToken;
 
                 foreach (CloudFileShare listResultShare in resultSegment.Results)
@@ -1362,8 +1366,8 @@ namespace Microsoft.Azure.Storage.File
 
             Assert.AreEqual(2, count);
 
-            snapshot.DeleteAsync().Wait();
-            share.DeleteAsync().Wait();
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 #endif
     }

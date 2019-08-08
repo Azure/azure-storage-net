@@ -546,36 +546,36 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlockBlobReadLockToETagTestTask()
+        public async Task BlockBlobReadLockToETagTestTask()
         {
             byte[] outBuffer = new byte[1 * 1024 * 1024];
             byte[] buffer = GetRandomBuffer(2 * outBuffer.Length);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
                 blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    blob.UploadFromStreamAsync(wholeBlob).Wait();
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
-                using (Stream blobStream = blob.OpenReadAsync().Result)
+                using (Stream blobStream = await blob.OpenReadAsync())
                 {
-                    blobStream.Read(outBuffer, 0, outBuffer.Length);
-                    blob.SetMetadataAsync().Wait();
+                    await blobStream.ReadAsync(outBuffer, 0, outBuffer.Length);
+                    await blob.SetMetadataAsync();
                     TestHelper.ExpectedException(
                         () => blobStream.Read(outBuffer, 0, outBuffer.Length),
                         "Blob read stream should fail if blob is modified during read",
                         HttpStatusCode.PreconditionFailed);
                 }
 
-                using (Stream blobStream = blob.OpenReadAsync().Result)
+                using (Stream blobStream = await blob.OpenReadAsync())
                 {
                     long length = blobStream.Length;
-                    blob.SetMetadataAsync().Wait();
+                    await blob.SetMetadataAsync();
                     TestHelper.ExpectedException(
                         () => blobStream.Read(outBuffer, 0, outBuffer.Length),
                         "Blob read stream should fail if blob is modified during read",
@@ -583,7 +583,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
 
                 AccessCondition accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(DateTimeOffset.Now.Subtract(TimeSpan.FromHours(1)));
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
                 TestHelper.ExpectedExceptionTask(
                     blob.OpenReadAsync(accessCondition, null, null),
                     "Blob read stream should fail if blob is modified during read",
@@ -591,7 +591,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -731,36 +731,36 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void PageBlobReadLockToETagTestTask()
+        public async Task PageBlobReadLockToETagTestTask()
         {
             byte[] outBuffer = new byte[1 * 1024 * 1024];
             byte[] buffer = GetRandomBuffer(2 * outBuffer.Length);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob1");
                 blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    blob.UploadFromStreamAsync(wholeBlob).Wait();
+                    await blob.UploadFromStreamAsync(wholeBlob);
                 }
 
-                using (Stream blobStream = blob.OpenReadAsync().Result)
+                using (Stream blobStream = await blob.OpenReadAsync())
                 {
-                    blobStream.Read(outBuffer, 0, outBuffer.Length);
-                    blob.SetMetadataAsync().Wait();
+                    await blobStream.ReadAsync(outBuffer, 0, outBuffer.Length);
+                    await blob.SetMetadataAsync();
                     TestHelper.ExpectedException(
                         () => blobStream.Read(outBuffer, 0, outBuffer.Length),
                         "Blob read stream should fail if blob is modified during read",
                         HttpStatusCode.PreconditionFailed);
                 }
 
-                using (Stream blobStream = blob.OpenReadAsync().Result)
+                using (Stream blobStream = await blob.OpenReadAsync())
                 {
                     long length = blobStream.Length;
-                    blob.SetMetadataAsync().Wait();
+                    await blob.SetMetadataAsync();
                     TestHelper.ExpectedException(
                         () => blobStream.Read(outBuffer, 0, outBuffer.Length),
                         "Blob read stream should fail if blob is modified during read",
@@ -768,7 +768,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
 
                 AccessCondition accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(DateTimeOffset.Now.Subtract(TimeSpan.FromHours(1)));
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
                 TestHelper.ExpectedExceptionTask(
                     blob.OpenReadAsync(accessCondition, null, null),
                     "Blob read stream should fail if blob is modified during read",
@@ -776,7 +776,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -919,37 +919,37 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void AppendBlobReadLockToETagTestTask()
+        public async Task AppendBlobReadLockToETagTestTask()
         {
             byte[] outBuffer = new byte[1 * 1024 * 1024];
             byte[] buffer = GetRandomBuffer(2 * outBuffer.Length);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
                 blob.StreamMinimumReadSizeInBytes = outBuffer.Length;
                 using (MemoryStream wholeBlob = new MemoryStream(buffer))
                 {
-                    blob.CreateOrReplace();
-                    blob.AppendBlock(wholeBlob, null);
+                    await blob.CreateOrReplaceAsync();
+                    await blob.AppendBlockAsync(wholeBlob, null);
                 }
 
-                using (Stream blobStream = blob.OpenReadAsync().Result)
+                using (Stream blobStream = await blob.OpenReadAsync())
                 {
-                    blobStream.Read(outBuffer, 0, outBuffer.Length);
-                    blob.SetMetadataAsync().Wait();
+                    await blobStream.ReadAsync(outBuffer, 0, outBuffer.Length);
+                    await blob.SetMetadataAsync();
                     TestHelper.ExpectedException(
                         () => blobStream.Read(outBuffer, 0, outBuffer.Length),
                         "Blob read stream should fail if blob is modified during read",
                         HttpStatusCode.PreconditionFailed);
                 }
 
-                using (Stream blobStream = blob.OpenReadAsync().Result)
+                using (Stream blobStream = await blob.OpenReadAsync())
                 {
                     long length = blobStream.Length;
-                    blob.SetMetadataAsync().Wait();
+                    await blob.SetMetadataAsync();
                     TestHelper.ExpectedException(
                         () => blobStream.Read(outBuffer, 0, outBuffer.Length),
                         "Blob read stream should fail if blob is modified during read",
@@ -957,7 +957,7 @@ namespace Microsoft.Azure.Storage.Blob
                 }
 
                 AccessCondition accessCondition = AccessCondition.GenerateIfNotModifiedSinceCondition(DateTimeOffset.Now.Subtract(TimeSpan.FromHours(1)));
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
                 TestHelper.ExpectedExceptionTask(
                     blob.OpenReadAsync(accessCondition, null, null),
                     "Blob read stream should fail if blob is modified during read",
@@ -965,7 +965,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -1205,7 +1205,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -1239,7 +1239,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -1275,7 +1275,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -1338,7 +1338,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -1401,7 +1401,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -1466,7 +1466,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -1574,7 +1574,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -1609,7 +1609,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -1646,7 +1646,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
     }

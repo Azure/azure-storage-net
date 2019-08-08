@@ -152,15 +152,16 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateAndDeleteTask()
+        [DoNotParallelize]
+        public async Task CloudQueueCreateAndDeleteTask()
         {
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
-            queue.CreateAsync().Wait();
-            Assert.IsTrue(queue.ExistsAsync().Result);
-            queue.DeleteAsync().Wait();
+            await queue.CreateAsync();
+            await queue.CreateAsync();
+            Assert.IsTrue(await queue.ExistsAsync());
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -199,17 +200,17 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateAndDeleteFullParameterTask()
+        public async Task CloudQueueCreateAndDeleteFullParameterTask()
         {
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
 
-            queue.CreateAsync(null, new OperationContext()).Wait();
+            await queue.CreateAsync(null, new OperationContext());
 
-            Assert.IsTrue(queue.ExistsAsync(null, new OperationContext()).Result);
+            Assert.IsTrue(await queue.ExistsAsync(null, new OperationContext()));
 
-            queue.DeleteAsync(null, new OperationContext()).Wait();
+            await queue.DeleteAsync(null, new OperationContext());
         }
 #endif
 
@@ -347,7 +348,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateIfNotExistsTask()
+        public async Task CloudQueueCreateIfNotExistsTask()
         {
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -355,12 +356,12 @@ namespace Microsoft.Azure.Storage.Queue
 
             try
             {
-                Assert.IsTrue(queue.CreateIfNotExistsAsync().Result);
-                Assert.IsFalse(queue.CreateIfNotExistsAsync().Result);
+                Assert.IsTrue(await queue.CreateIfNotExistsAsync());
+                Assert.IsFalse(await queue.CreateIfNotExistsAsync());
             }
             finally
             {
-                queue.DeleteAsync().Wait();
+                await queue.DeleteAsync();
             }
         }
 
@@ -370,7 +371,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateIfNotExistsFullParameterTask()
+        public async Task CloudQueueCreateIfNotExistsFullParameterTask()
         {
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -378,12 +379,12 @@ namespace Microsoft.Azure.Storage.Queue
 
             try
             {
-                Assert.IsTrue(queue.CreateIfNotExistsAsync(null, new OperationContext()).Result);
-                Assert.IsFalse(queue.CreateIfNotExistsAsync(null, new OperationContext()).Result);
+                Assert.IsTrue(await queue.CreateIfNotExistsAsync(null, new OperationContext()));
+                Assert.IsFalse(await queue.CreateIfNotExistsAsync(null, new OperationContext()));
             }
             finally
             {
-                queue.DeleteAsync().Wait();
+                await queue.DeleteAsync();
             }
         }
 #endif
@@ -412,6 +413,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueDeleteIfExistsAPM()
         {
             string name = GenerateNewQueueName();
@@ -477,16 +479,16 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueDeleteIfExistsTask()
+        public async Task CloudQueueDeleteIfExistsTask()
         {
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
 
-            Assert.IsFalse(queue.DeleteIfExistsAsync().Result);
-            queue.CreateAsync().Wait();
-            Assert.IsTrue(queue.DeleteIfExistsAsync().Result);
-            Assert.IsFalse(queue.DeleteIfExistsAsync().Result);
+            Assert.IsFalse(await queue.DeleteIfExistsAsync());
+            await queue.CreateAsync();
+            Assert.IsTrue(await queue.DeleteIfExistsAsync());
+            Assert.IsFalse(await queue.DeleteIfExistsAsync());
         }
 
         [TestMethod]
@@ -495,16 +497,16 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueDeleteIfExistsFullParametersTask()
+        public async Task CloudQueueDeleteIfExistsFullParametersTask()
         {
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
 
-            Assert.IsFalse(queue.DeleteIfExistsAsync(null, new OperationContext()).Result);
-            queue.CreateAsync().Wait();
-            Assert.IsTrue(queue.DeleteIfExistsAsync(null, new OperationContext()).Result);
-            Assert.IsFalse(queue.DeleteIfExistsAsync(null, new OperationContext()).Result);
+            Assert.IsFalse(await queue.DeleteIfExistsAsync(null, new OperationContext()));
+            await queue.CreateAsync();
+            Assert.IsTrue(await queue.DeleteIfExistsAsync(null, new OperationContext()));
+            Assert.IsFalse(await queue.DeleteIfExistsAsync(null, new OperationContext()));
         }
 #endif
 
@@ -622,15 +624,15 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueGetSetPermissionsTask()
+        public async Task CloudQueueGetSetPermissionsTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
 
             try
             {
-                queue.CreateAsync().Wait();
-                QueuePermissions emptyPermission = queue.GetPermissionsAsync().Result;
+                await queue.CreateAsync();
+                QueuePermissions emptyPermission = await queue.GetPermissionsAsync();
                 Assert.AreEqual(emptyPermission.SharedAccessPolicies.Count, 0);
                 string id = Guid.NewGuid().ToString();
                 DateTime start = DateTime.UtcNow;
@@ -650,7 +652,7 @@ namespace Microsoft.Azure.Storage.Queue
                             Permissions = queuePerm
                         });
 
-                queue.SetPermissionsAsync(permissions).Wait();
+                await queue.SetPermissionsAsync(permissions);
                 TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
                 {
 
@@ -662,7 +664,7 @@ namespace Microsoft.Azure.Storage.Queue
             }
             finally
             {
-                queue.DeleteIfExistsAsync().Wait();
+                await queue.DeleteAsync();
             }
         }
 #endif
@@ -831,42 +833,43 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueSetGetMetadataTask()
+        public async Task CloudQueueSetGetMetadataTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(GenerateNewQueueName());
 
             try
             {
-                queue.CreateAsync().Wait();
+                await queue.CreateAsync();
 
                 CloudQueue queueToRetrieve = client.GetQueueReference(queue.Name);
-                queueToRetrieve.FetchAttributesAsync().Wait();
+                await queueToRetrieve.FetchAttributesAsync();
                 Assert.AreEqual<int>(0, queueToRetrieve.Metadata.Count);
 
                 queue.Metadata.Add("key1", "value1");
-                queue.SetMetadataAsync().Wait();
+                await queue.SetMetadataAsync();
 
-                queueToRetrieve.FetchAttributesAsync().Wait();
+                await queueToRetrieve.FetchAttributesAsync();
                 Assert.AreEqual(1, queueToRetrieve.Metadata.Count);
                 Assert.AreEqual("value1", queueToRetrieve.Metadata["key1"]);
                 // Metadata keys should be case-insensitive
                 Assert.AreEqual("value1", queueToRetrieve.Metadata["KEY1"]);
 
-                CloudQueue listedQueue = client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null).Result.Results.First();
+                CloudQueue listedQueue 
+                    = (await client.ListQueuesSegmentedAsync(queue.Name, QueueListingDetails.All, null, null, null, null)).Results.First();
                 Assert.AreEqual(1, listedQueue.Metadata.Count);
                 Assert.AreEqual("value1", listedQueue.Metadata["key1"]);
                 Assert.AreEqual("value1", listedQueue.Metadata["KEY1"]);
 
                 queue.Metadata.Clear();
-                queue.SetMetadataAsync(null, new OperationContext()).Wait();
+                await queue.SetMetadataAsync(null, new OperationContext());
 
-                queueToRetrieve.FetchAttributesAsync(null, new OperationContext()).Wait();
+                await queueToRetrieve.FetchAttributesAsync(null, new OperationContext());
                 Assert.AreEqual<int>(0, queueToRetrieve.Metadata.Count);
             }
             finally
             {
-                queue.DeleteIfExistsAsync().Wait();
+                await queue.DeleteAsync();
             }
         }
 #endif
@@ -1112,6 +1115,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueCopyPermissions()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -1695,6 +1699,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void ListQueuesSegmentedTest()
         {
             String prefix = "pagingqueuetest" + Guid.NewGuid();
@@ -1766,6 +1771,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsSync()
         {
             CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
@@ -1774,12 +1780,11 @@ namespace Microsoft.Azure.Storage.Queue
                 Assert.IsFalse(queueWithSAS.DeleteIfExists());
                 Assert.IsTrue(queueWithSAS.CreateIfNotExists());
                 Assert.IsFalse(queueWithSAS.CreateIfNotExists());
-                Assert.IsTrue(queueWithSAS.DeleteIfExists());
-                Assert.IsTrue(queueWithSAS.DeleteIfExists());
+
             }
             finally
             {
-                queueWithSAS.DeleteIfExists();
+                Assert.IsTrue(queueWithSAS.DeleteIfExists());
             }
         }
 
@@ -1812,13 +1817,9 @@ namespace Microsoft.Azure.Storage.Queue
                     result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     Assert.IsTrue(queueWithSAS.EndDeleteIfExists(result));
-
-                    result = queueWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    Assert.IsTrue(queueWithSAS.EndDeleteIfExists(result));
                 }
             }
-            finally
+            catch
             {
                 queueWithSAS.DeleteIfExists();
             }
@@ -1832,21 +1833,18 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueCreateAndDeleteWithWriteOnlyPermissionsTask()
+        public async Task CloudQueueCreateAndDeleteWithWriteOnlyPermissionsTask()
         {
             CloudQueue queueWithSAS = GenerateRandomWriteOnlyQueue();
             try
             {
-                Assert.IsFalse(queueWithSAS.DeleteIfExistsAsync().Result);
-                Assert.IsTrue(queueWithSAS.CreateIfNotExistsAsync().Result);
-                Assert.IsFalse(queueWithSAS.CreateIfNotExistsAsync().Result);
-                Assert.IsTrue(queueWithSAS.DeleteIfExistsAsync().Result);
-                // Design mechanic, delete takes time to propagate on the service.
-                Assert.IsTrue(queueWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(await queueWithSAS.DeleteIfExistsAsync());
+                Assert.IsTrue(await queueWithSAS.CreateIfNotExistsAsync());
+                Assert.IsFalse(await queueWithSAS.CreateIfNotExistsAsync());
             }
             finally
             {
-                queueWithSAS.DeleteIfExists();
+                Assert.IsTrue(await queueWithSAS.DeleteIfExistsAsync());
             }
 
         }

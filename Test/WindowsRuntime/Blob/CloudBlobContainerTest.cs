@@ -171,7 +171,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -213,7 +213,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -240,7 +240,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -267,7 +267,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -293,7 +293,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
 
             Assert.IsFalse(await container2.ExistsAsync());
@@ -344,7 +344,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -374,7 +374,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -418,7 +418,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -447,7 +447,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
 #if NETCORE
                 //CultureInfo.CurrentCulture = currentCulture;
 #else
@@ -480,7 +480,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -517,7 +517,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -562,7 +562,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -600,7 +600,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -776,7 +776,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -836,7 +836,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -913,7 +913,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                webContainer.DeleteIfExistsAsync().Wait();
+                await webContainer.DeleteIfExistsAsync();
             }
         }
 
@@ -940,7 +940,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                blobContainerWithSAS.DeleteIfExistsAsync().Wait();
+                await blobContainerWithSAS.DeleteAsync();
             }
         }
     }

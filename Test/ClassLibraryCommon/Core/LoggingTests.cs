@@ -22,6 +22,7 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.Core
 {
@@ -50,6 +51,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void LoggingTest()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -107,6 +109,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void LoggingTestAPM()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -184,7 +187,8 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void LoggingTestTask()
+        [DoNotParallelize]
+        public async Task LoggingTestTask()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference("logging" + Guid.NewGuid().ToString("N"));
@@ -229,7 +233,7 @@ namespace Microsoft.Azure.Storage.Core
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif

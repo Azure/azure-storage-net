@@ -427,7 +427,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedWithPrefixTask()
+        public async Task CloudBlobClientListBlobsSegmentedWithPrefixTask()
         {
             string name = "bb" + GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -436,40 +436,40 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                rootContainer.CreateIfNotExistsAsync().Wait();
-                container.CreateAsync().Wait();
+                await rootContainer.CreateIfNotExistsAsync();
+                await container.CreateAsync();
 
-                List<string> blobNames = CreateBlobsTask(container, 3, BlobType.BlockBlob);
-                List<string> rootBlobNames = CreateBlobsTask(rootContainer, 2, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobsTask(container, 3, BlobType.BlockBlob);
+                List<string> rootBlobNames = await CreateBlobsTask(rootContainer, 2, BlobType.BlockBlob);
 
                 BlobResultSegment results;
                 BlobContinuationToken token = null;
                 do
                 {
-                    results = blobClient.ListBlobsSegmentedAsync("bb", token).Result;
+                    results = await blobClient.ListBlobsSegmentedAsync("bb", token);
                     token = results.ContinuationToken;
 
                     foreach (CloudBlockBlob blob in results.Results)
                     {
-                        blob.DeleteAsync().Wait();
+                        await blob.DeleteAsync();
                         rootBlobNames.Remove(blob.Name);
                     }
                 }
                 while (token != null);
                 Assert.AreEqual(0, rootBlobNames.Count);
 
-                results = blobClient.ListBlobsSegmentedAsync("bb", token).Result;
+                results = await blobClient.ListBlobsSegmentedAsync("bb", token);
                 Assert.AreEqual(0, results.Results.Count());
                 Assert.IsNull(results.ContinuationToken);
 
-                results = blobClient.ListBlobsSegmentedAsync(name, token).Result;
+                results = await blobClient.ListBlobsSegmentedAsync(name, token);
                 Assert.AreEqual(0, results.Results.Count());
                 Assert.IsNull(results.ContinuationToken);
 
                 token = null;
                 do
                 {
-                    results = blobClient.ListBlobsSegmentedAsync(name + "/", token).Result;
+                    results = await blobClient.ListBlobsSegmentedAsync(name + "/", token);
                     token = results.ContinuationToken;
 
                     foreach (CloudBlockBlob blob in results.Results)
@@ -482,7 +482,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -492,7 +492,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedPrefixCurrentTokenTask()
+        public async Task CloudBlobClientListBlobsSegmentedPrefixCurrentTokenTask()
         {
             string containerName = GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -504,14 +504,14 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                List<string> blobNames = CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
 
                 int totalCount = 0;
                 do
                 {
-                    BlobResultSegment resultSegment = blobClient.ListBlobsSegmentedAsync(prefix, currentToken).Result;
+                    BlobResultSegment resultSegment = await blobClient.ListBlobsSegmentedAsync(prefix, currentToken);
                     currentToken = resultSegment.ContinuationToken;
 
                     int count = 0;
@@ -530,7 +530,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -540,7 +540,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedPrefixCurrentTokenCancellationTokenTask()
+        public async Task CloudBlobClientListBlobsSegmentedPrefixCurrentTokenCancellationTokenTask()
         {
             string containerName = GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -553,9 +553,9 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                List<string> blobNames = CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
 
                 int totalCount = 0;
                 do
@@ -579,7 +579,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -589,7 +589,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedPrefixUseFlatBlobListingDetailsMaxResultsCurrentTokenOptionsOperationContextTask()
+        public async Task CloudBlobClientListBlobsSegmentedPrefixUseFlatBlobListingDetailsMaxResultsCurrentTokenOptionsOperationContextTask()
         {
             string containerName = GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -606,9 +606,9 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                List<string> blobNames = CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
 
                 int totalCount = 0;
                 do
@@ -634,7 +634,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -644,7 +644,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListBlobsSegmentedPrefixUseFlatBlobListingDetailsMaxResultsCurrentTokenOptionsOperationContextCancellationTokenTask()
+        public async Task CloudBlobClientListBlobsSegmentedPrefixUseFlatBlobListingDetailsMaxResultsCurrentTokenOptionsOperationContextCancellationTokenTask()
         {
             string containerName = GetRandomContainerName();
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -662,14 +662,15 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                List<string> blobNames = CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
+                List<string> blobNames = await CreateBlobsTask(container, blobCount, BlobType.BlockBlob);
 
                 int totalCount = 0;
                 do
                 {
-                    BlobResultSegment resultSegment = blobClient.ListBlobsSegmentedAsync(prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken).Result;
+                    BlobResultSegment resultSegment 
+                        = await blobClient.ListBlobsSegmentedAsync(prefix, useFlatBlobListing, blobListingDetails, maxResults, currentToken, options, operationContext, cancellationToken);
                     currentToken = resultSegment.ContinuationToken;
 
                     int count = 0;
@@ -690,7 +691,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -970,7 +971,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersWithPrefixSegmentedTask()
+        public async Task CloudBlobClientListContainersWithPrefixSegmentedTask()
         {
             string name = GetRandomContainerName();
             List<string> containerNames = new List<string>();
@@ -980,7 +981,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 string containerName = name + i.ToString();
                 containerNames.Add(containerName);
-                blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                await blobClient.GetContainerReference(containerName).CreateAsync();
             }
 
             List<string> listedContainerNames = new List<string>();
@@ -988,7 +989,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             do
             {
-                ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(name, token).Result;
+                ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(name, token);
                 token = resultSegment.ContinuationToken;
 
                 int count = 0;
@@ -1004,7 +1005,7 @@ namespace Microsoft.Azure.Storage.Blob
             foreach (string containerName in listedContainerNames)
             {
                 Assert.IsTrue(containerNames.Remove(containerName));
-                blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                await blobClient.GetContainerReference(containerName).DeleteAsync();
             }
             Assert.AreEqual(0, containerNames.Count);
         }
@@ -1193,7 +1194,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersSegmentedTask()
+        public async Task CloudBlobClientListContainersSegmentedTask()
         {
             string name = GetRandomContainerName();
             List<string> containerNames = new List<string>();
@@ -1203,14 +1204,14 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 string containerName = name + i.ToString();
                 containerNames.Add(containerName);
-                blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                await blobClient.GetContainerReference(containerName).CreateAsync();
             }
 
             List<string> listedContainerNames = new List<string>();
             BlobContinuationToken token = null;
             do
             {
-                ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(token).Result;
+                ContainerResultSegment resultSegment = await blobClient.ListContainersSegmentedAsync(token);
                 token = resultSegment.ContinuationToken;
 
                 foreach (CloudBlobContainer container in resultSegment.Results)
@@ -1224,7 +1225,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 if (containerNames.Remove(containerName))
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
 
@@ -1237,7 +1238,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersSegmentedContinuationTokenTask()
+        public async Task CloudBlobClientListContainersSegmentedContinuationTokenTask()
         {
             int containerCount = 3;
             string containerNamePrefix = GetRandomContainerName();
@@ -1252,13 +1253,14 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     string containerName = containerNamePrefix + i.ToString();
                     containerNames.Add(containerName);
-                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(continuationToken).Result;
+                    ContainerResultSegment resultSegment 
+                        = await blobClient.ListContainersSegmentedAsync(continuationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudBlobContainer container in resultSegment.Results)
@@ -1277,7 +1279,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 foreach (string containerName in containerNames)
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
         }
@@ -1288,7 +1290,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersSegmentedContinuationTokenCancellationTokenTask()
+        public async Task CloudBlobClientListContainersSegmentedContinuationTokenCancellationTokenTask()
         {
             int containerCount = 3;
             string containerNamePrefix = GetRandomContainerName();
@@ -1304,13 +1306,14 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     string containerName = containerNamePrefix + i.ToString();
                     containerNames.Add(containerName);
-                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(continuationToken, cancellationToken).Result;
+                    ContainerResultSegment resultSegment = 
+                        await blobClient.ListContainersSegmentedAsync(continuationToken, cancellationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudBlobContainer container in resultSegment.Results)
@@ -1329,7 +1332,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 foreach (string containerName in containerNames)
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
         }
@@ -1340,7 +1343,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersSegmentedPrefixContinuationToken()
+        public async Task CloudBlobClientListContainersSegmentedPrefixContinuationToken()
         {
             int containerCount = 3;
             string containerNamePrefix = GetRandomContainerName();
@@ -1356,13 +1359,14 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     string containerName = containerNamePrefix + i.ToString();
                     containerNames.Add(containerName);
-                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(prefix, continuationToken).Result;
+                    ContainerResultSegment resultSegment 
+                        = await blobClient.ListContainersSegmentedAsync(prefix, continuationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudBlobContainer container in resultSegment.Results)
@@ -1381,7 +1385,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 foreach (string containerName in containerNames)
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
         }
@@ -1392,7 +1396,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersSegmentedPrefixContinuationTokenCancellationTokenTask()
+        public async Task CloudBlobClientListContainersSegmentedPrefixContinuationTokenCancellationTokenTask()
         {
             int containerCount = 3;
             string containerNamePrefix = GetRandomContainerName();
@@ -1409,13 +1413,14 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     string containerName = containerNamePrefix + i.ToString();
                     containerNames.Add(containerName);
-                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(prefix, continuationToken, cancellationToken).Result;
+                    ContainerResultSegment resultSegment
+                        = await blobClient.ListContainersSegmentedAsync(prefix, continuationToken, cancellationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     foreach (CloudBlobContainer container in resultSegment.Results)
@@ -1434,7 +1439,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 foreach (string containerName in containerNames)
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
         }
@@ -1445,7 +1450,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainerWithContinuationTokenNullTarget()
+        public async Task CloudBlobClientListContainerWithContinuationTokenNullTarget()
         {
             int containerCount = 8;
             string containerNamePrefix = GetRandomContainerName();
@@ -1463,14 +1468,15 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     string containerName = containerNamePrefix + i.ToString();
                     containerNames.Add(containerName);
-                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 int tokenCount = 0;
                 do
                 {
-                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(containerNamePrefix, ContainerListingDetails.All, 1, continuationToken, requestOptions, operationContext, cancellationToken).Result;
+                    ContainerResultSegment resultSegment 
+                        = await blobClient.ListContainersSegmentedAsync(containerNamePrefix, ContainerListingDetails.All, 1, continuationToken, requestOptions, operationContext, cancellationToken);
                     continuationToken = resultSegment.ContinuationToken;
                     //first result segment might not actually return any results
                     if(resultSegment.Results.Any())
@@ -1499,7 +1505,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 foreach (string containerName in containerNames)
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
         }
@@ -1510,7 +1516,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextTask()
+        public async Task CloudBlobClientListContainersSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextTask()
         {
             int containerCount = 3;
             string containerNamePrefix = GetRandomContainerName();
@@ -1530,13 +1536,14 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     string containerName = containerNamePrefix + i.ToString();
                     containerNames.Add(containerName);
-                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext).Result;
+                    ContainerResultSegment resultSegment
+                        = await blobClient.ListContainersSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext);
                     continuationToken = resultSegment.ContinuationToken;
 
                     int count = 0;
@@ -1559,7 +1566,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 foreach (string containerName in containerNames)
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
         }
@@ -1570,7 +1577,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobClientListContainersSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextCancellationTokenTask()
+        public async Task CloudBlobClientListContainersSegmentedPrefixDetailsIncludedMaxResultsContinuationTokenOptionsOperationContextCancellationTokenTask()
         {
             int containerCount = 3;
             string containerNamePrefix = GetRandomContainerName();
@@ -1591,13 +1598,14 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     string containerName = containerNamePrefix + i.ToString();
                     containerNames.Add(containerName);
-                    blobClient.GetContainerReference(containerName).CreateAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).CreateAsync();
                 }
 
                 int totalCount = 0;
                 do
                 {
-                    ContainerResultSegment resultSegment = blobClient.ListContainersSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext, cancellationToken).Result;
+                    ContainerResultSegment resultSegment 
+                        = await blobClient.ListContainersSegmentedAsync(prefix, detailsIncluded, maxResults, continuationToken, options, operationContext, cancellationToken);
                     continuationToken = resultSegment.ContinuationToken;
 
                     int count = 0;
@@ -1620,7 +1628,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 foreach (string containerName in containerNames)
                 {
-                    blobClient.GetContainerReference(containerName).DeleteAsync().Wait();
+                    await blobClient.GetContainerReference(containerName).DeleteAsync();
                 }
             }
         }

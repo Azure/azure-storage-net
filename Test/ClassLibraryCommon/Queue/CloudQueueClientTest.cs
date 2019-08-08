@@ -109,6 +109,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientListQueuesBasic()
         {
             string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
@@ -152,6 +153,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientListQueuesSegmented()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -194,6 +196,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientListQueuesSegmentedWithPrefix()
         {
             string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
@@ -254,6 +257,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientListQueuesSegmentedWithPrefixOverload()
         {
             string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
@@ -315,6 +319,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task QueueContinuationTokenVerifySerializer()
         {
             XmlSerializer serializer = new XmlSerializer(typeof(QueueContinuationToken));
@@ -540,6 +545,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientCreateQueueSharedKeyLite()
         {
             DelegatingHandlerImpl delegatingHandlerImpl = new DelegatingHandlerImpl(new DelegatingHandlerImpl());
@@ -561,6 +567,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientListQueuesSegmentedAPM()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -608,6 +615,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientListQueuesSegmentedWithPrefixAPM()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -674,6 +682,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueClientListQueuesSegmentedWithPrefixAPMOverload()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -741,7 +750,8 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueClientListQueuesSegmentedTask()
+        [DoNotParallelize]
+        public async Task CloudQueueClientListQueuesSegmentedTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
 
@@ -752,7 +762,7 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 string queueName = prefix + i;
                 queueNames.Add(queueName);
-                client.GetQueueReference(queueName).CreateAsync().Wait();
+                await client.GetQueueReference(queueName).CreateAsync();
             }
 
             QueueContinuationToken token = null;
@@ -760,7 +770,7 @@ namespace Microsoft.Azure.Storage.Queue
 
             do
             {
-                QueueResultSegment segment = client.ListQueuesSegmentedAsync(token).Result;
+                QueueResultSegment segment = await client.ListQueuesSegmentedAsync(token);
                 token = segment.ContinuationToken;
                 results.AddRange(segment.Results);
             }
@@ -770,7 +780,7 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 if (queueNames.Remove(queue.Name))
                 {
-                    client.GetQueueReference(queue.Name).DeleteAsync().Wait();
+                    await client.GetQueueReference(queue.Name).DeleteAsync();
                 }
             }
 
@@ -783,7 +793,8 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueClientListQueuesSegmentedWithPrefixTask()
+        [DoNotParallelize]
+        public async Task CloudQueueClientListQueuesSegmentedWithPrefixTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
@@ -798,7 +809,8 @@ namespace Microsoft.Azure.Storage.Queue
             List<CloudQueue> results = new List<CloudQueue>();
             do
             {
-                QueueResultSegment segment = client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.None, null, token, null, null).Result;
+                QueueResultSegment segment 
+                    = await client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.None, null, token, null, null);
                 results.AddRange(segment.Results);
                 token = segment.ContinuationToken;
             }
@@ -808,12 +820,13 @@ namespace Microsoft.Azure.Storage.Queue
 
             foreach (string name in queueNames)
             {
-                client.GetQueueReference(name).CreateAsync().Wait();
+                await client.GetQueueReference(name).CreateAsync();
             }
 
             do
             {
-                QueueResultSegment segment = client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.None, 10, token, null, null).Result;
+                QueueResultSegment segment
+                    = await client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.None, 10, token, null, null);
                 results.AddRange(segment.Results);
                 token = segment.ContinuationToken;
             }
@@ -825,7 +838,7 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 if (queueNames.Remove(queue.Name))
                 {
-                    queue.DeleteAsync().Wait();
+                    await queue.DeleteAsync();
                 }
                 else
                 {
@@ -858,12 +871,12 @@ namespace Microsoft.Azure.Storage.Queue
             int tokenCount = 0;
             foreach (string name in queueNames)
             {
-                client.GetQueueReference(name).CreateAsync().Wait();
+                client.GetQueueReference(name).Create();
             }
 
             do
             {
-                QueueResultSegment segment = client.ListQueuesSegmentedAsync(prefix, QueueListingDetails.None, 1, continuationToken, null, null).Result;
+                QueueResultSegment segment = client.ListQueuesSegmented(prefix, QueueListingDetails.None, 1, continuationToken, null, null);
                 tokenCount++;
                 continuationToken = segment.ContinuationToken;
                 if (tokenCount < segmentCount)
@@ -883,7 +896,7 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 if (queueNames.Remove(queue.Name))
                 {
-                    queue.DeleteAsync().Wait();
+                    queue.Delete();
                 }
                 else
                 {
@@ -900,7 +913,8 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueClientListQueuesSegmentedWithPrefixTaskOverload()
+        [DoNotParallelize]
+        public async Task CloudQueueClientListQueuesSegmentedWithPrefixTaskOverload()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string prefix = "dotnetqueuetest" + Guid.NewGuid().ToString("N");
@@ -915,7 +929,7 @@ namespace Microsoft.Azure.Storage.Queue
             List<CloudQueue> results = new List<CloudQueue>();
             do
             {
-                QueueResultSegment segment = client.ListQueuesSegmentedAsync(prefix, token).Result;
+                QueueResultSegment segment = await client.ListQueuesSegmentedAsync(prefix, token);
                 results.AddRange(segment.Results);
                 token = segment.ContinuationToken;
             }
@@ -925,12 +939,12 @@ namespace Microsoft.Azure.Storage.Queue
 
             foreach (string name in queueNames)
             {
-                client.GetQueueReference(name).CreateAsync().Wait();
+                await client.GetQueueReference(name).CreateAsync();
             }
 
             do
             {
-                QueueResultSegment segment = client.ListQueuesSegmentedAsync(prefix, token).Result;
+                QueueResultSegment segment = await client.ListQueuesSegmentedAsync(prefix, token);
                 results.AddRange(segment.Results);
                 token = segment.ContinuationToken;
             }
@@ -942,7 +956,7 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 if (queueNames.Remove(queue.Name))
                 {
-                    queue.DeleteAsync().Wait();
+                    await queue.DeleteAsync();
                 }
                 else
                 {

@@ -98,6 +98,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueAddGetMessage()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -151,6 +152,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueDeleteMessageWithAddMessagePopReceipt()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -175,6 +177,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueIngressEgress()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -329,28 +332,30 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueAddGetMessageTask()
+        [DoNotParallelize]
+        public async Task CloudQueueAddGetMessageTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
-            queue.AddMessageAsync(message).Wait();
+            await queue.AddMessageAsync(message);
 
-            CloudQueueMessage receivedMessage1 = queue.GetMessageAsync().Result;
+            CloudQueueMessage receivedMessage1 = await queue.GetMessageAsync();
 
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
 
             receivedMessage1.SetMessageContent(Guid.NewGuid().ToString("N"));
 
-            queue.UpdateMessageAsync(receivedMessage1, TimeSpan.FromSeconds(1), MessageUpdateFields.Content | MessageUpdateFields.Visibility).Wait();
+            await queue.UpdateMessageAsync(
+                receivedMessage1, TimeSpan.FromSeconds(1), MessageUpdateFields.Content | MessageUpdateFields.Visibility);
 
-            queue.DeleteMessageAsync(receivedMessage1, null, null).Wait();
+            await queue.DeleteMessageAsync(receivedMessage1, null, null);
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -360,6 +365,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueAddGetByteMessage()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -440,34 +446,35 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueAddGetByteMessageTask()
+        [DoNotParallelize]
+        public async Task CloudQueueAddGetByteMessageTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
             byte[] testData = new byte[20];
             CloudQueueMessage message = new CloudQueueMessage(testData);
-            queue.AddMessageAsync(message).Wait();
+            await queue.AddMessageAsync(message);
 
-            CloudQueueMessage receivedMessage1 = queue.GetMessageAsync().Result;
+            CloudQueueMessage receivedMessage1 = await queue.GetMessageAsync();
 
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
             TestHelper.AssertStreamsAreEqual(new MemoryStream(receivedMessage1.AsBytes), new MemoryStream(message.AsBytes));
 
             receivedMessage1.SetMessageContent(Guid.NewGuid().ToString("N"));
 
-            queue.UpdateMessageAsync(
+            await queue.UpdateMessageAsync(
                 receivedMessage1,
                 TimeSpan.FromSeconds(1),
                 MessageUpdateFields.Content | MessageUpdateFields.Visibility,
                 null,
-                new OperationContext()).Wait();
+                new OperationContext());
 
-            queue.DeleteMessageAsync(receivedMessage1, null, null).Wait();
+            await queue.DeleteMessageAsync(receivedMessage1, null, null);
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -714,6 +721,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueGetMessagesNegativeAPM()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -775,12 +783,12 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueGetMessagesTask()
+        public async Task CloudQueueGetMessagesTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
             const int messageCount = 30;
 
@@ -799,14 +807,14 @@ namespace Microsoft.Azure.Storage.Queue
                 CloudQueueMessage message = new CloudQueueMessage(messageContent);
 
                 // Add message to Queue
-                queue.AddMessageAsync(message).Wait();
+                await queue.AddMessageAsync(message);
 
                 // Add message to list to compare
                 messageContentList.Add(messageContent);
             }
 
             // Get messages from queue
-            List<CloudQueueMessage> receivedMessages = queue.GetMessagesAsync(messageCount).Result.ToList();
+            List<CloudQueueMessage> receivedMessages = (await queue.GetMessagesAsync(messageCount)).ToList();
 
             // Test that messages are the same
             Assert.AreEqual(messageCount, receivedMessages.Count);
@@ -815,7 +823,7 @@ namespace Microsoft.Azure.Storage.Queue
                 Assert.IsTrue(messageContentList.Contains(receivedMessages[i].AsString));
             }
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 
         [TestMethod]
@@ -824,12 +832,12 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueGetMessagesWithTimeoutTask()
+        public async Task CloudQueueGetMessagesWithTimeoutTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
             const int messageCount = 30;
 
@@ -842,14 +850,15 @@ namespace Microsoft.Azure.Storage.Queue
                 CloudQueueMessage message = new CloudQueueMessage(messageContent);
 
                 // Add message to Queue
-                queue.AddMessageAsync(message).Wait();
+                await queue.AddMessageAsync(message);
 
                 // Add message to list to compare
                 messageContentList.Add(messageContent);
             }
 
             // Test 1 second timeout (minimum)
-            List<CloudQueueMessage> receivedMessages = queue.GetMessagesAsync(messageCount, TimeSpan.FromSeconds(1), null, null).Result.ToList();
+            List<CloudQueueMessage> receivedMessages 
+                = (await queue.GetMessagesAsync(messageCount, TimeSpan.FromSeconds(1), null, null)).ToList();
 
             // Test that messages are the same
             Assert.AreEqual(messageCount, receivedMessages.Count);
@@ -862,7 +871,8 @@ namespace Microsoft.Azure.Storage.Queue
             Thread.Sleep(TimeSpan.FromSeconds(1));
 
             // Test 7 day timeout (maximum)
-            receivedMessages = queue.GetMessagesAsync(messageCount, TimeSpan.FromDays(7), null, null).Result.ToList();
+            receivedMessages 
+                = (await queue.GetMessagesAsync(messageCount, TimeSpan.FromDays(7), null, null)).ToList();
 
             // Test that messages are the same
             Assert.AreEqual(messageCount, receivedMessages.Count);
@@ -871,7 +881,7 @@ namespace Microsoft.Azure.Storage.Queue
                 Assert.IsTrue(messageContentList.Contains(receivedMessages[i].AsString));
             }
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -1287,6 +1297,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueuePeekMessageAPM()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -1335,24 +1346,24 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueuePeekMessageTask()
+        public async Task CloudQueuePeekMessageTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
-            CloudQueueMessage emptyMessage = queue.PeekMessageAsync().Result;
+            CloudQueueMessage emptyMessage = await queue.PeekMessageAsync();
             Assert.IsNull(emptyMessage);
 
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
-            queue.AddMessageAsync(message).Wait();
-            CloudQueueMessage receivedMessage1 = queue.PeekMessageAsync(null, new OperationContext()).Result;
+            await queue.AddMessageAsync(message);
+            CloudQueueMessage receivedMessage1 = await queue.PeekMessageAsync(null, new OperationContext());
 
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -1362,6 +1373,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueuePeekMessages()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -1474,16 +1486,17 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueuePeekMessagesTask()
+        [DoNotParallelize]
+        public async Task CloudQueuePeekMessagesTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
             const int messageCount = 30;
 
-            List<CloudQueueMessage> emptyMessages = queue.PeekMessagesAsync(messageCount).Result.ToList();
+            List<CloudQueueMessage> emptyMessages = (await queue.PeekMessagesAsync(messageCount)).ToList();
             Assert.AreEqual(0, emptyMessages.Count);
 
             List<string> messageContentList = new List<string>();
@@ -1491,11 +1504,11 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 string messageContent = i.ToString();
                 CloudQueueMessage message = new CloudQueueMessage(messageContent);
-                queue.AddMessageAsync(message).Wait();
+                await queue.AddMessageAsync(message);
                 messageContentList.Add(messageContent);
             }
 
-            List<CloudQueueMessage> receivedMessages = queue.PeekMessagesAsync(messageCount, null, new OperationContext()).Result.ToList();
+            List<CloudQueueMessage> receivedMessages = (await queue.PeekMessagesAsync(messageCount, null, new OperationContext())).ToList();
             Assert.AreEqual(messageCount, receivedMessages.Count);
 
             for (int i = 0; i < messageCount; i++)
@@ -1503,7 +1516,7 @@ namespace Microsoft.Azure.Storage.Queue
                 Assert.IsTrue(messageContentList.Contains(receivedMessages[i].AsString));
             }
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -1629,21 +1642,22 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueClearMessageTask()
+        [DoNotParallelize]
+        public async Task CloudQueueClearMessageTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
-            queue.AddMessageAsync(message).Wait();
-            CloudQueueMessage receivedMessage1 = queue.PeekMessageAsync().Result;
+            await queue.AddMessageAsync(message);
+            CloudQueueMessage receivedMessage1 = await queue.PeekMessageAsync();
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
-            queue.ClearAsync().Wait();
-            Assert.IsNull(queue.PeekMessage());
-            queue.DeleteAsync().Wait();
+            await queue.ClearAsync();
+            Assert.IsNull(await queue.PeekMessageAsync());
+            await queue.DeleteAsync();
         }
 
         [TestMethod]
@@ -1652,33 +1666,33 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueClearMessageFullParameterTask()
+        public async Task CloudQueueClearMessageFullParameterTask()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.Create();
+            await queue.CreateAsync();
 
             // Create Message
             string msgContent = Guid.NewGuid().ToString("N");
             CloudQueueMessage message = new CloudQueueMessage(msgContent);
 
             // Add message
-            queue.AddMessageAsync(message).Wait();
+            await queue.AddMessageAsync(message);
 
             // Peek message
-            CloudQueueMessage receivedMessage1 = queue.PeekMessageAsync().Result;
+            CloudQueueMessage receivedMessage1 = await queue.PeekMessageAsync();
 
             // Test message
             Assert.IsTrue(receivedMessage1.AsString == message.AsString);
 
             // Clear queue
-            queue.ClearAsync(null, new OperationContext()).Wait();
+            await queue.ClearAsync(null, new OperationContext());
 
             // Test clear result
-            Assert.IsNull(queue.PeekMessageAsync().Result);
+            Assert.IsNull(await queue.PeekMessageAsync());
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -1798,6 +1812,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueMessageNull()
         {
             CloudQueueClient client = GenerateCloudQueueClient();
@@ -2014,7 +2029,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueAddMessageFullParameterTask()
+        public async Task CloudQueueAddMessageFullParameterTask()
         {
             CloudQueueMessage futureMessage = new CloudQueueMessage("This message is for the future.");
             CloudQueueMessage presentMessage = new CloudQueueMessage("This message is for the present.");
@@ -2022,18 +2037,18 @@ namespace Microsoft.Azure.Storage.Queue
             CloudQueueClient client = GenerateCloudQueueClient();
             string name = GenerateNewQueueName();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
-            queue.AddMessageAsync(futureMessage, null, TimeSpan.FromDays(2), null, null).Wait();
+            await queue.AddMessageAsync(futureMessage, null, TimeSpan.FromDays(2), null, null);
 
             // We should not be able to see the future message yet.
-            CloudQueueMessage retrievedMessage = queue.GetMessageAsync().Result;
+            CloudQueueMessage retrievedMessage = await queue.GetMessageAsync();
             Assert.IsNull(retrievedMessage);
 
-            queue.AddMessageAsync(presentMessage, null, TimeSpan.Zero, null, null).Wait();
+            await queue.AddMessageAsync(presentMessage, null, TimeSpan.Zero, null, null);
 
             // We should be able to see the present message.
-            retrievedMessage = queue.GetMessageAsync().Result;
+            retrievedMessage = await queue.GetMessageAsync();
             Assert.IsNotNull(retrievedMessage);
             Assert.AreEqual<string>(presentMessage.AsString, retrievedMessage.AsString);
 
@@ -2049,7 +2064,7 @@ namespace Microsoft.Azure.Storage.Queue
                         () => queue.AddMessageAsync(futureMessage, null, TimeSpan.FromMinutes(-1), null, null),
                         "Using a negative visibility should fail");
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 
@@ -2375,6 +2390,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueUpdateMessageBoundaryAndNegativeCheck()
         {
             string name = GenerateNewQueueName();
@@ -2417,6 +2433,7 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudQueueUpdateMessageBoundaryAndNegativeCheckAPM()
         {
             string name = GenerateNewQueueName();
@@ -2600,7 +2617,8 @@ namespace Microsoft.Azure.Storage.Queue
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudQueueMessageGetMessageFullParameterTask()
+        [DoNotParallelize]
+        public async Task CloudQueueMessageGetMessageFullParameterTask()
         {
             string data = "Visibility Test Message";
             CloudQueueMessage message;
@@ -2608,9 +2626,9 @@ namespace Microsoft.Azure.Storage.Queue
             string name = GenerateNewQueueName();
             CloudQueueClient client = GenerateCloudQueueClient();
             CloudQueue queue = client.GetQueueReference(name);
-            queue.CreateAsync().Wait();
+            await queue.CreateAsync();
 
-            queue.AddMessageAsync(new CloudQueueMessage(data)).Wait();
+            await queue.AddMessageAsync(new CloudQueueMessage(data));
 
             // Expect failure from zero visibility timeout
             TestHelper.ExpectedExceptionTask<StorageException>(
@@ -2623,7 +2641,7 @@ namespace Microsoft.Azure.Storage.Queue
                 "Expect failure from over 7 days visibility timeout");
 
             // Test 1 second timeout (minimum)
-            message = queue.GetMessageAsync(TimeSpan.FromSeconds(1), null, null).Result;
+            message = await queue.GetMessageAsync(TimeSpan.FromSeconds(1), null, null);
             Assert.IsNotNull(message);
             Assert.AreEqual(message.AsString, data);
 
@@ -2631,14 +2649,14 @@ namespace Microsoft.Azure.Storage.Queue
             Thread.Sleep(TimeSpan.FromSeconds(1));
 
             // Test 7 day timeout (maximum)
-            message = queue.GetMessageAsync(TimeSpan.FromDays(7), null, null).Result;
+            message = await queue.GetMessageAsync(TimeSpan.FromDays(7), null, null);
             Assert.IsNotNull(message);
             Assert.AreEqual(message.AsString, data);
 
             // Delete the message
-            queue.DeleteMessageAsync(message.Id, message.PopReceipt, null, null).Wait();
+            await queue.DeleteMessageAsync(message.Id, message.PopReceipt, null, null);
 
-            queue.DeleteAsync().Wait();
+            await queue.DeleteAsync();
         }
 #endif
 

@@ -342,12 +342,12 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
 #if TASK
-        private static void CloudBlockBlobCopyImpl(Func<CloudBlockBlob, string, CloudBlockBlob, string> copyFunc)
+        private static async Task CloudBlockBlobCopyImpl(Func<CloudBlockBlob, string, CloudBlockBlob, string> copyFunc)
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 CloudBlockBlob source = container.GetBlockBlobReference("source");
 
@@ -355,8 +355,8 @@ namespace Microsoft.Azure.Storage.Blob
                 UploadTextTask(source, data, Encoding.UTF8);
 
                 source.Metadata["Test"] = "value";
-                source.SetMetadataAsync().Wait();
-                source.FetchAttributesAsync().Wait();
+                await source.SetMetadataAsync();
+                await source.FetchAttributesAsync();
 
                 CloudBlockBlob copy = container.GetBlockBlobReference("copy");
                 string copyId = copyFunc(source, source.Properties.ContentMD5, copy);
@@ -376,7 +376,7 @@ namespace Microsoft.Azure.Storage.Blob
                     HttpStatusCode.Conflict,
                     "NoPendingCopyOperation");
 
-                source.FetchAttributesAsync().Wait();
+                await source.FetchAttributesAsync();
                 Assert.IsNotNull(copy.Properties.ETag);
                 Assert.AreNotEqual(source.Properties.ETag, copy.Properties.ETag);
                 Assert.IsTrue(copy.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
@@ -384,7 +384,7 @@ namespace Microsoft.Azure.Storage.Blob
                 string copyData = DownloadTextTask(copy, Encoding.UTF8);
                 Assert.AreEqual(data, copyData, "Data inside copy of blob not similar");
 
-                copy.FetchAttributesAsync().Wait();
+                await copy.FetchAttributesAsync();
                 BlobProperties prop1 = copy.Properties;
                 BlobProperties prop2 = source.Properties;
 
@@ -396,11 +396,11 @@ namespace Microsoft.Azure.Storage.Blob
 
                 Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
 
-                copy.DeleteAsync().Wait();
+                await copy.DeleteAsync();
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -430,7 +430,7 @@ namespace Microsoft.Azure.Storage.Blob
             //CloudBlockBlobCopyImpl((source, sourceContentMD5, copy) => copy.StartCopyAsync(TestHelper.Defiddler(source), sourceContentMD5, true /* syncCopy */, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), default(CancellationToken)).Result);
         }
 
-        private static void CloudBlockBlobCopyFromCloudFileImpl(Func<CloudFile, CloudBlockBlob, string> copyFunc)
+        private static async Task CloudBlockBlobCopyFromCloudFileImpl(Func<CloudFile, CloudBlockBlob, string> copyFunc)
         {
             CloudFileClient fileClient = GenerateCloudFileClient();
 
@@ -443,7 +443,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 try
                 {
-                    container.CreateAsync().Wait();
+                    await container.CreateAsync();
 
                     share.Create();
 
@@ -453,7 +453,7 @@ namespace Microsoft.Azure.Storage.Blob
                     source.UploadFromByteArray(data, 0, data.Length);
 
                     source.Metadata["Test"] = "value";
-                    source.SetMetadataAsync().Wait();
+                    await source.SetMetadataAsync();
 
                     string sasToken = source.GetSharedAccessSignature(new SharedAccessFilePolicy
                     {
@@ -492,7 +492,7 @@ namespace Microsoft.Azure.Storage.Blob
                         HttpStatusCode.Conflict,
                         "NoPendingCopyOperation");
 
-                    source.FetchAttributesAsync().Wait();
+                    await source.FetchAttributesAsync();
                     Assert.IsNotNull(copy.Properties.ETag);
                     Assert.AreNotEqual(source.Properties.ETag, copy.Properties.ETag);
                     Assert.IsTrue(copy.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
@@ -503,7 +503,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     Assert.IsTrue(data.SequenceEqual(copyData), "Data inside copy of blob not similar");
 
-                    copy.FetchAttributesAsync().Wait();
+                    await copy.FetchAttributesAsync();
                     BlobProperties prop1 = copy.Properties;
                     FileProperties prop2 = source.Properties;
 
@@ -515,16 +515,16 @@ namespace Microsoft.Azure.Storage.Blob
 
                     Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
 
-                    copy.DeleteIfExistsAsync().Wait();
+                    await copy.DeleteIfExistsAsync();
                 }
                 finally
                 {
-                    share.DeleteIfExistsAsync().Wait();
+                    await share.DeleteIfExistsAsync();
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -978,12 +978,12 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobCopyTestTask()
+        public async Task CloudPageBlobCopyTestTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 CloudPageBlob source = container.GetPageBlobReference("source");
 
@@ -991,10 +991,10 @@ namespace Microsoft.Azure.Storage.Blob
                 UploadTextTask(source, data, Encoding.UTF8);
 
                 source.Metadata["Test"] = "value";
-                source.SetMetadataAsync().Wait();
+                await source.SetMetadataAsync();
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
-                string copyId = copy.StartCopyAsync(TestHelper.Defiddler(source)).Result;
+                string copyId = await copy.StartCopyAsync(TestHelper.Defiddler(source));
                 Assert.AreEqual(BlobType.PageBlob, copy.BlobType);
                 WaitForCopyTask(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
@@ -1010,7 +1010,7 @@ namespace Microsoft.Azure.Storage.Blob
                     HttpStatusCode.Conflict,
                     "NoPendingCopyOperation");
 
-                source.FetchAttributesAsync().Wait();
+                await source.FetchAttributesAsync();
                 Assert.IsNotNull(copy.Properties.ETag);
                 Assert.AreNotEqual(source.Properties.ETag, copy.Properties.ETag);
                 Assert.IsTrue(copy.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
@@ -1018,7 +1018,7 @@ namespace Microsoft.Azure.Storage.Blob
                 string copyData = DownloadTextTask(copy, Encoding.UTF8);
                 Assert.AreEqual(data, copyData, "Data inside copy of blob not similar");
 
-                copy.FetchAttributesAsync().Wait();
+                await copy.FetchAttributesAsync();
                 BlobProperties prop1 = copy.Properties;
                 BlobProperties prop2 = source.Properties;
 
@@ -1030,11 +1030,11 @@ namespace Microsoft.Azure.Storage.Blob
 
                 Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
 
-                copy.DeleteAsync().Wait();
+                await copy.DeleteAsync();
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif

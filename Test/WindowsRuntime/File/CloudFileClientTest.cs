@@ -260,7 +260,7 @@ namespace Microsoft.Azure.Storage.File
             finally
             {
                 fileClient.DefaultRequestOptions.MaximumExecutionTime = null;
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #if !FACADE_NETCORE
@@ -338,7 +338,7 @@ namespace Microsoft.Azure.Storage.File
             finally
             {
                 fileClient.DefaultRequestOptions.MaximumExecutionTime = null;
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 

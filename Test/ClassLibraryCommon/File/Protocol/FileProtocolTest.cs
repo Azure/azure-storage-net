@@ -118,6 +118,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolGetFileCloudOwnerSync()
         {
             await cloudOwnerSync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties, null);
@@ -129,6 +130,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolGetFileCloudOwnerAsync()
         {
             await cloudOwnerAsync.GetFileScenarioTest(cloudSetup.ShareName, cloudSetup.FileName, cloudSetup.Properties,
@@ -165,6 +167,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolGetPublicFileCloudOwnerSync()
         {
             await cloudOwnerSync.GetFileScenarioTest(cloudSetup.PublicShareName, cloudSetup.PublicFileName, cloudSetup.Properties,
@@ -177,6 +180,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolGetPublicFileCloudOwnerAsync()
         {
             await cloudOwnerAsync.GetFileScenarioTest(cloudSetup.PublicShareName, cloudSetup.PublicFileName, cloudSetup.Properties,
@@ -189,6 +193,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolGetFileRangeCloudOwnerSync()
         {
             int all = cloudSetup.Content.Length;
@@ -215,6 +220,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolGetFileRangeCloudOwnerSyncInvalidRange()
         {
             int all = cloudSetup.Content.Length;
@@ -230,6 +236,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolGetFileRangeCloudOwnerAsync()
         {
             int all = cloudSetup.Content.Length;
@@ -259,6 +266,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task FileProtocolListSharesCloud()
         {
             ListingContext listingContext = new ListingContext("default", null);

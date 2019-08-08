@@ -90,7 +90,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
         
@@ -153,7 +153,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
         
@@ -205,7 +205,7 @@ namespace Microsoft.Azure.Storage.Blob
                     await source.UploadFromByteArrayAsync(data, 0, data.Length);
 
                     source.Metadata["Test"] = "value";
-                    source.SetMetadataAsync().Wait();
+                    await source.SetMetadataAsync();
 
                     string sasToken = source.GetSharedAccessSignature(new SharedAccessFilePolicy
                     {
@@ -246,7 +246,7 @@ namespace Microsoft.Azure.Storage.Blob
                         HttpStatusCode.Conflict,
                         "NoPendingCopyOperation");
 
-                    source.FetchAttributesAsync().Wait();
+                    await source.FetchAttributesAsync();
                     Assert.IsNotNull(copy.Properties.ETag);
                     Assert.AreNotEqual(source.Properties.ETag, copy.Properties.ETag);
                     Assert.IsTrue(copy.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
@@ -257,7 +257,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     Assert.IsTrue(data.SequenceEqual(copyData), "Data inside copy of blob not similar");
 
-                    copy.FetchAttributesAsync().Wait();
+                    await copy.FetchAttributesAsync();
                     BlobProperties prop1 = copy.Properties;
                     FileProperties prop2 = source.Properties;
 
@@ -269,16 +269,16 @@ namespace Microsoft.Azure.Storage.Blob
 
                     Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
 
-                    copy.DeleteIfExistsAsync().Wait();
+                    await copy.DeleteIfExistsAsync();
                 }
                 finally
                 {
-                    share.DeleteIfExistsAsync().Wait();
+                    await share.DeleteAsync();
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -347,7 +347,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -411,7 +411,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -480,7 +480,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -538,7 +538,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -602,7 +602,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -708,7 +708,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
     }

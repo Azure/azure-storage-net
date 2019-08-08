@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -117,7 +117,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -158,7 +158,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
 
             Assert.IsFalse(await share2.ExistsAsync());
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -234,7 +234,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -268,7 +268,7 @@ namespace Microsoft.Azure.Storage.File
 #else
                 ApplicationLanguages.PrimaryLanguageOverride = currentPrimaryLanguage;
 #endif
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -335,7 +335,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -373,7 +373,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -416,7 +416,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -462,7 +462,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteIfExistsAsync();
             }
         }
 
@@ -509,7 +509,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -557,7 +557,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -610,7 +610,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -685,7 +685,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -748,7 +748,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -802,7 +802,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -855,7 +855,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 

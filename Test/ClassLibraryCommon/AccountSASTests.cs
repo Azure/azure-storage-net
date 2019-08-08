@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Storage
     [TestClass]
     public class AccountSASTests : TestBase
     {
-        public void RunPermissionsTestBlobs(SharedAccessAccountPolicy policy)
+        public async Task RunPermissionsTestBlobs(SharedAccessAccountPolicy policy)
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
             string containerName = "c" + Guid.NewGuid().ToString("N");
@@ -68,12 +68,12 @@ namespace Microsoft.Azure.Storage
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Container) == SharedAccessAccountResourceTypes.Container))
                 {
-                    containerWithSAS.Create();
+                    await containerWithSAS.CreateAsync();
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => containerWithSAS.Create(), "Create a container should fail with SAS without Create or Write and Container-level permissions.");
-                    container.Create();
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => containerWithSAS.CreateAsync(), "Create a container should fail with SAS without Create or Write and Container-level permissions.");
+                    await container.CreateAsync();
                 }
 
                 Assert.IsTrue(container.Exists());
@@ -98,12 +98,12 @@ namespace Microsoft.Azure.Storage
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    appendBlobWithSAS.CreateOrReplace();
+                    await appendBlobWithSAS.CreateOrReplaceAsync();
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => appendBlobWithSAS.CreateOrReplace(), "Creating an append blob should fail with SAS without Create or Write and Object-level perms.");
-                    appendBlob.CreateOrReplace();
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => appendBlobWithSAS.CreateOrReplaceAsync(), "Creating an append blob should fail with SAS without Create or Write and Object-level perms.");
+                    await appendBlob.CreateOrReplaceAsync();
                 }
 
                 Assert.IsTrue(appendBlob.Exists());
@@ -114,7 +114,7 @@ namespace Microsoft.Azure.Storage
                 {
                     using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(blobText)))
                     {
-                        appendBlobWithSAS.AppendBlock(stream);
+                        await appendBlobWithSAS.AppendBlockAsync(stream);
                     }
                 }
                 else
@@ -123,16 +123,16 @@ namespace Microsoft.Azure.Storage
                     {
                         TestHelper.ExpectedException<StorageException>(() => appendBlobWithSAS.AppendBlock(stream), "Append a block to an append blob should fail with SAS without Add or Write and Object-level perms.");
                         stream.Seek(0, SeekOrigin.Begin);
-                        appendBlob.AppendBlock(stream);
+                        await appendBlob.AppendBlockAsync(stream);
                     }
                 }
 
-                Assert.AreEqual(blobText, appendBlob.DownloadText());
+                Assert.AreEqual(blobText, await appendBlob.DownloadTextAsync());
 
                 if (((policy.Permissions & SharedAccessAccountPermissions.Read) == SharedAccessAccountPermissions.Read) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    Assert.AreEqual(blobText, appendBlobWithSAS.DownloadText());
+                    Assert.AreEqual(blobText, await appendBlobWithSAS.DownloadTextAsync());
                 }
                 else
                 {
@@ -142,23 +142,23 @@ namespace Microsoft.Azure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.Delete) == SharedAccessAccountPermissions.Delete) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    appendBlobWithSAS.Delete();
+                    await appendBlobWithSAS.DeleteAsync();
                 }
                 else
                 {
                     TestHelper.ExpectedException<StorageException>(() => appendBlobWithSAS.Delete(), "Deleting a blob with SAS without Delete and Object-level perms should fail.");
-                    appendBlob.Delete();
+                    await appendBlob.DeleteAsync();
                 }
 
                 Assert.IsFalse(appendBlob.Exists());
             }
             finally
             {
-                blobClient.GetContainerReference(containerName).DeleteIfExists();
+                await blobClient.GetContainerReference(containerName).DeleteIfExistsAsync();
             }
         }
 
-        public void RunPermissionsTestQueues(SharedAccessAccountPolicy policy)
+        public async Task RunPermissionsTestQueues(SharedAccessAccountPolicy policy)
         {
             CloudQueueClient queueClient = GenerateCloudQueueClient();
             string queueName = "q" + Guid.NewGuid().ToString("N");
@@ -188,12 +188,14 @@ namespace Microsoft.Azure.Storage
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Container) == SharedAccessAccountResourceTypes.Container))
                 {
-                    queueWithSAS.Create();
+                    await queueWithSAS.CreateAsync();
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => queueWithSAS.Create(), "Creating a queue with SAS should fail without Add and Container-level permissions.");
-                    queue.Create();
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => 
+                    queueWithSAS.CreateAsync(), 
+                    "Creating a queue with SAS should fail without Add and Container-level permissions.");
+                    await queue.CreateAsync();
                 }
                 Assert.IsTrue(queue.Exists());
 
@@ -211,13 +213,13 @@ namespace Microsoft.Azure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Container) == SharedAccessAccountResourceTypes.Container))
                 {
-                    queueWithSAS.SetMetadata();
-                    queue.FetchAttributes();
+                    await queueWithSAS.SetMetadataAsync();
+                    await queue.FetchAttributesAsync();
                     Assert.AreEqual("metadatavalue", queue.Metadata["metadatakey"]);
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => queueWithSAS.SetMetadata(), "Setting a queue's metadata with SAS should fail without Write and Container-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => queueWithSAS.SetMetadataAsync(), "Setting a queue's metadata with SAS should fail without Write and Container-level permissions.");
                 }
 
                 string messageText = "messageText";
@@ -225,35 +227,35 @@ namespace Microsoft.Azure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.Add) == SharedAccessAccountPermissions.Add) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    queueWithSAS.AddMessage(message);
+                    await queueWithSAS.AddMessageAsync(message);
                 }
                 else
                 {
                     TestHelper.ExpectedException<StorageException>(() => queueWithSAS.AddMessage(message), "Adding a queue message should fail with SAS without Add and Object-level permissions.");
-                    queue.AddMessage(message);
+                    await queue.AddMessageAsync(message);
                 }
-                Assert.AreEqual(messageText, queue.PeekMessage().AsString);
+                Assert.AreEqual(messageText, (await queue.PeekMessageAsync()).AsString);
 
                 if (((policy.Permissions & SharedAccessAccountPermissions.Read) == SharedAccessAccountPermissions.Read) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    Assert.AreEqual(messageText, queueWithSAS.PeekMessage().AsString);
+                    Assert.AreEqual(messageText, (await queueWithSAS.PeekMessageAsync()).AsString);
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => queueWithSAS.PeekMessage(), "Peeking a queue message should fail with SAS without Read and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => queueWithSAS.PeekMessageAsync(), "Peeking a queue message should fail with SAS without Read and Object-level permissions.");
                 }
 
                 CloudQueueMessage messageResult = null;
                 if (((policy.Permissions & SharedAccessAccountPermissions.ProcessMessages) == SharedAccessAccountPermissions.ProcessMessages) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    messageResult = queueWithSAS.GetMessage();
+                    messageResult = await queueWithSAS.GetMessageAsync();
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => queueWithSAS.GetMessage(), "Getting a message should fail with SAS without Process and Object-level permissions.");
-                    messageResult = queue.GetMessage();
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => queueWithSAS.GetMessageAsync(), "Getting a message should fail with SAS without Process and Object-level permissions.");
+                    messageResult = await queue.GetMessageAsync();
                 }
                 Assert.AreEqual(messageText, messageResult.AsString);
 
@@ -266,28 +268,28 @@ namespace Microsoft.Azure.Storage
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => queueWithSAS.UpdateMessage(messageResult, TimeSpan.Zero, MessageUpdateFields.Content | MessageUpdateFields.Visibility), "Updating a message should fail with SAS without Update and Object-level permissions.");
-                    queue.UpdateMessage(messageResult, TimeSpan.Zero, MessageUpdateFields.Content | MessageUpdateFields.Visibility);
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => queueWithSAS.UpdateMessageAsync(messageResult, TimeSpan.Zero, MessageUpdateFields.Content | MessageUpdateFields.Visibility), "Updating a message should fail with SAS without Update and Object-level permissions.");
+                    await queue.UpdateMessageAsync(messageResult, TimeSpan.Zero, MessageUpdateFields.Content | MessageUpdateFields.Visibility);
                 }
-                messageResult = queue.PeekMessage();
+                messageResult = await queue.PeekMessageAsync();
                 Assert.AreEqual(newMessageContent, messageResult.AsString);
 
                 if (((policy.Permissions & SharedAccessAccountPermissions.Delete) == SharedAccessAccountPermissions.Delete) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    queueWithSAS.Clear();
+                    await queueWithSAS.ClearAsync();
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => queueWithSAS.Clear(), "Clearing messages should fail with SAS without delete and Object-level permissions.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => queueWithSAS.ClearAsync(), "Clearing messages should fail with SAS without delete and Object-level permissions.");
                 }
             }
             finally
             {
-                queueClient.GetQueueReference(queueName).DeleteIfExists();
+                await queueClient.GetQueueReference(queueName).DeleteIfExistsAsync();
             }
         }
-        public void RunPermissionsTestFiles(SharedAccessAccountPolicy policy)
+        public async Task RunPermissionsTestFiles(SharedAccessAccountPolicy policy)
         {
             CloudFileClient fileClient = GenerateCloudFileClient();
             string shareName = "s" + Guid.NewGuid().ToString("N");
@@ -316,11 +318,11 @@ namespace Microsoft.Azure.Storage
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Container) == SharedAccessAccountResourceTypes.Container))
                 {
-                    shareWithSAS.Create();
+                    await shareWithSAS.CreateAsync();
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => shareWithSAS.Create(), "Creating a share with SAS should fail without Create or Write and Container-level perms.");
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => shareWithSAS.CreateAsync(), "Creating a share with SAS should fail without Create or Write and Container-level perms.");
                     share.Create();
                 }
                 Assert.IsTrue(share.Exists());
@@ -346,12 +348,12 @@ namespace Microsoft.Azure.Storage
                 if ((((policy.Permissions & SharedAccessAccountPermissions.Create) == SharedAccessAccountPermissions.Create) || ((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write)) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    fileWithSAS.Create(content.Length);
+                    await fileWithSAS.CreateAsync(content.Length);
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => fileWithSAS.Create(content.Length), "Creating a file with SAS should fail without Create or Write and Object-level perms.");
-                    file.Create(content.Length);
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => fileWithSAS.CreateAsync(content.Length), "Creating a file with SAS should fail without Create or Write and Object-level perms.");
+                    await file.CreateAsync(content.Length);
                 }
                 Assert.IsTrue(file.Exists());
 
@@ -360,18 +362,18 @@ namespace Microsoft.Azure.Storage
                     if (((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write) &&
                         ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                     {
-                        fileWithSAS.WriteRange(stream, 0);
+                        await fileWithSAS.WriteRangeAsync(stream, 0, null);
                     }
                     else
                     {
                         TestHelper.ExpectedException<StorageException>(() => fileWithSAS.WriteRange(stream, 0), "Writing a range to a file with SAS should fail without Write and Object-level perms.");
                         stream.Seek(0, SeekOrigin.Begin);
-                        file.WriteRange(stream, 0);
+                        await file.WriteRangeAsync(stream, 0, null);
                     }
                 }
 
                 byte[] result = new byte[content.Length];
-                file.DownloadRangeToByteArray(result, 0, 0, content.Length);
+                await file.DownloadRangeToByteArrayAsync(result, 0, 0, content.Length);
                 for (int i = 0; i < content.Length; i++)
                 {
                     Assert.AreEqual(content[i], result[i]);
@@ -395,16 +397,16 @@ namespace Microsoft.Azure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.Write) == SharedAccessAccountPermissions.Write) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    fileWithSAS.Create(2);
+                    await fileWithSAS.CreateAsync(2);
                 }
                 else
                 {
                     TestHelper.ExpectedException<StorageException>(() => fileWithSAS.Create(2), "Overwriting a file with SAS should fail without Write and Object-level perms.");
-                    file.Create(2);
+                    await file.CreateAsync(2);
                 }
 
                 result = new byte[content.Length];
-                file.DownloadRangeToByteArray(result, 0, 0, content.Length);
+                await file.DownloadRangeToByteArrayAsync(result, 0, 0, content.Length);
                 for (int i = 0; i < content.Length; i++)
                 {
                     Assert.AreEqual(0, result[i]);
@@ -413,19 +415,19 @@ namespace Microsoft.Azure.Storage
                 if (((policy.Permissions & SharedAccessAccountPermissions.Delete) == SharedAccessAccountPermissions.Delete) &&
                     ((policy.ResourceTypes & SharedAccessAccountResourceTypes.Object) == SharedAccessAccountResourceTypes.Object))
                 {
-                    fileWithSAS.Delete();
+                    await fileWithSAS.DeleteAsync();
                 }
                 else
                 {
-                    TestHelper.ExpectedException<StorageException>(() => fileWithSAS.Delete(), "Deleting a file with SAS should fail without Delete and Object-level perms.");
-                    file.Delete();
+                    await TestHelper.ExpectedExceptionAsync<StorageException>(() => fileWithSAS.DeleteAsync(), "Deleting a file with SAS should fail without Delete and Object-level perms.");
+                    await file.DeleteAsync();
                 }
 
-                Assert.IsFalse(file.Exists());
+                Assert.IsFalse(await file.ExistsAsync());
             }
             finally
             {
-                fileClient.GetShareReference(shareName).DeleteIfExists();
+                await fileClient.GetShareReference(shareName).DeleteIfExistsAsync();
             }
         }
 
@@ -435,7 +437,7 @@ namespace Microsoft.Azure.Storage
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void AccountSASPermissions()
+        public async Task AccountSASPermissions()
         {
             // Single-threaded, takes 10 minutes to run
             // Parallelized, 1 minute.
@@ -447,12 +449,11 @@ namespace Microsoft.Azure.Storage
                 SharedAccessAccountPermissions permissions = (SharedAccessAccountPermissions)i;
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.Permissions = permissions;
-                tasks.Add(Task.Run(() => this.RunPermissionsTestBlobs(policy)));
-                tasks.Add(Task.Run(() => this.RunPermissionsTestQueues(policy)));
-                tasks.Add(Task.Run(() => this.RunPermissionsTestFiles(policy)));
+                await Task.WhenAll(
+                    this.RunPermissionsTestBlobs(policy),
+                    this.RunPermissionsTestQueues(policy),
+                    this.RunPermissionsTestFiles(policy));
             }
-            
-            Task.WaitAll(tasks.ToArray());
         }
 
         [TestMethod]
@@ -461,7 +462,7 @@ namespace Microsoft.Azure.Storage
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void AccountSASResourceTypes()
+        public async Task AccountSASResourceTypes()
         {
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < 0x8; i++)
@@ -469,11 +470,12 @@ namespace Microsoft.Azure.Storage
                 SharedAccessAccountResourceTypes resourceTypes = (SharedAccessAccountResourceTypes)i;
                 SharedAccessAccountPolicy policy = GetPolicyWithFullPermissions();
                 policy.ResourceTypes = resourceTypes;
-                tasks.Add(Task.Run(() => this.RunPermissionsTestBlobs(policy)));
-                tasks.Add(Task.Run(() => this.RunPermissionsTestQueues(policy)));
-                tasks.Add(Task.Run(() => this.RunPermissionsTestFiles(policy)));
+
+                await Task.WhenAll(
+                    this.RunPermissionsTestBlobs(policy),
+                    this.RunPermissionsTestQueues(policy),
+                    this.RunPermissionsTestFiles(policy));
             }
-            Task.WaitAll(tasks.ToArray());
         }
 
         public void RunBlobTest(SharedAccessAccountPolicy policy, Action<Action> testHandler, int? httpsPort)

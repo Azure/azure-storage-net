@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -119,7 +119,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -159,7 +159,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -222,7 +222,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -285,7 +285,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -354,14 +354,14 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
 #if WINDOWS_RT
         private static async Task<uint> BlobReadStreamSeekAndCompareAsync(IRandomAccessStreamWithContentType blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
 #elif NETCORE || FACADE_NETCORE
-        private static async Task<uint> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, ulong offset, uint readSize, uint expectedReadCount)
+        private static async Task<int> BlobReadStreamSeekAndCompareAsync(Stream blobStream, byte[] bufferToCompare, long offset, uint readSize, int expectedReadCount)
 #endif
         {
             byte[] testBuffer = new byte[readSize];
@@ -389,37 +389,37 @@ namespace Microsoft.Azure.Storage.Blob
 #endif
         {
             int attempts = 1;
-            ulong position = 0;
+            long position = 0;
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             attempts++;
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 512, 512);
             Assert.AreEqual(position, blobStream.Position);
-            position = (ulong)(bufferToCompare.Length - 128);
-            blobStream.Seek(position);
+            position = bufferToCompare.Length - 128;
+            blobStream.Seek((ulong)position);
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 128);
             attempts++;
             Assert.AreEqual(position, blobStream.Position);
             position = 4096;
-            blobStream.Seek(position);
+            blobStream.Seek((ulong)position);
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             attempts++;
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual((long)position, blobStream.Position);
             position += 4096;
-            blobStream.Seek(position);
+            blobStream.Seek((ulong)position);
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             Assert.AreEqual(position, blobStream.Position);
             position -= 4096;
-            blobStream.Seek(position);
+            blobStream.Seek((ulong)position);
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 128, 128);
             Assert.AreEqual(position, blobStream.Position);
-            position = (ulong)(streamReadSize + 4096 - 512);
-            blobStream.Seek(position);
+            position = (streamReadSize + 4096 - 512);
+            blobStream.Seek((ulong)position);
 #if NETCORE
             //don't know why adding these two line will pass, but this this the same as the desktop test
             Assert.AreEqual(position, blobStream.Position);
@@ -432,15 +432,15 @@ namespace Microsoft.Azure.Storage.Blob
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 1024);
             Assert.AreEqual(position, blobStream.Position);
             position -= 1024;
-            blobStream.Seek(position);
+            blobStream.Seek((ulong)position);
             Assert.AreEqual(position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 2048, 2048);
             Assert.AreEqual(position, blobStream.Position);
-            position = (ulong)(bufferToCompare.Length - 128);
-            blobStream.Seek(position);
-            Assert.AreEqual(position, blobStream.Position);
+            position = bufferToCompare.Length - 128;
+            blobStream.Seek((ulong)position);
+            Assert.AreEqual((long)position, blobStream.Position);
             position += await BlobReadStreamSeekAndCompareAsync(blobStream, bufferToCompare, position, 1024, 128);
-            Assert.AreEqual(position, blobStream.Position);
+            Assert.AreEqual((long)position, blobStream.Position);
             return attempts;
         }
 
@@ -478,7 +478,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -516,7 +516,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -556,7 +556,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
         

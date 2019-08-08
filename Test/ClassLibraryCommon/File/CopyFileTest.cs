@@ -22,6 +22,7 @@ using System;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Storage.File
 {
@@ -319,12 +320,12 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileCopyTestTask()
+        public async Task CloudFileCopyTestTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFile source = share.GetRootDirectoryReference().GetFileReference("source");
 
@@ -332,10 +333,10 @@ namespace Microsoft.Azure.Storage.File
                 UploadTextTask(source, data, Encoding.UTF8);
 
                 source.Metadata["Test"] = "value";
-                source.SetMetadataAsync().Wait();
+                await source.SetMetadataAsync();
 
                 CloudFile copy = share.GetRootDirectoryReference().GetFileReference("copy");
-                string copyId = copy.StartCopyAsync(TestHelper.Defiddler(source)).Result;
+                string copyId = await copy.StartCopyAsync(TestHelper.Defiddler(source));
                 WaitForCopyTask(copy);
                 Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
                 Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
@@ -350,7 +351,7 @@ namespace Microsoft.Azure.Storage.File
                     HttpStatusCode.Conflict,
                     "NoPendingCopyOperation");
 
-                source.FetchAttributesAsync().Wait();
+                await source.FetchAttributesAsync();
                 Assert.IsNotNull(copy.Properties.ETag);
                 Assert.AreNotEqual(source.Properties.ETag, copy.Properties.ETag);
                 Assert.IsTrue(copy.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
@@ -358,7 +359,7 @@ namespace Microsoft.Azure.Storage.File
                 string copyData = DownloadTextTask(copy, Encoding.UTF8);
                 Assert.AreEqual(data, copyData, "Data inside copy of file not similar");
 
-                copy.FetchAttributesAsync().Wait();
+                await copy.FetchAttributesAsync();
                 FileProperties prop1 = copy.Properties;
                 FileProperties prop2 = source.Properties;
 
@@ -370,11 +371,11 @@ namespace Microsoft.Azure.Storage.File
 
                 Assert.AreEqual("value", copy.Metadata["Test"], false, "Copied metadata not same");
 
-                copy.DeleteAsync().Wait();
+                await copy.DeleteAsync();
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif

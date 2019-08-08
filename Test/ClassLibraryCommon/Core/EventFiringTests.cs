@@ -47,6 +47,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void TestEvents()
         {
             CloudBlobContainer container = GetRandomContainerReference();

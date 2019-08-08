@@ -101,6 +101,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsRoundTripSync()
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
@@ -159,6 +160,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsRoundTripAPM()
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
@@ -341,6 +343,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task BlobGetSetServicePropertiesRequestOptionsOperationContextTask()
         {
             BlobRequestOptions requestOptions = new BlobRequestOptions();
@@ -412,6 +415,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsDisable()
         {
             // These are set to defaults in the test initialization
@@ -427,6 +431,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsDefaultServiceVersion()
         {
             props.DefaultServiceVersion = "2009-09-19";
@@ -456,6 +461,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsLoggingOperations()
         {
             // None
@@ -480,6 +486,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsMetricsLevel()
         {
             // None
@@ -509,6 +516,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsMinuteMetricsLevel()
         {
             // None
@@ -538,6 +546,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsRetentionPolicies()
         {
             // Set retention policy null with metrics disabled.
@@ -602,6 +611,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestValidCorsRules()
         {
             CorsRule ruleMinRequired = new CorsRule()
@@ -766,6 +776,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestCorsMaxOrigins()
         {
             CorsRule ruleManyOrigins = new CorsRule() { AllowedMethods = CorsHttpMethods.Get, };
@@ -796,6 +807,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestCorsMaxHeaders()
         {
             CorsRule ruleManyHeaders = new CorsRule()
@@ -876,6 +888,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsStaticWebsite()
         {
             // Disabled
@@ -942,6 +955,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsOptionalPropertiesSync()
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
@@ -1011,6 +1025,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudBlobTestAnalyticsStaticOnlySync()
         {
             props.Logging.LoggingOperations = LoggingOperations.Read | LoggingOperations.Write;
@@ -1064,6 +1079,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Test that the other properties did not change.
             props.StaticWebsite = newProps.StaticWebsite;
+            Task.Delay(500).Wait();
             TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties());
 
             newProps.StaticWebsite = new StaticWebsiteProperties();
@@ -1073,6 +1089,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Test that the other properties did not change.
             props.StaticWebsite = newProps.StaticWebsite;
+            Task.Delay(500).Wait();
             TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties());
 
             // Reset to enabled for following test
@@ -1093,6 +1110,7 @@ namespace Microsoft.Azure.Storage.Blob
             client.SetServiceProperties(newProps);
 
             // Test that the CORS rules did not change.
+            Task.Delay(500).Wait();
             TestHelper.AssertServicePropertiesAreEqual(props, client.GetServiceProperties());
         }
         #endregion

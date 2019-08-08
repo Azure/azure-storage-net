@@ -176,7 +176,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -445,7 +445,7 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 blobClient.DefaultRequestOptions.MaximumExecutionTime = null;
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -570,7 +570,7 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 blobClient.DefaultRequestOptions.MaximumExecutionTime = null;
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif

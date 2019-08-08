@@ -167,17 +167,17 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareCreateTask()
+        public async Task CloudFileShareCreateTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
 
             AggregateException e = TestHelper.ExpectedException<AggregateException>(
                  share.CreateAsync().Wait,
                 "Creating already exists share should fail");
             Assert.IsInstanceOfType(e.InnerException, typeof(StorageException));
             Assert.AreEqual((int)HttpStatusCode.Conflict, ((StorageException)e.InnerException).RequestInformation.HttpStatusCode);
-            Task.Factory.FromAsync(share.BeginDelete, share.EndDelete, null).Wait();
+            await Task.Factory.FromAsync(share.BeginDelete, share.EndDelete, null);
         }
 
         [TestMethod]
@@ -209,7 +209,7 @@ namespace Microsoft.Azure.Storage.File
             }
 
             // Validate that we did attempt one request and it was cancelled
-            TestHelper.AssertCancellation(ctx);
+            TestHelper.AssertCancellationTask(ctx);
         }
 #endif
 
@@ -361,12 +361,12 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareDeleteTask()
+        public async Task CloudFileShareDeleteTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             Assert.IsTrue(share.Exists());
-            share.DeleteAsync().Wait();
+            await share.DeleteAsync();
             Assert.IsFalse(share.Exists());
         }
 
@@ -376,13 +376,13 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareDeleteIfExistsTask()
+        public async Task CloudFileShareDeleteIfExistsTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            Assert.IsFalse(share.DeleteIfExistsAsync().Result);
-            share.CreateAsync().Wait();
-            Assert.IsTrue(share.DeleteIfExistsAsync().Result);
-            Assert.IsFalse(share.DeleteIfExistsAsync().Result);
+            Assert.IsFalse(await share.DeleteIfExistsAsync());
+            await share.CreateAsync();
+            Assert.IsTrue(await share.DeleteIfExistsAsync());
+            Assert.IsFalse(await share.DeleteIfExistsAsync());
         }
 #endif
 
@@ -464,26 +464,26 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareExistsTask()
+        public async Task CloudFileShareExistsTask()
         {
             CloudFileShare share = GetRandomShareReference();
             CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
 
-            Assert.IsFalse(share2.ExistsAsync().Result);
+            Assert.IsFalse(await share2.ExistsAsync());
 
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
 
             try
             {
-                Assert.IsTrue(share2.ExistsAsync().Result);
+                Assert.IsTrue(await share2.ExistsAsync());
                 Assert.IsNotNull(share2.Properties.ETag);
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
 
-            Assert.IsFalse(share2.ExistsAsync().Result);
+            Assert.IsFalse(await share2.ExistsAsync());
         }
 #endif
 
@@ -530,16 +530,16 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareCreateWithMetadataTask()
+        public async Task CloudFileShareCreateWithMetadataTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
                 share.Metadata.Add("key1", "value1");
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
                 CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                share2.FetchAttributesAsync().Wait();
+                await share2.FetchAttributesAsync();
                 Assert.AreEqual(1, share2.Metadata.Count);
                 Assert.AreEqual("value1", share2.Metadata["key1"]);
                 // Metadata keys should be case-insensitive
@@ -550,7 +550,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -700,42 +700,42 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareSetMetadataTask()
+        public async Task CloudFileShareSetMetadataTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.Create();
+                await share.CreateAsync();
 
                 CloudFileShare share2 = share.ServiceClient.GetShareReference(share.Name);
-                share2.FetchAttributesAsync().Wait();
+                await share2.FetchAttributesAsync();
                 Assert.AreEqual(0, share2.Metadata.Count);
 
                 share.Metadata.Add("key1", "value1");
-                share.SetMetadataAsync().Wait();
+                await share.SetMetadataAsync();
 
-                share2.FetchAttributesAsync().Wait();
+                await share2.FetchAttributesAsync();
                 Assert.AreEqual(1, share2.Metadata.Count);
                 Assert.AreEqual("value1", share2.Metadata["key1"]);
                 // Metadata keys should be case-insensitive
                 Assert.AreEqual("value1", share2.Metadata["KEY1"]);
 
                 CloudFileShare share3 =
-                    share.ServiceClient.ListSharesSegmentedAsync(
-                        share.Name, ShareListingDetails.Metadata, null, null, null, null).Result.Results.First();
+                    (await share.ServiceClient.ListSharesSegmentedAsync(
+                        share.Name, ShareListingDetails.Metadata, null, null, null, null)).Results.First();
                 Assert.AreEqual(1, share3.Metadata.Count);
                 Assert.AreEqual("value1", share3.Metadata["key1"]);
                 Assert.AreEqual("value1", share3.Metadata["KEY1"]);
 
                 share.Metadata.Clear();
-                share.SetMetadataAsync().Wait();
+                await share.SetMetadataAsync();
 
-                share2.FetchAttributesAsync().Wait();
+                await share2.FetchAttributesAsync();
                 Assert.AreEqual(0, share2.Metadata.Count);
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -956,14 +956,14 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareSetPermissionsTask()
+        public async Task CloudFileShareSetPermissionsTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.Create();
+                await share.CreateAsync();
 
-                FileSharePermissions permissions = share.GetPermissionsAsync().Result;
+                FileSharePermissions permissions = await share.GetPermissionsAsync();
                 Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
 
                 // We do not have precision at milliseconds level. Hence, we need
@@ -978,7 +978,7 @@ namespace Microsoft.Azure.Storage.File
                     SharedAccessExpiryTime = expiry,
                     Permissions = SharedAccessFilePermissions.List,
                 });
-                share.SetPermissionsAsync(permissions).Wait();
+                await share.SetPermissionsAsync(permissions);
 
                 TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
                 {
@@ -994,7 +994,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1004,14 +1004,14 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareSetPermissionsOverloadTask()
+        public async Task CloudFileShareSetPermissionsOverloadTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
 
-                FileSharePermissions permissions = share.GetPermissionsAsync().Result;
+                FileSharePermissions permissions = await share.GetPermissionsAsync();
                 Assert.AreEqual(0, permissions.SharedAccessPolicies.Count);
 
                 // We do not have precision at milliseconds level. Hence, we need
@@ -1027,7 +1027,7 @@ namespace Microsoft.Azure.Storage.File
                     Permissions = SharedAccessFilePermissions.List,
                 });
                 permissions.SharedAccessPolicies.Add(sharedAccessPolicy);
-                share.SetPermissionsAsync(permissions).Wait();
+                await share.SetPermissionsAsync(permissions);
 
                 TestHelper.SpinUpTo30SecondsIgnoringFailures(() =>
                 {
@@ -1043,7 +1043,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExists();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -1584,19 +1584,19 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareListFilesAndDirectoriesSegmentedTask()
+        public async Task CloudFileShareListFilesAndDirectoriesSegmentedTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
                 List<string> fileNames = CreateFilesTask(share, 3);
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
 
                 FileContinuationToken token = null;
                 do
                 {
-                    FileResultSegment results = rootDirectory.ListFilesAndDirectoriesSegmentedAsync(1, token, null, null).Result;
+                    FileResultSegment results = await rootDirectory.ListFilesAndDirectoriesSegmentedAsync(1, token, null, null);
                     int count = 0;
                     foreach (IListFileItem fileItem in results.Results)
                     {
@@ -1612,7 +1612,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -1705,19 +1705,19 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareListFilesAndDirectoriesSegmentedOverloadTask()
+        public async Task CloudFileShareListFilesAndDirectoriesSegmentedOverloadTask()
         {
             CloudFileShare share = GetRandomShareReference();
             try
             {
-                share.CreateAsync().Wait();
+                await share.CreateAsync();
                 List<string> fileNames = CreateFiles(share, 3);
                 CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
 
                 FileContinuationToken token = null;
                 do
                 {
-                    FileResultSegment results = rootDirectory.ListFilesAndDirectoriesSegmentedAsync(token).Result;
+                    FileResultSegment results = await rootDirectory.ListFilesAndDirectoriesSegmentedAsync(token);
                     int count = 0;
                     foreach (IListFileItem fileItem in results.Results)
                     {
@@ -1732,7 +1732,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 #endif
@@ -2185,7 +2185,7 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareSetPropertiesTask()
+        public async Task CloudFileShareSetPropertiesTask()
         {
             string shareName = GetRandomShareName();
             CloudFileClient client = GenerateCloudFileClient();
@@ -2193,21 +2193,21 @@ namespace Microsoft.Azure.Storage.File
             try
             {
                 CloudFileShare share1 = client.GetShareReference(shareName);
-                share1.CreateAsync().Wait();
+                await share1.CreateAsync();
 
-                share1.FetchAttributesAsync().Wait();
+                await share1.FetchAttributesAsync();
                 Assert.AreEqual(5120, share1.Properties.Quota);
 
                 share1.Properties.Quota = 8;
-                share1.SetPropertiesAsync().Wait();
+                await share1.SetPropertiesAsync();
 
                 CloudFileShare share2 = client.GetShareReference(shareName);
-                share2.FetchAttributesAsync().Wait();
+                await share2.FetchAttributesAsync();
                 Assert.AreEqual(8, share2.Properties.Quota);
             }
             finally
             {
-                client.GetShareReference(shareName).DeleteIfExistsAsync().Wait();
+                await client.GetShareReference(shareName).DeleteIfExistsAsync();
             }
         }
 #endif
@@ -2226,13 +2226,11 @@ namespace Microsoft.Azure.Storage.File
                 Assert.IsFalse(fileShareWithSAS.DeleteIfExists());
                 Assert.IsTrue(fileShareWithSAS.CreateIfNotExists());
                 Assert.IsFalse(fileShareWithSAS.CreateIfNotExists());
-                Assert.IsTrue(fileShareWithSAS.DeleteIfExists());
-                // Design mechanic, delete takes time to propagate on the service.
-                Assert.IsTrue(fileShareWithSAS.DeleteIfExists());
+
             }
             finally
             {
-                fileShareWithSAS.DeleteIfExists();
+                Assert.IsTrue(fileShareWithSAS.DeleteIfExists());
             }
         }
 
@@ -2265,13 +2263,9 @@ namespace Microsoft.Azure.Storage.File
                     result = fileShareWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     Assert.IsTrue(fileShareWithSAS.EndDeleteIfExists(result));
-
-                    result = fileShareWithSAS.BeginDeleteIfExists(ar => waitHandle.Set(), null);
-                    waitHandle.WaitOne();
-                    Assert.IsTrue(fileShareWithSAS.EndDeleteIfExists(result));
                 }
             }
-            finally
+            catch
             {
                 fileShareWithSAS.DeleteIfExists();
             }
@@ -2285,20 +2279,18 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareCreateAndDeleteWithWriteOnlyPermissionsTask()
+        public async Task CloudFileShareCreateAndDeleteWithWriteOnlyPermissionsTask()
         {
             CloudFileShare fileShareWithSAS = GenerateRandomWriteOnlyFileShare();
             try
             {
-                Assert.IsFalse(fileShareWithSAS.DeleteIfExistsAsync().Result);
-                Assert.IsTrue(fileShareWithSAS.CreateIfNotExistsAsync().Result);
-                Assert.IsFalse(fileShareWithSAS.CreateIfNotExistsAsync().Result);
-                Assert.IsTrue(fileShareWithSAS.DeleteIfExistsAsync().Result);
-                Assert.IsTrue(fileShareWithSAS.DeleteIfExistsAsync().Result);
+                Assert.IsFalse(await fileShareWithSAS.DeleteIfExistsAsync());
+                Assert.IsTrue(await fileShareWithSAS.CreateIfNotExistsAsync());
+                Assert.IsFalse(await fileShareWithSAS.CreateIfNotExistsAsync());
             }
             finally
             {
-                fileShareWithSAS.DeleteIfExists();
+                Assert.IsTrue(await fileShareWithSAS.DeleteIfExistsAsync());
             }
         }
 #endif
@@ -2482,32 +2474,32 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileCreateShareSnapshotTask()
+        public async Task CloudFileCreateShareSnapshotTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             share.Metadata["key1"] = "value1";
-            share.SetMetadataAsync().Wait();
+            await share.SetMetadataAsync();
 
             CloudFileDirectory dir1 = share.GetRootDirectoryReference().GetDirectoryReference("dir1");
-            dir1.CreateAsync().Wait();
+            await dir1.CreateAsync();
             CloudFile file1 = dir1.GetFileReference("file1");
-            file1.CreateAsync(1024).Wait();
+            await file1.CreateAsync(1024);
             byte[] buffer = GetRandomBuffer(1024);
-            file1.UploadFromByteArrayAsync(buffer, 0, 1024).Wait();
+            await file1.UploadFromByteArrayAsync(buffer, 0, 1024);
             dir1.Metadata["key2"] = "value2";
-            dir1.SetMetadataAsync().Wait();
+            await dir1.SetMetadataAsync();
 
-            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFileShare snapshot = await share.SnapshotAsync();
             CloudFileClient client = GenerateCloudFileClient();
             CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
-            Assert.IsTrue(snapshotRef.ExistsAsync().Result);
+            Assert.IsTrue(await snapshotRef.ExistsAsync());
             Assert.IsTrue(snapshotRef.Metadata.Count == 1 && snapshotRef.Metadata["key1"].Equals("value1"));
             // Metadata keys should be case-insensitive
             Assert.IsTrue(snapshotRef.Metadata["KEY1"].Equals("value1"));
 
             CloudFileShare snapshotRef2 = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
-            snapshotRef2.FetchAttributesAsync().Wait();
+            await snapshotRef2.FetchAttributesAsync();
             Assert.IsTrue(snapshotRef2.Metadata.Count == 1 && snapshotRef2.Metadata["key1"].Equals("value1"));
             Assert.IsTrue(snapshotRef2.Metadata["KEY1"].Equals("value1"));
 
@@ -2515,7 +2507,7 @@ namespace Microsoft.Azure.Storage.File
             Assert.IsTrue(snapshot.Metadata["KEY1"].Equals("value1"));
 
             CloudFileDirectory snapshotDir1 = snapshot.GetRootDirectoryReference().GetDirectoryReference("dir1");
-            snapshotDir1.FetchAttributesAsync().Wait();
+            await snapshotDir1.FetchAttributesAsync();
             Assert.IsTrue(snapshotDir1.Metadata.Count == 1 && snapshotDir1.Metadata["key2"].Equals("value2"));
             Assert.IsTrue(snapshotDir1.Metadata["KEY2"].Equals("value2"));
 
@@ -2523,9 +2515,9 @@ namespace Microsoft.Azure.Storage.File
             // create snapshot with metadata
             IDictionary<string, string> shareMeta2 = new Dictionary<string, string>();
             shareMeta2.Add("abc", "def");
-            CloudFileShare snapshotRef3 = share.SnapshotAsync(shareMeta2, null, null, null).Result;
+            CloudFileShare snapshotRef3 = await share.SnapshotAsync(shareMeta2, null, null, null);
             CloudFileShare snapshotRef4 = client.GetShareReference(snapshotRef3.Name, snapshotRef3.SnapshotTime);
-            Assert.IsTrue(snapshotRef4.ExistsAsync().Result);
+            Assert.IsTrue(await snapshotRef4.ExistsAsync());
             Assert.IsTrue(snapshotRef4.Metadata.Count == 1 && snapshotRef4.Metadata["abc"].Equals("def"));
             Assert.IsTrue(snapshotRef4.Metadata["ABC"].Equals("def"));
         }
@@ -2614,28 +2606,27 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileShareDeleteSnapshotOptionsTask()
+        public async Task CloudFileShareDeleteSnapshotOptionsTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
 
-            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFileShare snapshot = await share.SnapshotAsync();
 
             try
             {
-                share.DeleteAsync(DeleteShareSnapshotsOption.None, null, null, null, CancellationToken.None).Wait();
+                await share.DeleteAsync(DeleteShareSnapshotsOption.None, null, null, null, CancellationToken.None);
                 Assert.Fail("Should not be able to delete a share that has snapshots");
             }
-            catch (AggregateException ae)
+            catch (StorageException e)
             {
-                StorageException se = ae.InnerException as StorageException;
-                Assert.AreEqual("ShareHasSnapshots", se.RequestInformation.ExtendedErrorInformation.ErrorCode);
+                Assert.AreEqual("ShareHasSnapshots", e.RequestInformation.ExtendedErrorInformation.ErrorCode);
             }
 
-            share.DeleteAsync(DeleteShareSnapshotsOption.IncludeSnapshots, null, null, null, CancellationToken.None).Wait();
+            await share.DeleteAsync(DeleteShareSnapshotsOption.IncludeSnapshots, null, null, null, CancellationToken.None);
 
-            Assert.IsFalse(share.ExistsAsync().Result);
-            Assert.IsFalse(snapshot.ExistsAsync().Result);
+            Assert.IsFalse(await share.ExistsAsync());
+            Assert.IsFalse(await snapshot.ExistsAsync());
         }
 #endif
 
@@ -2809,16 +2800,16 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileInvalidApisForShareSnapshotTask()
+        public async Task CloudFileInvalidApisForShareSnapshotTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
 
-            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            CloudFileShare snapshot = await share.SnapshotAsync();
             try
             {
                 //snapshot.CreateAsync().Wait();
-                bool t = snapshot.DeleteIfExistsAsync().Result;
+                bool t = await snapshot.DeleteIfExistsAsync();
             }
             catch (InvalidOperationException e)
             {
@@ -2826,7 +2817,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                snapshot.GetPermissionsAsync().Wait();
+                await snapshot.GetPermissionsAsync();
             }
             catch (InvalidOperationException e)
             {
@@ -2834,7 +2825,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                snapshot.GetStatsAsync().Wait();
+                await snapshot.GetStatsAsync();
             }
             catch (InvalidOperationException e)
             {
@@ -2842,7 +2833,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                snapshot.SetMetadataAsync().Wait();
+                await snapshot.SetMetadataAsync();
             }
             catch (InvalidOperationException e)
             {
@@ -2850,7 +2841,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                snapshot.SetPermissionsAsync(null).Wait();
+                await snapshot.SetPermissionsAsync(null);
             }
             catch (InvalidOperationException e)
             {
@@ -2858,7 +2849,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                snapshot.SetPropertiesAsync().Wait();
+                await snapshot.SetPropertiesAsync();
             }
             catch (InvalidOperationException e)
             {
@@ -2866,7 +2857,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                snapshot.SnapshotAsync().Wait();
+                await snapshot.SnapshotAsync();
             }
             catch (InvalidOperationException e)
             {
@@ -3028,24 +3019,25 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudFileListFilesAndDirectoriesWithinSnapshotTask()
+        public async Task CloudFileListFilesAndDirectoriesWithinSnapshotTask()
         {
             CloudFileShare share = GetRandomShareReference();
-            share.CreateAsync().Wait();
+            await share.CreateAsync();
             CloudFileDirectory myDir = share.GetRootDirectoryReference().GetDirectoryReference("mydir");
 
-            myDir.CreateAsync().Wait();
-            myDir.GetFileReference("myfile").CreateAsync(1024).Wait();
-            myDir.GetDirectoryReference("yourDir").CreateAsync().Wait();
-            Assert.IsTrue(share.ExistsAsync().Result);
-            CloudFileShare snapshot = share.SnapshotAsync().Result;
+            await myDir.CreateAsync();
+            await myDir.GetFileReference("myfile").CreateAsync(1024);
+            await myDir.GetDirectoryReference("yourDir").CreateAsync();
+            Assert.IsTrue(await share.ExistsAsync());
+            CloudFileShare snapshot = await share.SnapshotAsync();
             CloudFileClient client = GenerateCloudFileClient();
             CloudFileShare snapshotRef = client.GetShareReference(snapshot.Name, snapshot.SnapshotTime);
             List<IListFileItem> listedFileItems = new List<IListFileItem>();
             FileContinuationToken token = null;
             do
             {
-                FileResultSegment resultSegment = snapshotRef.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(token).Result;
+                FileResultSegment resultSegment 
+                    = await snapshotRef.GetRootDirectoryReference().ListFilesAndDirectoriesSegmentedAsync(token);
                 token = resultSegment.ContinuationToken;
 
                 foreach (IListFileItem listResultItem in resultSegment.Results)
@@ -3068,7 +3060,8 @@ namespace Microsoft.Azure.Storage.File
             listedFileItems.Clear();
             do
             {
-                FileResultSegment resultSegment = snapshotRef.GetRootDirectoryReference().GetDirectoryReference("mydir").ListFilesAndDirectoriesSegmentedAsync(token).Result;
+                FileResultSegment resultSegment 
+                    = await snapshotRef.GetRootDirectoryReference().GetDirectoryReference("mydir").ListFilesAndDirectoriesSegmentedAsync(token);
                 token = resultSegment.ContinuationToken;
 
                 foreach (IListFileItem listResultItem in resultSegment.Results)
@@ -3101,8 +3094,8 @@ namespace Microsoft.Azure.Storage.File
 
             Assert.AreEqual(2, count);
 
-            snapshot.DeleteAsync().Wait();
-            share.DeleteAsync().Wait();
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 #endif
 

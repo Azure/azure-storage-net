@@ -435,15 +435,15 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlockBlobWriteStreamOpenWithAccessConditionTask()
+        public async Task BlockBlobWriteStreamOpenWithAccessConditionTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
 
             try
             {
                 CloudBlockBlob existingBlob = container.GetBlockBlobReference("blob");
-                existingBlob.PutBlockListAsync(new List<string>()).Wait();
+                await existingBlob.PutBlockListAsync(new List<string>());
 
                 CloudBlockBlob blob = container.GetBlockBlobReference("blob2");
                 AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
@@ -454,17 +454,17 @@ namespace Microsoft.Azure.Storage.Blob
 
                 blob = container.GetBlockBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                Stream blobStream = blob.OpenWriteAsync(accessCondition, null ,null).Result;
+                Stream blobStream = await blob.OpenWriteAsync(accessCondition, null ,null);
                 blobStream.Dispose();
 
                 blob = container.GetBlockBlobReference("blob4");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                blobStream = blob.OpenWriteAsync(accessCondition, null, null).Result;
+                blobStream = await blob.OpenWriteAsync(accessCondition, null, null);
                 blobStream.Dispose();
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -725,15 +725,15 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void PageBlobWriteStreamOpenWithAccessConditionTask()
+        public async Task PageBlobWriteStreamOpenWithAccessConditionTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
 
             try
             {
                 CloudPageBlob existingBlob = container.GetPageBlobReference("blob");
-                existingBlob.CreateAsync(1024).Wait();
+                await existingBlob.CreateAsync(1024);
 
                 CloudPageBlob blob = container.GetPageBlobReference("blob2");
                 AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
@@ -744,17 +744,17 @@ namespace Microsoft.Azure.Storage.Blob
 
                 blob = container.GetPageBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                Stream blobStream = blob.OpenWriteAsync(1024, accessCondition, null, null).Result;
+                Stream blobStream = await blob.OpenWriteAsync(1024, accessCondition, null, null);
                 blobStream.Dispose();
 
                 blob = container.GetPageBlobReference("blob4");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                blobStream = blob.OpenWriteAsync(1024, accessCondition, null, null).Result;
+                blobStream = await blob.OpenWriteAsync(1024, accessCondition, null, null);
                 blobStream.Dispose();
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -1064,6 +1064,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.FuntionalTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void BlockBlobWriteStreamFlushTestAPM()
         {
             byte[] buffer = GetRandomBuffer(512 * 1024);
@@ -1627,6 +1628,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.FuntionalTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void PageBlobWriteStreamFlushTestAPM()
         {
             byte[] buffer = GetRandomBuffer(512 * 1024);
@@ -2142,15 +2144,15 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void AppendBlobWriteStreamOpenWithAccessConditionTask()
+        public async Task AppendBlobWriteStreamOpenWithAccessConditionTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
 
             try
             {
                 CloudAppendBlob existingBlob = container.GetAppendBlobReference("blob");
-                existingBlob.CreateOrReplaceAsync().Wait();
+                await existingBlob.CreateOrReplaceAsync();
 
                 CloudAppendBlob blob = container.GetAppendBlobReference("blob2");
                 AccessCondition accessCondition = AccessCondition.GenerateIfMatchCondition(existingBlob.Properties.ETag);
@@ -2161,17 +2163,17 @@ namespace Microsoft.Azure.Storage.Blob
 
                 blob = container.GetAppendBlobReference("blob3");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(existingBlob.Properties.ETag);
-                Stream blobStream = blob.OpenWriteAsync(true, accessCondition, null, null).Result;
+                Stream blobStream = await blob.OpenWriteAsync(true, accessCondition, null, null);
                 blobStream.Dispose();
 
                 blob = container.GetAppendBlobReference("blob4");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                blobStream = blob.OpenWriteAsync(true, accessCondition, null, null).Result;
+                blobStream = await blob.OpenWriteAsync(true, accessCondition, null, null);
                 blobStream.Dispose();
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2673,7 +2675,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -2820,7 +2822,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -2923,7 +2925,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3026,7 +3028,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3094,7 +3096,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3123,7 +3125,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3189,7 +3191,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3293,7 +3295,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3349,7 +3351,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
         
@@ -3425,7 +3427,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3499,7 +3501,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3528,7 +3530,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
         
@@ -3605,7 +3607,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -3655,7 +3657,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 

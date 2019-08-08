@@ -58,9 +58,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// Create the given blob and, if necessary, its container.
         /// </summary>
         /// <param name="blob">The blob to create.</param>
-        internal static void CreateBlobTask(CloudBlob blob)
+        internal static async Task CreateBlobTask(CloudBlob blob)
         {
-            blob.Container.CreateIfNotExistsAsync().Wait();
+            await blob.Container.CreateIfNotExistsAsync();
             UploadTextTask(blob, "LeaseTestBlobContent", Encoding.UTF8);
         }
 #endif
@@ -160,7 +160,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// Deletes all containers beginning with the current prefix, and all blobs in the root container beginning with the current prefix.
         /// Any existing lease is broken before the resource is deleted. All exceptions are ignored.
         /// </summary>
-        internal void DeleteAllTask()
+        internal async Task DeleteAllTask()
         {
             try
             {
@@ -169,7 +169,7 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     try
                     {
-                        container.BreakLeaseAsync(TimeSpan.Zero).Wait();
+                        await container.BreakLeaseAsync(TimeSpan.Zero);
                     }
                     catch (Exception)
                     {
@@ -177,7 +177,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     try
                     {
-                        container.DeleteAsync().Wait();
+                        await container.DeleteAsync();
                     }
                     catch (Exception)
                     {
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.Storage.Blob
                 {
                     try
                     {
-                        blob.BreakLeaseAsync(TimeSpan.Zero).Wait();
+                        await blob.BreakLeaseAsync(TimeSpan.Zero);
                     }
                     catch (Exception)
                     {
@@ -198,7 +198,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     try
                     {
-                        blob.DeleteAsync(DeleteSnapshotsOption.IncludeSnapshots, null /* access conditions */, null /* options */, new OperationContext());
+                        await blob.DeleteAsync(DeleteSnapshotsOption.IncludeSnapshots, null /* access conditions */, null /* options */, new OperationContext());
                     }
                     catch (Exception)
                     {
@@ -287,21 +287,21 @@ namespace Microsoft.Azure.Storage.Blob
         /// Puts the lease on the given blob in an available state.
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
-        internal static void SetAvailableStateTask(CloudBlob blob)
+        internal static async Task SetAvailableStateTask(CloudBlob blob)
         {
             bool shouldBreakFirst = false;
 
             try
             {
-                blob.DeleteIfExistsAsync().Wait();
+                await blob.DeleteIfExistsAsync();
             }
-            catch (AggregateException ex)
+            catch (StorageException exception)
             {
-                StorageException exception = ex.InnerException as StorageException;
-                if (exception == null)
-                {
-                    throw;
-                }
+                //StorageException exception = ex.InnerException as StorageException;
+                //if (exception == null)
+                //{
+                //    throw;
+                //}
 
                 if (exception.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.LeaseIdMissing)
                 {
@@ -315,12 +315,12 @@ namespace Microsoft.Azure.Storage.Blob
 
             if (shouldBreakFirst)
             {
-                blob.BreakLeaseAsync(TimeSpan.Zero).Wait();
+                await blob.BreakLeaseAsync(TimeSpan.Zero);
 
-                blob.DeleteAsync().Wait();
+                await blob.DeleteAsync();
             }
 
-            CreateBlobTask(blob);
+            await CreateBlobTask(blob);
         }
 #endif
 
@@ -363,11 +363,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="blob">The blob with the lease.</param>
         /// <param name="leaseTime">The amount of time on the new lease.</param>
         /// <returns>The lease ID of the current lease.</returns>
-        internal static string SetLeasedStateTask(CloudBlob blob, TimeSpan? leaseTime)
+        internal static async Task<string> SetLeasedStateTask(CloudBlob blob, TimeSpan? leaseTime)
         {
             string leaseId = Guid.NewGuid().ToString();
-            SetAvailableStateTask(blob);
-            return blob.AcquireLeaseAsync(leaseTime, leaseId).Result;
+            await SetAvailableStateTask(blob);
+            return await blob.AcquireLeaseAsync(leaseTime, leaseId);
         }
 #endif
 
@@ -423,10 +423,10 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="blob">The blob with the lease.</param>
         /// <param name="leaseTime">The amount of time on the released lease.</param>
         /// <returns>The lease ID of the released lease.</returns>
-        internal static string SetReleasedStateTask(CloudBlob blob, TimeSpan? leaseTime)
+        internal async Task<string> SetReleasedStateTask(CloudBlob blob, TimeSpan? leaseTime)
         {
             string leaseId = SetLeasedStateAPM(blob, leaseTime);
-            blob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await blob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
             return leaseId;
         }
 #endif
@@ -467,11 +467,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
         /// <returns>The lease ID of the current (but breaking) lease.</returns>
-        internal static string SetBreakingStateTask(CloudBlob blob)
+        internal static async Task<string> SetBreakingStateTask(CloudBlob blob)
         {
-            string leaseId = SetLeasedStateTask(blob, null /* infinite lease */);
+            string leaseId = await SetLeasedStateTask(blob, null /* infinite lease */);
 
-            blob.BreakLeaseAsync(TimeSpan.FromSeconds(60)).Wait();
+            await blob.BreakLeaseAsync(TimeSpan.FromSeconds(60));
 
             return leaseId;
         }
@@ -526,10 +526,10 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
         /// <returns>The lease ID of the broken lease.</returns>
-        internal static string SetInstantBrokenStateTask(CloudBlob blob)
+        internal static async Task<string> SetInstantBrokenStateTask(CloudBlob blob)
         {
-            string leaseId = SetLeasedStateTask(blob, null /* infinite lease */);
-            blob.BreakLeaseAsync(TimeSpan.Zero).Wait();
+            string leaseId = await SetLeasedStateTask(blob, null /* infinite lease */);
+            await blob.BreakLeaseAsync(TimeSpan.Zero);
             return leaseId;
         }
 #endif
@@ -564,9 +564,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="blob">The blob with the lease.</param>
         /// <returns>The lease ID of the expired lease.</returns>
-        internal static string SetExpiredStateTask(CloudBlob blob)
+        internal static async Task<string> SetExpiredStateTask(CloudBlob blob)
         {
-            string leaseId = SetLeasedStateTask(blob, TimeSpan.FromSeconds(15));
+            string leaseId = await SetLeasedStateTask(blob, TimeSpan.FromSeconds(15));
             Thread.Sleep(TimeSpan.FromSeconds(17));
             return leaseId;
         }
@@ -841,14 +841,14 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobAcquireRenewLeaseSemanticTests()
+        public async Task BlobAcquireRenewLeaseSemanticTests()
         {
             try
             {
                 List<Task> tasks = new List<Task>();
                 tasks.Add(Task.Run(() => BlobAcquireLeaseSemanticTests()));
                 tasks.Add(Task.Run(() => BlobRenewLeaseSemanticTests()));
-                Task.WaitAll(tasks.ToArray());
+                await Task.WhenAll(tasks.ToArray());
             }
             finally
             {
@@ -1434,7 +1434,8 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobAcquireLeaseStateTestsTask()
+        [DoNotParallelize]
+        public async Task BlobAcquireLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string leaseId;
@@ -1443,16 +1444,16 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Acquire the lease while in available state, make idempotent call
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
-            leaseId = leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Result;
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
             Assert.IsNotNull(leasedBlob.Properties.ETag);
-            leaseId2 = leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Result;
+            leaseId2 = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
 
             Assert.AreEqual(leaseId, leaseId2);
 
             // Acquire the lease while in leased state (conflict)
-            SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId),
@@ -1461,7 +1462,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseAlreadyPresent);
 
             // Acquire the lease while breaking (same ID)
-            leaseId = SetBreakingStateTask(leasedBlob);
+            leaseId = await SetBreakingStateTask(leasedBlob);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId),
@@ -1470,7 +1471,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIsBreakingAndCannotBeAcquired);
 
             // Acquire the lease while breaking (different ID)
-            SetBreakingStateTask(leasedBlob);
+            await SetBreakingStateTask(leasedBlob);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId),
@@ -1479,29 +1480,29 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseAlreadyPresent);
 
             // Acquire the lease while in broken state (same ID), make idempotent call
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
 
             // Acquire the lease while in broken state (new ID), make idempotent call
-            SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
+            await SetInstantBrokenStateTask(leasedBlob);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
 
             // Acquire the lease while in released state (same ID), make idempotent call. Also, use the other overload for BeginAcquireLease.
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
 
             // Acquire the lease while in released state (new ID), make idempotent call. Also, use the other overload for BeginAcquireLease.
-            SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             OperationContext context = new OperationContext();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context).Wait();
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context);
 
             // Acquire with no proposed ID (non-idempotent)
-            SetAvailableStateTask(leasedBlob);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, context).Wait();
+            await SetAvailableStateTask(leasedBlob);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, context);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, context),
@@ -1511,7 +1512,7 @@ namespace Microsoft.Azure.Storage.Blob
 
 
             // Delete the blob
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 
         [TestMethod]
@@ -1520,7 +1521,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void PageBlobAcquireLeaseStateTestsTask()
+        public async Task PageBlobAcquireLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string leaseId;
@@ -1529,16 +1530,16 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
 
             // Acquire the lease while in available state, make idempotent call
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
-            leaseId = leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Result;
+            leaseId = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
             Assert.IsNotNull(leasedBlob.Properties.ETag);
-            leaseId2 = leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Result;
+            leaseId2 = await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
 
             Assert.AreEqual(leaseId, leaseId2);
 
             // Acquire the lease while in leased state (conflict)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId),
@@ -1547,7 +1548,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseAlreadyPresent);
 
             // Acquire the lease while breaking (same ID)
-            leaseId = SetBreakingStateTask(leasedBlob);
+            leaseId = await SetBreakingStateTask(leasedBlob);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId),
@@ -1556,7 +1557,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIsBreakingAndCannotBeAcquired);
 
             // Acquire the lease while breaking (different ID)
-            leaseId = SetBreakingStateTask(leasedBlob);
+            leaseId = await SetBreakingStateTask(leasedBlob);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId),
@@ -1565,29 +1566,29 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseAlreadyPresent);
 
             // Acquire the lease while in broken state (same ID), make idempotent call
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
 
             // Acquire the lease while in broken state (new ID), make idempotent call
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
 
             // Acquire the lease while in released state (same ID), make idempotent call. Also, use the other overload for BeginAcquireLease.
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, leaseId);
 
             // Acquire the lease while in released state (new ID), make idempotent call. Also, use the other overload for BeginAcquireLease.
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             OperationContext context = new OperationContext();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context).Wait();
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context).Wait();
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId, null, null, context);
 
             // Acquire with no proposed ID (non-idempotent)
-            SetAvailableStateTask(leasedBlob);
-            leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, context).Wait();
+            await SetAvailableStateTask(leasedBlob);
+            await leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, context);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.AcquireLeaseAsync(null /* infinite lease */, null /* proposed lease ID */, null, null, context),
@@ -1596,7 +1597,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseAlreadyPresent);
 
             // Delete the blob
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 #endif
 
@@ -1606,7 +1607,8 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void AllRenewLeaseStateTests()
+        [DoNotParallelize]
+        public async Task AllRenewLeaseStateTests()
         {
             List<Task> tasks = new List<Task>();
             tasks.Add(Task.Run(() => BlobRenewLeaseStateTestsSync()));
@@ -1618,7 +1620,7 @@ namespace Microsoft.Azure.Storage.Blob
             tasks.Add(Task.Run(() => ContainerRenewLeaseStateTestsSync()));
             tasks.Add(Task.Run(() => ContainerRenewLeaseStateTestsAPM()));
             tasks.Add(Task.Run(() => ContainerRenewLeaseStateTestsTask()));
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
             DeleteAll();
         }
 
@@ -2194,7 +2196,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        public void BlobRenewLeaseStateTestsTask()
+        public async Task BlobRenewLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string unknownLeaseId = Guid.NewGuid().ToString();
@@ -2203,7 +2205,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("blobtask").GetBlockBlobReference("LeasedBlob");
 
             // Renew lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a lease while in the available state",
@@ -2211,13 +2213,13 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew infinite lease
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("blobtask").GetBlockBlobReference("LeasedBlob");
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsNotNull(leasedBlob.Properties.ETag);
 
             // Renew infinite lease (wrong lease)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew an infinite lease with the wrong lease ID",
@@ -2225,7 +2227,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released lease (wrong lease)
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a released infinite lease with the wrong lease ID",
@@ -2233,7 +2235,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released lease
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew a released lease",
@@ -2241,17 +2243,17 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew expired lease
-            leaseId = SetExpiredStateTask(leasedBlob);
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            leaseId = await SetExpiredStateTask(leasedBlob);
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew expired lease after read
-            leaseId = SetExpiredStateTask(leasedBlob);
+            leaseId = await SetExpiredStateTask(leasedBlob);
             string content = DownloadTextTask(leasedBlob, Encoding.UTF8);
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew expired lease after write
-            leaseId = SetExpiredStateTask(leasedBlob);
-            leasedBlob.SetMetadataAsync().Wait();
+            leaseId = await SetExpiredStateTask(leasedBlob);
+            await leasedBlob.SetMetadataAsync();
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew an expired lease that has been modified",
@@ -2259,11 +2261,11 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew finite lease
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew finite lease (wrong lease)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a finite lease with the wrong lease ID",
@@ -2271,7 +2273,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released finite lease (wrong ID)
-            leaseId = SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            leaseId = await SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a released finite lease with the wrong lease ID",
@@ -2279,7 +2281,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released finite lease (right ID)
-            leaseId = SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            leaseId = await SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a released finite lease",
@@ -2287,7 +2289,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew a breaking lease (same ID)
-            leaseId = SetBreakingStateTask(leasedBlob);
+            leaseId = await SetBreakingStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew a lease while in the breaking state",
@@ -2295,7 +2297,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIsBrokenAndCannotBeRenewed);
 
             // Renew a breaking lease (different ID)
-            leaseId = SetBreakingStateTask(leasedBlob);
+            leaseId = await SetBreakingStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a lease while in the breaking state",
@@ -2303,7 +2305,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew broken lease (same ID)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew a broken lease with the same lease ID",
@@ -2311,7 +2313,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIsBrokenAndCannotBeRenewed);
 
             // Renew broken lease (different ID)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId), null, new OperationContext()),
                 "renew a broken lease with a different lease ID",
@@ -2319,7 +2321,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
         }
 
-        public void PageBlobRenewLeaseStateTestsTask()
+        public async Task PageBlobRenewLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string unknownLeaseId = Guid.NewGuid().ToString();
@@ -2328,7 +2330,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("pageblobtask").GetPageBlobReference("LeasedBlob");
 
             // Renew lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a lease while in the available state",
@@ -2336,13 +2338,13 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew infinite lease
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("pageblobtask").GetPageBlobReference("LeasedBlob");
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsNotNull(leasedBlob.Properties.ETag);
 
             // Renew infinite lease (wrong lease)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew an infinite lease with the wrong lease ID",
@@ -2350,7 +2352,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released lease (wrong lease)
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a released infinite lease with the wrong lease ID",
@@ -2358,7 +2360,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released lease
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew a released lease",
@@ -2366,17 +2368,17 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew expired lease
-            leaseId = SetExpiredStateTask(leasedBlob);
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            leaseId = await SetExpiredStateTask(leasedBlob);
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew expired lease after read
-            leaseId = SetExpiredStateTask(leasedBlob);
+            leaseId = await SetExpiredStateTask(leasedBlob);
             string content = DownloadTextTask(leasedBlob, Encoding.UTF8);
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew expired lease after write
-            leaseId = SetExpiredStateTask(leasedBlob);
-            leasedBlob.SetMetadataAsync().Wait();
+            leaseId = await SetExpiredStateTask(leasedBlob);
+            await leasedBlob.SetMetadataAsync();
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew an expired lease that has been modified",
@@ -2384,11 +2386,11 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew finite lease
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
-            leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            await leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew finite lease (wrong lease)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a finite lease with the wrong lease ID",
@@ -2396,7 +2398,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released finite lease (wrong ID)
-            leaseId = SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            leaseId = await SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a released finite lease with the wrong lease ID",
@@ -2404,7 +2406,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew released finite lease (right ID)
-            leaseId = SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
+            leaseId = await SetReleasedStateTask(leasedBlob, TimeSpan.FromSeconds(60));
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a released finite lease",
@@ -2412,7 +2414,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew a breaking lease (same ID)
-            leaseId = SetBreakingStateTask(leasedBlob);
+            leaseId = await SetBreakingStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew a lease while in the breaking state",
@@ -2420,7 +2422,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIsBrokenAndCannotBeRenewed);
 
             // Renew a breaking lease (different ID)
-            leaseId = SetBreakingStateTask(leasedBlob);
+            leaseId = await SetBreakingStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "renew a lease while in the breaking state",
@@ -2428,7 +2430,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Renew broken lease (same ID)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)),
                 "renew a broken lease with the same lease ID",
@@ -2436,7 +2438,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIsBrokenAndCannotBeRenewed);
 
             // Renew broken lease (different ID)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId), null, new OperationContext()),
                 "renew a broken lease with a different lease ID",
@@ -2899,7 +2901,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobChangeLeaseStateTestsTask()
+        public async Task BlobChangeLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string proposedLeaseId2 = Guid.NewGuid().ToString();
@@ -2910,7 +2912,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Change lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.ChangeLeaseAsync(proposedLeaseId, AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "change a lease when no lease is held",
@@ -2918,18 +2920,20 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseNotPresentWithLeaseOperation);
 
             // Change leased lease, with idempotent change
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsNotNull(leasedBlob.Properties.ETag);
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Change a leased lease, with same proposed ID but different lease ID
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext()).Result;
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(unknownLeaseId), null, new OperationContext()).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(
+                proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext());
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(
+                proposedLeaseId2, AccessCondition.GenerateLeaseCondition(unknownLeaseId), null, new OperationContext());
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 
         [TestMethod]
@@ -2938,7 +2942,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void PageBlobChangeLeaseStateTestsTask()
+        public async Task PageBlobChangeLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string proposedLeaseId2 = Guid.NewGuid().ToString();
@@ -2949,7 +2953,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
 
             // Change lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.ChangeLeaseAsync(proposedLeaseId, AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "change a lease when no lease is held",
@@ -2957,18 +2961,20 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseNotPresentWithLeaseOperation);
 
             // Change leased lease, with idempotent change
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsNotNull(leasedBlob.Properties.ETag);
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Change a leased lease, with same proposed ID but different lease ID
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext()).Result;
-            leaseId2 = leasedBlob.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(unknownLeaseId), null, new OperationContext()).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(
+                proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext());
+            leaseId2 = await leasedBlob.ChangeLeaseAsync(
+                proposedLeaseId2, AccessCondition.GenerateLeaseCondition(unknownLeaseId), null, new OperationContext());
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 #endif
 
@@ -3343,7 +3349,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobReleaseLeaseStateTestsTask()
+        public async Task BlobReleaseLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string unknownLeaseId = Guid.NewGuid().ToString();
@@ -3352,7 +3358,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Release lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "release a lease when no lease is held",
@@ -3360,7 +3366,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Release lease (wrong lease)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "release a lease with the wrong lease ID",
@@ -3368,12 +3374,12 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Release lease (right lease)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
-            leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext()).Wait();
+            await leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext());
             Assert.IsNotNull(leasedBlob.Properties.ETag);
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 
         [TestMethod]
@@ -3382,7 +3388,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void PageBlobReleaseLeaseStateTestsTask()
+        public async Task PageBlobReleaseLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string unknownLeaseId = Guid.NewGuid().ToString();
@@ -3391,7 +3397,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
 
             // Release lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "release a lease when no lease is held",
@@ -3399,7 +3405,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Release lease (wrong lease)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "release a lease with the wrong lease ID",
@@ -3407,12 +3413,12 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseIdMismatchWithLeaseOperation);
 
             // Release lease (right lease)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
-            leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext()).Wait();
+            await leasedBlob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId), null, new OperationContext());
             Assert.IsNotNull(leasedBlob.Properties.ETag);
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 #endif
 
@@ -3839,7 +3845,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobBreakLeaseStateTestsTask()
+        public async Task BlobBreakLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string leaseId;
@@ -3848,7 +3854,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
 
             // Break lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
 
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.BreakLeaseAsync(null /* default break period */),
@@ -3857,69 +3863,69 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseNotPresentWithLeaseOperation);
 
             // Break infinite lease (default break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
-            leaseTime = leasedBlob.BreakLeaseAsync(null /* default break period */).Result;
+            leaseTime = await leasedBlob.BreakLeaseAsync(null /* default break period */);
             Assert.IsNotNull(leasedBlob.Properties.ETag);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (zero break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (1 second break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1)).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1));
 
             // Break infinite lease (60 seconds break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60)).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60));
 
             // Break breaking lease (zero break time)
-            leaseId = SetBreakingStateTask(leasedBlob);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseId = await SetBreakingStateTask(leasedBlob);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break breaking lease (default break time)
-            leaseId = SetBreakingStateTask(leasedBlob);
-            leasedBlob.BreakLeaseAsync(null /* default break time */).Wait();
+            leaseId = await SetBreakingStateTask(leasedBlob);
+            await leasedBlob.BreakLeaseAsync(null /* default break time */);
 
             // Break finite lease (longer than lease time)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
-            leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60)).Wait();
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
+            await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60));
 
             // Break finite lease (zero break time)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break finite lease (default break time)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
-            leasedBlob.BreakLeaseAsync(null /* default break time */).Wait();
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
+            await leasedBlob.BreakLeaseAsync(null /* default break time */);
 
             // Break instant broken lease (default break time). Use the other overload for BeginBreakLease.
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
             OperationContext context = new OperationContext();
-            leasedBlob.BreakLeaseAsync(null /* default break time */, null, null, context).Wait();
+            await leasedBlob.BreakLeaseAsync(null /* default break time */, null, null, context);
 
             // Break instant broken lease (nonzero break time)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1), null, null, context).Wait();
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
+            await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1), null, null, context);
 
             // Break instant broken lease (zero break time)
             leaseId = SetInstantBrokenStateAPM(leasedBlob);
-            leasedBlob.BreakLeaseAsync(TimeSpan.Zero, null, null, context).Wait();
+            await leasedBlob.BreakLeaseAsync(TimeSpan.Zero, null, null, context);
 
             // Break released lease (default break time)
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.BreakLeaseAsync(null /* default break time */, null, null, context),
                 "break a released lease",
                 HttpStatusCode.Conflict,
                 BlobErrorCodeStrings.LeaseNotPresentWithLeaseOperation);
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 
         [TestMethod]
@@ -3928,7 +3934,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void PageBlobBreakLeaseStateTestsTask()
+        public async Task PageBlobBreakLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string leaseId;
@@ -3937,7 +3943,7 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlob leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
 
             // Break lease in available state
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.BreakLeaseAsync(null /* default break period */),
                 "break a lease when no lease is present",
@@ -3945,68 +3951,68 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobErrorCodeStrings.LeaseNotPresentWithLeaseOperation);
 
             // Break infinite lease (default break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             leasedBlob = this.GetContainerReference("lease-tests").GetPageBlobReference("LeasedBlob");
             leaseTime = leasedBlob.BreakLeaseAsync(null /* default break period */).Result;
             Assert.IsNotNull(leasedBlob.Properties.ETag);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (zero break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (1 second break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1)).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1));
 
             // Break infinite lease (60 seconds break time)
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60)).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60));
 
             // Break breaking lease (zero break time)
-            leaseId = SetBreakingStateTask(leasedBlob);
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseId = await SetBreakingStateTask(leasedBlob);
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break breaking lease (default break time)
-            leaseId = SetBreakingStateTask(leasedBlob);
-            leasedBlob.BreakLeaseAsync(null /* default break time */).Wait();
+            leaseId = await SetBreakingStateTask(leasedBlob);
+            await leasedBlob.BreakLeaseAsync(null /* default break time */);
 
             // Break finite lease (longer than lease time)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60)).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(60));
 
             // Break finite lease (zero break time)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
-            leaseTime = leasedBlob.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
+            leaseTime = await leasedBlob.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break finite lease (default break time)
-            leaseId = SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
-            leaseTime = leasedBlob.BreakLeaseAsync(null /* default break time */).Result;
+            leaseId = await SetLeasedStateTask(leasedBlob, TimeSpan.FromSeconds(50));
+            leaseTime = await leasedBlob.BreakLeaseAsync(null /* default break time */);
 
             // Break instant broken lease (default break time)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.BreakLeaseAsync(null /* default break time */).Wait();
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
+            await leasedBlob.BreakLeaseAsync(null /* default break time */);
 
             // Break instant broken lease (nonzero break time)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1)).Wait();
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
+            await leasedBlob.BreakLeaseAsync(TimeSpan.FromSeconds(1));
 
             // Break instant broken lease (zero break time)
-            leaseId = SetInstantBrokenStateTask(leasedBlob);
-            leasedBlob.BreakLeaseAsync(TimeSpan.Zero, null, null, null).Wait();
+            leaseId = await SetInstantBrokenStateTask(leasedBlob);
+            leasedBlob.BreakLeaseAsync(TimeSpan.Zero, null, null, null);
 
             // Break released lease (default break time)
-            leaseId = SetReleasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetReleasedStateTask(leasedBlob, null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedBlob.BreakLeaseAsync(null /* default break time */),
                 "break a released lease",
                 HttpStatusCode.Conflict,
                 BlobErrorCodeStrings.LeaseNotPresentWithLeaseOperation);
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 #endif
 
@@ -4101,7 +4107,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobLeasedWriteTestsTask()
+        public async Task BlobLeasedWriteTestsTask()
         {
             CloudBlockBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             CloudBlockBlob sourceBlob = leasedBlob.Container.GetBlockBlobReference("LeasedBlob");
@@ -4115,26 +4121,26 @@ namespace Microsoft.Azure.Storage.Blob
             // BlobCreateExpectLeaseFailureTask(leasedBlob, sourceBlob, testAccessCondition, BlobErrorCodeStrings.LeaseNotPresent, "create blob using a lease");
 
             // From available state, verify that writes/deletes that pass a lease fail if none is present.
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             testAccessCondition.LeaseId = fakeLease;
             this.BlobWriteExpectLeaseFailureTask(leasedBlob, sourceBlob, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithBlobOperation, "write blob using a lease when no lease is held");
 
             // From leased state, verify that writes/deletes without a lease do not succeed.
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             testAccessCondition.LeaseId = null;
             this.BlobWriteExpectLeaseFailureTask(leasedBlob, sourceBlob, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseIdMissing, "write blob using no lease when a lease is held");
 
             // From leased state, verify that writes/deletes with the wrong lease fail.
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             testAccessCondition.LeaseId = fakeLease;
             this.BlobWriteExpectLeaseFailureTask(leasedBlob, sourceBlob, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseIdMismatchWithBlobOperation, "write blob using a lease when a different lease is held");
 
             // From leased state, verify that writes/deletes with the right lease succeed.
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             testAccessCondition.LeaseId = leaseId;
             this.BlobWriteExpectLeaseSuccessTask(leasedBlob, sourceBlob, testAccessCondition);
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 #endif
 
@@ -4280,7 +4286,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="testAccessCondition">The failing access condition to use.</param>
         /// <param name="expectedErrorCode">The expected error code.</param>
         /// <param name="description">The reason why these calls should fail.</param>
-        private void BlobCreateExpectLeaseFailureTask(CloudBlockBlob testBlob, CloudBlockBlob sourceBlob, AccessCondition testAccessCondition, HttpStatusCode expectedStatusCode, string expectedErrorCode, string description)
+        private async Task BlobCreateExpectLeaseFailureTask(CloudBlockBlob testBlob, CloudBlockBlob sourceBlob, AccessCondition testAccessCondition, HttpStatusCode expectedStatusCode, string expectedErrorCode, string description)
         {
             TestHelper.ExpectedException(
                 () => UploadTextTask(testBlob, "No Dice", Encoding.UTF8, testAccessCondition, null /* options */),
@@ -4293,7 +4299,7 @@ namespace Microsoft.Azure.Storage.Blob
                 expectedStatusCode,
                 expectedErrorCode);
 
-            Stream stream = testBlob.OpenWriteAsync(testAccessCondition, null /* options */, new OperationContext()).Result;
+            Stream stream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, new OperationContext());
             TestHelper.ExpectedException(
                 () =>
                 {
@@ -4382,29 +4388,29 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="testBlob">The blob to test.</param>
         /// <param name="sourceBlob">A blob to use as the source of a copy.</param>
         /// <param name="testAccessCondition">The access condition to use.</param>
-        private void BlobWriteExpectLeaseSuccessTask(CloudBlockBlob testBlob, CloudBlob sourceBlob, AccessCondition testAccessCondition)
+        private async Task BlobWriteExpectLeaseSuccessTask(CloudBlockBlob testBlob, CloudBlob sourceBlob, AccessCondition testAccessCondition)
         {
-            testBlob.SetMetadataAsync(testAccessCondition, null /* options */, new OperationContext()).Wait();
-            testBlob.SetPropertiesAsync(testAccessCondition, null /* options */, new OperationContext()).Wait();
+            await testBlob.SetMetadataAsync(testAccessCondition, null /* options */, new OperationContext());
+            await testBlob.SetPropertiesAsync(testAccessCondition, null /* options */, new OperationContext());
             UploadTextTask(testBlob, "No Problem", Encoding.UTF8, testAccessCondition, null /* options */, new OperationContext());
-            testBlob.StartCopyAsync(
+            await testBlob.StartCopyAsync(
                 TestHelper.Defiddler(sourceBlob.Uri),
                 null /* source access condition */,
                 testAccessCondition,
                 null /* options */,
-                new OperationContext()).Wait();
+                new OperationContext());
 
             while (testBlob.CopyState.Status == CopyStatus.Pending)
             {
                 Thread.Sleep(1000);
-                testBlob.FetchAttributesAsync().Wait();
+                await testBlob.FetchAttributesAsync();
             }
 
-            Stream stream = testBlob.OpenWriteAsync(testAccessCondition, null /* options */, new OperationContext()).Result;
+            Stream stream = await testBlob.OpenWriteAsync(testAccessCondition, null /* options */, new OperationContext());
             stream.WriteByte(0);
             stream.Flush();
 
-            testBlob.DeleteAsync(DeleteSnapshotsOption.None, testAccessCondition, null /* options */, new OperationContext());
+            await testBlob.DeleteAsync(DeleteSnapshotsOption.None, testAccessCondition, null /* options */, new OperationContext());
         }
 #endif
 
@@ -4489,7 +4495,8 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void BlobLeasedReadTestsTask()
+        [DoNotParallelize]
+        public async Task BlobLeasedReadTestsTask()
         {
             CloudBlockBlob leasedBlob = this.GetContainerReference("lease-tests").GetBlockBlobReference("LeasedBlob");
             CloudBlockBlob targetBlob = leasedBlob.Container.GetBlockBlobReference("TargetBlob");
@@ -4498,26 +4505,26 @@ namespace Microsoft.Azure.Storage.Blob
             string leaseId;
 
             // From available state, verify that reads that pass a lease fail if none is present
-            SetAvailableStateTask(leasedBlob);
+            await SetAvailableStateTask(leasedBlob);
             testAccessCondition.LeaseId = fakeLease;
             this.BlobReadExpectLeaseFailureTask(leasedBlob, targetBlob, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithBlobOperation, "read blob using a lease when no lease is held");
 
             // Verify that reads without a lease succeed.
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             testAccessCondition.LeaseId = null;
             this.BlobReadExpectLeaseSuccessTask(leasedBlob, testAccessCondition);
 
             // Verify that reads with the wrong lease fail.
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             testAccessCondition.LeaseId = fakeLease;
             this.BlobReadExpectLeaseFailureTask(leasedBlob, targetBlob, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseIdMismatchWithBlobOperation, "read blob using a lease when a different lease is held");
 
             // Verify that reads with the right lease succeed.
-            leaseId = SetLeasedStateTask(leasedBlob, null /* infinite lease */);
+            leaseId = await SetLeasedStateTask(leasedBlob, null /* infinite lease */);
             testAccessCondition.LeaseId = leaseId;
             this.BlobReadExpectLeaseSuccessTask(leasedBlob, testAccessCondition);
 
-            this.DeleteAllTask();
+            await this.DeleteAllTask();
         }
 #endif
 
@@ -5588,27 +5595,27 @@ namespace Microsoft.Azure.Storage.Blob
             TimeSpan tolerance = TimeSpan.FromSeconds(4);
             List<Task> tasks = new List<Task>();
 
-            tasks.Add(Task.Run(() =>
+            tasks.Add(Task.Run(async () =>
             {
                 CloudBlobContainer leasedContainer = this.GetContainerReference("renewtask1"); // make sure we use a new container
                 string leaseId = SetLeasedState(leasedContainer, TimeSpan.FromSeconds(15));
-                leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+                await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
                 this.ContainerAcquireRenewLeaseTest(leasedContainer, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(20), tolerance);
             }));
 
-            tasks.Add(Task.Run(() =>
+            tasks.Add(Task.Run(async () =>
             {
                 CloudBlobContainer leasedContainer = this.GetContainerReference("renewtask2"); // make sure we use a new container
                 string leaseId = SetLeasedState(leasedContainer, TimeSpan.FromSeconds(60));
-                leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+                await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
                 this.ContainerAcquireRenewLeaseTest(leasedContainer, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(70), tolerance);
             }));
 
-            tasks.Add(Task.Run(() =>
+            tasks.Add(Task.Run(async () =>
             {
                 CloudBlobContainer leasedContainer = this.GetContainerReference("renewtask3"); // make sure we use a new container
                 string leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
-                leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId), null, null).Wait();
+                await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId), null, null);
                 this.ContainerAcquireRenewLeaseTest(leasedContainer, null /* infinite lease */, TimeSpan.FromSeconds(70), tolerance);
             }));
 
@@ -5967,7 +5974,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ContainerAcquireLeaseStateTestsTask()
+        public async Task ContainerAcquireLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string leaseId;
@@ -5978,9 +5985,9 @@ namespace Microsoft.Azure.Storage.Blob
             // Acquire the lease while in available state, make idempotent call
             SetUnleasedState(leasedContainer);
             leasedContainer = this.GetContainerReference("lease-tests");
-            leaseId = leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Result;
+            leaseId = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
             Assert.IsNotNull(leasedContainer.Properties.ETag);
-            leaseId2 = leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Result;
+            leaseId2 = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
             Assert.AreEqual(leaseId, leaseId2);
 
             // Acquire the lease while in leased state (conflict)
@@ -6009,27 +6016,27 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Acquire the lease while in broken state (same ID), make idempotent call
             leaseId = SetInstantBrokenState(leasedContainer);
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId);
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId);
 
             // Acquire the lease while in broken state (new ID), make idempotent call
             leaseId = SetInstantBrokenState(leasedContainer);
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
 
             // Acquire the lease while in released state (same ID), make idempotent call
             leaseId = SetReleasedState(leasedContainer, null /* infinite lease */);
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId).Wait();
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId);
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, leaseId);
 
             // Acquire the lease while in released state (new ID), make idempotent call
             leaseId = SetReleasedState(leasedContainer, null /* infinite lease */);
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
-            leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId).Wait();
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
+            await leasedContainer.AcquireLeaseAsync(null /* infinite lease */, proposedLeaseId);
 
             // Acquire with no proposed ID (non-idempotent)
             SetUnleasedState(leasedContainer);
-            leaseId = leasedContainer.AcquireLeaseAsync(null /* infinite lease */).Result;
+            leaseId = await leasedContainer.AcquireLeaseAsync(null /* infinite lease */);
             TestHelper.ExpectedExceptionTask(
                 leasedContainer.AcquireLeaseAsync(null /* infinite lease */),
                 "acquire a lease twice with no proposed lease ID",
@@ -6316,7 +6323,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
         }
 
-        public void ContainerRenewLeaseStateTestsTask()
+        public async Task ContainerRenewLeaseStateTestsTask()
         {
             string unknownLeaseId = Guid.NewGuid().ToString();
             string leaseId;
@@ -6334,7 +6341,7 @@ namespace Microsoft.Azure.Storage.Blob
             // Renew infinite lease
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
             leasedContainer = this.GetContainerReference("containertask");
-            leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsNotNull(leasedContainer.Properties.ETag);
 
             // Renew infinite lease (wrong lease)
@@ -6363,21 +6370,21 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Renew expired lease
             leaseId = SetExpiredState(leasedContainer);
-            leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew expired lease after read
             leaseId = SetExpiredState(leasedContainer);
-            leasedContainer.FetchAttributesAsync().Wait();
-            leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.FetchAttributesAsync();
+            await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew expired lease after write
             leaseId = SetExpiredState(leasedContainer);
-            leasedContainer.SetMetadataAsync().Wait();
-            leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.SetMetadataAsync();
+            await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew finite lease
             leaseId = SetLeasedState(leasedContainer, TimeSpan.FromSeconds(60));
-            leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Renew finite lease (wrong lease)
             leaseId = SetLeasedState(leasedContainer, TimeSpan.FromSeconds(60));
@@ -6663,7 +6670,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ContainerChangeLeaseStateTestsTask()
+        public async Task ContainerChangeLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string proposedLeaseId2 = Guid.NewGuid().ToString();
@@ -6684,18 +6691,18 @@ namespace Microsoft.Azure.Storage.Blob
             // Change leased lease, with idempotent change
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
             leasedContainer = this.GetContainerReference("lease-tests");
-            leaseId2 = leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
+            leaseId2 = await leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsNotNull(leasedContainer.Properties.ETag);
-            leaseId2 = leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
+            leaseId2 = await leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Change a leased lease, with same proposed ID but different lease ID
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
-            leaseId2 = leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
-            leaseId2 = leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(unknownLeaseId)).Result;
+            leaseId2 = await leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
+            leaseId2 = await leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(unknownLeaseId));
 
             // Change lease (wrong lease specified)
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
-            leaseId2 = leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId)).Result;
+            leaseId2 = await leasedContainer.ChangeLeaseAsync(proposedLeaseId2, AccessCondition.GenerateLeaseCondition(leaseId));
             TestHelper.ExpectedExceptionTask(
                 leasedContainer.ChangeLeaseAsync(proposedLeaseId, AccessCondition.GenerateLeaseCondition(unknownLeaseId)),
                 "change a lease using the wrong lease ID",
@@ -6940,7 +6947,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ContainerReleaseLeaseStateTestsTask()
+        public async Task ContainerReleaseLeaseStateTestsTask()
         {
             string proposedLeaseId = Guid.NewGuid().ToString();
             string unknownLeaseId = Guid.NewGuid().ToString();
@@ -6967,7 +6974,7 @@ namespace Microsoft.Azure.Storage.Blob
             // Release lease (right lease)
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
             leasedContainer = this.GetContainerReference("lease-tests");
-            leasedContainer.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
             Assert.IsNotNull(leasedContainer.Properties.ETag);
 
             // Release lease in released state (old lease)
@@ -6988,7 +6995,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Release breaking lease (right lease)
             leaseId = SetBreakingState(leasedContainer);
-            leasedContainer.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Release breaking lease (wrong lease)
             leaseId = SetBreakingState(leasedContainer);
@@ -7000,7 +7007,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Release broken lease (right lease)
             leaseId = SetInstantBrokenState(leasedContainer);
-            leasedContainer.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId)).Wait();
+            await leasedContainer.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(leaseId));
 
             // Release broken lease (wrong lease)
             leaseId = SetInstantBrokenState(leasedContainer);
@@ -7223,7 +7230,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ContainerBreakLeaseStateTestsTask()
+        public async Task ContainerBreakLeaseStateTestsTask()
         {
             string leaseId;
             TimeSpan leaseTime;
@@ -7241,56 +7248,56 @@ namespace Microsoft.Azure.Storage.Blob
             // Break infinite lease (default break time)
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
             leasedContainer = this.GetContainerReference("lease-tests");
-            leaseTime = leasedContainer.BreakLeaseAsync(null /* default break period */).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(null /* default break period */);
             Assert.IsNotNull(leasedContainer.Properties.ETag);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (zero break time)
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
-            leaseTime = leasedContainer.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break infinite lease (1 second break time)
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
-            leaseTime = leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(1)).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(1));
 
             // Break infinite lease (60 seconds break time)
             leaseId = SetLeasedState(leasedContainer, null /* infinite lease */);
-            leaseTime = leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(60)).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(60));
 
             // Break breaking lease (zero break time)
             leaseId = SetBreakingState(leasedContainer);
-            leaseTime = leasedContainer.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break breaking lease (default break time)
             leaseId = SetBreakingState(leasedContainer);
-            leasedContainer.BreakLeaseAsync(null /* default break period */).Wait();
+            await leasedContainer.BreakLeaseAsync(null /* default break period */);
 
             // Break finite lease (longer than lease time)
             leaseId = SetLeasedState(leasedContainer, TimeSpan.FromSeconds(50));
-            leaseTime = leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(60)).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(60));
 
             // Break finite lease (zero break time)
             leaseId = SetLeasedState(leasedContainer, TimeSpan.FromSeconds(50));
-            leaseTime = leasedContainer.BreakLeaseAsync(TimeSpan.Zero).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(TimeSpan.Zero);
             Assert.AreEqual(TimeSpan.Zero, leaseTime);
 
             // Break finite lease (default break time)
             leaseId = SetLeasedState(leasedContainer, TimeSpan.FromSeconds(50));
-            leaseTime = leasedContainer.BreakLeaseAsync(null /* default break period */).Result;
+            leaseTime = await leasedContainer.BreakLeaseAsync(null /* default break period */);
 
             // Break broken lease (default break time)
             leaseId = SetInstantBrokenState(leasedContainer);
-            leasedContainer.BreakLeaseAsync(null /* default break period */).Wait();
+            await leasedContainer.BreakLeaseAsync(null /* default break period */);
 
             // Break instant broken lease (nonzero break time)
             leaseId = SetInstantBrokenState(leasedContainer);
-            leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(1)).Wait();
+            await leasedContainer.BreakLeaseAsync(TimeSpan.FromSeconds(1));
 
             // Break instant broken lease (zero break time)
             leaseId = SetInstantBrokenState(leasedContainer);
-            leasedContainer.BreakLeaseAsync(TimeSpan.Zero, null, null, null).Wait();
+            await leasedContainer.BreakLeaseAsync(TimeSpan.Zero, null, null, null);
 
             // Break released lease (default break time)
             leaseId = SetReleasedState(leasedContainer, null /* infinite lease */);
@@ -7388,21 +7395,21 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ContainerLeasedDeleteTestsTask()
+        public async Task ContainerLeasedDeleteTestsTask()
         {
             CloudBlobContainer leasedContainer = this.GetContainerReference("leased-container");
             AccessCondition testAccessCondition = AccessCondition.GenerateEmptyCondition();
             string fakeLease = Guid.NewGuid().ToString();
 
             // Create the container
-            leasedContainer.CreateAsync().Wait();
+            await leasedContainer.CreateAsync();
 
             // Verify that deletes that pass a lease fail if none is present.
             testAccessCondition.LeaseId = fakeLease;
             this.ContainerDeleteExpectLeaseFailureTask(leasedContainer, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithContainerOperation, "delete container using a lease when no lease is held");
 
             // Acquire a lease
-            string leaseId = leasedContainer.AcquireLeaseAsync(null /* lease duration */).Result;
+            string leaseId = await leasedContainer.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that deletes without a lease do not succeed.
             testAccessCondition.LeaseId = null;
@@ -7414,7 +7421,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Verify that deletes with the right lease succeed.
             testAccessCondition.LeaseId = leaseId;
-            this.ContainerDeleteExpectLeaseSuccessTask(leasedContainer, testAccessCondition);
+            await this.ContainerDeleteExpectLeaseSuccessTask(leasedContainer, testAccessCondition);
 
             this.DeleteAll();
         }
@@ -7507,9 +7514,9 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="testContainer">The container.</param>
         /// <param name="testAccessCondition">The access condition to use.</param>
-        private void ContainerDeleteExpectLeaseSuccessTask(CloudBlobContainer testContainer, AccessCondition testAccessCondition)
+        private async Task ContainerDeleteExpectLeaseSuccessTask(CloudBlobContainer testContainer, AccessCondition testAccessCondition)
         {
-            testContainer.DeleteAsync(testAccessCondition, null /* options */, null /* operationContext */).Wait();
+            await testContainer.DeleteAsync(testAccessCondition, null /* options */, null /* operationContext */);
         }
 #endif
 
@@ -7596,23 +7603,23 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void ContainerLeasedReadWriteTestsTask()
+        public async Task ContainerLeasedReadWriteTestsTask()
         {
             CloudBlobContainer leasedContainer = this.GetContainerReference("leased-container");
             AccessCondition testAccessCondition = AccessCondition.GenerateEmptyCondition();
             string fakeLease = Guid.NewGuid().ToString();
-            leasedContainer.CreateAsync().Wait();
+            await leasedContainer.CreateAsync();
 
             // Verify that reads and writes that pass a lease fail if none is present
             testAccessCondition.LeaseId = fakeLease;
             this.ContainerReadWriteExpectLeaseFailureTask(leasedContainer, testAccessCondition, HttpStatusCode.PreconditionFailed, BlobErrorCodeStrings.LeaseNotPresentWithContainerOperation, "read/write container using a lease when no lease is held");
 
             // Acquire a lease
-            string leaseId = leasedContainer.AcquireLeaseAsync(null /* lease duration */).Result;
+            string leaseId = await leasedContainer.AcquireLeaseAsync(null /* lease duration */);
 
             // Verify that reads and writes without a lease succeed.
             testAccessCondition.LeaseId = null;
-            this.ContainerReadWriteExpectLeaseSuccessTask(leasedContainer, testAccessCondition);
+            await this.ContainerReadWriteExpectLeaseSuccessTask(leasedContainer, testAccessCondition);
 
             // Verify that reads and writes with the wrong lease fail.
             testAccessCondition.LeaseId = fakeLease;
@@ -7620,7 +7627,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             // Verify that reads and writes with the right lease succeed.
             testAccessCondition.LeaseId = leaseId;
-            this.ContainerReadWriteExpectLeaseSuccessTask(leasedContainer, testAccessCondition);
+            await this.ContainerReadWriteExpectLeaseSuccessTask(leasedContainer, testAccessCondition);
 
             this.DeleteAll();
         }
@@ -7782,12 +7789,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <param name="testContainer">The container.</param>
         /// <param name="testAccessCondition">The access condition to use.</param>
-        private void ContainerReadWriteExpectLeaseSuccessTask(CloudBlobContainer testContainer, AccessCondition testAccessCondition)
+        private async Task ContainerReadWriteExpectLeaseSuccessTask(CloudBlobContainer testContainer, AccessCondition testAccessCondition)
         {
-            testContainer.FetchAttributesAsync(testAccessCondition, null /* options */, null /* operationContext */).Wait();
-            testContainer.GetPermissionsAsync(testAccessCondition, null /* options */, null /* operationContext */).Wait();
-            testContainer.SetMetadataAsync(testAccessCondition, null /* options */, null /* operationContext */).Wait();
-            testContainer.SetPermissionsAsync(new BlobContainerPermissions(), testAccessCondition, null /* options */, null /* operationContext */).Wait();
+            await testContainer.FetchAttributesAsync(testAccessCondition, null /* options */, null /* operationContext */);
+            await testContainer.GetPermissionsAsync(testAccessCondition, null /* options */, null /* operationContext */);
+            await testContainer.SetMetadataAsync(testAccessCondition, null /* options */, null /* operationContext */);
+            await testContainer.SetPermissionsAsync(new BlobContainerPermissions(), testAccessCondition, null /* options */, null /* operationContext */);
         }
 #endif
 

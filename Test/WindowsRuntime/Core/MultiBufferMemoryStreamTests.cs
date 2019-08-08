@@ -108,7 +108,7 @@ namespace Microsoft.Azure.Storage.Core
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
     }

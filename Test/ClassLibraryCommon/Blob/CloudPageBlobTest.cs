@@ -68,7 +68,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(0);
                 Assert.IsTrue(blob.Exists());
                 blob.Delete(DeleteSnapshotsOption.IncludeSnapshots);
@@ -96,7 +97,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudPageBlob blob = container.GetPageBlobReference(blobName);
                     result = blob.BeginCreate(0, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob.EndCreate(result);
@@ -123,21 +125,22 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobCreateAndDeleteTask()
+        public async Task CloudPageBlobCreateAndDeleteTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(0).Wait();
-                Assert.IsTrue(blob.ExistsAsync().Result);
-                blob.DeleteAsync().Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(0);
+                Assert.IsTrue(await blob.ExistsAsync());
+                await blob.DeleteAsync();
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -151,7 +154,8 @@ namespace Microsoft.Azure.Storage.Blob
         public void CloudPageBlobConstructor()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            CloudPageBlob blob = container.GetPageBlobReference("blob1");
+            var blobName = GetRandomBlobName();
+            CloudPageBlob blob = container.GetPageBlobReference(blobName);
             CloudPageBlob blob2 = new CloudPageBlob(blob.StorageUri, null, credentials: null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
@@ -172,8 +176,9 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
 
                 blob.Create(1024);
                 Assert.AreEqual(1024, blob.Properties.Length);
@@ -215,8 +220,9 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -291,40 +297,41 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobResizeTask()
+        public async Task CloudPageBlobResizeTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
 
-                blob.CreateAsync(1024).Wait();
+                await blob.CreateAsync(1024);
                 Assert.AreEqual(1024, blob.Properties.Length);
-                blob2.FetchAttributesAsync().Wait();
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(1024, blob2.Properties.Length);
                 blob2.Properties.ContentType = "text/plain";
-                blob2.SetPropertiesAsync().Wait();
-                blob.ResizeAsync(2048).Wait();
+                await blob2.SetPropertiesAsync();
+                await blob.ResizeAsync(2048);
                 Assert.AreEqual(2048, blob.Properties.Length);
-                blob.FetchAttributesAsync().Wait();
+                await blob.FetchAttributesAsync();
                 Assert.AreEqual("text/plain", blob.Properties.ContentType);
-                blob2.FetchAttributesAsync().Wait();
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(2048, blob2.Properties.Length);
 
                 // Resize to 0 length
-                blob.ResizeAsync(0).Wait();
+                await blob.ResizeAsync(0);
                 Assert.AreEqual(0, blob.Properties.Length);
-                blob.FetchAttributesAsync().Wait();
+                await blob.FetchAttributesAsync();
                 Assert.AreEqual("text/plain", blob.Properties.ContentType);
-                blob2.FetchAttributesAsync().Wait();
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(0, blob2.Properties.Length);
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -343,7 +350,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
 
                 blob.Create(buffer.Length);
                 Assert.IsNull(blob.Properties.PageBlobSequenceNumber);
@@ -464,7 +472,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -685,29 +694,30 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobSequenceNumberTask()
+        public async Task CloudPageBlobSequenceNumberTask()
         {
             byte[] buffer = GetRandomBuffer(1024);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
 
-                blob.CreateAsync(buffer.Length).Wait();
+                await blob.CreateAsync(buffer.Length);
                 Assert.IsNull(blob.Properties.PageBlobSequenceNumber);
 
-                blob.SetSequenceNumberAsync(SequenceNumberAction.Update, 5).Wait();
+                await blob.SetSequenceNumberAsync(SequenceNumberAction.Update, 5);
                 Assert.AreEqual(5, blob.Properties.PageBlobSequenceNumber);
 
-                blob.SetSequenceNumberAsync(SequenceNumberAction.Max, 7).Wait();
+                await blob.SetSequenceNumberAsync(SequenceNumberAction.Max, 7);
                 Assert.AreEqual(7, blob.Properties.PageBlobSequenceNumber);
 
-                blob.SetSequenceNumberAsync(SequenceNumberAction.Max, 3).Wait();
+                await blob.SetSequenceNumberAsync(SequenceNumberAction.Max, 3);
                 Assert.AreEqual(7, blob.Properties.PageBlobSequenceNumber);
 
-                blob.SetSequenceNumberAsync(SequenceNumberAction.Increment, null).Wait();
+                await blob.SetSequenceNumberAsync(SequenceNumberAction.Increment, null);
                 Assert.AreEqual(8, blob.Properties.PageBlobSequenceNumber);
 
                 StorageException e = TestHelper.ExpectedExceptionTask<StorageException>(
@@ -733,20 +743,20 @@ namespace Microsoft.Azure.Storage.Blob
                 using (MemoryStream stream = new MemoryStream(buffer))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberEqualCondition(8), null, null).Wait();
-                    blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberEqualCondition(8), null, null).Wait();
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberEqualCondition(8), null, null);
+                    await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberEqualCondition(8), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(8), null, null).Wait();
-                    blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(8), null, null).Wait();
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(8), null, null);
+                    await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(8), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(9), null, null).Wait();
-                    blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(9), null, null).Wait();
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(9), null, null);
+                    await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(9), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanCondition(9), null, null).Wait();
-                    blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanCondition(9), null, null).Wait();
+                    await blob.WritePagesAsync(stream, 0, null, AccessCondition.GenerateIfSequenceNumberLessThanCondition(9), null, null);
+                    await blob.ClearPagesAsync(0, stream.Length, AccessCondition.GenerateIfSequenceNumberLessThanCondition(9), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
                     TestHelper.ExpectedExceptionTask(
@@ -785,18 +795,18 @@ namespace Microsoft.Azure.Storage.Blob
                         "SequenceNumberConditionNotMet");
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberEqualCondition(9), null, null).Wait();
+                    await blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberEqualCondition(9), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(7), null, null).Wait();
+                    await blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberLessThanOrEqualCondition(7), null, null);
 
                     stream.Seek(0, SeekOrigin.Begin);
-                    blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberLessThanCondition(8), null, null).Wait();
+                    await blob.UploadFromStreamAsync(stream, AccessCondition.GenerateIfSequenceNumberLessThanCondition(8), null, null);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -814,7 +824,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 TestHelper.ExpectedException(
                 () => blob.Create(-1),
                 "Creating a page blob with size<0 should fail",
@@ -843,7 +854,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 Assert.IsFalse(blob.DeleteIfExists());
                 blob.Create(0);
                 Assert.IsTrue(blob.DeleteIfExists());
@@ -870,7 +882,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudPageBlob blob = container.GetPageBlobReference(blobName);
                     IAsyncResult result = blob.BeginDeleteIfExists(
                         ar => waitHandle.Set(),
                         null);
@@ -906,22 +919,23 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobDeleteIfExistsTask()
+        public async Task CloudPageBlobDeleteIfExistsTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
-                blob.CreateAsync(0).Wait();
-                Assert.IsTrue(blob.DeleteIfExistsAsync().Result);
-                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                Assert.IsFalse(await blob.DeleteIfExistsAsync());
+                await blob.CreateAsync(0);
+                Assert.IsTrue(await blob.DeleteIfExistsAsync());
+                Assert.IsFalse(await blob.DeleteIfExistsAsync());
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -939,8 +953,9 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
 
                 Assert.IsFalse(blob2.Exists());
 
@@ -972,8 +987,9 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -1014,30 +1030,31 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobExistsTask()
+        public async Task CloudPageBlobExistsTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
 
             try
             {
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
 
-                Assert.IsFalse(blob2.ExistsAsync().Result);
+                Assert.IsFalse(await blob2.ExistsAsync());
 
-                blob.CreateAsync(2048).Wait();
+                await blob.CreateAsync(2048);
 
-                Assert.IsTrue(blob2.ExistsAsync().Result);
+                Assert.IsTrue(await blob2.ExistsAsync());
                 Assert.AreEqual(2048, blob2.Properties.Length);
 
-                blob.DeleteAsync().Wait();
+                await blob.DeleteAsync();
 
-                Assert.IsFalse(blob2.ExistsAsync().Result);
+                Assert.IsFalse(await blob2.ExistsAsync());
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -1054,7 +1071,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
                 Assert.AreEqual(1024, blob.Properties.Length);
                 Assert.IsNotNull(blob.Properties.ETag);
@@ -1068,7 +1086,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(LeaseStatus.Unspecified, blob.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.PageBlob, blob.Properties.BlobType);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(1024, blob2.Properties.Length);
                 Assert.AreEqual(blob.Properties.ETag, blob2.Properties.ETag);
@@ -1103,7 +1121,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudPageBlob blob = container.GetPageBlobReference(blobName);
                     IAsyncResult result = blob.BeginCreate(1024,
                         ar => waitHandle.Set(),
                         null);
@@ -1121,7 +1140,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.AreEqual(LeaseStatus.Unspecified, blob.Properties.LeaseStatus);
                     Assert.AreEqual(BlobType.PageBlob, blob.Properties.BlobType);
 
-                    CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                    CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                     result = blob2.BeginFetchAttributes(
                         ar => waitHandle.Set(),
                         null);
@@ -1153,15 +1172,16 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobFetchAttributesTask()
+        public async Task CloudPageBlobFetchAttributesTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(1024).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(1024);
                 Assert.AreEqual(1024, blob.Properties.Length);
                 Assert.IsNotNull(blob.Properties.ETag);
                 Assert.IsTrue(blob.Properties.LastModified > DateTimeOffset.UtcNow.AddMinutes(-5));
@@ -1173,8 +1193,8 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(LeaseStatus.Unspecified, blob.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.PageBlob, blob.Properties.BlobType);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(1024, blob2.Properties.Length);
                 Assert.AreEqual(blob.Properties.ETag, blob2.Properties.ETag);
                 Assert.AreEqual(blob.Properties.LastModified, blob2.Properties.LastModified);
@@ -1186,7 +1206,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(LeaseStatus.Unlocked, blob2.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.PageBlob, blob2.Properties.BlobType);
 
-                CloudPageBlob blob3 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob3 = container.GetPageBlobReference(blobName);
                 Assert.IsNull(blob3.Properties.ContentMD5);
                 byte[] target = new byte[4];
                 BlobRequestOptions options2 = new BlobRequestOptions();
@@ -1197,7 +1217,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -1215,7 +1235,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
                 string eTag = blob.Properties.ETag;
                 DateTimeOffset lastModified = blob.Properties.LastModified.Value;
@@ -1232,7 +1253,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.IsTrue(blob.Properties.LastModified > lastModified);
                 Assert.AreNotEqual(eTag, blob.Properties.ETag);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
                 Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
@@ -1241,7 +1262,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", blob2.Properties.ContentType);
 
-                CloudPageBlob blob3 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob3 = container.GetPageBlobReference(blobName);
                 using (MemoryStream stream = new MemoryStream())
                 {
                     BlobRequestOptions options = new BlobRequestOptions()
@@ -1255,13 +1276,13 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudPageBlob blob4 = (CloudPageBlob)container.ListBlobs().First();
                 AssertAreEqual(blob2.Properties, blob4.Properties);
 
-                CloudPageBlob blob5 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob5 = container.GetPageBlobReference(blobName);
                 Assert.IsNull(blob5.Properties.ContentMD5);
                 byte[] target = new byte[4];
                 blob5.DownloadRangeToByteArray(target, 0, 0, 4);
                 Assert.AreEqual("MDAwMDAwMDA=", blob5.Properties.ContentMD5);
 
-                CloudPageBlob blob6 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob6 = container.GetPageBlobReference(blobName);
                 Assert.IsNull(blob6.Properties.ContentMD5);
                 target = new byte[4];
                 BlobRequestOptions options2 = new BlobRequestOptions();
@@ -1290,7 +1311,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudPageBlob blob = container.GetPageBlobReference(blobName);
                     IAsyncResult result = blob.BeginCreate(1024,
                         ar => waitHandle.Set(),
                         null);
@@ -1315,7 +1337,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.IsTrue(blob.Properties.LastModified > lastModified);
                     Assert.AreNotEqual(eTag, blob.Properties.ETag);
 
-                    CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                    CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                     result = blob2.BeginFetchAttributes(
                         ar => waitHandle.Set(),
                         null);
@@ -1328,7 +1350,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                     Assert.AreEqual("text/html", blob2.Properties.ContentType);
 
-                    CloudPageBlob blob3 = container.GetPageBlobReference("blob1");
+                    CloudPageBlob blob3 = container.GetPageBlobReference(blobName);
                     using (MemoryStream stream = new MemoryStream())
                     {
                         BlobRequestOptions options = new BlobRequestOptions()
@@ -1365,15 +1387,16 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobSetPropertiesTask()
+        public async Task CloudPageBlobSetPropertiesTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(1024).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(1024);
                 string eTag = blob.Properties.ETag;
                 DateTimeOffset lastModified = blob.Properties.LastModified.Value;
 
@@ -1385,12 +1408,12 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.Properties.ContentLanguage = "tr,en";
                 blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 blob.Properties.ContentType = "text/html";
-                blob.SetPropertiesAsync().Wait();
+                await blob.SetPropertiesAsync();
                 Assert.IsTrue(blob.Properties.LastModified > lastModified);
                 Assert.AreNotEqual(eTag, blob.Properties.ETag);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
                 Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
                 Assert.AreEqual("gzip", blob2.Properties.ContentEncoding);
@@ -1398,14 +1421,14 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", blob2.Properties.ContentType);
 
-                CloudPageBlob blob3 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob3 = container.GetPageBlobReference(blobName);
                 using (MemoryStream stream = new MemoryStream())
                 {
                     BlobRequestOptions options = new BlobRequestOptions()
                     {
                         DisableContentMD5Validation = true,
                     };
-                    blob3.DownloadToStreamAsync(stream, null, options, null).Wait();
+                    await blob3.DownloadToStreamAsync(stream, null, options, null);
                 }
                 AssertAreEqual(blob2.Properties, blob3.Properties);
 
@@ -1414,7 +1437,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -1432,10 +1455,11 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
 
-                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blob2 = container.GetBlockBlobReference(blobName);
                 StorageException e = TestHelper.ExpectedException<StorageException>(
                     () => blob2.FetchAttributes(),
                     "Fetching attributes of a page blob using block blob reference should fail");
@@ -1460,7 +1484,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Metadata["key1"] = "value1";
                 blob.Properties.CacheControl = "no-transform";
                 blob.Properties.ContentDisposition = "attachment";
@@ -1470,7 +1495,7 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.Properties.ContentType = "text/html";
                 blob.Create(1024);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual("value1", blob2.Metadata["key1"]);
@@ -1502,8 +1527,9 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
                 blob.Metadata["key1"] = "value1";
 
@@ -1549,10 +1575,11 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(0, blob2.Metadata.Count);
 
@@ -1613,12 +1640,13 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                    CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                     IAsyncResult result = blob2.BeginFetchAttributes(
                         ar => waitHandle.Set(),
                         null);
@@ -1711,18 +1739,19 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobSetMetadataTask()
+        public async Task CloudPageBlobSetMetadataTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(1024).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(1024);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(0, blob2.Metadata.Count);
 
                 blob.Metadata["key1"] = null;
@@ -1744,9 +1773,9 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "value1";
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
 
-                blob2.FetchAttributesAsync().Wait();
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual("value1", blob2.Metadata["key1"]);
                 // Metadata keys should be case-insensitive
@@ -1754,8 +1783,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 CloudPageBlob blob3 =
                     (CloudPageBlob)
-                    container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.Metadata, null, null, null, null)
-                             .Result
+                    (await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.Metadata, null, null, null, null))
                              .Results
                              .First();
 
@@ -1764,14 +1792,14 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual("value1", blob3.Metadata["KEY1"]);
 
                 blob.Metadata.Clear();
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
 
-                blob2.FetchAttributesAsync().Wait();
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(0, blob2.Metadata.Count);
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -1790,7 +1818,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(4 * 1024);
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
@@ -1858,7 +1887,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(4 * 1024);
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
@@ -1960,31 +1990,32 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobGetPageRangesTask()
+        public async Task CloudPageBlobGetPageRangesTask()
         {
             byte[] buffer = GetRandomBuffer(1024);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(4 * 1024).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(4 * 1024);
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
                 {
-                    blob.WritePagesAsync(memoryStream, 512, null).Wait();
+                    await blob.WritePagesAsync(memoryStream, 512, null);
                 }
 
                 using (MemoryStream memoryStream = new MemoryStream(buffer))
                 {
-                    blob.WritePagesAsync(memoryStream, 3 * 1024, null).Wait();
+                    await blob.WritePagesAsync(memoryStream, 3 * 1024, null);
                 }
 
-                blob.ClearPagesAsync(1024, 1024).Wait();
-                blob.ClearPagesAsync(0, 512).Wait();
+                await blob.ClearPagesAsync(1024, 1024);
+                await blob.ClearPagesAsync(0, 512);
 
-                IEnumerable<PageRange> pageRanges = blob.GetPageRangesAsync().Result;
+                IEnumerable<PageRange> pageRanges = await blob.GetPageRangesAsync();
                 List<string> expectedPageRanges = new List<string>()
                 {
                     new PageRange(512, 1023).ToString(),
@@ -1996,10 +2027,10 @@ namespace Microsoft.Azure.Storage.Blob
                 }
                 Assert.AreEqual(0, expectedPageRanges.Count);
 
-                pageRanges = blob.GetPageRangesAsync(1024, 1024, null, null, null).Result;
+                pageRanges = await blob.GetPageRangesAsync(1024, 1024, null, null, null);
                 Assert.AreEqual(0, pageRanges.Count());
 
-                pageRanges = blob.GetPageRangesAsync(512, 3 * 1024, null, null, null).Result;
+                pageRanges = await blob.GetPageRangesAsync(512, 3 * 1024, null, null, null);
                 expectedPageRanges = new List<string>()
                 {
                     new PageRange(512, 1023).ToString(),
@@ -2018,7 +2049,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2040,7 +2071,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(4 * 1024 * 1024);
 
                 using (MemoryStream memoryStream = new MemoryStream())
@@ -2131,7 +2163,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 Task.Delay(1000).Wait();
 
-                CloudPageBlob dest = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob dest = container.GetPageBlobReference(blobName);
                 dest.Create(buffer.Length);
 
                 dest.WritePages(source.Uri, 0, buffer.Length, 0, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext));
@@ -2145,7 +2178,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                container.DeleteIfExists();
             }
         }
 
@@ -2163,7 +2196,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 using (MemoryStream originalBlob = new MemoryStream(buffer))
                 {
                     using (AutoResetEvent waitHandle = new AutoResetEvent(false))
@@ -2212,7 +2246,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(4 * 1024 * 1024);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
@@ -2312,30 +2347,31 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobDownloadToStreamTask()
+        public async Task CloudPageBlobDownloadToStreamTask()
         {
             byte[] buffer = GetRandomBuffer(1 * 1024 * 1024);
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 using (MemoryStream originalBlob = new MemoryStream(buffer))
                 {
-                    blob.UploadFromStreamAsync(originalBlob).Wait();
+                    await blob.UploadFromStreamAsync(originalBlob);
 
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
                         OperationContext context = new OperationContext();
-                        blob.DownloadRangeToStreamAsync(downloadedBlob, 0, buffer.Length).Wait();
+                        await blob.DownloadRangeToStreamAsync(downloadedBlob, 0, buffer.Length);
                         TestHelper.AssertStreamsAreEqual(originalBlob, downloadedBlob);
                     }
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -2345,7 +2381,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobWritePagesTask()
+        public async Task CloudPageBlobWritePagesTask()
         {
             byte[] buffer = GetRandomBuffer(4 * 1024 * 1024);
             MD5 md5 = MD5.Create();
@@ -2354,10 +2390,11 @@ namespace Microsoft.Azure.Storage.Blob
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(4 * 1024 * 1024).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(4 * 1024 * 1024);
 
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
@@ -2382,7 +2419,7 @@ namespace Microsoft.Azure.Storage.Blob
                             "InvalidPageRange");
 
                         memoryStream.Seek(0, SeekOrigin.Begin);
-                        blob.WritePagesAsync(memoryStream, 0, contentMD5).Wait();
+                        await blob.WritePagesAsync(memoryStream, 0, contentMD5);
                         resultingData.Write(buffer, 0, buffer.Length);
 
                         int offset = buffer.Length - 1024;
@@ -2394,20 +2431,20 @@ namespace Microsoft.Azure.Storage.Blob
                             "Md5Mismatch");
 
                         memoryStream.Seek(offset, SeekOrigin.Begin);
-                        blob.WritePagesAsync(memoryStream, 0, null).Wait();
+                        await blob.WritePagesAsync(memoryStream, 0, null);
                         resultingData.Seek(0, SeekOrigin.Begin);
                         resultingData.Write(buffer, offset, buffer.Length - offset);
 
                         offset = buffer.Length - 2048;
                         memoryStream.Seek(offset, SeekOrigin.Begin);
-                        blob.WritePagesAsync(memoryStream, 1024, null).Wait();
+                        await blob.WritePagesAsync(memoryStream, 1024, null);
                         resultingData.Seek(1024, SeekOrigin.Begin);
                         resultingData.Write(buffer, offset, buffer.Length - offset);
                     }
 
                     using (MemoryStream blobData = new MemoryStream())
                     {
-                        blob.DownloadToStreamAsync(blobData).Wait();
+                        await blob.DownloadToStreamAsync(blobData);
                         Assert.AreEqual(resultingData.Length, blobData.Length);
 
                         Assert.IsTrue(blobData.ToArray().SequenceEqual(resultingData.ToArray()));
@@ -2416,7 +2453,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
         
@@ -2447,7 +2484,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 await Task.Delay(1000);
 
-                CloudPageBlob dest = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob dest = container.GetPageBlobReference(blobName);
                 await dest.CreateAsync(buffer.Length);
 
                 await dest.WritePagesAsync(source.Uri, 0, buffer.Length, 0, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
@@ -2461,7 +2499,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -2536,7 +2574,8 @@ namespace Microsoft.Azure.Storage.Blob
                 AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
                 this.CloudPageBlobUploadFromStream(container, 6 * 512, null, accessCondition, 0, false, true);
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 TestHelper.ExpectedException(
@@ -2577,7 +2616,8 @@ namespace Microsoft.Azure.Storage.Blob
                 AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("\"*\"");
                 this.CloudPageBlobUploadFromStream(container, 6 * 512, null, accessCondition, 0, true, true);
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 TestHelper.ExpectedException(
@@ -2610,38 +2650,37 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobUploadFromStreamWithAccessConditionTask()
+        public async Task CloudPageBlobUploadFromStreamWithAccessConditionTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
             try
             {
                 AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true);
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(1024).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(1024);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
-                TestHelper.ExpectedException(
+                await TestHelper.ExpectedExceptionAsync<StorageException>(
                     () => this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true),
-                    "Uploading a blob on top of an existing blob should fail if the ETag matches",
-                    HttpStatusCode.PreconditionFailed);
+                    "Uploading a blob on top of an existing blob should fail if the ETag matches");
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true);
 
                 blob = container.GetPageBlobReference("blob3");
-                blob.CreateAsync(1024).Wait();
+                await blob.CreateAsync(1024);
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                TestHelper.ExpectedException(
+                await TestHelper.ExpectedExceptionAsync<StorageException>(
                     () => this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true),
-                    "Uploading a blob on top of an existing blob should fail if the ETag matches",
-                    HttpStatusCode.PreconditionFailed);
+                    "Uploading a blob on top of an existing blob should fail if the ETag matches");
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true);
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2695,18 +2734,18 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobUploadFromStreamTask()
+        public async Task CloudPageBlobUploadFromStreamTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
             try
             {
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, null, 0, true);
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, null, 1024, true);
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2747,6 +2786,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void CloudPageBlobUploadFromStreamLengthAPM()
         {
             CloudBlobContainer container = GetRandomContainerReference();
@@ -2778,27 +2818,27 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobUploadFromStreamLengthTask()
+        public async Task CloudPageBlobUploadFromStreamLengthTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
             try
             {
                 // Upload half of the stream
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 3 * 512, null, 0, true);
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 3 * 512, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 3 * 512, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 3 * 512, null, 1024, true);
 
                 // Upload full stream
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 6 * 512, null, 0, true);
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 4 * 512, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 6 * 512, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 4 * 512, null, 1024, true);
 
                 // Exclude last page
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 5 * 512, null, 0, true);
-                this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 3 * 512, null, 1024, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 5 * 512, null, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, 3 * 512, null, 1024, true);
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2862,23 +2902,23 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobUploadFromStreamLengthInvalidTask()
+        public async Task CloudPageBlobUploadFromStreamLengthInvalidTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
             try
             {
-                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
                     () => this.CloudPageBlobUploadFromStreamTask(container, 3 * 512, 3 * 512 + 1, null, 0, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
 
-                TestHelper.ExpectedException<ArgumentOutOfRangeException>(
+                await TestHelper.ExpectedExceptionAsync<ArgumentOutOfRangeException>(
                     () => this.CloudPageBlobUploadFromStreamTask(container, 3 * 512, 3 * 512 + 1025, null, 1024, false),
                     "The given stream does not contain the requested number of bytes from its given position.");
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2894,7 +2934,8 @@ namespace Microsoft.Azure.Storage.Blob
                 md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
             }
 
-            CloudPageBlob blob = container.GetPageBlobReference("blob1");
+            var blobName = GetRandomBlobName();
+            CloudPageBlob blob = container.GetPageBlobReference(blobName);
             blob.StreamWriteSizeInBytes = 512;
 
             using (MemoryStream originalBlob = new MemoryStream())
@@ -2976,7 +3017,7 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
 #if TASK
-        private void CloudPageBlobUploadFromStreamTask(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool testMd5)
+        private async Task CloudPageBlobUploadFromStreamTask(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool testMd5)
         {
             try
             {
@@ -2986,15 +3027,17 @@ namespace Microsoft.Azure.Storage.Blob
                 string md5 = string.Empty;
                 if (testMd5)
                 {
-                    md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
+                    md5 = Convert.ToBase64String(
+                        hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
                 }
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.StreamWriteSizeInBytes = 512;
 
                 using (MemoryStream originalBlob = new MemoryStream())
                 {
-                    originalBlob.Write(buffer, startOffset, buffer.Length - startOffset);
+                    await originalBlob.WriteAsync(buffer, startOffset, buffer.Length - startOffset);
 
                     using (MemoryStream sourceStream = new MemoryStream(buffer))
                     {
@@ -3006,15 +3049,16 @@ namespace Microsoft.Azure.Storage.Blob
 
                         if (copyLength.HasValue)
                         {
-                            blob.UploadFromStreamAsync(sourceStream, copyLength.Value, accessCondition, options, null).GetAwaiter().GetResult();
+                            await blob.UploadFromStreamAsync(
+                                sourceStream, copyLength.Value, accessCondition, options, null);
                         }
                         else
                         {
-                            blob.UploadFromStreamAsync(sourceStream, accessCondition, options, null).GetAwaiter().GetResult();
+                            await blob.UploadFromStreamAsync(sourceStream, accessCondition, options, null);
                         }
                     }
 
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.FetchAttributesAsync();
                     if (testMd5)
                     {
                         Assert.AreEqual(md5, blob.Properties.ContentMD5);
@@ -3022,7 +3066,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
-                        blob.DownloadToStreamAsync(downloadedBlob).Wait();
+                        await blob.DownloadToStreamAsync(downloadedBlob);
 
                         TestHelper.AssertStreamsAreEqualAtIndex(
                             originalBlob,
@@ -3054,7 +3098,8 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.UploadFromStream(originalData);
                 Assert.IsFalse(blob.IsSnapshot);
                 Assert.IsNull(blob.SnapshotTime, "Root blob has SnapshotTime set");
@@ -3135,7 +3180,8 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 IAsyncResult result;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -3223,22 +3269,22 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobSnapshotTask()
+        public async Task CloudPageBlobSnapshotTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.UploadFromStreamAsync(originalData).Wait();
+                CloudPageBlob blob = container.GetPageBlobReference(GetRandomBlobName());
+                await blob.UploadFromStreamAsync(originalData);
                 Assert.IsFalse(blob.IsSnapshot);
                 Assert.IsNull(blob.SnapshotTime, "Root blob has SnapshotTime set");
                 Assert.IsFalse(blob.SnapshotQualifiedUri.Query.Contains("snapshot"));
                 Assert.AreEqual(blob.Uri, blob.SnapshotQualifiedUri);
 
-                CloudPageBlob snapshot1 = blob.CreateSnapshotAsync().Result;
+                CloudPageBlob snapshot1 = await blob.CreateSnapshotAsync();
                 Assert.AreEqual(blob.Properties.ETag, snapshot1.Properties.ETag);
                 Assert.AreEqual(blob.Properties.LastModified, snapshot1.Properties.LastModified);
                 Assert.IsTrue(snapshot1.IsSnapshot);
@@ -3251,19 +3297,19 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudPageBlob snapshot2 = blob.CreateSnapshotAsync().Result;
                 Assert.IsTrue(snapshot2.SnapshotTime.Value > snapshot1.SnapshotTime.Value);
 
-                snapshot1.FetchAttributesAsync().Wait();
-                snapshot2.FetchAttributesAsync().Wait();
-                blob.FetchAttributesAsync().Wait();
+                await snapshot1.FetchAttributesAsync();
+                await snapshot2.FetchAttributesAsync();
+                await blob.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, blob.Properties);
 
                 CloudPageBlob snapshot1Clone = new CloudPageBlob(new Uri(blob.Uri + "?snapshot=" + snapshot1.SnapshotTime.Value.ToString("O")), blob.ServiceClient.Credentials);
                 Assert.IsNotNull(snapshot1Clone.SnapshotTime, "Snapshot clone does not have SnapshotTime set");
                 Assert.AreEqual(snapshot1.SnapshotTime.Value, snapshot1Clone.SnapshotTime.Value);
-                snapshot1Clone.FetchAttributesAsync().Wait();
+                await snapshot1Clone.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties);
 
                 CloudPageBlob snapshotCopy = container.GetPageBlobReference("blob2");
-                snapshotCopy.StartCopyAsync(snapshot1, null, null, null, null).Wait();
+                await snapshotCopy.StartCopyAsync(snapshot1, null, null, null, null);
                 WaitForCopy(snapshotCopy);
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
@@ -3271,23 +3317,24 @@ namespace Microsoft.Azure.Storage.Blob
                     () => snapshot1.OpenWriteAsync(1024).GetAwaiter().GetResult(),
                     "Trying to write to a blob snapshot should fail");
 
-                using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
+                using (Stream snapshotStream = await snapshot1.OpenReadAsync())
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
-                blob.CreateAsync(1024).Wait();
+                await blob.CreateAsync(1024);
 
-                using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
+                using (Stream snapshotStream = await snapshot1.OpenReadAsync())
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
+
+                await Task.Delay(1000);
 
                 List<IListBlobItem> blobs =
-                    container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null)
-                             .Result
+                    (await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null))
                              .Results
                              .ToList();
                 Assert.AreEqual(4, blobs.Count);
@@ -3298,7 +3345,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -3316,7 +3363,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
 
                 blob.Metadata["Hello"] = "World";
@@ -3363,7 +3411,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
 
                 blob.Metadata["Hello"] = "World";
@@ -3411,25 +3460,26 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudPageBlobSnapshotMetadataTask()
+        public async Task CloudPageBlobSnapshotMetadataTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(1024, null, null, new OperationContext()).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(1024, null, null, new OperationContext());
 
                 blob.Metadata["Hello"] = "World";
                 blob.Metadata["Marco"] = "Polo";
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
 
                 IDictionary<string, string> snapshotMetadata = new Dictionary<string, string>();
                 snapshotMetadata["Hello"] = "Dolly";
                 snapshotMetadata["Yoyo"] = "Ma";
 
-                CloudPageBlob snapshot = blob.CreateSnapshotAsync(snapshotMetadata, null, null, null).Result;
+                CloudPageBlob snapshot = await blob.CreateSnapshotAsync(snapshotMetadata, null, null, null);
 
                 // Test the client view against the expected metadata
                 // Metadata keys should be case-insensitive
@@ -3440,7 +3490,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.IsFalse(snapshot.Metadata.ContainsKey("Marco"));
 
                 // Test the server view against the expected metadata
-                snapshot.FetchAttributesAsync().Wait();
+                await snapshot.FetchAttributesAsync();
                 Assert.AreEqual("Dolly", snapshot.Metadata["Hello"]);
                 Assert.AreEqual("Dolly", snapshot.Metadata["HELLO"]);
                 Assert.AreEqual("Ma", snapshot.Metadata["Yoyo"]);
@@ -3448,7 +3498,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -3466,7 +3516,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
                 blob.FetchAttributes();
 
@@ -3616,7 +3667,8 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 container.Create();
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
 
                 TestHelper.ExpectedException(
                     () => blob.Create(511),
@@ -3671,7 +3723,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 TestHelper.ExpectedException<ArgumentNullException>(
                     () => blob.UploadFromStream(null),
                     "Uploading from a null stream should fail");
@@ -3730,7 +3783,8 @@ namespace Microsoft.Azure.Storage.Blob
                     () => new CloudPageBlob(new Uri(blobUri), container.ServiceClient.Credentials),
                     "Try to use SAS creds in Uri on a shared key client");
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(0);
                 CloudPageBlob snapshot = blob.CreateSnapshot();
                 DateTimeOffset? wrongTime = snapshot.SnapshotTime.Value + TimeSpan.FromSeconds(10);
@@ -3762,7 +3816,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 IAsyncResult result;
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 result = blob.BeginCreate(0, null, null);
                 result.AsyncWaitHandle.WaitOne();
                 blob.EndCreate(result);
@@ -3901,7 +3956,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                container.DeleteIfExists();
             }
         }
 
@@ -3918,14 +3973,15 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(0, PremiumPageBlobTier.P40, null, null, null);
                 Assert.AreEqual(PremiumPageBlobTier.P40, blob.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
                 Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(PremiumPageBlobTier.P40, blob2.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
@@ -3934,7 +3990,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 byte[] data = GetRandomBuffer(512);
 
-                CloudPageBlob blob3 = container.GetPageBlobReference("blob3");
+                CloudPageBlob blob3 = container.GetPageBlobReference(GetRandomBlobName());
                 blob3.UploadFromByteArray(data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null);
                 Assert.AreEqual(PremiumPageBlobTier.P10, blob3.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob3.Properties.BlobTierInferred.Value);
@@ -3947,14 +4003,14 @@ namespace Microsoft.Azure.Storage.Blob
                     fs.Write(data, 0, data.Length);
                 }
 
-                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                CloudPageBlob blob4 = container.GetPageBlobReference(GetRandomBlobName());
                 blob4.UploadFromFile(inputFileName, PremiumPageBlobTier.P20, null, null, null);
                 Assert.AreEqual(PremiumPageBlobTier.P20, blob4.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob4.Properties.BlobTierInferred.Value);
 
                 using (MemoryStream memStream = new MemoryStream(data))
                 {
-                    CloudPageBlob blob5 = container.GetPageBlobReference("blob5");
+                    CloudPageBlob blob5 = container.GetPageBlobReference(GetRandomBlobName());
                     blob5.UploadFromStream(memStream, PremiumPageBlobTier.P30, null, null, null);
                     Assert.AreEqual(PremiumPageBlobTier.P30, blob5.Properties.PremiumPageBlobTier);
                     Assert.IsFalse(blob5.Properties.BlobTierInferred.Value);
@@ -3983,13 +4039,14 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudPageBlob blob = container.GetPageBlobReference(blobName);
                     result = blob.BeginCreate(0, PremiumPageBlobTier.P50, null, null, null, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob.EndCreate(result);
                     Assert.AreEqual(PremiumPageBlobTier.P50, blob.Properties.PremiumPageBlobTier);
 
-                    CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                    CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                     result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob2.EndFetchAttributes(result);
@@ -3997,7 +4054,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     byte[] data = GetRandomBuffer(512);
 
-                    CloudPageBlob blob3 = container.GetPageBlobReference("blob3");
+                    CloudPageBlob blob3 = container.GetPageBlobReference(GetRandomBlobName());
                     result = blob3.BeginUploadFromByteArray(data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob3.EndUploadFromByteArray(result);
@@ -4009,7 +4066,7 @@ namespace Microsoft.Azure.Storage.Blob
                         fs.Write(data, 0, data.Length);
                     }
 
-                    CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                    CloudPageBlob blob4 = container.GetPageBlobReference(GetRandomBlobName());
                     result = blob4.BeginUploadFromFile(inputFileName, PremiumPageBlobTier.P20, null, null, null, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob4.EndUploadFromFile(result);
@@ -4017,7 +4074,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                     using (MemoryStream memStream = new MemoryStream(data))
                     {
-                        CloudPageBlob blob5 = container.GetPageBlobReference("blob5");
+                        CloudPageBlob blob5 = container.GetPageBlobReference(GetRandomBlobName());
                         result = blob5.BeginUploadFromStream(memStream, PremiumPageBlobTier.P30, null, null, null, ar => waitHandle.Set(), null);
                         waitHandle.WaitOne();
                         blob5.EndUploadFromStream(result);
@@ -4038,52 +4095,54 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Premium)]
-        public void CloudPageBlobSetPremiumBlobTierOnCreateTask()
+        public async Task CloudPageBlobSetPremiumBlobTierOnCreateTask()
         {
             CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(0, PremiumPageBlobTier.P60, null, null, null, CancellationToken.None).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(0, PremiumPageBlobTier.P60, null, null, null, CancellationToken.None);
                 Assert.AreEqual(PremiumPageBlobTier.P60, blob.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(PremiumPageBlobTier.P60, blob2.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
 
                 byte[] data = GetRandomBuffer(512);
 
-                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
-                blob4.UploadFromByteArrayAsync(data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null, CancellationToken.None).Wait();
+                CloudPageBlob blob4 = container.GetPageBlobReference(GetRandomBlobName());
+                await blob4.UploadFromByteArrayAsync(
+                    data, 0, data.Length, PremiumPageBlobTier.P10, null, null, null, CancellationToken.None);
                 Assert.AreEqual(PremiumPageBlobTier.P10, blob4.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob4.Properties.BlobTierInferred.Value);
 
                 string inputFileName = "i_" + Path.GetRandomFileName();
                 using (FileStream fs = new FileStream(inputFileName, FileMode.Create, FileAccess.Write))
                 {
-                    fs.WriteAsync(data, 0, data.Length).Wait();
+                    await fs.WriteAsync(data, 0, data.Length);
                 }
 
-                CloudPageBlob blob5 = container.GetPageBlobReference("blob5");
-                blob5.UploadFromFileAsync(inputFileName, PremiumPageBlobTier.P20, null, null, null, CancellationToken.None).Wait();
+                CloudPageBlob blob5 = container.GetPageBlobReference(GetRandomBlobName());
+                await blob5.UploadFromFileAsync(inputFileName, PremiumPageBlobTier.P20, null, null, null, CancellationToken.None);
                 Assert.AreEqual(PremiumPageBlobTier.P20, blob5.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob5.Properties.BlobTierInferred.Value);
 
                 using (MemoryStream memStream = new MemoryStream(data))
                 {
-                    CloudPageBlob blob6 = container.GetPageBlobReference("blob6");
-                    blob6.UploadFromStreamAsync(memStream, PremiumPageBlobTier.P30, null, null, null, CancellationToken.None).Wait();
+                    CloudPageBlob blob6 = container.GetPageBlobReference(GetRandomBlobName());
+                    await blob6.UploadFromStreamAsync(memStream, PremiumPageBlobTier.P30, null, null, null, CancellationToken.None);
                     Assert.AreEqual(PremiumPageBlobTier.P30, blob6.Properties.PremiumPageBlobTier);
                     Assert.IsFalse(blob6.Properties.BlobTierInferred.Value);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -4101,7 +4160,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.Create(1024);
                 Assert.IsFalse(blob.Properties.BlobTierInferred.HasValue);
                 blob.FetchAttributes();
@@ -4112,7 +4172,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob.Properties.BlobTierInferred.Value);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob2.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob2.Properties.BlobTierInferred.Value);
@@ -4121,7 +4181,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(PremiumPageBlobTier.P30, blob3.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob3.Properties.BlobTierInferred.HasValue);
 
-                CloudPageBlob blob4 = container.GetPageBlobReference("blob4");
+                CloudPageBlob blob4 = container.GetPageBlobReference(GetRandomBlobName());
                 blob4.Create(125 * Constants.GB);
                 try
                 {
@@ -4167,7 +4227,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudPageBlob blob = container.GetPageBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudPageBlob blob = container.GetPageBlobReference(blobName);
                     result = blob.BeginCreate(0, ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob.EndCreate(result);
@@ -4179,7 +4240,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
                     Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
-                    CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
+                    CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
                     result = blob2.BeginFetchAttributes(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob2.EndFetchAttributes(result);
@@ -4201,30 +4262,31 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Premium)]
-        public void CloudPageBlobSetPremiumBlobTierTask()
+        public async Task CloudPageBlobSetPremiumBlobTierTask()
         {
             CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudPageBlob blob = container.GetPageBlobReference("blob1");
-                blob.CreateAsync(0).Wait();
+                var blobName = GetRandomBlobName();
+                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+                await blob.CreateAsync(0);
 
-                blob.SetPremiumBlobTierAsync(PremiumPageBlobTier.P20).Wait();
+                await blob.SetPremiumBlobTierAsync(PremiumPageBlobTier.P20);
                 Assert.AreEqual(PremiumPageBlobTier.P20, blob.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob.Properties.RehydrationStatus.HasValue);
 
-                CloudPageBlob blob2 = container.GetPageBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudPageBlob blob2 = container.GetPageBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(PremiumPageBlobTier.P20, blob.Properties.PremiumPageBlobTier);
                 Assert.IsFalse(blob2.Properties.StandardBlobTier.HasValue);
                 Assert.IsFalse(blob2.Properties.RehydrationStatus.HasValue);
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -4331,28 +4393,28 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Premium)]
-        public void CloudPageBlobSetPremiumBlobTierOnCopyTask()
+        public async Task CloudPageBlobSetPremiumBlobTierOnCopyTask()
         {
             CloudBlobContainer container = GetRandomPremiumBlobContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await  container.CreateAsync();
 
                 CloudPageBlob blob = container.GetPageBlobReference("source");
-                blob.CreateAsync(0, PremiumPageBlobTier.P4, null, null, null, CancellationToken.None).Wait();
+                await blob.CreateAsync(0, PremiumPageBlobTier.P4, null, null, null, CancellationToken.None);
 
                 CloudPageBlob copy = container.GetPageBlobReference("copy");
-                copy.StartCopyAsync(blob, PremiumPageBlobTier.P60, null, null, null, null, CancellationToken.None).Wait();
+                await copy.StartCopyAsync(blob, PremiumPageBlobTier.P60, null, null, null, null, CancellationToken.None);
                 Assert.AreEqual(PremiumPageBlobTier.P4, blob.Properties.PremiumPageBlobTier);
                 Assert.AreEqual(PremiumPageBlobTier.P60, copy.Properties.PremiumPageBlobTier);
 
                 CloudPageBlob copy2 = container.GetPageBlobReference("copy");
-                copy2.FetchAttributesAsync().Wait();
+                await copy2.FetchAttributesAsync();
                 Assert.AreEqual(PremiumPageBlobTier.P60, copy2.Properties.PremiumPageBlobTier);
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif

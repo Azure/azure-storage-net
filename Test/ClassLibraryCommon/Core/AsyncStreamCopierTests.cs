@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TenantTypeCategory.DevStore)]
         [TestCategory(TenantTypeCategory.DevFabric)]
         [TestCategory(TenantTypeCategory.Cloud)]
-        public void StreamCopyMaxLengthTest()
+        public async Task StreamCopyMaxLengthTest()
         {
             List<Task> tasks = new List<Task>();
             // Boundary tests
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Storage.Core
             tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, true, 10, -1, false, 10, -1, null, false)));
             tasks.Add(Task.Run(() => ValidateCopier(16 * 1024 * 1024, null, (16 * 1024 * 1024) + 1, false, 10, -1, false, 10, -1, null, false)));
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
         }
 
         [TestMethod]
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TenantTypeCategory.DevStore)]
         [TestCategory(TenantTypeCategory.DevFabric)]
         [TestCategory(TenantTypeCategory.Cloud)]
-        public void StreamCopyCopyLengthTest()
+        public async Task StreamCopyCopyLengthTest()
         {
             List<Task> tasks = new List<Task>();
             // Copy half the stream
@@ -153,7 +153,7 @@ namespace Microsoft.Azure.Storage.Core
             tasks.Add(Task.Run(() => TestHelper.ExpectedException<ArgumentOutOfRangeException>(
                 () => ValidateCopier(16 * 1024 * 1024, (16 * 1024 * 1024) + 1, null, false, 10, -1, false, 10, -1, null, false),
                 "The given stream does not contain the requested number of bytes from its given position.")));
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
         }
 
         [TestMethod]
@@ -162,6 +162,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopySyncSyncSameSpeedTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, true, 10, -1, true, 10, -1, null, true);
@@ -173,6 +174,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopySyncAsyncSameSpeedTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, true, 10, -1, false, 10, -1, null, true);
@@ -217,6 +219,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopySyncAsyncSlowInputTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, true, 50, -1, false, 10, -1, null, true);
@@ -228,6 +231,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopyAsyncSyncSlowInputTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, false, 50, -1, true, 10, -1, null, true);
@@ -239,6 +243,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopyAsyncAsyncSlowInputTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, false, 50, -1, false, 10, -1, null, true);
@@ -261,6 +266,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopySyncAsyncSlowOutputTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, true, 10, -1, false, 50, -1, null, true);
@@ -272,6 +278,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopyAsyncSyncSlowOutputTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, false, 10, -1, true, 50, -1, null, true);
@@ -283,6 +290,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopyAsyncAsyncSlowOutputTest()
         {
             ValidateCopier(16 * 1024 * 1024, null, null, false, 10, -1, false, 50, -1, null, true);
@@ -294,6 +302,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopySyncSyncFailInputTest()
         {
             TestHelper.ExpectedException<IOException>(
@@ -307,6 +316,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopySyncSyncFailOutputTest()
         {
             TestHelper.ExpectedException<IOException>(
@@ -320,6 +330,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopyAsyncAsyncFailInputTest()
         {
             TestHelper.ExpectedException<IOException>(
@@ -333,6 +344,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopyAsyncAsyncFailOutputTest()
         {
             TestHelper.ExpectedException<IOException>(
@@ -346,6 +358,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopySyncSyncTimeoutTest()
         {
             StorageException e = TestHelper.ExpectedException<StorageException>(
@@ -361,6 +374,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void StreamCopyAsyncAsyncTimeoutTest()
         {
             StorageException e = TestHelper.ExpectedException<StorageException>(

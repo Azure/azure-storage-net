@@ -244,7 +244,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -266,7 +266,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -342,7 +342,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -606,7 +606,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -664,7 +664,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -724,7 +724,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -762,7 +762,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -848,7 +848,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
         */
@@ -888,7 +888,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -921,7 +921,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -965,7 +965,7 @@ namespace Microsoft.Azure.Storage.File
             }
             finally
             {
-                share.DeleteIfExistsAsync().Wait();
+                await share.DeleteAsync();
             }
         }
 
@@ -1147,7 +1147,7 @@ namespace Microsoft.Azure.Storage.File
 
             try
             {
-                dir.CreateAsync().Wait();
+                await dir.CreateAsync();
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -1156,7 +1156,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                dir.DeleteAsync().Wait();
+                await dir.DeleteAsync();
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -1165,7 +1165,7 @@ namespace Microsoft.Azure.Storage.File
             }
             try
             {
-                dir.SetMetadataAsync(null, null, null).Wait();
+                await dir.SetMetadataAsync(null, null, null);
                 Assert.Fail("API should fail in a snapshot");
             }
             catch (InvalidOperationException e)
@@ -1173,8 +1173,8 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(SR.CannotModifyShareSnapshot, e.Message);
             }
 
-            snapshot.DeleteAsync().Wait();
-            share.DeleteAsync().Wait();
+            await snapshot.DeleteAsync();
+            await share.DeleteAsync();
         }
 
         [TestMethod]

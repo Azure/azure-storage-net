@@ -109,6 +109,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void OpContextTestClientRequestIDOnBlob()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -137,6 +138,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void OpContextTestUserHeadersOnBlob()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -169,6 +171,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void OpContextTestClientRequestIDOnQueue()
         {
             CloudQueueClient qClient = GenerateCloudQueueClient();
@@ -197,6 +200,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void OpContextTestUserHeadersOnQueue()
         {
             CloudQueueClient qClient = GenerateCloudQueueClient();
@@ -229,6 +233,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public void OpContextTestCustomUserAgent()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();

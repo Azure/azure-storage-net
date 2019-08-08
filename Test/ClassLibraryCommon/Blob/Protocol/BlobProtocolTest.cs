@@ -341,6 +341,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task BlobProtocolListBlobsCloudAnonSync()
         {
             BlobListingContext listingContext = new BlobListingContext("p", null, null, BlobListingDetails.All);
@@ -370,6 +371,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task BlobProtocolListBlobsCloudOwnerSync()
         {
             BlobListingContext listingContext = new BlobListingContext("def", null, null, BlobListingDetails.All);

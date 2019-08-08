@@ -153,7 +153,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();;
             }
         }
 
@@ -201,7 +201,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();;
             }
         }
 
@@ -213,36 +213,35 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobSoftDeleteNoSnapshotTask()
+        public async Task CloudBlobSoftDeleteNoSnapshotTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 //Enables a delete retention policy on the blob with 1 day of default retention days
                 container.ServiceClient.EnableSoftDelete();
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 // Upload some data to the blob.
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
                 CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
-                appendBlob.CreateOrReplaceAsync().Wait();
-                appendBlob.AppendBlockAsync(originalData, null).Wait();
+                await appendBlob.CreateOrReplaceAsync();
+                await appendBlob.AppendBlockAsync(originalData, null);
 
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
-                Assert.IsTrue(blob.ExistsAsync().Result);
+                Assert.IsTrue(await blob.ExistsAsync());
                 Assert.IsFalse(blob.IsDeleted);
 
-                blob.DeleteAsync().Wait();
-                Assert.IsFalse(blob.ExistsAsync().Result);
+                await blob.DeleteAsync();
+                Assert.IsFalse(await blob.ExistsAsync());
 
                 int blobCount = 0;
                 BlobContinuationToken ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
@@ -257,9 +256,9 @@ namespace Microsoft.Azure.Storage.Blob
 
                 Assert.AreEqual(blobCount, 1);
 
-                blob.UndeleteAsync().Wait();
+                await blob.UndeleteAsync();
 
-                blob.FetchAttributesAsync().Wait();
+                await blob.FetchAttributesAsync();
                 Assert.IsFalse(blob.IsDeleted);
                 Assert.IsNull(blob.Properties.DeletedTime);
                 Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
@@ -268,9 +267,8 @@ namespace Microsoft.Azure.Storage.Blob
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
@@ -288,7 +286,7 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.ServiceClient.DisableSoftDelete();
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 
@@ -298,26 +296,26 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudBlobSoftDeleteSnapshotTask()
+        public async Task CloudBlobSoftDeleteSnapshotTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
                 //Enables a delete retention policy on the blob with 1 day of default retention days
                 container.ServiceClient.EnableSoftDelete();
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 // Upload some data to the blob.
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
                 CloudAppendBlob appendBlob = container.GetAppendBlobReference(BlobName);
-                appendBlob.UploadFromStreamAsync(originalData).Wait();
+                await appendBlob.UploadFromStreamAsync(originalData);
 
                 CloudBlob blob = container.GetBlobReference(BlobName);
 
                 //create snapshot via api
-                CloudBlob snapshot = blob.SnapshotAsync().Result;
+                CloudBlob snapshot = await blob.SnapshotAsync();
                 //create snapshot via write protection
-                appendBlob.UploadFromStreamAsync(originalData).Wait();
+                await appendBlob.UploadFromStreamAsync(originalData);
 
                 //we should have 2 snapshots 1 regular and 1 deleted: there is no way to get only the deleted snapshots but the below listing will get both snapshot types
                 int blobCount = 0;
@@ -326,9 +324,8 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobContinuationToken ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.Snapshots | BlobListingDetails.Deleted, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.Snapshots | BlobListingDetails.Deleted, null, ct, null, null))
                         .Results
                         .ToList())
                     {
@@ -354,9 +351,8 @@ namespace Microsoft.Azure.Storage.Blob
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.Snapshots, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.Snapshots, null, ct, null, null))
                         .Results
                         .ToList())
                     {
@@ -372,17 +368,16 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(blobCount, 2);
 
                 //Delete Blob and snapshots
-                blob.DeleteAsync(DeleteSnapshotsOption.IncludeSnapshots,null, null, null).Wait();
-                Assert.IsFalse(blob.ExistsAsync().Result);
-                Assert.IsFalse(snapshot.ExistsAsync().Result);
+                await blob.DeleteAsync(DeleteSnapshotsOption.IncludeSnapshots,null, null, null);
+                Assert.IsFalse(await blob.ExistsAsync());
+                Assert.IsFalse(await snapshot.ExistsAsync());
 
                 blobCount = 0;
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
@@ -397,9 +392,9 @@ namespace Microsoft.Azure.Storage.Blob
 
                 Assert.AreEqual(blobCount, 3);
 
-                blob.UndeleteAsync().Wait();
+                await blob.UndeleteAsync();
 
-                blob.FetchAttributesAsync().Wait();
+                await blob.FetchAttributesAsync();
                 Assert.IsFalse(blob.IsDeleted);
                 Assert.IsNull(blob.Properties.DeletedTime);
                 Assert.IsNull(blob.Properties.RemainingDaysBeforePermanentDelete);
@@ -408,9 +403,8 @@ namespace Microsoft.Azure.Storage.Blob
                 ct = null;
                 do
                 {
-                    foreach (IListBlobItem item in container.ListBlobsSegmentedAsync
-                        (null, true, BlobListingDetails.All, null, ct, null, null)
-                        .Result
+                    foreach (IListBlobItem item in (await container.ListBlobsSegmentedAsync
+                        (null, true, BlobListingDetails.All, null, ct, null, null))
                         .Results
                         .ToList())
                     {
@@ -429,7 +423,7 @@ namespace Microsoft.Azure.Storage.Blob
             finally
             {
                 container.ServiceClient.DisableSoftDelete();
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
         #endregion

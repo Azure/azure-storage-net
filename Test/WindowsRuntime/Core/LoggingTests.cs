@@ -47,6 +47,7 @@ namespace Microsoft.Azure.Storage.Core
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        [DoNotParallelize]
         public async Task LoggingTestAsync()
         {
             CloudBlobClient blobClient = GenerateCloudBlobClient();
@@ -83,7 +84,7 @@ namespace Microsoft.Azure.Storage.Core
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
     }

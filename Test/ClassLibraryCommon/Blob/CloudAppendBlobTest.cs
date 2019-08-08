@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                 blob.CreateOrReplace();
                 Assert.IsTrue(blob.Exists());
                 blob.Delete();
@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                    CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                     result = blob.BeginCreateOrReplace(ar => waitHandle.Set(), null);
                     waitHandle.WaitOne();
                     blob.EndCreateOrReplace(result);
@@ -129,7 +129,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                 await blob.CreateOrReplaceAsync();
                 Assert.IsTrue(await blob.ExistsAsync());
                 await blob.DeleteAsync();
@@ -150,7 +150,7 @@ namespace Microsoft.Azure.Storage.Blob
         public void CloudAppendBlobConstructor()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+            CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
             CloudAppendBlob blob2 = new CloudAppendBlob(blob.StorageUri, null, credentials: null);
             Assert.AreEqual(blob.Name, blob2.Name);
             Assert.AreEqual(blob.StorageUri, blob2.StorageUri);
@@ -172,7 +172,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                 Assert.IsFalse(blob.DeleteIfExists());
                 blob.CreateOrReplace();
                 Assert.IsTrue(blob.DeleteIfExists());
@@ -199,7 +199,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                    CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                     IAsyncResult result = blob.BeginDeleteIfExists(
                         ar => waitHandle.Set(),
                         null);
@@ -235,22 +235,22 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobDeleteIfExistsTask()
+        public async Task CloudAppendBlobDeleteIfExistsTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
-                blob.CreateOrReplaceAsync().Wait();
-                Assert.IsTrue(blob.DeleteIfExistsAsync().Result);
-                Assert.IsFalse(blob.DeleteIfExistsAsync().Result);
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
+                Assert.IsFalse(await blob.DeleteIfExistsAsync());
+                await blob.CreateOrReplaceAsync();
+                Assert.IsTrue(await blob.DeleteIfExistsAsync());
+                Assert.IsFalse(await blob.DeleteIfExistsAsync());
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 #endif
@@ -268,8 +268,9 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
 
                 Assert.IsFalse(blob2.Exists());
 
@@ -301,8 +302,9 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -343,30 +345,31 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobExistsTask()
+        public async Task CloudAppendBlobExistsTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
-            container.CreateAsync().Wait();
+            await container.CreateAsync();
 
             try
             {
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
 
-                Assert.IsFalse(blob2.ExistsAsync().Result);
+                Assert.IsFalse(await blob2.ExistsAsync());
 
-                blob.CreateOrReplaceAsync().Wait();
+                await blob.CreateOrReplaceAsync();
 
-                Assert.IsTrue(blob2.ExistsAsync().Result);
+                Assert.IsTrue(await blob2.ExistsAsync());
                 Assert.AreEqual(0, blob2.Properties.Length);
 
-                blob.DeleteAsync().Wait();
+                await blob.DeleteAsync();
 
-                Assert.IsFalse(blob2.ExistsAsync().Result);
+                Assert.IsFalse(await blob2.ExistsAsync());
             }
             finally
             {
-                container.DeleteAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -383,8 +386,8 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 container.Create();
-
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
                 Assert.AreEqual(0, blob.Properties.Length);
                 Assert.IsNotNull(blob.Properties.ETag);
@@ -398,7 +401,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(LeaseStatus.Unspecified, blob.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.AppendBlob, blob.Properties.BlobType);
 
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(0, blob2.Properties.Length);
                 Assert.AreEqual(blob.Properties.ETag, blob2.Properties.ETag);
@@ -433,7 +436,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                     IAsyncResult result = blob.BeginCreateOrReplace(
                         ar => waitHandle.Set(),
                         null);
@@ -451,7 +455,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.AreEqual(LeaseStatus.Unspecified, blob.Properties.LeaseStatus);
                     Assert.AreEqual(BlobType.AppendBlob, blob.Properties.BlobType);
 
-                    CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                    CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                     result = blob2.BeginFetchAttributes(
                         ar => waitHandle.Set(),
                         null);
@@ -483,15 +487,16 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobFetchAttributesTask()
+        public async Task CloudAppendBlobFetchAttributesTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
                 Assert.AreEqual(0, blob.Properties.Length);
                 Assert.IsNotNull(blob.Properties.ETag);
                 Assert.IsTrue(blob.Properties.LastModified > DateTimeOffset.UtcNow.AddMinutes(-5));
@@ -503,8 +508,8 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual(LeaseStatus.Unspecified, blob.Properties.LeaseStatus);
                 Assert.AreEqual(BlobType.AppendBlob, blob.Properties.BlobType);
 
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(0, blob2.Properties.Length);
                 Assert.AreEqual(blob.Properties.ETag, blob2.Properties.ETag);
                 Assert.AreEqual(blob.Properties.LastModified, blob2.Properties.LastModified);
@@ -518,7 +523,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -536,7 +541,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
                 string eTag = blob.Properties.ETag;
                 DateTimeOffset lastModified = blob.Properties.LastModified.Value;
@@ -553,7 +559,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.IsTrue(blob.Properties.LastModified > lastModified);
                 Assert.AreNotEqual(eTag, blob.Properties.ETag);
 
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
                 Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
@@ -562,7 +568,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", blob2.Properties.ContentType);
 
-                CloudAppendBlob blob3 = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob3 = container.GetAppendBlobReference(blobName);
                 using (MemoryStream stream = new MemoryStream())
                 {
                     BlobRequestOptions options = new BlobRequestOptions()
@@ -597,7 +603,8 @@ namespace Microsoft.Azure.Storage.Blob
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                    var blobName = GetRandomBlobName();
+                    CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                     IAsyncResult result = blob.BeginCreateOrReplace(
                         ar => waitHandle.Set(),
                         null);
@@ -622,7 +629,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.IsTrue(blob.Properties.LastModified > lastModified);
                     Assert.AreNotEqual(eTag, blob.Properties.ETag);
 
-                    CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                    CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                     result = blob2.BeginFetchAttributes(
                         ar => waitHandle.Set(),
                         null);
@@ -635,7 +642,7 @@ namespace Microsoft.Azure.Storage.Blob
                     Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                     Assert.AreEqual("text/html", blob2.Properties.ContentType);
 
-                    CloudAppendBlob blob3 = container.GetAppendBlobReference("blob1");
+                    CloudAppendBlob blob3 = container.GetAppendBlobReference(blobName);
                     using (MemoryStream stream = new MemoryStream())
                     {
                         BlobRequestOptions options = new BlobRequestOptions()
@@ -672,15 +679,16 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobSetPropertiesTask()
+        public async Task CloudAppendBlobSetPropertiesTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
                 string eTag = blob.Properties.ETag;
                 DateTimeOffset lastModified = blob.Properties.LastModified.Value;
 
@@ -692,12 +700,12 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.Properties.ContentLanguage = "tr,en";
                 blob.Properties.ContentMD5 = "MDAwMDAwMDA=";
                 blob.Properties.ContentType = "text/html";
-                blob.SetPropertiesAsync().Wait();
+                await blob.SetPropertiesAsync();
                 Assert.IsTrue(blob.Properties.LastModified > lastModified);
                 Assert.AreNotEqual(eTag, blob.Properties.ETag);
 
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual("no-transform", blob2.Properties.CacheControl);
                 Assert.AreEqual("attachment", blob2.Properties.ContentDisposition);
                 Assert.AreEqual("gzip", blob2.Properties.ContentEncoding);
@@ -705,14 +713,14 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual("MDAwMDAwMDA=", blob2.Properties.ContentMD5);
                 Assert.AreEqual("text/html", blob2.Properties.ContentType);
 
-                CloudAppendBlob blob3 = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob3 = container.GetAppendBlobReference(blobName);
                 using (MemoryStream stream = new MemoryStream())
                 {
                     BlobRequestOptions options = new BlobRequestOptions()
                     {
                         DisableContentMD5Validation = true,
                     };
-                    blob3.DownloadToStreamAsync(stream, null, options, null).Wait();
+                    await blob3.DownloadToStreamAsync(stream, null, options, null);
                 }
                 AssertAreEqual(blob2.Properties, blob3.Properties);
 
@@ -721,7 +729,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -739,10 +747,11 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
-                CloudBlockBlob blob2 = container.GetBlockBlobReference("blob1");
+                CloudBlockBlob blob2 = container.GetBlockBlobReference(blobName);
                 StorageException e = TestHelper.ExpectedException<StorageException>(
                     () => blob2.FetchAttributes(),
                     "Fetching attributes of an append blob using block blob reference should fail");
@@ -767,7 +776,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.Metadata["key1"] = "value1";
                 blob.Properties.CacheControl = "no-transform";
                 blob.Properties.ContentDisposition = "attachment";
@@ -777,7 +787,7 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.Properties.ContentType = "text/html";
                 blob.CreateOrReplace();
 
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual("value1", blob2.Metadata["key1"]);
@@ -809,8 +819,9 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
                 blob.Metadata["key1"] = "value1";
 
@@ -852,10 +863,11 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                 blob2.FetchAttributes();
                 Assert.AreEqual(0, blob2.Metadata.Count);
 
@@ -916,12 +928,13 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
-                    CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
+                    CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
                     IAsyncResult result = blob2.BeginFetchAttributes(
                         ar => waitHandle.Set(),
                         null);
@@ -1014,18 +1027,19 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobSetMetadataTask()
+        public async Task CloudAppendBlobSetMetadataTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
 
-                CloudAppendBlob blob2 = container.GetAppendBlobReference("blob1");
-                blob2.FetchAttributesAsync().Wait();
+                CloudAppendBlob blob2 = container.GetAppendBlobReference(blobName);
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(0, blob2.Metadata.Count);
 
                 blob.Metadata["key1"] = null;
@@ -1047,9 +1061,9 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.IsInstanceOfType(e.InnerException, typeof(ArgumentException));
 
                 blob.Metadata["key1"] = "value1";
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
 
-                blob2.FetchAttributesAsync().Wait();
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(1, blob2.Metadata.Count);
                 Assert.AreEqual("value1", blob2.Metadata["key1"]);
                 // Metadata keys should be case-insensitive
@@ -1057,8 +1071,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 CloudAppendBlob blob3 =
                     (CloudAppendBlob)
-                    container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.Metadata, null, null, null, null)
-                             .Result
+                    (await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.Metadata, null, null, null, null))
                              .Results
                              .First();
 
@@ -1067,14 +1080,14 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreEqual("value1", blob3.Metadata["KEY1"]);
 
                 blob.Metadata.Clear();
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
 
-                blob2.FetchAttributesAsync().Wait();
+                await blob2.FetchAttributesAsync();
                 Assert.AreEqual(0, blob2.Metadata.Count);
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -1209,8 +1222,8 @@ namespace Microsoft.Azure.Storage.Blob
             await container.CreateAsync();
             try
             {
-                this.CloudAppendBlockTask(container, 2 * 1024, null, 0);
-                this.CloudAppendBlockTask(container, 2 * 1024, null, 1024);
+                await this.CloudAppendBlockTask(container, 2 * 1024, null, 0);
+                await this.CloudAppendBlockTask(container, 2 * 1024, null, 1024);
             }
             finally
             {
@@ -1244,7 +1257,8 @@ namespace Microsoft.Azure.Storage.Blob
         {
             byte[] buffer = GetRandomBuffer(size);
 
-            CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+            var blobName = GetRandomBlobName();
+            CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
             blob.CreateOrReplace();
 
             using (MemoryStream originalBlob = new MemoryStream())
@@ -1321,7 +1335,8 @@ namespace Microsoft.Azure.Storage.Blob
 
             Task.Delay(1000).Wait();
 
-            CloudAppendBlob dest = container.GetAppendBlobReference("blob1");
+            var blobName = GetRandomBlobName();
+            CloudAppendBlob dest = container.GetAppendBlobReference(blobName);
             dest.CreateOrReplace();
 
             dest.AppendBlock(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext));
@@ -1335,18 +1350,19 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
 #if TASK
-        private void CloudAppendBlockTask(CloudBlobContainer container, int size, AccessCondition accessCondition, int startOffset)
+        private async Task CloudAppendBlockTask(CloudBlobContainer container, int size, AccessCondition accessCondition, int startOffset)
         {
             try
             {
                 byte[] buffer = GetRandomBuffer(size);
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
 
                 using (MemoryStream originalBlob = new MemoryStream())
                 {
-                    originalBlob.Write(buffer, startOffset, buffer.Length - startOffset);
+                    await originalBlob.WriteAsync(buffer, startOffset, buffer.Length - startOffset);
 
                     using (MemoryStream sourceStream = new MemoryStream(buffer))
                     {
@@ -1356,14 +1372,14 @@ namespace Microsoft.Azure.Storage.Blob
                             UseTransactionalMD5 = true,
                         };
 
-                        blob.AppendBlockAsync(sourceStream, null, accessCondition, options, null).Wait();
+                        await blob.AppendBlockAsync(sourceStream, null, accessCondition, options, null);
                     }
 
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.FetchAttributesAsync();
 
                     using (MemoryStream downloadedBlob = new MemoryStream())
                     {
-                        blob.DownloadToStreamAsync(downloadedBlob).Wait();
+                        await blob.DownloadToStreamAsync(downloadedBlob);
 
                         TestHelper.AssertStreamsAreEqualAtIndex(
                             originalBlob,
@@ -1396,7 +1412,8 @@ namespace Microsoft.Azure.Storage.Blob
 
             await Task.Delay(1000);
 
-            CloudAppendBlob dest = container.GetAppendBlobReference("blob1");
+            var blobName = GetRandomBlobName();
+            CloudAppendBlob dest = container.GetAppendBlobReference(blobName);
             await dest.CreateOrReplaceAsync().ConfigureAwait(false);
 
             await dest.AppendBlockAsync(source.Uri, startOffset, buffer.Length - startOffset, contentMD5, default(AccessCondition), default(AccessCondition), default(BlobRequestOptions), default(OperationContext), CancellationToken.None).ConfigureAwait(false);
@@ -1425,7 +1442,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
 
                 blob.UploadFromStream(new MemoryStream(buffer));
                 blob.FetchAttributes();
@@ -1460,7 +1478,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 IAsyncResult result;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -1524,7 +1543,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
                 blob.AppendFromStream(new MemoryStream(buffer));
@@ -1561,7 +1581,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
                 blob.AppendFromStream(new MemoryStream(buffer), 5 * 1024 * 1024);
@@ -1598,7 +1619,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 IAsyncResult result;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -1666,7 +1688,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 IAsyncResult result;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -1725,43 +1748,44 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobValidateAppendFromStreamTask()
+        public async Task CloudAppendBlobValidateAppendFromStreamTask()
         {
             byte[] buffer = GetRandomBuffer(6 * 1024 * 1024);
 
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
 
                 using (MemoryStream memStream = new MemoryStream(buffer))
                 {
-                    blob.AppendFromStreamAsync(memStream).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(6 * 1024 * 1024, blob.Properties.Length);
 
                     memStream.Seek(0, SeekOrigin.Begin);
-                    blob.AppendFromStreamAsync(memStream, CancellationToken.None).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream, CancellationToken.None);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(12 * 1024 * 1024, blob.Properties.Length);
 
                     memStream.Seek(0, SeekOrigin.Begin);
-                    blob.AppendFromStreamAsync(memStream, null /* accessCondition */, null /* options */, null /* operationContext */).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream, null /* accessCondition */, null /* options */, null /* operationContext */);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(18 * 1024 * 1024, blob.Properties.Length);
 
                     memStream.Seek(0, SeekOrigin.Begin);
-                    blob.AppendFromStreamAsync(memStream, null /* accessCondition */, null /* options */, null /* operationContext */, CancellationToken.None).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream, null /* accessCondition */, null /* options */, null /* operationContext */, CancellationToken.None);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(24 * 1024 * 1024, blob.Properties.Length);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteIfExistsAsync();
             }
         }
 
@@ -1771,43 +1795,44 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobValidateAppendFromStreamWithLengthTask()
+        public async Task CloudAppendBlobValidateAppendFromStreamWithLengthTask()
         {
             byte[] buffer = GetRandomBuffer(6 * 1024 * 1024);
 
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
 
                 using (MemoryStream memStream = new MemoryStream(buffer))
                 {
-                    blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(5 * 1024 * 1024, blob.Properties.Length);
 
                     memStream.Seek(0, SeekOrigin.Begin);
-                    blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024, CancellationToken.None).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024, CancellationToken.None);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(10 * 1024 * 1024, blob.Properties.Length);
 
                     memStream.Seek(0, SeekOrigin.Begin);
-                    blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024, null /* accessCondition */, null /* options */, null /* operationContext */).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024, null /* accessCondition */, null /* options */, null /* operationContext */);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(15 * 1024 * 1024, blob.Properties.Length);
 
                     memStream.Seek(0, SeekOrigin.Begin);
-                    blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024, null /* accessCondition */, null /* options */, null /* operationContext */, CancellationToken.None).Wait();
-                    blob.FetchAttributesAsync().Wait();
+                    await blob.AppendFromStreamAsync(memStream, 5 * 1024 * 1024, null /* accessCondition */, null /* options */, null /* operationContext */, CancellationToken.None);
+                    await blob.FetchAttributesAsync();
                     Assert.AreEqual(20 * 1024 * 1024, blob.Properties.Length);
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -1827,7 +1852,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
                 long offset = blob.AppendBlock(new MemoryStream(buffer));
@@ -1863,7 +1889,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 IAsyncResult result;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -1915,33 +1942,34 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobVerifyAppendOffsetTask()
+        public async Task CloudAppendBlobVerifyAppendOffsetTask()
         {
             byte[] buffer = GetRandomBuffer(2 * 1024 * 1024);
 
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
+                var blobName = GetRandomBlobName();
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
 
                 using (MemoryStream memStream = new MemoryStream(buffer))
                 {
-                    Assert.AreEqual(0, blob.AppendBlockAsync(new MemoryStream(buffer)).Result);
+                    Assert.AreEqual(0, await blob.AppendBlockAsync(new MemoryStream(buffer)));
                     memStream.Seek(0, SeekOrigin.Begin);
-                    Assert.AreEqual(2 * 1024 * 1024, blob.AppendBlockAsync(new MemoryStream(buffer)).Result);
+                    Assert.AreEqual(2 * 1024 * 1024, await blob.AppendBlockAsync(new MemoryStream(buffer)));
                     memStream.Seek(0, SeekOrigin.Begin);
-                    Assert.AreEqual(4 * 1024 * 1024, blob.AppendBlockAsync(new MemoryStream(buffer)).Result);
+                    Assert.AreEqual(4 * 1024 * 1024, await blob.AppendBlockAsync(new MemoryStream(buffer)));
                     memStream.Seek(0, SeekOrigin.Begin);
-                    Assert.AreEqual(6 * 1024 * 1024, blob.AppendBlockAsync(new MemoryStream(buffer)).Result);
+                    Assert.AreEqual(6 * 1024 * 1024, await blob.AppendBlockAsync(new MemoryStream(buffer)));
                 }
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -1977,10 +2005,10 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobUploadTextTask()
+        public async Task CloudAppendBlobUploadTextTask()
         {
-            this.DoTextUploadDownloadTask("test", false);
-            this.DoTextUploadDownloadTask("char中文test", true);
+            await this.DoTextUploadDownloadTask("test", false);
+            await this.DoTextUploadDownloadTask("char中文test", true);
         }
 #endif
 
@@ -1990,7 +2018,8 @@ namespace Microsoft.Azure.Storage.Blob
             try
             {
                 container.CreateIfNotExists();
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
 
                 if (isAsync)
                 {
@@ -2073,39 +2102,40 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
 #if TASK
-        private void DoTextUploadDownloadTask(string text, bool checkDifferentEncoding)
+        private async Task DoTextUploadDownloadTask(string text, bool checkDifferentEncoding)
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateIfNotExistsAsync().Wait();
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                await container.CreateIfNotExistsAsync();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
 
-                blob.UploadTextAsync(text).Wait();
-                Assert.AreEqual(text, blob.DownloadTextAsync().Result);
+                await blob.UploadTextAsync(text);
+                Assert.AreEqual(text, await blob.DownloadTextAsync());
                 if (checkDifferentEncoding)
                 {
-                    Assert.AreNotEqual(text, blob.DownloadTextAsync(Encoding.Unicode, null, null, null).Result);
+                    Assert.AreNotEqual(text, await blob.DownloadTextAsync(Encoding.Unicode, null, null, null));
                 }
 
-                blob.UploadTextAsync(text, Encoding.Unicode, null, null, null).Wait();
-                Assert.AreEqual(text, blob.DownloadTextAsync(Encoding.Unicode, null, null, null).Result);
+                await blob.UploadTextAsync(text, Encoding.Unicode, null, null, null);
+                Assert.AreEqual(text, await blob.DownloadTextAsync(Encoding.Unicode, null, null, null));
                 if (checkDifferentEncoding)
                 {
-                    Assert.AreNotEqual(text, blob.DownloadTextAsync().Result);
+                    Assert.AreNotEqual(text, await blob.DownloadTextAsync());
                 }
 
                 OperationContext context = new OperationContext();
-                blob.UploadTextAsync(text, Encoding.Unicode, null, null, context).Wait();
+                await blob.UploadTextAsync(text, Encoding.Unicode, null, null, context);
 
                 // 3 because of Create and Appendblock
                 Assert.AreEqual(2, context.RequestResults.Count);
-                blob.DownloadTextAsync(Encoding.Unicode, null, null, context).Wait();
+                await blob.DownloadTextAsync(Encoding.Unicode, null, null, context);
                 Assert.AreEqual(3, context.RequestResults.Count);
             }
             finally
             {
-                container.DeleteIfExists();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2124,7 +2154,8 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
                 blob.AppendBlock(originalData, null);
                 Assert.IsFalse(blob.IsSnapshot);
@@ -2202,7 +2233,8 @@ namespace Microsoft.Azure.Storage.Blob
                 container.Create();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 IAsyncResult result;
                 using (AutoResetEvent waitHandle = new AutoResetEvent(false))
                 {
@@ -2288,23 +2320,24 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobSnapshotTask()
+        public async Task CloudAppendBlobSnapshotTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
                 MemoryStream originalData = new MemoryStream(GetRandomBuffer(1024));
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync().Wait();
-                blob.AppendBlockAsync(originalData, null).Wait();
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
+                await blob.CreateOrReplaceAsync();
+                await blob.AppendBlockAsync(originalData, null);
                 Assert.IsFalse(blob.IsSnapshot);
                 Assert.IsNull(blob.SnapshotTime, "Root blob has SnapshotTime set");
                 Assert.IsFalse(blob.SnapshotQualifiedUri.Query.Contains("snapshot"));
                 Assert.AreEqual(blob.Uri, blob.SnapshotQualifiedUri);
 
-                CloudAppendBlob snapshot1 = blob.CreateSnapshotAsync().Result;
+                CloudAppendBlob snapshot1 = await blob.CreateSnapshotAsync();
                 Assert.AreEqual(blob.Properties.ETag, snapshot1.Properties.ETag);
                 Assert.AreEqual(blob.Properties.LastModified, snapshot1.Properties.LastModified);
                 Assert.IsTrue(snapshot1.IsSnapshot);
@@ -2314,42 +2347,41 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.AreNotEqual(snapshot1.Uri, snapshot1.SnapshotQualifiedUri);
                 Assert.IsTrue(snapshot1.SnapshotQualifiedUri.Query.Contains("snapshot"));
 
-                CloudAppendBlob snapshot2 = blob.CreateSnapshotAsync().Result;
+                CloudAppendBlob snapshot2 = await blob.CreateSnapshotAsync();
                 Assert.IsTrue(snapshot2.SnapshotTime.Value > snapshot1.SnapshotTime.Value);
 
-                snapshot1.FetchAttributesAsync().Wait();
-                snapshot2.FetchAttributesAsync().Wait();
-                blob.FetchAttributesAsync().Wait();
+                await snapshot1.FetchAttributesAsync();
+                await snapshot2.FetchAttributesAsync();
+                await blob.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, blob.Properties);
 
                 CloudAppendBlob snapshot1Clone = new CloudAppendBlob(new Uri(blob.Uri + "?snapshot=" + snapshot1.SnapshotTime.Value.ToString("O")), blob.ServiceClient.Credentials);
                 Assert.IsNotNull(snapshot1Clone.SnapshotTime, "Snapshot clone does not have SnapshotTime set");
                 Assert.AreEqual(snapshot1.SnapshotTime.Value, snapshot1Clone.SnapshotTime.Value);
-                snapshot1Clone.FetchAttributesAsync().Wait();
+                await snapshot1Clone.FetchAttributesAsync();
                 AssertAreEqual(snapshot1.Properties, snapshot1Clone.Properties);
 
                 CloudAppendBlob snapshotCopy = container.GetAppendBlobReference("blob2");
-                snapshotCopy.StartCopyAsync(snapshot1, null, null, null, null).Wait();
+                await snapshotCopy.StartCopyAsync(snapshot1, null, null, null, null);
                 WaitForCopy(snapshotCopy);
                 Assert.AreEqual(CopyStatus.Success, snapshotCopy.CopyState.Status);
 
-                using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
+                using (Stream snapshotStream = await snapshot1.OpenReadAsync())
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
-                blob.CreateOrReplaceAsync().Wait();
+                await blob.CreateOrReplaceAsync();
 
-                using (Stream snapshotStream = snapshot1.OpenReadAsync().Result)
+                using (Stream snapshotStream = await snapshot1.OpenReadAsync())
                 {
                     snapshotStream.Seek(0, SeekOrigin.End);
                     TestHelper.AssertStreamsAreEqual(originalData, snapshotStream);
                 }
 
                 List<IListBlobItem> blobs =
-                    container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null)
-                             .Result
+                    (await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.All, null, null, null, null))
                              .Results
                              .ToList();
                 Assert.AreEqual(4, blobs.Count);
@@ -2360,7 +2392,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2378,7 +2410,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
                 blob.Metadata["Hello"] = "World";
@@ -2425,7 +2458,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
 
                 blob.Metadata["Hello"] = "World";
@@ -2473,25 +2507,25 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public void CloudAppendBlobSnapshotMetadataTask()
+        public async Task CloudAppendBlobSnapshotMetadataTask()
         {
             CloudBlobContainer container = GetRandomContainerReference();
             try
             {
-                container.CreateAsync().Wait();
+                await container.CreateAsync();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
-                blob.CreateOrReplaceAsync(null, null, new OperationContext()).Wait();
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
+                await blob.CreateOrReplaceAsync(null, null, new OperationContext());
 
                 blob.Metadata["Hello"] = "World";
                 blob.Metadata["Marco"] = "Polo";
-                blob.SetMetadataAsync().Wait();
+                await blob.SetMetadataAsync();
 
                 IDictionary<string, string> snapshotMetadata = new Dictionary<string, string>();
                 snapshotMetadata["Hello"] = "Dolly";
                 snapshotMetadata["Yoyo"] = "Ma";
 
-                CloudAppendBlob snapshot = blob.CreateSnapshotAsync(snapshotMetadata, null, null, null).Result;
+                CloudAppendBlob snapshot = await blob.CreateSnapshotAsync(snapshotMetadata, null, null, null);
 
                 // Test the client view against the expected metadata
                 // Metadata keys should be case-insensitive
@@ -2502,7 +2536,7 @@ namespace Microsoft.Azure.Storage.Blob
                 Assert.IsFalse(snapshot.Metadata.ContainsKey("Marco"));
 
                 // Test the server view against the expected metadata
-                snapshot.FetchAttributesAsync().Wait();
+                await snapshot.FetchAttributesAsync();
                 Assert.AreEqual("Dolly", snapshot.Metadata["Hello"]);
                 Assert.AreEqual("Dolly", snapshot.Metadata["HELLO"]);
                 Assert.AreEqual("Ma", snapshot.Metadata["Yoyo"]);
@@ -2510,7 +2544,7 @@ namespace Microsoft.Azure.Storage.Blob
             }
             finally
             {
-                container.DeleteIfExistsAsync().Wait();
+                await container.DeleteAsync();
             }
         }
 #endif
@@ -2528,7 +2562,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                 blob.CreateOrReplace();
                 blob.FetchAttributes();
 
@@ -2638,7 +2672,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                 blob.CreateOrReplace();
 
                 AccessCondition condition = AccessCondition.GenerateIfMaxSizeLessThanOrEqualCondition(2 * 1024 * 1024);
@@ -2684,7 +2718,7 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 container.Create();
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                 blob.CreateOrReplace();
 
                 using (MemoryStream originalBlob = new MemoryStream(buffer))
@@ -2836,7 +2870,8 @@ namespace Microsoft.Azure.Storage.Blob
                     () => new CloudAppendBlob(new Uri(blobUri), container.ServiceClient.Credentials),
                     "Try to use SAS creds in Uri on a shared key client");
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                var blobName = GetRandomBlobName();
+                CloudAppendBlob blob = container.GetAppendBlobReference(blobName);
                 blob.CreateOrReplace();
                 CloudAppendBlob snapshot = blob.CreateSnapshot();
                 DateTimeOffset? wrongTime = snapshot.SnapshotTime.Value + TimeSpan.FromSeconds(10);
@@ -2868,7 +2903,7 @@ namespace Microsoft.Azure.Storage.Blob
 
                 IAsyncResult result;
 
-                CloudAppendBlob blob = container.GetAppendBlobReference("blob1");
+                CloudAppendBlob blob = container.GetAppendBlobReference(GetRandomBlobName());
                 result = blob.BeginCreateOrReplace(null, null);
                 result.AsyncWaitHandle.WaitOne();
                 blob.EndCreateOrReplace(result);
