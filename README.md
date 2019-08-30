@@ -138,7 +138,21 @@ OAuth testing requires the ActiveDirectory identity model also available via NuG
 How-Tos focused around accomplishing specific tasks are available on the [Microsoft Azure .NET Developer Center][].
 
 ## Need Help?
+
 Be sure to check out the [Azure Community Support][] page if you have trouble with the provided code or use StackOverflow.
+
+### Async Deadlock?
+
+Because of certain limitations in the HTTP stack used by the library, forcing sync APIs to use a sync-over-async implementation, sync APIs may be vulnerable to async deadlock.  While we've made several automated passes through the codebase to catch those issues, some do escape us from time to time.  If you encounter a deadlock due to this, there are some recommendations: 
+
+- If possible, migrate to use the async APIs.  This is the best option to take whenever possible.
+- If a migration is not possible, some developers find the following pattern to work well for them: 
+
+```csharp
+Task.Run(() => SynchronousCall()).Wait();
+```
+
+The new [Azure Storage libraries for .NET][azure-sdk-for-net-storage] use a different approach for providing sync support, and should be less prone to deadlock issues going forward.
 
 ## Collaborate & Contribute
 
@@ -173,6 +187,7 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum][]
 [Microsoft Azure Downloads Page]: http://azure.microsoft.com/en-us/downloads/?sdk=net
 [Get started with Azure Storage]: https://docs.microsoft.com/en-us/azure/storage/storage-dotnet-how-to-use-blobs
 [azure-sdk-for-net]: https://github.com/Azure/azure-sdk-for-net
+[azure-sdk-for-net-storage]: https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage
 [create an account]: https://account.Azure.com/Home/Index
 [semver]: http://semver.org/
 [emulator]: https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator
