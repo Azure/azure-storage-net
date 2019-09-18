@@ -65,7 +65,7 @@ namespace Microsoft.Azure.Storage.File.Protocol
         {
             XElement shareStatsElement = shareStatsDocument.Element(ShareStatsName);
 
-            int usageInBytes = int.Parse(shareStatsElement.Element(ShareUsageBytes).Value, CultureInfo.InvariantCulture);
+            long usageInBytes = long.Parse(shareStatsElement.Element(ShareUsageBytes).Value, CultureInfo.InvariantCulture);
             int usage = (int)Math.Ceiling(usageInBytes / (double)Constants.GB);
 
             return new ShareStats()
