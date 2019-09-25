@@ -311,6 +311,40 @@ namespace Microsoft.Azure.Storage.File
         }
 
         [TestMethod]
+        [Description("Get service stats large share")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileShareGetShareStats_LargeShare_Task()
+        {
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                await share.CreateAsync();
+
+                // should begin empty
+                Protocol.ShareStats stats1 = await share.GetStatsAsync();
+                Assert.AreEqual(0, stats1.Usage);
+
+                CloudFileDirectory directory = share.GetRootDirectoryReference().GetDirectoryReference("directory1");
+                CloudFile file = directory.GetFileReference("file1");
+                await directory.CreateAsync();
+                await file.CreateAsync(5 * TestConstants.GB);
+
+                Protocol.ShareStats stats2 = await share.GetStatsAsync();
+
+                Assert.AreEqual(5, stats2.Usage);
+                Assert.AreEqual(5 * TestConstants.GB, stats2.UsageInBytes);
+            }
+            finally
+            {
+                await share.DeleteIfExistsAsync();
+            }
+        }
+
+        [TestMethod]
         [Description("List files")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
