@@ -1,3 +1,7 @@
+Tracking Breaking Changes since 11.1:
+
+- Switched ShareStatus.UsageInBytes from an int to a long
+
 Tracking Breaking Changes since 11.0:
 
 - Various MD5-specific parameters on public APIs have been replaced with more generic checksum parameters.  For example, ContentMD5 parameter on public APIs has been replaced with a Checksum, which contains MD5 and CRC64 properties.
