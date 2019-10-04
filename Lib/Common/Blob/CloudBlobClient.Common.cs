@@ -187,8 +187,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// Returns a reference to the root container.
         /// </summary>
         /// <returns>A <see cref="CloudBlobContainer"/> object.</returns>
-        /// <remarks>Note that the root container must be explicitly created, if it does not already exist, before
-        /// you can read from it or write to it.</remarks>
+        /// <remarks>Note that the root container must be explicitly created, if it does not already exist, before you can read from it or write to it.</remarks>
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Reviewed")]
         public virtual CloudBlobContainer GetRootContainerReference()
         {
