@@ -1684,7 +1684,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// to <c>null</c>, then the client library will calculate the checksum value internally.
         /// </remarks>
         [DoesServiceRequest]
-        public void PutBlock(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
+        public virtual void PutBlock(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition = null, BlobRequestOptions options = null, OperationContext operationContext = null)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -1906,7 +1906,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Stream blockData, Checksum contentChecksum = null)
+        public virtual Task PutBlockAsync(string blockId, Stream blockData, Checksum contentChecksum = null)
         {
             return this.PutBlockAsync(blockId, blockData, contentChecksum, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), default(AggregatingProgressIncrementer), CancellationToken.None);
         }
@@ -1939,7 +1939,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="count">The number of bytes to return, or <c>null</c> to return all bytes through the end of the blob.</param>
         /// <param name="contentChecksum">An optional hash value used to ensure transactional integrity. May be <c>null</c>.</param>
         [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum = null)
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum = null)
         {
             return this.PutBlockAsync(blockId, sourceUri, offset, count, contentChecksum, CancellationToken.None);
         }
@@ -2009,7 +2009,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, CancellationToken cancellationToken)
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, CancellationToken cancellationToken)
         {
             return this.PutBlockAsync(blockId, sourceUri, offset, count, contentChecksum, default(AccessCondition), default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
@@ -2047,7 +2047,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Stream blockData, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task PutBlockAsync(string blockId, Stream blockData, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.PutBlockAsync(blockId, blockData, contentChecksum, accessCondition, options, operationContext, default(AggregatingProgressIncrementer), CancellationToken.None);
         }
@@ -2087,7 +2087,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext)
         {
             return this.PutBlockAsync(blockId, sourceUri, offset, count, contentChecksum, accessCondition, options, operationContext, CancellationToken.None);
         }
@@ -2169,7 +2169,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task PutBlockAsync(string blockId, Uri sourceUri, long? offset, long? count, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             CommonUtility.AssertNotNull("sourceUri", sourceUri);
 
@@ -2219,7 +2219,7 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [DoesServiceRequest]
-        public Task PutBlockAsync(string blockId, Stream blockData, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
+        public virtual Task PutBlockAsync(string blockId, Stream blockData, Checksum contentChecksum, AccessCondition accessCondition, BlobRequestOptions options, OperationContext operationContext, IProgress<StorageProgress> progressHandler, CancellationToken cancellationToken)
         {
             return this.PutBlockAsync(blockId, blockData, contentChecksum, accessCondition, options, operationContext, new AggregatingProgressIncrementer(progressHandler), cancellationToken);
         }
