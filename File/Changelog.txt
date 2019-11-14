@@ -1,3 +1,7 @@
+Changes in 11.1.1:
+
+- None
+
 Changes in 11.1.0:
 
 - Fixed bug where CloudFileShare.GetStats() and CloudFileShare.GetStatsAsync() would throw an exception when the Share was larger than Int32.MaxValue

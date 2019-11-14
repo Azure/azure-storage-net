@@ -1,3 +1,7 @@
+Changes in 11.1.1:
+
+- Made .NET Core 2.0 CloudBlockBlob.PutBlock and .PutBlockAsync methods virtual
+
 Changes in 11.1.0:
 
 - None.
