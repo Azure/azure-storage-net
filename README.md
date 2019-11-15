@@ -1,3 +1,18 @@
+# Microsoft Azure Storage SDK for .NET
+## If you would like to access our latest .NET SDK, please refer to the Storage SDK v12 for .NET link in the table below. If you would like more information on Azure's burgeoning effort to coordinate the development of the SDKs across services, of which this change is a part, please refer to [this article](https://azure.microsoft.com/en-us/blog/previewing-azure-sdks-following-new-azure-sdk-api-standards/).
+
+## We will continue to respond to issues here, but prefer that you post them on the [v12 repo](https://github.com/azure/azure-sdk-for-net). Thank you for your patience. We look forward to continuing to work together with you.
+
+| SDK Name      | Version       | Description | NuGet/API Reference Links |
+| ------------- | ------------- | ----------- | ----- |
+| [Blob Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Blobs) | v12.0.0 | The next generation Blob Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Blobs/) - [Reference](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-dotnet)
+| [File Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.Shares) | 12.0.0-preview.5 | The next generation File Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.Shares) - [Reference](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.files?view=azure-dotnet-preview)
+| [Queue Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Queues) | v12.0.0 | The next generation Queue Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Queues/) - [Reference](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.queues?view=azure-dotnet)
+| [Data Lake Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.DataLake) | 12.0.0-preview.6 | The next generation Data Lake Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.DataLake)
+
+## For more details, please visit the proper location for each repo.
+
+
 # Microsoft Azure Storage SDK for .NET (11.0.0)
 
 > Server Version: 2019-02-02
