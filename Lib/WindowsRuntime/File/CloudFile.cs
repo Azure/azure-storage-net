@@ -2528,7 +2528,7 @@ namespace Microsoft.Azure.Storage.File
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) => FileHttpRequestMessageFactory.PutRangeFromUrl(
-                uri: this.Uri,
+                uri: uri,
                 sourceUri: sourceUri,
                 sourceFileRange: sourceFileRange,
                 destFileRange: destFileRange,

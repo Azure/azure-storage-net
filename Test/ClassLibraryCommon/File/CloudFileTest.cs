@@ -2469,6 +2469,67 @@ namespace Microsoft.Azure.Storage.File
         }
 
         [TestMethod]
+        [Description("Writes range from source file with destination SAS")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public async Task CloudFileWriteRangeFromUrlDestSasAsync()
+        {
+            CloudFileShare share = GetRandomShareReference();
+
+            try
+            {
+                // Arrange
+                await share.CreateAsync();
+
+                CloudFileDirectory dir = share.GetRootDirectoryReference().GetDirectoryReference("dir");
+                await dir.CreateAsync();
+
+                CloudFile sourceFile = dir.GetFileReference("source");
+
+                byte[] buffer = GetRandomBuffer(1024);
+                using (MemoryStream stream = new MemoryStream(buffer))
+                {
+                    await sourceFile.UploadFromStreamAsync(stream);
+                }
+
+                SharedAccessFilePolicy policy = new SharedAccessFilePolicy()
+                {
+                    SharedAccessStartTime = DateTimeOffset.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessFilePermissions.Read
+                };
+                string sourceSasToken = sourceFile.GetSharedAccessSignature(policy, null, null);
+                Uri sourceUri = new Uri(sourceFile.Uri.ToString() + sourceSasToken);
+
+                CloudFile destFile = dir.GetFileReference("dest1");
+                await destFile.CreateAsync(1024);
+
+                policy.Permissions = SharedAccessFilePermissions.Write;
+                string destSasToken = destFile.GetSharedAccessSignature(policy, null, null);
+                CloudFile sasDestFile = new CloudFile(destFile.Uri, new StorageCredentials(destSasToken));
+
+                // Act
+                await sasDestFile.WriteRangeAsync(sourceUri, sourceOffset: 512, count: 512, destOffset: 0);
+
+                using (MemoryStream sourceStream = new MemoryStream())
+                using (MemoryStream destStream = new MemoryStream())
+                {
+                    // Assert
+                    await sourceFile.DownloadRangeToStreamAsync(sourceStream, offset: 512, length: 512);
+                    await destFile.DownloadRangeToStreamAsync(destStream, offset: 0, length: 512);
+
+                    Assert.IsTrue(sourceStream.ToArray().SequenceEqual(destStream.ToArray()));
+                }
+            }
+            finally
+            {
+                await share.DeleteAsync();
+            }
+        }
+
+        [TestMethod]
         [Description("Writes range from source file with source CRC")]
         [TestCategory(ComponentCategory.File)]
         [TestCategory(TestTypeCategory.UnitTest)]
