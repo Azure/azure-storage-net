@@ -274,7 +274,7 @@ namespace Microsoft.WindowsAzure.Storage.Analytics
             }
             else
             {
-                return long.Parse(temp, NumberStyles.None, CultureInfo.InvariantCulture);
+                return Math.Max(0, long.Parse(temp, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture));
             }
         }
 
