@@ -1,3 +1,7 @@
+Changes in 11.1.2:
+
+- Fixed bug where CloudFile.WriteRange() and .WriteRangeAsync() with sourceUri parameter didn't work with SAS.
+
 Changes in 11.1.1:
 
 - None

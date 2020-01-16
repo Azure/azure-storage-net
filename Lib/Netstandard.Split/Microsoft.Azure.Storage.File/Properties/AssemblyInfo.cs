@@ -34,9 +34,9 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("11.1.1")]
-[assembly: AssemblyFileVersion("11.1.1")]
-[assembly: AssemblyInformationalVersion("11.1.1.0")]
+[assembly: AssemblyVersion("11.1.2")]
+[assembly: AssemblyFileVersion("11.1.2")]
+[assembly: AssemblyInformationalVersion("11.1.2.0")]
 
 [assembly: InternalsVisibleTo(
     "Microsoft.Azure.Storage.Test, PublicKey=" +
