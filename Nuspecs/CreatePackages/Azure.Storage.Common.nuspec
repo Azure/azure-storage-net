@@ -16,6 +16,16 @@
       in addition to the breaking changes https://github.com/Azure/azure-storage-net/blob/master/Common/BreakingChanges.txt
       Microsoft Azure Storage quickstarts and tutorials - https://docs.microsoft.com/en-us/azure/storage/
       Microsoft Azure Storage REST API Reference - https://docs.microsoft.com/en-us/rest/api/storageservices/
+
+      This library has been replaced by the following new Azure SDKs. You can read about the new Azure SDKs at https://aka.ms/azsdkvalueprop.
+
+      The latest libraries to interact with the Azure Storage service are:
+
+      * https://www.nuget.org/packages/Azure.Storage.Blobs
+      * https://www.nuget.org/packages/Azure.Storage.Queues/
+      * https://www.nuget.org/packages/Azure.Storage.Files.Shares/
+
+      It is recommended that you move to the new package.
     </description>
     <summary>A client library for working with Microsoft Azure Storage services including blobs, files and queues.</summary>
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
