@@ -22,9 +22,9 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("9d154050-0b01-4f70-afa3-8e2176e9cd73")]
 
-[assembly: AssemblyVersion("11.1.2")]
-[assembly: AssemblyFileVersion("11.1.2")]
-[assembly: AssemblyInformationalVersion("11.1.2.0")]
+[assembly: AssemblyVersion("11.1.3")]
+[assembly: AssemblyFileVersion("11.1.3")]
+[assembly: AssemblyInformationalVersion("11.1.3.0")]
 
 [assembly: InternalsVisibleTo(
     "Microsoft.Azure.Storage.Test, PublicKey=" +
