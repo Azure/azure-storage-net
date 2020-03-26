@@ -1,8 +1,10 @@
+## NOTE: The latest version of this library (v12) can be found [here](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Queues). This library and repository are of a legacy version of the Azure Storage Queue SDK for .NET. Only the latest version will receive frequent feature updates.
+
 # Microsoft Azure Storage Queue SDK for .NET (11.1.3)
 
 The Microsoft Azure Storage Queue SDK for .NET allows you to build Azure applications that take advantage of scalable cloud computing resources.
 
-For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
+For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes.
 
 _For general information pertaining to all services, please see the top-level [README.md][readme-main] file in this repository._
 
@@ -19,7 +21,7 @@ The complete Microsoft Azure SDK can be downloaded from the [Microsoft Azure Dow
 
 Please review [Get started with Azure Storage][] if you are not familiar with Azure Storage.
 
-For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
+For the best development experience, developers should use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes.
 
 - NuGet package for [Queue][]
 - [Azure Storage APIs for .NET][]
@@ -27,7 +29,7 @@ For the best development experience, developers should use the official Microsof
 
 ## Download & Install
 
-The Storage Client Libraries ship with the Microsoft Azure SDK for .NET and also on NuGet. 
+The Storage Client Libraries ship with the Microsoft Azure SDK for .NET and also on NuGet.
 You'll find the latest version and hotfixes on NuGet via the `Microsoft.Azure.Storage.Queue` package.
 
 ### Via Git
