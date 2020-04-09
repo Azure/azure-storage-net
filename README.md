@@ -3,12 +3,12 @@
 
 ## We will continue to respond to issues here, but prefer that you post them on the [v12 repo](https://github.com/azure/azure-sdk-for-net). Thank you for your patience. We look forward to continuing to work together with you.
 
-| SDK Name      | Version       | Description | NuGet/API Reference Links |
-| ------------- | ------------- | ----------- | ----- |
-| [Blob Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Blobs) | v12 | The next generation Blob Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Blobs/) - [Reference](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-dotnet)
-| [File Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.Shares) | v12 | The next generation File Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.Shares) - [Reference](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.files?view=azure-dotnet-preview)
-| [Queue Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Queues) | v12 | The next generation Queue Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Queues/) - [Reference](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.queues?view=azure-dotnet)
-| [Data Lake Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.DataLake) | v12 | The next generation Data Lake Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.DataLake)
+| SDK Name      | Description | NuGet/API Reference Links |
+| ------------- | ----------- | ----- |
+| [Blob Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Blobs) | The next generation Blob Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Blobs/) - [Reference](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-dotnet)
+| [File Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.Shares) | The next generation File Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.Shares) - [Reference](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.files?view=azure-dotnet-preview)
+| [Queue Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Queues) | The next generation Queue Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Queues/) - [Reference](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.queues?view=azure-dotnet)
+| [Data Lake Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.DataLake) | The next generation Data Lake Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.DataLake)
 
 ## For more details, please visit the proper location for each repo.
 
