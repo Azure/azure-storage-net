@@ -34,8 +34,16 @@ namespace Microsoft.Azure.Storage.Core.Util
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             using (cancellationToken.Register(
                         taskCompletionSource => ((TaskCompletionSource<bool>)taskCompletionSource).TrySetResult(true), tcs))
-                        if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
-                            throw new OperationCanceledException(cancellationToken);
+                if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
+                {
+                    _ = task.ContinueWith(val =>
+                    {
+                        // Mark exceptions thrown from abandonned task as handled.
+                        // https://tpodolak.com/blog/2015/08/10/tpl-exception-handling-and-unobservedtaskexception-issue/
+                        val.Exception.Handle(ex => true);
+                    }, TaskContinuationOptions.OnlyOnFaulted);
+                    throw new OperationCanceledException(cancellationToken);
+                }
             return await task.ConfigureAwait(false);
         }
 
@@ -51,7 +59,15 @@ namespace Microsoft.Azure.Storage.Core.Util
             using (cancellationToken.Register(
                         taskCompletionSource => ((TaskCompletionSource<bool>)taskCompletionSource).TrySetResult(true), tcs))
                 if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
+                {
+                    _ = task.ContinueWith(val =>
+                    {
+                        // Mark exceptions thrown from abandonned task as handled.
+                        // https://tpodolak.com/blog/2015/08/10/tpl-exception-handling-and-unobservedtaskexception-issue/
+                        val.Exception.Handle(ex => true);
+                    }, TaskContinuationOptions.OnlyOnFaulted);
                     throw new OperationCanceledException(cancellationToken);
+                }
             await task.ConfigureAwait(false);
         }
     }   

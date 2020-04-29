@@ -64,6 +64,7 @@ namespace Microsoft.Azure.Storage.Blob
             LocationMode = RetryPolicies.LocationMode.PrimaryOnly,
             ServerTimeout = null,
             MaximumExecutionTime = null,
+            NetworkTimeout = Constants.DefaultNetworkTimeout,
             ParallelOperationThreadCount = 1,
             SingleBlobUploadThresholdInBytes = Constants.MaxSingleUploadBlobSize / 2,
 
@@ -114,6 +115,7 @@ namespace Microsoft.Azure.Storage.Blob
                 this.LocationMode = other.LocationMode;
                 this.ServerTimeout = other.ServerTimeout;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
+                this.NetworkTimeout = other.NetworkTimeout;
                 this.OperationExpiryTime = other.OperationExpiryTime;
                 this.ChecksumOptions.CopyFrom(other.ChecksumOptions);
                 this.ParallelOperationThreadCount = other.ParallelOperationThreadCount;
@@ -161,6 +163,11 @@ namespace Microsoft.Azure.Storage.Blob
                 modifiedOptions.MaximumExecutionTime 
                 ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime 
                 ?? BaseDefaultRequestOptions.MaximumExecutionTime;
+
+            modifiedOptions.NetworkTimeout =
+                modifiedOptions.NetworkTimeout
+                ?? serviceClient.DefaultRequestOptions.NetworkTimeout
+                ?? BaseDefaultRequestOptions.NetworkTimeout;
 
             modifiedOptions.ParallelOperationThreadCount = 
                 modifiedOptions.ParallelOperationThreadCount 
@@ -242,6 +249,8 @@ namespace Microsoft.Azure.Storage.Blob
             {
                 cmd.OperationExpiryTime = DateTime.Now + this.MaximumExecutionTime.Value;
             }
+
+            cmd.NetworkTimeout = this.NetworkTimeout;
         }
 
 #if !(WINDOWS_RT || NETCORE)
@@ -412,6 +421,11 @@ namespace Microsoft.Azure.Storage.Blob
                 this.maximumExecutionTime = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the timeout applied to an individual network operations.
+        /// </summary>
+        public TimeSpan? NetworkTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets the number of blocks that may be simultaneously uploaded.

@@ -46,7 +46,8 @@ namespace Microsoft.Azure.Storage.Queue
 #endif
             LocationMode = RetryPolicies.LocationMode.PrimaryOnly,
             ServerTimeout = null,
-            MaximumExecutionTime = null
+            MaximumExecutionTime = null,
+            NetworkTimeout = Constants.DefaultNetworkTimeout,
         };
 
         /// <summary>
@@ -73,6 +74,7 @@ namespace Microsoft.Azure.Storage.Queue
                 this.ServerTimeout = other.ServerTimeout;
                 this.LocationMode = other.LocationMode;
                 this.MaximumExecutionTime = other.MaximumExecutionTime;
+                this.NetworkTimeout = other.NetworkTimeout;
                 this.OperationExpiryTime = other.OperationExpiryTime;
             }
         }
@@ -141,6 +143,8 @@ namespace Microsoft.Azure.Storage.Queue
             {
                 cmd.OperationExpiryTime = DateTime.Now + this.MaximumExecutionTime.Value;
             }
+
+            cmd.NetworkTimeout = this.NetworkTimeout;
         }
 
 #if !(WINDOWS_RT || NETCORE)
@@ -210,6 +214,11 @@ namespace Microsoft.Azure.Storage.Queue
 
                 this.maximumExecutionTime = value;
             }
-        }  
+        }
+
+        /// <summary>
+        /// Gets or sets the timeout applied to an individual network operations.
+        /// </summary>
+        public TimeSpan? NetworkTimeout { get; set; }
     }
 }

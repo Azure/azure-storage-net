@@ -37,6 +37,9 @@ namespace Microsoft.Azure.Storage.Core.Executor
         // Max client timeout, enforced over entire operation on client side
         internal DateTime? OperationExpiryTime = null;
 
+        // Timeout applied to an individual network operations.
+        internal TimeSpan? NetworkTimeout = null;
+
         // State- different than async state, this is used for ops to communicate state between invocations, i.e. bytes downloaded etc
         internal object OperationState = null;
 

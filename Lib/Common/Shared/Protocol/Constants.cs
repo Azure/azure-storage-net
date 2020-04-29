@@ -133,6 +133,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public static readonly TimeSpan MaximumAllowedTimeout = TimeSpan.FromSeconds(int.MaxValue);
 
         /// <summary>
+        /// Default timeout applied to an individual network operations.
+        /// </summary>
+        public static readonly TimeSpan DefaultNetworkTimeout = TimeSpan.FromSeconds(100);
+
+        /// <summary>
         /// Maximum allowed value for Delete Retention Days.
         /// </summary>
         internal static readonly int MaximumAllowedRetentionDays = 365;
