@@ -50,6 +50,12 @@ namespace Microsoft.Azure.Storage
         /// <value>A <see cref="TimeSpan"/> containing the maximum execution time across all potential retries.</value>
         TimeSpan? MaximumExecutionTime { get; set; }
 
+        /// <summary>
+        /// Gets or sets the timeout applied to an individual network operations.
+        /// </summary>
+        /// <value>A <see cref="TimeSpan"/> containing the timeout applied to an individual network operations.</value>
+        TimeSpan? NetworkTimeout { get; set; }
+
 #if !(WINDOWS_RT || NETCORE)
         /// <summary>
         /// Gets or sets a value to indicate whether data written and read by the client library should be encrypted.

@@ -141,7 +141,12 @@ namespace Microsoft.Azure.Storage.Core.Executor
 
                         // 8. (Potentially reads stream from server)
                         executionState.CurrentOperation = ExecutorOperation.GetResponseStream;
-                        cmd.ResponseStream = await executionState.Resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                        var responseStream = await executionState.Resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                        if (cmd.NetworkTimeout.HasValue)
+                        {
+                            responseStream = new TimeoutStream(responseStream, cmd.NetworkTimeout.Value);
+                        }
+                        cmd.ResponseStream = responseStream;
 
                         // The stream is now available in ResponseStream. Use the stream to parse out the response or error
                         if (executionState.ExceptionRef != null)

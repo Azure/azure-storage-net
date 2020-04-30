@@ -20,6 +20,8 @@ namespace Microsoft.Azure.Storage.Core
     using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// This class provides a wrapper that will update the Ingress / Egress bytes of a given request result as the stream is used.
@@ -107,6 +109,13 @@ namespace Microsoft.Azure.Storage.Core
             return read;
         }
 
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            int read = await this.wrappedStream.ReadAsync(buffer, offset, count, cancellationToken);
+            this.requestObject.IngressBytes += read;
+            return read;
+        }
+
         public override int ReadByte()
         {
             int val = this.wrappedStream.ReadByte();
@@ -178,6 +187,12 @@ namespace Microsoft.Azure.Storage.Core
         public override void Write(byte[] buffer, int offset, int count)
         {
             this.wrappedStream.Write(buffer, offset, count);
+            this.requestObject.EgressBytes += count;
+        }
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            await this.wrappedStream.WriteAsync(buffer, offset, count, cancellationToken);
             this.requestObject.EgressBytes += count;
         }
 
