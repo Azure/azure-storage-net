@@ -1,3 +1,8 @@
+Changes in 11.1.4:
+
+- Addressed GitHub Issue #908 - Unobserved exception was rethrown by the finalizer thread while using Storage Client.
+- Fixed bug where XML response parsing hangs indefinietly. This also addresses GitHub issue #790 and #866. SDK will throw if configurable network read timeout occurs.
+
 Changes in 11.1.3:
 
 - Updated NuGet package description.

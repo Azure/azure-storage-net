@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Blob SDK for .NET (11.1.3)
+# Microsoft Azure Storage Blob SDK for .NET (11.1.4)
 
 The Microsoft Azure Storage Blob SDK for .NET allows you to build Azure applications that take advantage of scalable cloud computing resources.
 
