@@ -115,7 +115,7 @@ namespace Microsoft.Azure.Storage.Core
             var source = StartTimeout(cancellationToken, out bool dispose);
             try
             {
-                await this.wrappedStream.FlushAsync(source.Token).WithCancellation(source.Token);
+                await this.wrappedStream.FlushAsync(source.Token);
             }
             finally
             {
@@ -133,7 +133,7 @@ namespace Microsoft.Azure.Storage.Core
             var source = StartTimeout(cancellationToken, out bool dispose);
             try
             {
-                return await this.wrappedStream.ReadAsync(buffer, offset, count, source.Token).WithCancellation(source.Token);
+                return await this.wrappedStream.ReadAsync(buffer, offset, count, source.Token);
             }
             finally
             {
@@ -166,7 +166,7 @@ namespace Microsoft.Azure.Storage.Core
             var source = StartTimeout(cancellationToken, out bool dispose);
             try
             {
-                await this.wrappedStream.WriteAsync(buffer, offset, count, source.Token).WithCancellation(source.Token);
+                await this.wrappedStream.WriteAsync(buffer, offset, count, source.Token);
             }
             finally
             {

@@ -109,9 +109,11 @@ namespace Microsoft.Azure.Storage.Core
             return read;
         }
 
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return this.wrappedStream.ReadAsync(buffer, offset, count, cancellationToken);
+            int read = await this.wrappedStream.ReadAsync(buffer, offset, count, cancellationToken);
+            this.requestObject.IngressBytes += read;
+            return read;
         }
 
         public override int ReadByte()
@@ -188,9 +190,10 @@ namespace Microsoft.Azure.Storage.Core
             this.requestObject.EgressBytes += count;
         }
 
-        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return this.wrappedStream.WriteAsync(buffer, offset, count, cancellationToken);
+            await this.wrappedStream.WriteAsync(buffer, offset, count, cancellationToken);
+            this.requestObject.EgressBytes += count;
         }
 
         public override void WriteByte(byte value)
