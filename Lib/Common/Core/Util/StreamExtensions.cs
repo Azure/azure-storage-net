@@ -251,11 +251,12 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// </summary>
         /// <param name="stream">A reference to the original stream</param>
         /// <param name="result">An object that represents the result of a physical request.</param>
+        /// <param name="reverseCapture">A flag indicating that ingress/egress bytes should be capture in reverse.</param>
         /// <returns></returns>
         [DebuggerNonUserCode]
-        internal static Stream WrapWithByteCountingStream(this Stream stream, RequestResult result)
+        internal static Stream WrapWithByteCountingStream(this Stream stream, RequestResult result, bool reverseCapture=false)
         {
-            return new ByteCountingStream(stream, result);
+            return new ByteCountingStream(stream, result, reverseCapture);
         }
 #endif
 
