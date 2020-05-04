@@ -31,17 +31,19 @@ namespace Microsoft.Azure.Storage.Core
     {
         private readonly Stream wrappedStream;
         private readonly RequestResult requestObject;
+        private readonly bool reverseCapture;
 
         /// <summary>
         /// Initializes a new instance of the ByteCountingStream class with an expandable capacity initialized to zero.
         /// </summary>
-        public ByteCountingStream(Stream wrappedStream, RequestResult requestObject)
+        public ByteCountingStream(Stream wrappedStream, RequestResult requestObject, bool reverseCapture = false)
             : base()
         {
             CommonUtility.AssertNotNull("WrappedStream", wrappedStream);
             CommonUtility.AssertNotNull("RequestObject", requestObject);
             this.wrappedStream = wrappedStream;
             this.requestObject = requestObject;
+            this.reverseCapture = reverseCapture;
         }
 
         public override bool CanRead
@@ -105,14 +107,14 @@ namespace Microsoft.Azure.Storage.Core
         public override int Read(byte[] buffer, int offset, int count)
         {
             int read = this.wrappedStream.Read(buffer, offset, count);
-            this.requestObject.IngressBytes += read;
+            this.CaptureRead(read);
             return read;
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             int read = await this.wrappedStream.ReadAsync(buffer, offset, count, cancellationToken);
-            this.requestObject.IngressBytes += read;
+            this.CaptureRead(read);
             return read;
         }
 
@@ -122,7 +124,7 @@ namespace Microsoft.Azure.Storage.Core
 
             if (val != -1)
             {
-                ++this.requestObject.IngressBytes;
+                this.CaptureRead(1);
             }
 
             return val;
@@ -155,7 +157,7 @@ namespace Microsoft.Azure.Storage.Core
         public override int EndRead(IAsyncResult asyncResult)
         {
             int read = this.wrappedStream.EndRead(asyncResult);
-            this.requestObject.IngressBytes += read;
+            this.CaptureRead(read);
             return read;
         }
 
@@ -171,7 +173,7 @@ namespace Microsoft.Azure.Storage.Core
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             IAsyncResult res = this.wrappedStream.BeginWrite(buffer, offset, count, callback, state);
-            this.requestObject.EgressBytes += count;
+            this.CaptureWrite(count);
             return res;
         }
 
@@ -187,19 +189,43 @@ namespace Microsoft.Azure.Storage.Core
         public override void Write(byte[] buffer, int offset, int count)
         {
             this.wrappedStream.Write(buffer, offset, count);
-            this.requestObject.EgressBytes += count;
+            this.CaptureWrite(count);
         }
 
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             await this.wrappedStream.WriteAsync(buffer, offset, count, cancellationToken);
-            this.requestObject.EgressBytes += count;
+            this.CaptureWrite(count);
         }
 
         public override void WriteByte(byte value)
         {
             this.wrappedStream.WriteByte(value);
-            ++this.requestObject.EgressBytes;
+            this.CaptureWrite(1);
+        }
+
+        private void CaptureWrite(int count)
+        {
+            if (reverseCapture)
+            {
+                this.requestObject.IngressBytes += count;
+            }
+            else
+            {
+                this.requestObject.EgressBytes += count;
+            }
+        }
+
+        private void CaptureRead(int count)
+        {
+            if (reverseCapture)
+            {
+                this.requestObject.EgressBytes += count;
+            }
+            else
+            {
+                this.requestObject.IngressBytes += count;
+            }
         }
 
         protected override void Dispose(bool disposing)

@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
 {
     using Microsoft.Azure.Storage.Core;
     using Microsoft.Azure.Storage.Core.Executor;
+    using Microsoft.Azure.Storage.Core.Util;
     using System;
     using System.IO;
     using System.Net.Http;
@@ -28,7 +29,10 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public static HttpContent BuildContentFromStream<T>(Stream stream, long offset, long? length, Checksum checksum, RESTCommand<T> cmd, OperationContext operationContext)
         {
             stream.Seek(offset, SeekOrigin.Begin);
-            
+
+#if !(WINDOWS_RT || NETCORE)
+            stream = stream.WrapWithByteCountingStream(cmd.CurrentResult, true);
+#endif
             HttpContent retContent = new StreamContent(new NonCloseableStream(stream));
             retContent.Headers.ContentLength = length;
             if (checksum?.MD5 != null)

@@ -343,6 +343,54 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
         [TestMethod]
+        [Description("Download a blob using CloudBlobStream With Ingress/Egress bytes tracking")]
+        [TestCategory(ComponentCategory.Blob)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void BlockBlobReadStreamBasicWithIngressEgressBytesTest()
+        {
+            int bufferSize = 5 * 1024 * 1024;
+            byte[] buffer = GetRandomBuffer(bufferSize);
+            CloudBlobContainer container = GetRandomContainerReference();
+            try
+            {
+                container.Create();
+
+                CloudBlockBlob blob = container.GetBlockBlobReference("blob1");
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    OperationContext operationContext = new OperationContext();
+                    blob.UploadFromStream(wholeBlob, null, null, operationContext);
+                    Assert.AreEqual(bufferSize, operationContext.LastResult.EgressBytes);
+                    Assert.AreEqual(0, operationContext.LastResult.IngressBytes);
+                }
+
+                using (MemoryStream wholeBlob = new MemoryStream(buffer))
+                {
+                    OperationContext operationContext = new OperationContext();
+                    using (Stream blobStream = blob.OpenRead(operationContext: operationContext))
+                    {
+                        TestHelper.AssertStreamsAreEqual(wholeBlob, blobStream);
+                    }
+                    long totalIngress = 0;
+                    long totalEggress = 0;
+                    foreach (var result in operationContext.RequestResults)
+                    {
+                        totalIngress += result.IngressBytes;
+                        totalEggress += result.EgressBytes;
+                    }
+                    Assert.AreEqual(bufferSize, totalIngress);
+                    Assert.AreEqual(0, totalEggress);
+                }
+            }
+            finally
+            {
+                container.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
         [Description("Download a blob using CloudBlobStream")]
         [TestCategory(ComponentCategory.Blob)]
         [TestCategory(TestTypeCategory.UnitTest)]
