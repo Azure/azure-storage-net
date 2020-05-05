@@ -1,3 +1,7 @@
+Changes in 11.1.5:
+
+- Fixed bug where egress bytes were not reported.
+
 Changes in 11.1.4:
 
 - Addressed GitHub Issue #908 - Unobserved exception was rethrown by the finalizer thread while using Storage Client.

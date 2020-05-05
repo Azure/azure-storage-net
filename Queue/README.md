@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Queue SDK for .NET (11.1.4)
+# Microsoft Azure Storage Queue SDK for .NET (11.1.5)
 
 The Microsoft Azure Storage Queue SDK for .NET allows you to build Azure applications that take advantage of scalable cloud computing resources.
 

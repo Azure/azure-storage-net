@@ -13,7 +13,7 @@
 ## For more details, please visit the proper location for each repo.
 
 
-# Microsoft Azure Storage SDK for .NET (11.0.0)
+# Microsoft Azure Storage SDK for .NET (11.1.5)
 
 > Server Version: 2019-02-02
 
