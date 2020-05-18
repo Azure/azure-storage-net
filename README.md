@@ -12,6 +12,14 @@
 
 ## For more details, please visit the proper location for each repo.
 
+## Support Statement
+
+- We will be making only fixes related data integrity and security for 11.x.
+- We will not be adding new storage service version support for this SDK. 
+- We will not be back porting fixes and features added to the current version to the versions in this repo
+- We will not be making any changes to the performance characteristics of this SDK.
+    
+We have engineered a highly performant and scalable SDK with our V12 releases. We encourage all our customers to give it a try.
 
 # Microsoft Azure Storage SDK for .NET (11.1.5)
 
