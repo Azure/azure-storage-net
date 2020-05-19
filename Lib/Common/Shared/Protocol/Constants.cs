@@ -1428,6 +1428,21 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             public const string FilePermission = PrefixForStorageHeader + "file-permission";
 
             /// <summary>
+            /// Header that specifies file permission copy mode.
+            /// </summary>
+            public const string FilePermissionCopyMode = PrefixForStorageHeader + "file-permission-copy-mode";
+
+            /// <summary>
+            /// Header value that specifies copy file permissions, file system attributes, creation time or last write time from the source file to the destination file.
+            /// </summary>
+            public const string FileCopyFromSource = "source";
+
+            /// <summary>
+            /// Header value that specifies override file permissions on the destination file.
+            /// </summary>
+            public const string FileCopyOverride = "override";
+
+            /// <summary>
             /// Default header value for file permission.
             /// </summary>
             public const string FilePermissionInherit = "Inherit";
@@ -1441,6 +1456,17 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Header that specifies file attributes.
             /// </summary>
             public const string FileAttributes = PrefixForStorageHeader + "file-attributes";
+
+            /// <summary>
+            /// Header with a boolean value that specifies whether the Archive attribute should be set.
+            /// </summary>
+            public const string FileCopySetArchive = PrefixForStorageHeader + "file-copy-set-archive";
+
+            /// <summary>
+            /// Header with a boolean value that specifies whether the ReadOnly attribute on a preexisting destination file should be respected. 
+            /// If true, the copy will succeed, otherwise, a previous file at the destination with the ReadOnly attribute set will cause the copy to fail.
+            /// </summary>
+            public const string FileCopyInoreReadOnly = PrefixForStorageHeader + "file-copy-ignore-readonly";
 
             /// <summary>
             /// Default file attribute value for files.
@@ -1495,7 +1521,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// Current storage version header value.
             /// Every time this version changes, assembly version needs to be updated as well.
             /// </summary>
-            public const string TargetStorageVersion = "2019-02-02";
+            public const string TargetStorageVersion = "2019-07-07";
 
             /// <summary>
             /// Specifies the file type.

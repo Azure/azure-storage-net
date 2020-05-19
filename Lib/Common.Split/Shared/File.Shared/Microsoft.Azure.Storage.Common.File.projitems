@@ -9,8 +9,9 @@
     <Import_RootNamespace>Microsoft.Azure.Storage.Common.File</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\File\**\*.cs" >
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\File\**\*.cs">
       <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Compile>	
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)FileCopyOptions.cs" />
   </ItemGroup>
 </Project>

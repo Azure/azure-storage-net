@@ -109,6 +109,20 @@ namespace Microsoft.Azure.Storage.File
                 source.Metadata["Test"] = "value";
                 source.SetMetadata();
 
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = share.CreateFilePermission(permission);
+                source.Properties.FilePermissionKey = permissionKey;
+
+                var attributes = CloudFileNtfsAttributes.NoScrubData | CloudFileNtfsAttributes.Temporary;
+                var creationTime = DateTimeOffset.UtcNow.AddDays(-1);
+
+                source.Properties.NtfsAttributes = attributes;
+                DateTimeOffset lastWriteTime = DateTimeOffset.UtcNow;
+                source.Properties.LastWriteTime = lastWriteTime;
+
+                source.Properties.CreationTime = creationTime;
+                source.SetProperties();
+
                 // Create Destination on server
                 CloudFile destination = share.GetRootDirectoryReference().GetFileReference("destination");
                 destination.Create(1);
@@ -126,7 +140,8 @@ namespace Microsoft.Azure.Storage.File
                         SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddMinutes(30),
                         Permissions = permissions,
                     };
-                    string sasToken = source.GetSharedAccessSignature(policy);
+
+                    string sasToken = share.GetSharedAccessSignature(policy);
 
                     // Get source 
                     StorageCredentials credentials = new StorageCredentials(sasToken);
@@ -153,7 +168,19 @@ namespace Microsoft.Azure.Storage.File
                 }
 
                 // Start copy and wait for completion
-                string copyId = copyDestination.StartCopy(TestHelper.Defiddler(copySource));
+                string copyId = copyDestination.StartCopy(TestHelper.Defiddler(copySource), 
+                    null,
+                    null,
+                    new FileCopyOptions()
+                    { 
+                        PreservePermissions = true,
+                        PreserveCreationTime = true,
+                        PreserveLastWriteTime = true,
+                        PreserveNtfsAttributes = true,
+                        SetArchive = false
+                    },
+                    null, null);
+
                 WaitForCopy(destination);
 
                 // Check original file references for equality
@@ -191,6 +218,11 @@ namespace Microsoft.Azure.Storage.File
                 Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
                 Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
                 Assert.AreEqual(prop1.ContentType, prop2.ContentType);
+                Assert.AreEqual(lastWriteTime, destination.Properties.LastWriteTime.Value);
+                Assert.AreEqual(creationTime, destination.Properties.CreationTime.Value);
+                Assert.AreEqual(attributes, destination.Properties.NtfsAttributes.Value);
+                Assert.IsNotNull(destination.Properties.FilePermissionKey);
+                Assert.IsNull(destination.FilePermission);
 
                 Assert.AreEqual("value", destination.Metadata["Test"], false, "Copied metadata not same");
 
@@ -313,6 +345,205 @@ namespace Microsoft.Azure.Storage.File
             }
         }
 
+        [TestMethod]
+        [Description("Copy a file and then verify its contents, properties, and metadata")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileCopyPermissionOverrideTest()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                // Create Source on server
+                CloudFile source = share.GetRootDirectoryReference().GetFileReference("source");
+
+                string data = "String data";
+                UploadText(source, data, Encoding.UTF8);
+
+                // Create Destination on server
+                CloudFile destination = share.GetRootDirectoryReference().GetFileReference("destination");
+                destination.Create(1);
+
+                destination.Metadata["Test"] = "value";
+                destination.SetMetadata();
+
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = share.CreateFilePermission(permission);
+                destination.Properties.FilePermissionKey = permissionKey;
+
+                var attributes = CloudFileNtfsAttributes.NoScrubData | CloudFileNtfsAttributes.Temporary;
+                var creationTime = DateTimeOffset.UtcNow.AddDays(-1);
+
+                destination.Properties.NtfsAttributes = attributes;
+                DateTimeOffset lastWriteTime = DateTimeOffset.UtcNow;
+                destination.Properties.LastWriteTime = lastWriteTime;
+
+                destination.Properties.CreationTime = creationTime;
+
+                CloudFile copySource = source;
+                CloudFile copyDestination = destination;
+
+                // Start copy and wait for completion
+                string copyId = copyDestination.StartCopy(TestHelper.Defiddler(copySource),
+                    null,
+                    null,
+                    new FileCopyOptions()
+                    {
+                        PreservePermissions = false,
+                        PreserveCreationTime = false,
+                        PreserveLastWriteTime = false,
+                        PreserveNtfsAttributes = false,
+                        SetArchive = false
+                    },
+                    null,
+                    null);
+
+                WaitForCopy(destination);
+
+                // Check original file references for equality
+                Assert.AreEqual(CopyStatus.Success, destination.CopyState.Status);
+                Assert.AreEqual(source.Uri.AbsolutePath, destination.CopyState.Source.AbsolutePath);
+                Assert.AreEqual(data.Length, destination.CopyState.TotalBytes);
+                Assert.AreEqual(data.Length, destination.CopyState.BytesCopied);
+                Assert.AreEqual(copyId, destination.CopyState.CopyId);
+                Assert.IsTrue(destination.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                TestHelper.ExpectedException(
+                           () => copyDestination.AbortCopy(copyId),
+                           "Aborting a copy operation after completion should fail",
+                           HttpStatusCode.Conflict,
+                           "NoPendingCopyOperation");
+
+                source.FetchAttributes();
+                Assert.IsNotNull(destination.Properties.ETag);
+                Assert.AreNotEqual(source.Properties.ETag, destination.Properties.ETag);
+                Assert.IsTrue(destination.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                string copyData = DownloadText(destination, Encoding.UTF8);
+                Assert.AreEqual(data, copyData, "Data inside copy of file not equal.");
+
+                destination.FetchAttributes();
+                FileProperties prop1 = destination.Properties;
+                FileProperties prop2 = source.Properties;
+
+                Assert.AreEqual(prop1.CacheControl, prop2.CacheControl);
+                Assert.AreEqual(prop1.ContentEncoding, prop2.ContentEncoding);
+                Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
+                Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
+                Assert.AreEqual(prop1.ContentType, prop2.ContentType);
+                Assert.AreEqual(lastWriteTime, destination.Properties.LastWriteTime.Value);
+                Assert.AreEqual(creationTime, destination.Properties.CreationTime.Value);
+                Assert.AreEqual(attributes, destination.Properties.NtfsAttributes.Value);
+                Assert.IsNotNull(destination.Properties.FilePermissionKey);
+                Assert.IsNull(destination.FilePermission);
+
+                Assert.AreEqual("value", destination.Metadata["Test"], false, "Copied metadata not same");
+
+                destination.Delete();
+                source.Delete();
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Copy a file and then verify its contents, properties, and metadata")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileCopyIgnoreReadOnlyAndSetArchiveTest()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                // Create Source on server
+                CloudFile source = share.GetRootDirectoryReference().GetFileReference("source");
+
+                string data = "String data";
+                UploadText(source, data, Encoding.UTF8);
+
+                // Create Destination on server
+                CloudFile destination = share.GetRootDirectoryReference().GetFileReference("destination");
+                destination.Create(1);
+
+                destination.Properties.NtfsAttributes = CloudFileNtfsAttributes.Hidden | CloudFileNtfsAttributes.ReadOnly;
+                destination.SetProperties();
+                
+                string permission = "O:S-1-5-21-2127521184-1604012920-1887927527-21560751G:S-1-5-21-2127521184-1604012920-1887927527-513D:AI(A;;FA;;;SY)(A;;FA;;;BA)(A;;0x1200a9;;;S-1-5-21-397955417-626881126-188441444-3053964)";
+                string permissionKey = share.CreateFilePermission(permission);
+                destination.Properties.FilePermissionKey = permissionKey;
+
+                CloudFile copySource = source;
+                CloudFile copyDestination = destination;
+
+                // Start copy and wait for completion
+                string copyId = copyDestination.StartCopy(TestHelper.Defiddler(copySource),
+                    null,
+                    null,
+                    new FileCopyOptions()
+                    {
+                        PreservePermissions = false,
+                        IgnoreReadOnly = true,
+                        SetArchive = true
+                    },
+                    null,
+                    null);
+
+                WaitForCopy(destination);
+
+                // Check original file references for equality
+                Assert.AreEqual(CopyStatus.Success, destination.CopyState.Status);
+                Assert.AreEqual(source.Uri.AbsolutePath, destination.CopyState.Source.AbsolutePath);
+                Assert.AreEqual(data.Length, destination.CopyState.TotalBytes);
+                Assert.AreEqual(data.Length, destination.CopyState.BytesCopied);
+                Assert.AreEqual(copyId, destination.CopyState.CopyId);
+                Assert.IsTrue(destination.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                TestHelper.ExpectedException(
+                           () => copyDestination.AbortCopy(copyId),
+                           "Aborting a copy operation after completion should fail",
+                           HttpStatusCode.Conflict,
+                           "NoPendingCopyOperation");
+
+                source.FetchAttributes();
+                Assert.IsNotNull(destination.Properties.ETag);
+                Assert.AreNotEqual(source.Properties.ETag, destination.Properties.ETag);
+                Assert.IsTrue(destination.Properties.LastModified > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                string copyData = DownloadText(destination, Encoding.UTF8);
+                Assert.AreEqual(data, copyData, "Data inside copy of file not equal.");
+
+                destination.FetchAttributes();
+                FileProperties prop1 = destination.Properties;
+                FileProperties prop2 = source.Properties;
+
+                Assert.AreEqual(prop1.CacheControl, prop2.CacheControl);
+                Assert.AreEqual(prop1.ContentEncoding, prop2.ContentEncoding);
+                Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
+                Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
+                Assert.AreEqual(prop1.ContentType, prop2.ContentType);
+                Assert.AreEqual(CloudFileNtfsAttributes.Archive, destination.Properties.NtfsAttributes.Value);
+                Assert.IsNotNull(destination.Properties.FilePermissionKey);
+                Assert.IsNull(destination.FilePermission);
+
+                destination.Delete();
+                source.Delete();
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
 #if TASK
         [TestMethod]
         [Description("Copy a file and then verify its contents, properties, and metadata")]
@@ -387,6 +618,64 @@ namespace Microsoft.Azure.Storage.File
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
         public void CloudFileCopyTestWithMetadataOverride()
+        {
+            CloudFileShare share = GetRandomShareReference();
+            try
+            {
+                share.Create();
+
+                CloudFile source = share.GetRootDirectoryReference().GetFileReference("source");
+
+                string data = "String data";
+                UploadText(source, data, Encoding.UTF8);
+
+                source.Metadata["Test"] = "value";
+                source.SetMetadata();
+
+                CloudFile copy = share.GetRootDirectoryReference().GetFileReference("copy");
+                copy.Metadata["Test2"] = "value2";
+                string copyId = copy.StartCopy(TestHelper.Defiddler(source));
+                WaitForCopy(copy);
+                Assert.AreEqual(CopyStatus.Success, copy.CopyState.Status);
+                Assert.AreEqual(source.Uri.AbsolutePath, copy.CopyState.Source.AbsolutePath);
+                Assert.AreEqual(data.Length, copy.CopyState.TotalBytes);
+                Assert.AreEqual(data.Length, copy.CopyState.BytesCopied);
+                Assert.AreEqual(copyId, copy.CopyState.CopyId);
+                Assert.IsTrue(copy.CopyState.CompletionTime > DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1)));
+
+                string copyData = DownloadText(copy, Encoding.UTF8);
+                Assert.AreEqual(data, copyData, "Data inside copy of file not similar");
+
+                copy.FetchAttributes();
+                source.FetchAttributes();
+                FileProperties prop1 = copy.Properties;
+                FileProperties prop2 = source.Properties;
+
+                Assert.AreEqual(prop1.CacheControl, prop2.CacheControl);
+                Assert.AreEqual(prop1.ContentEncoding, prop2.ContentEncoding);
+                Assert.AreEqual(prop1.ContentDisposition, prop2.ContentDisposition);
+                Assert.AreEqual(prop1.ContentLanguage, prop2.ContentLanguage);
+                Assert.AreEqual(prop1.ContentMD5, prop2.ContentMD5);
+                Assert.AreEqual(prop1.ContentType, prop2.ContentType);
+
+                Assert.AreEqual("value2", copy.Metadata["Test2"], false, "Copied metadata not same");
+                Assert.IsFalse(copy.Metadata.ContainsKey("Test"), "Source Metadata should not appear in destination file");
+
+                copy.Delete();
+            }
+            finally
+            {
+                share.DeleteIfExists();
+            }
+        }
+
+        [TestMethod]
+        [Description("Copy a file and override file attributes during copy")]
+        [TestCategory(ComponentCategory.File)]
+        [TestCategory(TestTypeCategory.UnitTest)]
+        [TestCategory(SmokeTestCategory.NonSmoke)]
+        [TestCategory(TenantTypeCategory.DevStore), TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
+        public void CloudFileCopyTestWithFileAttributesOverride()
         {
             CloudFileShare share = GetRandomShareReference();
             try

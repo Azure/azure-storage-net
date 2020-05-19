@@ -3986,12 +3986,38 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual string StartCopy(Uri source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)
         {
+            return this.StartCopy(source, sourceAccessCondition, destAccessCondition, default(FileCopyOptions), options, operationContext);
+        }
+
+        /// <summary>
+        /// Begins an operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob or file.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the file's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual string StartCopy(
+            Uri source,
+            AccessCondition sourceAccessCondition, 
+            AccessCondition destAccessCondition,
+            FileCopyOptions copyOptions,
+            FileRequestOptions options,
+            OperationContext operationContext)
+        {
             CommonUtility.AssertNotNull("source", source);
 
             this.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteSync(
-                this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, copyOptions, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext);
         }
@@ -4014,6 +4040,38 @@ namespace Microsoft.Azure.Storage.File
         {
             return this.StartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext);
         }
+
+        /// <summary>
+        /// Begins an operation to start copying another file's contents, properties, and metadata to this file.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request. If <c>null</c>, default options are applied to the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>The copy ID associated with the copy operation.</returns>
+        /// <remarks>
+        /// This method fetches the file's ETag, last-modified time, and part of the copy state.
+        /// The copy ID and copy status fields are fetched, and the rest of the copy state is cleared.
+        /// </remarks>
+        [DoesServiceRequest]
+        public virtual string StartCopy(
+            CloudFile source,
+            AccessCondition sourceAccessCondition, 
+            AccessCondition destAccessCondition,
+            FileCopyOptions copyOptions,
+            FileRequestOptions options, 
+            OperationContext operationContext)
+        {
+            return this.StartCopy(
+                CloudFile.SourceFileToUri(source),
+                sourceAccessCondition,
+                destAccessCondition,
+                copyOptions,
+                options,
+                operationContext);
+        }
 #endif
         /// <summary>
         /// Begins an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -4025,7 +4083,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(Uri source, AsyncCallback callback, object state)
         {
-            return this.BeginStartCopy(source, null /* sourceAccessCondition */, null /* destAccessCondition */, null /* options */, null /* operationContext */, callback, state);
+            return this.BeginStartCopy(source, null /* sourceAccessCondition */, null /* destAccessCondition */, default(FileCopyOptions) /* copyOptions */, null /* options */, null /* operationContext */, callback, state);
         }
 
         /// <summary>
@@ -4055,7 +4113,25 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual ICancellableAsyncResult BeginStartCopy(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
-            return CancellableAsyncResultTaskWrapper.Create(token => this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, token), callback, state);
+            return this.BeginStartCopy(source, sourceAccessCondition, destAccessCondition, default(FileCopyOptions), options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob or file.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginStartCopy(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileCopyOptions copyOptions, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return CancellableAsyncResultTaskWrapper.Create(token => this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, copyOptions, options, operationContext, token), callback, state);
         }
 
         /// <summary>
@@ -4073,6 +4149,24 @@ namespace Microsoft.Azure.Storage.File
         public virtual ICancellableAsyncResult BeginStartCopy(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
         {
             return this.BeginStartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, callback, state);
+        }
+
+        /// <summary>
+        /// Begins an asynchronous operation to start copying another file's contents, properties, and metadata to this file.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate that will receive notification when the asynchronous operation completes.</param>
+        /// <param name="state">A user-defined object that will be passed to the callback delegate.</param>
+        /// <returns>An <see cref="ICancellableAsyncResult"/> that references the asynchronous operation.</returns>        
+        [DoesServiceRequest]
+        public virtual ICancellableAsyncResult BeginStartCopy(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileCopyOptions copyOptions, FileRequestOptions options, OperationContext operationContext, AsyncCallback callback, object state)
+        {
+            return this.BeginStartCopy(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, copyOptions, options, operationContext, callback, state);
         }
 
         /// <summary>
@@ -4098,7 +4192,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source)
         {
-            return this.StartCopyAsync(source, default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), CancellationToken.None);
+            return this.StartCopyAsync(source, default(AccessCondition), default(AccessCondition), default(FileCopyOptions), default(FileRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -4110,7 +4204,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(source, default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
+            return this.StartCopyAsync(source, default(AccessCondition), default(AccessCondition), default(FileCopyOptions), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -4121,7 +4215,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudFile source)
         {
-            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), CancellationToken.None);
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileCopyOptions), default(FileRequestOptions), default(OperationContext), CancellationToken.None);
         }
 
         /// <summary>
@@ -4133,7 +4227,7 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudFile source, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileCopyOptions), default(FileRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
@@ -4148,8 +4242,25 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
         {
-            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, default(FileCopyOptions), options, operationContext, CancellationToken.None);
         }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob or file.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileCopyOptions copyOptions, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, copyOptions, options, operationContext, CancellationToken.None);
+        }
+
 
         /// <summary>
         /// Initiates an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
@@ -4164,10 +4275,34 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return this.StartCopyAsync(source, sourceAccessCondition, destAccessCondition, default(FileCopyOptions), options, operationContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another Azure file or blob's contents, properties, and metadata to this Azure file.
+        /// </summary>
+        /// <param name="source">The <see cref="System.Uri"/> of the source blob or file.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(
+            Uri source,
+            AccessCondition sourceAccessCondition, 
+            AccessCondition destAccessCondition,
+            FileCopyOptions copyOptions,
+            FileRequestOptions options, 
+            OperationContext operationContext, 
+            CancellationToken cancellationToken)
+        {
             this.Share.AssertNoSnapshot();
             FileRequestOptions modifiedOptions = FileRequestOptions.ApplyDefaults(options, this.ServiceClient);
             return Executor.ExecuteAsync<string>(
-                this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, modifiedOptions),
+                this.StartCopyImpl(source, sourceAccessCondition, destAccessCondition, copyOptions, modifiedOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -4185,7 +4320,23 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext)
         {
-            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, options, operationContext, CancellationToken.None);
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, default(FileCopyOptions), options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another file's contents, properties, and metadata to this file.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileCopyOptions copyOptions, FileRequestOptions options, OperationContext operationContext)
+        {
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, copyOptions, options, operationContext, CancellationToken.None);
         }
 
         /// <summary>
@@ -4201,7 +4352,24 @@ namespace Microsoft.Azure.Storage.File
         [DoesServiceRequest]
         public virtual Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
-            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), default(AccessCondition), default(AccessCondition), default(FileRequestOptions), default(OperationContext), cancellationToken);
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, default(FileCopyOptions), options, default(OperationContext), cancellationToken);
+        }
+
+        /// <summary>
+        /// Initiates an asynchronous operation to start copying another file's contents, properties, and metadata to this file.
+        /// </summary>
+        /// <param name="source">A <see cref="CloudFile"/> object.</param>
+        /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source file. If <c>null</c>, no condition is used.</param>
+        /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
+        /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <c>string</c> that represents the asynchronous operation.</returns>
+        [DoesServiceRequest]
+        public virtual Task<string> StartCopyAsync(CloudFile source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileCopyOptions copyOptions, FileRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.StartCopyAsync(CloudFile.SourceFileToUri(source), sourceAccessCondition, destAccessCondition, copyOptions, options, operationContext, cancellationToken);
         }
 #endif
 
@@ -4918,12 +5086,13 @@ namespace Microsoft.Azure.Storage.File
         /// <param name="source">The URI of the source object.</param>
         /// <param name="sourceAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.</param>
         /// <param name="destAccessCondition">An <see cref="AccessCondition"/> object that represents the access conditions for the destination file. If <c>null</c>, no condition is used.</param>
+        /// <param name="copyOptions">An <see cref="FileCopyOptions"/> object that represents the options for the copying. If <c>null</c>, default options are applied.</param>
         /// <param name="options">A <see cref="FileRequestOptions"/> object that specifies additional options for the request.</param>
         /// <returns>
         /// A <see cref="RESTCommand{T}"/> that starts to copy the file.
         /// </returns>
         /// <exception cref="System.ArgumentException">sourceAccessCondition</exception>
-        private RESTCommand<string> StartCopyImpl(Uri source, AccessCondition sourceAccessCondition, AccessCondition destAccessCondition, FileRequestOptions options)
+        private RESTCommand<string> StartCopyImpl(Uri source, AccessCondition sourceAccessCondition = null, AccessCondition destAccessCondition = null, FileCopyOptions copyOptions = default, FileRequestOptions options = null)
         {
             if (sourceAccessCondition != null && !string.IsNullOrEmpty(sourceAccessCondition.LeaseId))
             {
@@ -4937,8 +5106,63 @@ namespace Microsoft.Azure.Storage.File
             {
                 StorageRequestMessage msg = FileHttpRequestMessageFactory.CopyFrom(uri, serverTimeout, source, sourceAccessCondition, destAccessCondition, cnt, ctx, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 FileHttpRequestMessageFactory.AddMetadata(msg, attributes.Metadata);
+
+                if (copyOptions.PreservePermissions)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FilePermissionCopyMode, Constants.HeaderConstants.FileCopyFromSource);
+                }
+                else if (this.filePermission != null)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FilePermissionCopyMode, Constants.HeaderConstants.FileCopyOverride);
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FilePermission, this.filePermission);
+                }
+                else if (null != this.Properties?.FilePermissionKey)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FilePermissionCopyMode, Constants.HeaderConstants.FileCopyOverride);
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FilePermissionKey, this.Properties.FilePermissionKey);
+                }
+
+                if (copyOptions.SetArchive.HasValue)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileCopySetArchive,
+                        copyOptions.SetArchive.Value ? Constants.HeaderConstants.TrueHeader : Constants.HeaderConstants.FalseHeader);
+                }
+
+                if (copyOptions.PreserveNtfsAttributes)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileAttributes, Constants.HeaderConstants.FileCopyFromSource);
+                }
+                else if (this.Properties?.ntfsAttributesToSet != null)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileAttributes, CloudFileNtfsAttributesHelper.ToString(this.Properties.ntfsAttributesToSet.Value));
+                }
+
+                if (copyOptions.PreserveCreationTime)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileCreationTime, Constants.HeaderConstants.FileCopyFromSource);
+                }
+                else if (this.Properties?.creationTimeToSet != null)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileCreationTime, Request.ConvertDateTimeToSnapshotString(this.Properties.creationTimeToSet.Value));
+                }
+
+                if (copyOptions.PreserveLastWriteTime)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileLastWriteTime, Constants.HeaderConstants.FileCopyFromSource);
+                }
+                else if (this.Properties?.lastWriteTimeToSet != null)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileLastWriteTime, Request.ConvertDateTimeToSnapshotString(this.Properties.lastWriteTimeToSet.Value));
+                }
+
+                if (copyOptions.IgnoreReadOnly)
+                {
+                    msg.AddOptionalHeader(Constants.HeaderConstants.FileCopyInoreReadOnly, Constants.HeaderConstants.TrueHeader);
+                }
+
                 return msg;
             };
+
             putCmd.PreProcessResponse = (cmd, resp, ex, ctx) =>
             {
                 HttpResponseParsers.ProcessExpectedStatusCodeNoException(HttpStatusCode.Accepted, resp, null /* retVal */, cmd, ex);
