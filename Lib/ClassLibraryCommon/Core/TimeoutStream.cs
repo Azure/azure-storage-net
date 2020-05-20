@@ -143,9 +143,10 @@ namespace Microsoft.Azure.Storage.Core
                 await this.wrappedStream.FlushAsync(source.Token).ConfigureAwait(false);
             }
             // We dispose stream on timeout so catch and check if cancellation token was cancelled
-            catch (ObjectDisposedException) when (source.IsCancellationRequested)
+            catch (ObjectDisposedException)
             {
-                throw new OperationCanceledException(source.Token);
+                source.Token.ThrowIfCancellationRequested();
+                throw;
             }
             finally
             {
@@ -166,9 +167,10 @@ namespace Microsoft.Azure.Storage.Core
                 return await this.wrappedStream.ReadAsync(buffer, offset, count, source.Token).ConfigureAwait(false);
             }
             // We dispose stream on timeout so catch and check if cancellation token was cancelled
-            catch (ObjectDisposedException) when (source.IsCancellationRequested)
+            catch (ObjectDisposedException)
             {
-                throw new OperationCanceledException(source.Token);
+                source.Token.ThrowIfCancellationRequested();
+                throw;
             }
             finally
             {
@@ -204,9 +206,10 @@ namespace Microsoft.Azure.Storage.Core
                 await this.wrappedStream.WriteAsync(buffer, offset, count, source.Token).ConfigureAwait(false);
             }
             // We dispose stream on timeout so catch and check if cancellation token was cancelled
-            catch (ObjectDisposedException) when (source.IsCancellationRequested)
+            catch (ObjectDisposedException)
             {
-                throw new OperationCanceledException(source.Token);
+                source.Token.ThrowIfCancellationRequested();
+                throw;
             }
             finally
             {
