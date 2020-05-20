@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Storage.Core
         private readonly Stream wrappedStream;
         private TimeSpan readTimeout;
         private TimeSpan writeTimeout;
-        private CancellationTokenSource cancellationTokenSource;
+        private CancellationTokenSource cancellationTokenSource = null!;
 
         public TimeoutStream(Stream wrappedStream, TimeSpan timeout)
             : this(wrappedStream, timeout, timeout) { }
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Storage.Core
             this.writeTimeout = writeTimeout;
             this.UpdateReadTimeout();
             this.UpdateWriteTimeout();
-            this.cancellationTokenSource = new CancellationTokenSource();
+            this.InitializeTokenSource();
         }
 
         public override long Position
@@ -140,7 +140,12 @@ namespace Microsoft.Azure.Storage.Core
             var source = StartTimeout(cancellationToken, out bool dispose);
             try
             {
-                await this.wrappedStream.FlushAsync(source.Token);
+                await this.wrappedStream.FlushAsync(source.Token).ConfigureAwait(false);
+            }
+            // We dispose stream on timeout so catch and check if cancellation token was cancelled
+            catch (ObjectDisposedException) when (source.IsCancellationRequested)
+            {
+                throw new OperationCanceledException(source.Token);
             }
             finally
             {
@@ -158,7 +163,12 @@ namespace Microsoft.Azure.Storage.Core
             var source = StartTimeout(cancellationToken, out bool dispose);
             try
             {
-                return await this.wrappedStream.ReadAsync(buffer, offset, count, source.Token);
+                return await this.wrappedStream.ReadAsync(buffer, offset, count, source.Token).ConfigureAwait(false);
+            }
+            // We dispose stream on timeout so catch and check if cancellation token was cancelled
+            catch (ObjectDisposedException) when (source.IsCancellationRequested)
+            {
+                throw new OperationCanceledException(source.Token);
             }
             finally
             {
@@ -191,7 +201,12 @@ namespace Microsoft.Azure.Storage.Core
             var source = StartTimeout(cancellationToken, out bool dispose);
             try
             {
-                await this.wrappedStream.WriteAsync(buffer, offset, count, source.Token);
+                await this.wrappedStream.WriteAsync(buffer, offset, count, source.Token).ConfigureAwait(false);
+            }
+            // We dispose stream on timeout so catch and check if cancellation token was cancelled
+            catch (ObjectDisposedException) when (source.IsCancellationRequested)
+            {
+                throw new OperationCanceledException(source.Token);
             }
             finally
             {
@@ -204,11 +219,22 @@ namespace Microsoft.Azure.Storage.Core
             this.wrappedStream.WriteByte(value);
         }
 
+        private void InitializeTokenSource()
+        {
+            this.cancellationTokenSource = new CancellationTokenSource();
+            this.cancellationTokenSource.Token.Register(() => DisposeStream());
+        }
+
+        private void DisposeStream()
+        {
+            this.wrappedStream.Dispose();
+        }
+
         private CancellationTokenSource StartTimeout(CancellationToken additionalToken, out bool dispose)
         {
             if (this.cancellationTokenSource.IsCancellationRequested)
             {
-                this.cancellationTokenSource = new CancellationTokenSource();
+                this.InitializeTokenSource();
             }
 
             CancellationTokenSource source;
