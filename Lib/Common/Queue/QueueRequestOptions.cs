@@ -110,6 +110,11 @@ namespace Microsoft.Azure.Storage.Queue
                 ?? serviceClient.DefaultRequestOptions.ServerTimeout 
                 ?? BaseDefaultRequestOptions.ServerTimeout;
 
+            modifiedOptions.NetworkTimeout =
+                modifiedOptions.NetworkTimeout
+                ?? serviceClient.DefaultRequestOptions.NetworkTimeout
+                ?? BaseDefaultRequestOptions.NetworkTimeout;
+
             modifiedOptions.MaximumExecutionTime = 
                 modifiedOptions.MaximumExecutionTime 
                 ?? serviceClient.DefaultRequestOptions.MaximumExecutionTime 
