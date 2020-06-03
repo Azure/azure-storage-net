@@ -1,3 +1,7 @@
+Changes in 11.1.7:
+
+- None.
+
 Changes in 11.1.6:
 
 - Fixed bug where response streaming hangs indefinietly on .NET Framework. Eagerly dispose network stream if read timeout occurs.

@@ -1,3 +1,7 @@
+Changes in 11.1.7:
+
+- GitHub Issue #999 - NetworkTimeout not applied correctly in QueueRequestOptions.
+
 Changes in 11.1.6:
 
 - Fixed bug where response streaming hangs indefinietly on .NET Framework. Eagerly dispose network stream if read timeout occurs.
