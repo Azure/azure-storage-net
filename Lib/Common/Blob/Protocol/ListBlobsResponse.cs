@@ -253,6 +253,18 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                                             blob.Properties.RemainingDaysBeforePermanentDelete = int.Parse(await reader.ReadElementContentAsStringAsync().ConfigureAwait(false));
                                             break;
 
+                                        case Constants.EncryptionScopeElement:
+                                            string encryptionScope = await reader.ReadElementContentAsStringAsync().ConfigureAwait(false);
+                                            if (string.IsNullOrEmpty(encryptionScope))
+                                            {
+                                                blob.Properties.EncryptionScope = null;
+                                            }
+                                            else
+                                            {
+                                                blob.Properties.EncryptionScope = encryptionScope;
+                                            }
+                                            break;
+
                                         default:
                                             await reader.SkipAsync().ConfigureAwait(false);
                                             break;

@@ -50,6 +50,16 @@ namespace Microsoft.Azure.Storage.Blob
         private TimeSpan? maximumExecutionTime;
 
         /// <summary>
+        /// Stores the blob customer provided key for the request.
+        /// </summary>
+        private BlobCustomerProvidedKey blobCustomerProvidedKey;
+
+        /// <summary>
+        /// Stores the encryption scope for the request.
+        /// </summary>
+        private string encryptionScope;
+
+        /// <summary>
         /// Defines the absolute default option values, should neither the user nor client specify anything.
         /// </summary>
         internal static BlobRequestOptions BaseDefaultRequestOptions = new BlobRequestOptions()
@@ -225,6 +235,7 @@ namespace Microsoft.Azure.Storage.Blob
 #endif
 
             modifiedOptions.CustomerProvidedKey = options?.CustomerProvidedKey;
+            modifiedOptions.EncryptionScope = options?.EncryptionScope;
 
             return modifiedOptions;
         }
@@ -334,7 +345,42 @@ namespace Microsoft.Azure.Storage.Blob
         /// Gets or sets the blob customer provided key for the request.
         /// </summary>
         /// <value>An object of type <see cref="CustomerProvidedKey"/></value>
-        public BlobCustomerProvidedKey CustomerProvidedKey { get; set; }
+        public BlobCustomerProvidedKey CustomerProvidedKey 
+        {
+            get
+            {
+                return this.blobCustomerProvidedKey;
+            }
+            set
+            {
+                if ((null != value) && (null != this.EncryptionScope))
+                {
+                    throw new StorageException("");
+                }
+
+                this.blobCustomerProvidedKey = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the encryption scope for the request.
+        /// </summary>
+        public string EncryptionScope 
+        {
+            get
+            {
+                return this.encryptionScope;
+            }
+            set
+            {
+                if ((null != value) && (null != this.CustomerProvidedKey))
+                {
+                    throw new StorageException("");
+                }
+
+                this.encryptionScope = value;
+            } 
+        }
 
         /// <summary>
         /// Gets or sets a value that indicates whether a conditional failure should be absorbed on a retry attempt

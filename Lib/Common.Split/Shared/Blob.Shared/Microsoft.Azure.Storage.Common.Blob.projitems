@@ -9,8 +9,9 @@
     <Import_RootNamespace>Microsoft.Azure.Storage.Common.Blob</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include = "$(MSBuildThisFileDirectory)..\..\..\Common\Blob\**\*.cs" >
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\Common\Blob\**\*.cs">
       <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Compile>	
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)BlobContainerEncryptionScopeOptions.cs" />
   </ItemGroup>
 </Project>

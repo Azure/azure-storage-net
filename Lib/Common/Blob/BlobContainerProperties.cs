@@ -72,5 +72,12 @@ namespace Microsoft.Azure.Storage.Blob
         /// <remarks>This field should only be set using the container's Create() method or SetPermissions() method</remarks>
         /// <value>A <see cref="BlobContainerPublicAccessType"/> that specifies the level of public access that is allowed on the container.</value>
         public BlobContainerPublicAccessType? PublicAccess { get; internal set; }
+
+        /// <summary>
+        ///  Gets the encryption scope options for the container.
+        /// </summary>
+        /// <remarks>This field should only be set using the container's Create() method</remarks>
+        /// <value>A <see cref="BlobContainerEncryptionScopeOptions"/> that specifies the encryption scope options for the container.</value>
+        public BlobContainerEncryptionScopeOptions EncryptionScopeOptions { get; internal set; }
     }
 }

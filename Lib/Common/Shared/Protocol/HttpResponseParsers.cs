@@ -66,6 +66,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             return string.Equals(serviceEncrypted, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
         }
 
+        internal static string ParseEncryptionScope(HttpResponseMessage response)
+        {
+            return response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.EncryptionScopeHeader);
+        }
+
         /// <summary>
         /// Gets the metadata or properties.
         /// </summary>

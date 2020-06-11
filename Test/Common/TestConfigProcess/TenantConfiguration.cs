@@ -22,6 +22,7 @@ namespace Microsoft.Azure.Storage
         public string TenantName { get; internal set; }
         public string AccountName { get; internal set; }
         public string AccountKey { get; internal set; }
+        public string EncryptionScope { get; internal set; }
         public string BlobServiceEndpoint { get; internal set; }
         public string FileServiceEndpoint { get; internal set; }
         public string QueueServiceEndpoint { get; internal set; }

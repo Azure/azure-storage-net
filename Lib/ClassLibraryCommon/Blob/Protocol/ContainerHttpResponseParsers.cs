@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 {
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
+    using System;
     using System.Collections.Generic;
     using System.Net.Http;
 
@@ -65,6 +66,17 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             string hasLegalHold = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.HasLegalHoldHeader);
             containerProperties.HasLegalHold = string.IsNullOrEmpty(hasLegalHold) ? (bool?)null : bool.Parse(hasLegalHold);
+
+            string defaultEncryptionScope = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.DefaultEncryptionScopeHeader);
+            if (!string.IsNullOrEmpty(defaultEncryptionScope))
+            {
+                containerProperties.EncryptionScopeOptions = new BlobContainerEncryptionScopeOptions();
+                containerProperties.EncryptionScopeOptions.DefaultEncryptionScope = defaultEncryptionScope;
+
+                string preventEncryptionScopeOverride = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.PreventEncryptionScopeOverrideHeader);
+                containerProperties.EncryptionScopeOptions.PreventEncryptionScopeOverride = 
+                    string.Equals(preventEncryptionScopeOverride, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
+            }
 
             return containerProperties;
         }
