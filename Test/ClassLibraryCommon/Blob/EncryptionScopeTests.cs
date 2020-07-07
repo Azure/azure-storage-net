@@ -1588,13 +1588,5 @@ namespace Microsoft.Azure.Storage.Blob
 
             return client;
         }
-
-        private BlobCustomerProvidedKey BuildCustomerProvidedKey()
-        {
-            using (var aes = Aes.Create())
-            {
-                return new BlobCustomerProvidedKey(aes.Key);
-            }
-        }
     }
 }

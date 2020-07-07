@@ -89,6 +89,21 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task CreateAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
+            return CreateAsync(accessType, null /* encryptionScopeOptions */, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates the container and specifies the level of access to the container's data.
+        /// </summary>
+        /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and what level of access is to be allowed.</param>                                                        
+        /// <param name="encryptionScopeOptions">An <see cref="BlobContainerEncryptionScopeOptions"/> object that specifies encryption scope options to set for this container.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns>A <see cref="Task"/> that represents an asynchronous action.</returns>
+        [DoesServiceRequest]
+        public virtual Task CreateAsync(BlobContainerPublicAccessType accessType, BlobContainerEncryptionScopeOptions encryptionScopeOptions, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
             if (accessType == BlobContainerPublicAccessType.Unknown)
             {
                 throw new ArgumentException(SR.ArgumentOutOfRangeError, "accessType");
@@ -96,7 +111,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             BlobRequestOptions modifiedOptions = BlobRequestOptions.ApplyDefaults(options, BlobType.Unspecified, this.ServiceClient);
             return Executor.ExecuteAsyncNullReturn(
-                this.CreateContainerImpl(modifiedOptions, accessType),
+                this.CreateContainerImpl(modifiedOptions, accessType, encryptionScopeOptions),
                 modifiedOptions.RetryPolicy,
                 operationContext,
                 cancellationToken);
@@ -150,7 +165,23 @@ namespace Microsoft.Azure.Storage.Blob
         /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
         /// <remarks>This API requires Create or Write permissions.</remarks>
         [DoesServiceRequest]
-        public virtual async Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        public virtual Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
+        {
+            return this.CreateIfNotExistsAsync(accessType, null /* encryptionScopeOptions */, options, operationContext, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates the container if it does not already exist and specifies the level of access to the container's data.
+        /// </summary>
+        /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and what level of access is to be allowed.</param>                                                                        
+        /// <param name="encryptionScopeOptions">An <see cref="BlobContainerEncryptionScopeOptions"/> object that specifies encryption scope options to set for this container.</param>
+        /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
+        /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
+        /// <returns><c>true</c> if the container did not already exist and was created; otherwise <c>false</c>.</returns>
+        /// <remarks>This API requires Create or Write permissions.</remarks>
+        [DoesServiceRequest]
+        public virtual async Task<bool> CreateIfNotExistsAsync(BlobContainerPublicAccessType accessType, BlobContainerEncryptionScopeOptions encryptionScopeOptions, BlobRequestOptions options, OperationContext operationContext, CancellationToken cancellationToken)
         {
             if (accessType == BlobContainerPublicAccessType.Unknown)
             {
@@ -162,7 +193,7 @@ namespace Microsoft.Azure.Storage.Blob
 
             try
             {
-                await this.CreateAsync(accessType, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
+                await this.CreateAsync(accessType, encryptionScopeOptions, modifiedOptions, operationContext, cancellationToken).ConfigureAwait(false);
                 return true;
             }
             catch (Exception)
@@ -1050,14 +1081,14 @@ namespace Microsoft.Azure.Storage.Blob
         /// <param name="options">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and the level of access.</param>                                                                                
         /// <returns>A <see cref="RESTCommand"/> that creates the container.</returns>
-        private RESTCommand<NullType> CreateContainerImpl(BlobRequestOptions options, BlobContainerPublicAccessType accessType)
+        private RESTCommand<NullType> CreateContainerImpl(BlobRequestOptions options, BlobContainerPublicAccessType accessType, BlobContainerEncryptionScopeOptions encryptionScopeOptions)
         {
             RESTCommand<NullType> putCmd = new RESTCommand<NullType>(this.ServiceClient.Credentials, this.StorageUri, this.ServiceClient.HttpClient);
 
             options.ApplyToStorageCommand(putCmd);
             putCmd.BuildRequest = (cmd, uri, builder, cnt, serverTimeout, ctx) =>
             {
-                StorageRequestMessage msg = ContainerHttpRequestMessageFactory.Create(uri, serverTimeout, cnt, ctx, accessType, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
+                StorageRequestMessage msg = ContainerHttpRequestMessageFactory.Create(uri, serverTimeout, cnt, ctx, accessType, encryptionScopeOptions, this.ServiceClient.GetCanonicalizer(), this.ServiceClient.Credentials);
                 ContainerHttpRequestMessageFactory.AddMetadata(msg, this.Metadata);
                 return msg;
             };

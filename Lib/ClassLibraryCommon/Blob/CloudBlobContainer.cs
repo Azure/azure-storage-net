@@ -63,8 +63,8 @@ namespace Microsoft.Azure.Storage.Blob
         /// <summary>
         /// Creates the container and specifies the level of access to the container's data.
         /// </summary>
-        /// <param name="encryptionScopeOptions">An <see cref="BlobContainerEncryptionScopeOptions"/> object that specifies encryption scope options to set for this container.</param>
         /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and what level of access is to be allowed.</param>
+        /// <param name="encryptionScopeOptions">An <see cref="BlobContainerEncryptionScopeOptions"/> object that specifies encryption scope options to set for this container.</param>
         /// <param name="requestOptions">A <see cref="BlobRequestOptions"/> object that specifies additional options for the request.</param>
         /// <param name="operationContext">An <see cref="OperationContext"/> object that represents the context for the current operation.</param>
         [DoesServiceRequest]
