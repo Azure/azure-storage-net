@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
             request.ApplyAppendCondition(accessCondition);
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
             return request;
         }
 
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
 
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
 
             return request;
         }
@@ -169,7 +169,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             }
 
             request.ApplyAccessCondition(accessCondition);
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
             return request;
         }
 
@@ -333,7 +333,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             StorageRequestMessage request = HttpRequestMessageFactory.GetProperties(uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
 
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKey(request, options?.CustomerProvidedKey, isSource: false);
 
             return request;
         }
@@ -488,7 +488,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             StorageRequestMessage request = HttpRequestMessageFactory.GetMetadata(uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
 
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKey(request, options?.CustomerProvidedKey, isSource: false);
 
             return request;
         }
@@ -509,7 +509,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         {
             StorageRequestMessage request = HttpRequestMessageFactory.SetMetadata(uri, timeout, null /* builder */, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
             return request;
         }
 
@@ -621,7 +621,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyAccessCondition(accessCondition);
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
             return request;
         }
 
@@ -722,7 +722,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             StorageRequestMessage request = HttpRequestMessageFactory.CreateRequestMessage(HttpMethod.Put, uri, timeout, builder, content, operationContext, canonicalizer, credentials);
             request.ApplyLeaseId(accessCondition);
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
             return request;
         }
 
@@ -762,7 +762,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
 
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
 
             return request;
         }
@@ -802,7 +802,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             request.ApplyAccessCondition(accessCondition);
 
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
 
             return request;
         }
@@ -857,7 +857,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             request.ApplyAccessCondition(accessCondition);
             request.ApplySequenceNumberCondition(accessCondition);
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
             return request;
         }
 
@@ -899,7 +899,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             request.ApplySourceContentChecksumHeaders(sourceContentChecksum);
 
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKeyOrEncryptionScope(request, options, isSource: false);
 
             return request;
         }
@@ -1096,7 +1096,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
 
             request.ApplyRangeContentChecksumRequested(offset, rangeContentChecksumRequested);
 
-            BlobRequest.ApplyCustomerProvidedKey(request, options, isSource: false);
+            BlobRequest.ApplyCustomerProvidedKey(request, options?.CustomerProvidedKey, isSource: false);
 
             return request;
         }

@@ -96,25 +96,39 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 writer.WriteEndDocument();
             }
         }
-
-        internal static void ApplyCustomerProvidedKey(StorageRequestMessage request, BlobRequestOptions options, bool isSource)
+        internal static void ApplyCustomerProvidedKey(StorageRequestMessage request, BlobCustomerProvidedKey customerProvidedKey, bool isSource)
         {
-            if(options?.CustomerProvidedKey == null)
+            if ((null == customerProvidedKey))
             {
                 return;
             }
 
-            if(isSource)
+            if (isSource)
             {
-                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeySource, options.CustomerProvidedKey.Key);
-                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyHashSource, options.CustomerProvidedKey.KeySHA256);
-                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyAlgorithmSource, options.CustomerProvidedKey.EncryptionAlgorithm);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeySource, customerProvidedKey.Key);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyHashSource, customerProvidedKey.KeySHA256);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyAlgorithmSource, customerProvidedKey.EncryptionAlgorithm);
             }
             else
             {
-                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKey, options.CustomerProvidedKey.Key);
-                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyHash, options.CustomerProvidedKey.KeySHA256);
-                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionAlgorithm, options.CustomerProvidedKey.EncryptionAlgorithm);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKey, customerProvidedKey.Key);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionKeyHash, customerProvidedKey.KeySHA256);
+                request.Headers.Add(Constants.HeaderConstants.ClientProvidedEncyptionAlgorithm, customerProvidedKey.EncryptionAlgorithm);
+            }
+        }
+
+        internal static void ApplyCustomerProvidedKeyOrEncryptionScope(StorageRequestMessage request, BlobRequestOptions options, bool isSource)
+        {
+            var customerProvidedKey = options?.CustomerProvidedKey;
+            var encryptionScope = options?.EncryptionScope;
+
+            if (null != customerProvidedKey)
+            {
+                ApplyCustomerProvidedKey(request, customerProvidedKey, isSource);
+            }
+            else if (null != encryptionScope)
+            {
+                request.Headers.Add(Constants.HeaderConstants.EncryptionScopeHeader, encryptionScope);
             }
         }
 

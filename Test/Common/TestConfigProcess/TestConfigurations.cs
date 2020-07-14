@@ -50,6 +50,7 @@ namespace Microsoft.Azure.Storage
                     TenantName = (string)tenantConfigurationElement.Element("TenantName"),
                     AccountName = (string)tenantConfigurationElement.Element("AccountName"),
                     AccountKey = (string)tenantConfigurationElement.Element("AccountKey"),
+                    EncryptionScope = (string)tenantConfigurationElement.Element("EncryptionScope"),
                     BlobServiceEndpoint = (string)tenantConfigurationElement.Element("BlobServiceEndpoint"),
                     FileServiceEndpoint = (string)tenantConfigurationElement.Element("FileServiceEndpoint"),
                     QueueServiceEndpoint = (string)tenantConfigurationElement.Element("QueueServiceEndpoint"),

@@ -58,6 +58,7 @@ namespace Microsoft.Azure.Storage.Blob
             this.PageBlobSequenceNumber = other.PageBlobSequenceNumber;
             this.AppendBlobCommittedBlockCount = other.AppendBlobCommittedBlockCount;
             this.IsServerEncrypted = other.IsServerEncrypted;
+            this.EncryptionScope = other.EncryptionScope;
             this.IsIncrementalCopy = other.IsIncrementalCopy;
             this.PremiumPageBlobTier = other.PremiumPageBlobTier;
             this.StandardBlobTier = other.StandardBlobTier;
@@ -190,6 +191,11 @@ namespace Microsoft.Azure.Storage.Blob
         /// </summary>
         /// <value>A bool representing the blob's server-side encryption state.</value>
         public bool IsServerEncrypted { get; internal set; }
+
+        /// <summary>
+        ///  Gets the encryption scope for the blob.
+        /// </summary>
+        public string EncryptionScope { get; internal set; }
 
         /// <summary>
         /// Gets a value indicating whether or not this blob is an incremental copy.

@@ -498,6 +498,11 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         public const string RemainingRetentionDaysElement = "RemainingRetentionDays";
 
         /// <summary>
+        /// XML element for the encryption scope date.
+        /// </summary>
+        public const string EncryptionScopeElement = "EncryptionScope";
+
+        /// <summary>
         /// Constant signaling a page blob.
         /// </summary>
         public const string PageBlobValue = "PageBlob";
@@ -1123,6 +1128,21 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             public const string ServerEncrypted = PrefixForStorageHeader + "server-encrypted";
 
             /// <summary>
+            /// Header that specifies encryption scope.
+            /// </summary>
+            public const string EncryptionScopeHeader = PrefixForStorageHeader + "encryption-scope";
+
+            /// <summary>
+            /// Header that specifies default encryption scope for a container.
+            /// </summary>
+            public const string DefaultEncryptionScopeHeader = PrefixForStorageHeader + "default-encryption-scope";
+
+            /// <summary>
+            /// Header that specifies a value to indicate whether preventing request from specifying a different encryption scope than the scope set on the container.
+            /// </summary>
+            public const string PreventEncryptionScopeOverrideHeader = PrefixForStorageHeader + "deny-encryption-scope-override";
+
+            /// <summary>
             /// Header that acknowledges the data used for write operation is encrypted server-side.
             /// </summary>
             public const string ServerRequestEncrypted = PrefixForStorageHeader + "request-server-encrypted";
@@ -1508,6 +1528,7 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
             /// </summary>
             public const string FileParentId = PrefixForStorageHeader + "file-parent-id";
 
+            /// <summary>
             /// Header for the blob rehydration priority.
             /// </summary>
             public const string RehydratePriorityHeader = PrefixForStorageHeader + "rehydrate-priority";

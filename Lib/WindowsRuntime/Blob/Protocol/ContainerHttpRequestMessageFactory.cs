@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <returns>A web request to use to perform the operation.</returns>
         public static StorageRequestMessage Create(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
-            return ContainerHttpRequestMessageFactory.Create(uri, timeout, content, operationContext, BlobContainerPublicAccessType.Off, canonicalizer, credentials);
+            return ContainerHttpRequestMessageFactory.Create(uri, timeout, content, operationContext, BlobContainerPublicAccessType.Off, null /* encryptionScopeOptions */, canonicalizer, credentials);
         }
         
         /// <summary>
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
         /// <param name="timeout">The server timeout interval.</param>
         /// <param name="accessType">An <see cref="BlobContainerPublicAccessType"/> object that specifies whether data in the container may be accessed publicly and what level of access is to be allowed.</param>                                                                                        
         /// <returns>A web request to use to perform the operation.</returns>
-        public static StorageRequestMessage Create(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, BlobContainerPublicAccessType accessType, ICanonicalizer canonicalizer, StorageCredentials credentials)
+        public static StorageRequestMessage Create(Uri uri, int? timeout, HttpContent content, OperationContext operationContext, BlobContainerPublicAccessType accessType, BlobContainerEncryptionScopeOptions encryptionScopeOptions, ICanonicalizer canonicalizer, StorageCredentials credentials)
         {
             UriQueryBuilder containerBuilder = GetContainerUriQueryBuilder();
             StorageRequestMessage request = HttpRequestMessageFactory.Create(uri, timeout, containerBuilder, content, operationContext, canonicalizer, credentials);
@@ -55,6 +55,14 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
             if (accessType != BlobContainerPublicAccessType.Off)
             {
                 request.Headers.Add(Constants.HeaderConstants.ContainerPublicAccessType, accessType.ToString().ToLower());
+            }
+
+            if (null != encryptionScopeOptions)
+            {
+                request.Headers.Add(Constants.HeaderConstants.DefaultEncryptionScopeHeader, encryptionScopeOptions.DefaultEncryptionScope);
+
+                request.Headers.Add(Constants.HeaderConstants.PreventEncryptionScopeOverrideHeader,
+                    encryptionScopeOptions.PreventEncryptionScopeOverride ? Constants.HeaderConstants.TrueHeader : Constants.HeaderConstants.FalseHeader);
             }
 
             return request;

@@ -130,6 +130,11 @@ namespace Microsoft.Azure.Storage
         public string EncryptionKeySHA256 { get; internal set; }
 
         /// <summary>
+        /// Represents encryption scope.
+        /// </summary>
+        public string EncryptionScope { get; internal set; }
+
+        /// <summary>
         /// Gets or sets the exception.
         /// </summary>
         /// <value>An <see cref="System.Exception"/> object.</value>
