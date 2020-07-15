@@ -85,6 +85,12 @@ namespace Microsoft.Azure.Storage.Blob.Protocol
                 string blobEncryption = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.ServerEncrypted);
                 properties.IsServerEncrypted = string.Equals(blobEncryption, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
+                string encryptionScope = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.EncryptionScopeHeader);
+                if (!string.IsNullOrEmpty(encryptionScope))
+                {
+                    properties.EncryptionScope = encryptionScope;
+                }
+
                 string incrementalCopy = response.Headers.GetHeaderSingleValueOrDefault(Constants.HeaderConstants.IncrementalCopyHeader);
                 properties.IsIncrementalCopy = string.Equals(incrementalCopy, Constants.HeaderConstants.TrueHeader, StringComparison.OrdinalIgnoreCase);
 
