@@ -367,7 +367,7 @@ namespace Microsoft.Azure.Storage.Blob
         [TestCategory(TestTypeCategory.UnitTest)]
         [TestCategory(SmokeTestCategory.NonSmoke)]
         [TestCategory(TenantTypeCategory.DevFabric), TestCategory(TenantTypeCategory.Cloud)]
-        public async Task CloudBlockBlobPutBlockFromUrlCPKTask()
+        public async Task CloudBlockBlobPutBlockFromUrlEncryptionScopeTask()
         {
             // Arrange
             CloudBlobContainer container = GetRandomContainerReference();

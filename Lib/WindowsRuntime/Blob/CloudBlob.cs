@@ -1423,6 +1423,7 @@ namespace Microsoft.Azure.Storage.Blob
                 BlobResponse.ValidateCPKHeaders(resp, options, false);
                 cmd.CurrentResult.IsServiceEncrypted = HttpResponseParsers.ParseServiceEncrypted(resp);
                 cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                cmd.CurrentResult.EncryptionScope = HttpResponseParsers.ParseEncryptionScope(resp);
 
                 return NullType.Value;
             };
@@ -1433,6 +1434,7 @@ namespace Microsoft.Azure.Storage.Blob
                 cmd.CurrentResult.IsServiceEncrypted = HttpResponseParsers.ParseServiceEncrypted(resp);
                 cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
                 HttpResponseParsers.ValidateResponseStreamChecksumAndLength(validateLength, storedMD5, storedCRC64, cmd);
+                cmd.CurrentResult.EncryptionScope = HttpResponseParsers.ParseEncryptionScope(resp);
                 return NullType.ValueTask;
             };
 
@@ -1465,6 +1467,7 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudBlob.UpdateAfterFetchAttributes(attributes, resp);
                 cmd.CurrentResult.IsServiceEncrypted = HttpResponseParsers.ParseServiceEncrypted(resp);
                 cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                cmd.CurrentResult.EncryptionScope = HttpResponseParsers.ParseEncryptionScope(resp);
                 BlobResponse.ValidateCPKHeaders(resp, options, false);
 
                 return NullType.Value;
@@ -1529,6 +1532,7 @@ namespace Microsoft.Azure.Storage.Blob
                 CloudBlob.UpdateETagLMTLengthAndSequenceNumber(attributes, resp, false);
                 cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                 cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
+                cmd.CurrentResult.EncryptionScope = HttpResponseParsers.ParseEncryptionScope(resp);
                 BlobResponse.ValidateCPKHeaders(resp, options, true);
                 return NullType.Value;
             };
@@ -1878,6 +1882,7 @@ namespace Microsoft.Azure.Storage.Blob
                     cmd.CurrentResult.IsRequestServerEncrypted = HttpResponseParsers.ParseServerRequestEncrypted(resp);
                     cmd.CurrentResult.EncryptionKeySHA256 = HttpResponseParsers.ParseEncryptionKeySHA256(resp);
                     BlobResponse.ValidateCPKHeaders(resp, options, true);
+                    cmd.CurrentResult.EncryptionScope = HttpResponseParsers.ParseEncryptionScope(resp);
                 }
 
                 return snapshot;
