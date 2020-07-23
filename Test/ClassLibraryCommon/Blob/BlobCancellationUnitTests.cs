@@ -92,7 +92,7 @@ namespace Microsoft.Azure.Storage.Blob
                             }
                             catch (StorageException ex)
                             {
-                                Assert.AreEqual("The operation was canceled.", ex.Message);
+                                Assert.AreEqual("A task was canceled.", ex.Message);
                                 Assert.AreEqual(ex.RequestInformation.HttpStatusCode, 306);
                                 Assert.AreEqual(ex.RequestInformation.HttpStatusMessage, null);
                             }

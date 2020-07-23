@@ -1682,9 +1682,9 @@ namespace Microsoft.Azure.Storage.Blob
                         TestHelper.Defiddler(source3), PremiumPageBlobTier.P6, null, null, null, null, CancellationToken.None);
                     Assert.Fail("Expect failure when attempting to copy to too small of a disk");
                 }
-                catch (AggregateException e)
+                catch (StorageException e)
                 {
-                    Assert.AreEqual("Specified blob tier size limit cannot be less than content length.", e.InnerException.Message);
+                    Assert.AreEqual("Specified blob tier size limit cannot be less than content length.", e.Message);
                     Assert.IsFalse(copy3.Properties.BlobTierInferred.HasValue);
                 }
             }
