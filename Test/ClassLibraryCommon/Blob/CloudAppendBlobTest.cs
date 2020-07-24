@@ -2208,10 +2208,10 @@ namespace Microsoft.Azure.Storage.Blob
 
                 List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
-                AssertAreEqual(blob, (CloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[1]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[2]);
+                AssertAreEqual(blob, (CloudBlob)blobs[3]);
             }
             finally
             {
@@ -2301,10 +2301,11 @@ namespace Microsoft.Azure.Storage.Blob
 
                     List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                     Assert.AreEqual(4, blobs.Count);
-                    AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
-                    AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
-                    AssertAreEqual(blob, (CloudBlob)blobs[2]);
-                    AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
+
+                    AssertAreEqual(snapshotCopy, (CloudBlob)blobs[0]);
+                    AssertAreEqual(snapshot1, (CloudBlob)blobs[1]);
+                    AssertAreEqual(snapshot2, (CloudBlob)blobs[2]);
+                    AssertAreEqual(blob, (CloudBlob)blobs[3]);
                 }
             }
             finally
@@ -2385,10 +2386,10 @@ namespace Microsoft.Azure.Storage.Blob
                              .Results
                              .ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
-                AssertAreEqual(blob, (CloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[1]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[2]);
+                AssertAreEqual(blob, (CloudBlob)blobs[3]);
             }
             finally
             {

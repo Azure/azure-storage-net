@@ -2579,11 +2579,11 @@ namespace Microsoft.Azure.Storage.Blob
                 blob.Create(1024);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 TestHelper.ExpectedException(
-                    () => this.CloudPageBlobUploadFromStream(container, 6 * 512, null, accessCondition, 0, false, true),
+                    () => this.CloudPageBlobUploadFromStream(container, 6 * 512, null, accessCondition, 0, false, true, blobName),
                     "Uploading a blob on top of an existing blob should fail if the ETag matches",
                     HttpStatusCode.PreconditionFailed);
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                this.CloudPageBlobUploadFromStream(container, 6 * 512, null, accessCondition, 0, false, true);
+                this.CloudPageBlobUploadFromStream(container, 6 * 512, null, accessCondition, 0, false, true, blobName);
 
                 blob = container.GetPageBlobReference("blob3");
                 blob.Create(1024);
@@ -2664,10 +2664,10 @@ namespace Microsoft.Azure.Storage.Blob
                 await blob.CreateAsync(1024);
                 accessCondition = AccessCondition.GenerateIfNoneMatchCondition(blob.Properties.ETag);
                 await TestHelper.ExpectedExceptionAsync<StorageException>(
-                    () => this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true),
+                    () => this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true, blobName),
                     "Uploading a blob on top of an existing blob should fail if the ETag matches");
                 accessCondition = AccessCondition.GenerateIfMatchCondition(blob.Properties.ETag);
-                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true);
+                await this.CloudPageBlobUploadFromStreamTask(container, 6 * 512, null, accessCondition, 0, true, blobName);
 
                 blob = container.GetPageBlobReference("blob3");
                 await blob.CreateAsync(1024);
@@ -2923,7 +2923,7 @@ namespace Microsoft.Azure.Storage.Blob
         }
 #endif
 
-        private void CloudPageBlobUploadFromStream(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool isAsync, bool testMd5)
+        private void CloudPageBlobUploadFromStream(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool isAsync, bool testMd5, string blobName = null)
         {
             byte[] buffer = GetRandomBuffer(size);
 
@@ -2934,7 +2934,11 @@ namespace Microsoft.Azure.Storage.Blob
                 md5 = Convert.ToBase64String(hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
             }
 
-            var blobName = GetRandomBlobName();
+            if (null == blobName)
+            {
+                blobName = GetRandomBlobName();
+            }
+
             CloudPageBlob blob = container.GetPageBlobReference(blobName);
             blob.StreamWriteSizeInBytes = 512;
 
@@ -3017,7 +3021,7 @@ namespace Microsoft.Azure.Storage.Blob
         }
 
 #if TASK
-        private async Task CloudPageBlobUploadFromStreamTask(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool testMd5)
+        private async Task CloudPageBlobUploadFromStreamTask(CloudBlobContainer container, int size, long? copyLength, AccessCondition accessCondition, int startOffset, bool testMd5, string blobName = null)
         {
             try
             {
@@ -3031,7 +3035,11 @@ namespace Microsoft.Azure.Storage.Blob
                         hasher.ComputeHash(buffer, startOffset, copyLength.HasValue ? (int)copyLength : buffer.Length - startOffset));
                 }
 
-                var blobName = GetRandomBlobName();
+                if (null == blobName)
+                {
+                    blobName = GetRandomBlobName();
+                }
+
                 CloudPageBlob blob = container.GetPageBlobReference(blobName);
                 blob.StreamWriteSizeInBytes = 512;
 
@@ -3155,10 +3163,10 @@ namespace Microsoft.Azure.Storage.Blob
 
                 List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
-                AssertAreEqual(blob, (CloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[1]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[2]);
+                AssertAreEqual(blob, (CloudBlob)blobs[3]);
             }
             finally
             {
@@ -3250,10 +3258,10 @@ namespace Microsoft.Azure.Storage.Blob
 
                     List<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, null, null).ToList();
                     Assert.AreEqual(4, blobs.Count);
-                    AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
-                    AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
-                    AssertAreEqual(blob, (CloudBlob)blobs[2]);
-                    AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
+                    AssertAreEqual(snapshotCopy, (CloudBlob)blobs[0]);
+                    AssertAreEqual(snapshot1, (CloudBlob)blobs[1]);
+                    AssertAreEqual(snapshot2, (CloudBlob)blobs[2]);
+                    AssertAreEqual(blob, (CloudBlob)blobs[3]);
                 }
             }
             finally
@@ -3338,10 +3346,10 @@ namespace Microsoft.Azure.Storage.Blob
                              .Results
                              .ToList();
                 Assert.AreEqual(4, blobs.Count);
-                AssertAreEqual(snapshot1, (CloudBlob)blobs[0]);
-                AssertAreEqual(snapshot2, (CloudBlob)blobs[1]);
-                AssertAreEqual(blob, (CloudBlob)blobs[2]);
-                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[3]);
+                AssertAreEqual(snapshotCopy, (CloudBlob)blobs[0]);
+                AssertAreEqual(snapshot1, (CloudBlob)blobs[1]);
+                AssertAreEqual(snapshot2, (CloudBlob)blobs[2]);
+                AssertAreEqual(blob, (CloudBlob)blobs[3]);
             }
             finally
             {

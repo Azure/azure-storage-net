@@ -1,3 +1,7 @@
+Changes in 11.2.0:
+
+- Updated REST version to 2019-07-07..
+
 Changes in 11.1.7:
 
 - None.

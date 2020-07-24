@@ -21,9 +21,9 @@
     
 We have engineered a highly performant and scalable SDK with our V12 releases. We encourage all our customers to give it a try.
 
-# Microsoft Azure Storage SDK for .NET (11.1.7)
+# Microsoft Azure Storage SDK for .NET (11.2.0)
 
-> Server Version: 2019-02-02
+> Server Version: 2019-07-07
 
 The Microsoft Azure Storage SDK for .NET allows you to build Azure applications 
 that take advantage of scalable cloud computing resources.
