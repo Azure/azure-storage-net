@@ -268,7 +268,7 @@ namespace Microsoft.Azure.Storage.Core
 
         private void UpdateReadTimeout()
         {
-            if (this.wrappedStream.CanTimeout)
+            if (this.wrappedStream.CanTimeout && this.wrappedStream.CanRead)
             {
                 try
                 {
@@ -283,7 +283,7 @@ namespace Microsoft.Azure.Storage.Core
 
         private void UpdateWriteTimeout()
         {
-            if (this.wrappedStream.CanTimeout)
+            if (this.wrappedStream.CanTimeout && this.wrappedStream.CanWrite)
             {
                 try
                 {
