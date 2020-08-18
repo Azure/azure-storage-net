@@ -1,3 +1,7 @@
+Changes in 11.2.1:
+
+- Fixed bug causing performance degradation on .NET Framework.
+
 Changes in 11.2.0:
 
 - Updated REST version to 2019-07-07..
