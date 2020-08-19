@@ -35,9 +35,9 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("11.2.1")]
-[assembly: AssemblyFileVersion("11.2.1")]
-[assembly: AssemblyInformationalVersion("11.2.1.0")]
+[assembly: AssemblyVersion("11.2.2")]
+[assembly: AssemblyFileVersion("11.2.2")]
+[assembly: AssemblyInformationalVersion("11.2.2.0")]
 
 #if SIGN
 [assembly: InternalsVisibleTo(
