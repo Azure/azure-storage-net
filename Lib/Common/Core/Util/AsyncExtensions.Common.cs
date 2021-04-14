@@ -229,7 +229,11 @@ namespace Microsoft.Azure.Storage.Core.Util
 
         public AsyncManualResetEvent(bool initialStateSignaled)
         {
-            Task.Run(() => m_tcs.TrySetResult(initialStateSignaled));
+            if (initialStateSignaled)
+            {
+                // There's nobody awaiting the task nor is there any continuation, so this should be safe to do.
+                m_tcs.SetResult(true);
+            }
         }
 
         public Task WaitAsync() { return m_tcs.Task; }
