@@ -17,12 +17,13 @@
 
 namespace Microsoft.Azure.Storage.Core.Util
 {
+    using System.Threading;
     using System.Threading.Tasks;
 
     internal sealed class CounterEventAsync
     {
         private AsyncManualResetEvent internalEvent = new AsyncManualResetEvent(true);
-        private object counterLock = new object();
+        private SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
         private int counter = 0;
 
         /// <summary>
@@ -30,10 +31,15 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// </summary>
         public void Increment()
         {
-            lock (this.counterLock)
+            semaphoreSlim.Wait();
+            try
             {
                 this.counter++;
                 this.internalEvent.Reset();
+            }
+            finally
+            {
+                semaphoreSlim.Release();
             }
         }
 
@@ -42,17 +48,17 @@ namespace Microsoft.Azure.Storage.Core.Util
         /// </summary>
         public async Task DecrementAsync()
         {
-            bool setEvent = false;
-            lock (this.counterLock)
+            await semaphoreSlim.WaitAsync().ConfigureAwait(false);
+            try
             {
                 if (--this.counter == 0)
                 {
-                    setEvent = true;
+                    await this.internalEvent.Set().ConfigureAwait(false);
                 }
             }
-            if (setEvent)
+            finally
             {
-                await this.internalEvent.Set().ConfigureAwait(false);
+                semaphoreSlim.Release();
             }
         }
 

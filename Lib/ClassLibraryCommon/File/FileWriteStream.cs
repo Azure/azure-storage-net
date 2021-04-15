@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Storage.File
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Threading;
@@ -134,8 +135,7 @@ namespace Microsoft.Azure.Storage.File
             int initialOffset = offset;
             int initialCount = count;
 
-            TaskCompletionSource<bool> continueTCS = new TaskCompletionSource<bool>();
-            Task<bool> continueTask = continueTCS.Task;
+            List<Task> continueTasks = new List<Task>();
 
             if (this.lastException == null)
             {
@@ -155,6 +155,9 @@ namespace Microsoft.Azure.Storage.File
 
                     if (bytesToWrite == maxBytesToWrite)
                     {
+                        TaskCompletionSource<bool> continueTCS = new TaskCompletionSource<bool>();
+                        continueTasks.Add(continueTCS.Task);
+
                         // Note that we do not await on temptask, nor do we store it.
                         // We do not await temptask so as to enable parallel reads and writes.
                         // We could store it and await on it later, but that ends up being more complicated
@@ -173,7 +176,6 @@ namespace Microsoft.Azure.Storage.File
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
-                        continueTCS = null;
                     }
                 }
             }
@@ -186,10 +188,8 @@ namespace Microsoft.Azure.Storage.File
                 this.fileChecksum.UpdateHash(buffer, initialOffset, initialCount);
             }
 
-            if (continueTCS == null)
-            {
-                await continueTask.ConfigureAwait(false);
-            }
+            // Wait until all continueTasks complete to let all dispatched writes increment noPendingWritesEvent counter.
+            await Task.WhenAll(continueTasks);
         }
 
         /// <summary>
@@ -235,7 +235,10 @@ namespace Microsoft.Azure.Storage.File
             }
 
             ThrowLastExceptionIfExists();
-            await this.DispatchWriteAsync(null, cancellationToken).ConfigureAwait(false);
+            TaskCompletionSource<bool> continueTCS = new TaskCompletionSource<bool>();
+            await this.DispatchWriteAsync(continueTCS, cancellationToken).ConfigureAwait(false);
+            // Make sure DispatchWriteAsync had a chance to increment noPendingWritesEvent if there's anything to write.
+            await continueTCS.Task;
             await this.noPendingWritesEvent.WaitAsync().WithCancellation(cancellationToken).ConfigureAwait(false);
             ThrowLastExceptionIfExists();
         }
