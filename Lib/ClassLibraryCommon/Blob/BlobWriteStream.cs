@@ -22,6 +22,7 @@ namespace Microsoft.Azure.Storage.Blob
     using Microsoft.Azure.Storage.Core.Util;
     using Microsoft.Azure.Storage.Shared.Protocol;
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Net;
@@ -181,8 +182,7 @@ namespace Microsoft.Azure.Storage.Blob
             int initialOffset = offset;
             int initialCount = count;
 
-            TaskCompletionSource<bool> continueTCS = new TaskCompletionSource<bool>();
-            Task<bool> continueTask = continueTCS.Task;
+            List<Task> continueTasks = new List<Task>();
 
             if (this.lastException == null)
             {
@@ -202,6 +202,9 @@ namespace Microsoft.Azure.Storage.Blob
 
                     if (bytesToWrite == maxBytesToWrite)
                     {
+                        TaskCompletionSource<bool> continueTCS = new TaskCompletionSource<bool>();
+                        continueTasks.Add(continueTCS.Task);
+
                         // Note that we do not await on temptask, nor do we store it.
                         // We do not await temptask so as to enable parallel reads and writes.
                         // We could store it and await on it later, but that ends up being more complicated
@@ -220,7 +223,6 @@ namespace Microsoft.Azure.Storage.Blob
                         }
 
                         token.ThrowIfCancellationRequested();
-                        continueTCS = null;
                     }
                 }
             }
@@ -233,10 +235,8 @@ namespace Microsoft.Azure.Storage.Blob
                 this.blobChecksum.UpdateHash(buffer, initialOffset, initialCount);
             }
 
-            if (continueTCS == null)
-            {
-                await continueTask.ConfigureAwait(false);
-            }
+            // Wait until all continueTasks complete to let all dispatched writes increment noPendingWritesEvent counter.
+            await Task.WhenAll(continueTasks);
         }
 
         /// <summary>
@@ -304,7 +304,10 @@ namespace Microsoft.Azure.Storage.Blob
             if (!this.IgnoreFlush)
             {  
                 this.ThrowLastExceptionIfExists();
-                await this.DispatchWriteAsync(null, token).ConfigureAwait(false);
+                TaskCompletionSource<bool> continueTCS = new TaskCompletionSource<bool>();
+                await this.DispatchWriteAsync(continueTCS, token).ConfigureAwait(false);
+                // Make sure DispatchWriteAsync had a chance to increment noPendingWritesEvent if there's anything to write.
+                await continueTCS.Task;
                 await this.noPendingWritesEvent.WaitAsync().WithCancellation(token).ConfigureAwait(false);
                 this.ThrowLastExceptionIfExists();
             }
