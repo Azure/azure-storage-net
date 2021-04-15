@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Common SDK for .NET (11.2.2)
+# Microsoft Azure Storage Common SDK for .NET (11.2.3)
 
 The Microsoft Azure Storage Common SDK for .NET is referenced by Azure Storage Blob/Queue/File SDKs and Azure CosmosDB Table SDK
 and should not be referenced directly by your application.

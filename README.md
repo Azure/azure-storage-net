@@ -21,7 +21,7 @@
     
 We have engineered a highly performant and scalable SDK with our V12 releases. We encourage all our customers to give it a try.
 
-# Microsoft Azure Storage SDK for .NET (11.2.2)
+# Microsoft Azure Storage SDK for .NET (11.2.3)
 
 > Server Version: 2019-07-07
 

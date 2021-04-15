@@ -1,3 +1,7 @@
+Changes in 11.2.3:
+
+- Fixed race conditions in OpenWrite, UploadFromStream.
+
 Changes in 11.2.1:
 
 - Fixed bug causing performance degradation on .NET Framework.
