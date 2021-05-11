@@ -1,4 +1,4 @@
-# Microsoft Azure Storage SDK for .NET
+# Microsoft Azure Storage SDK for .NET (Deprecated)
 ## If you would like to access our latest .NET SDK, please refer to the Storage SDK v12 for .NET link in the table below. If you would like more information on Azure's burgeoning effort to coordinate the development of the SDKs across services, of which this change is a part, please refer to [this article](https://azure.microsoft.com/en-us/blog/previewing-azure-sdks-following-new-azure-sdk-api-standards/).
 
 ## We will continue to respond to issues here, but prefer that you post them on the [v12 repo](https://github.com/azure/azure-sdk-for-net). Thank you for your patience. We look forward to continuing to work together with you.
