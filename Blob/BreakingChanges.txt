@@ -1,6 +1,7 @@
 Tracking Breaking Changes since 11.0:
 
 - Various MD5-specific parameters on public APIs have been replaced with more generic checksum parameters.  For example, ContentMD5 parameter on public APIs has been replaced with a Checksum, which contains MD5 and CRC64 properties.
+- CloudBlockBlob is no longer supported - see [https://github.com/Azure/azure-sdk-for-net/issues/17732]
 
 Tracking Breaking Changes since 10.0:
 
