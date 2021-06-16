@@ -951,7 +951,7 @@ namespace Microsoft.Azure.Storage.Blob
         [DoesServiceRequest]
         public virtual Task<AccountProperties> GetAccountPropertiesAsync(CancellationToken cancellationToken)
         {
-            return this.GetAccountPropertiesAsync(default(BlobRequestOptions), default(OperationContext), CancellationToken.None);
+            return this.GetAccountPropertiesAsync(default(BlobRequestOptions), default(OperationContext), cancellationToken);
         }
 
         /// <summary>
