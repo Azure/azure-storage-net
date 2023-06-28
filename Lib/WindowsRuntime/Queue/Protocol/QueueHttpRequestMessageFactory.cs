@@ -201,7 +201,8 @@ namespace Microsoft.Azure.Storage.Queue.Protocol
             builder.Add(Constants.QueryConstants.PopReceipt, popReceipt);
             if (visibilityTimeout != null)
             {
-                builder.Add(Constants.QueryConstants.VisibilityTimeout, visibilityTimeout.Value.TotalSeconds.ToString());
+                var totalSeconds = (long) visibilityTimeout.Value.TotalSeconds;
+                builder.Add(Constants.QueryConstants.VisibilityTimeout, totalSeconds.ToString());
             }
             else
             {
