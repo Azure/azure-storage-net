@@ -200,10 +200,10 @@ namespace Microsoft.Azure.Storage.Shared.Protocol
         /// <param name="value">The metadata value.</param>
         internal static void AddMetadata(StorageRequestMessage request, string name, string value)
         {
-            CommonUtility.AssertNotNull("value", value);
-            if (string.IsNullOrWhiteSpace(value))
+            CommonUtility.AssertNotNull(nameof(name), name);
+            if (string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentException(SR.ArgumentEmptyError, value);
+                throw new ArgumentException(SR.ArgumentEmptyError, name);
             }
 
             request.Headers.Add("x-ms-meta-" + name, value);
